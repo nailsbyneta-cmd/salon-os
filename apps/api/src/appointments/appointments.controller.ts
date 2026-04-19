@@ -29,6 +29,7 @@ export class AppointmentsController {
     @Query('to') to: string,
     @Query('locationId') locationId?: string,
     @Query('staffId') staffId?: string,
+    @Query('clientId') clientId?: string,
   ): Promise<{ appointments: Appointment[] }> {
     if (!from || !to) {
       throw new BadRequestException('from + to query params are required (ISO 8601)');
@@ -43,6 +44,7 @@ export class AppointmentsController {
       to: toDate,
       locationId,
       staffId,
+      clientId,
     });
     return { appointments };
   }

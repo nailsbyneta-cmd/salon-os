@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { transitionAppointment, cancelAppointment } from './actions';
 
 interface Appt {
   id: string;
@@ -171,9 +172,122 @@ export default async function CalendarPage({
         <p className="mt-4 text-center text-sm text-neutral-400">
           Keine Termine heute.
         </p>
-      ) : null}
+      ) : (
+        <section className="mt-8">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-neutral-500">
+            Termin-Details
+          </h2>
+          <div className="rounded-xl border border-neutral-200 bg-white divide-y divide-neutral-100">
+            {appts.map((a) => (
+              <ApptActions key={a.id} a={a} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
+}
+
+function ApptActions({ a }: { a: Appt }): React.JSX.Element {
+  const clientName = a.client
+    ? `${a.client.firstName} ${a.client.lastName}`
+    : 'Blockzeit';
+  const services = a.items.map((i) => i.service.name).join(', ') || '—';
+  const start = new Date(a.startAt).toLocaleTimeString('de-CH', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const transition = transitionAppointment.bind(null, a.id);
+  const cancel = cancelAppointment.bind(null, a.id);
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
+      <span className="w-16 tabular-nums font-medium text-neutral-700">{start}</span>
+      <div className="flex-1 min-w-[200px]">
+        <div className="font-medium">
+          {a.clientId ? (
+            <Link href={`/clients/${a.clientId}`} className="hover:underline">
+              {clientName}
+            </Link>
+          ) : (
+            clientName
+          )}
+        </div>
+        <div className="text-xs text-neutral-500">
+          {services} · {a.staff.firstName} {a.staff.lastName[0]}.
+        </div>
+      </div>
+      <span
+        className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyle(a.status)}`}
+      >
+        {statusLabelShort(a.status)}
+      </span>
+      <div className="flex gap-1">
+        {a.status === 'BOOKED' ? (
+          <form action={transition.bind(null, 'confirm')}>
+            <ActionBtn>Bestätigen</ActionBtn>
+          </form>
+        ) : null}
+        {(a.status === 'BOOKED' || a.status === 'CONFIRMED') ? (
+          <form action={transition.bind(null, 'check-in')}>
+            <ActionBtn>Eingecheckt</ActionBtn>
+          </form>
+        ) : null}
+        {a.status === 'CHECKED_IN' ? (
+          <form action={transition.bind(null, 'start')}>
+            <ActionBtn>Starten</ActionBtn>
+          </form>
+        ) : null}
+        {a.status === 'IN_SERVICE' ? (
+          <form action={transition.bind(null, 'complete')}>
+            <ActionBtn primary>Abschliessen</ActionBtn>
+          </form>
+        ) : null}
+        {a.status !== 'COMPLETED' && a.status !== 'CANCELLED' ? (
+          <form action={cancel.bind(null, 'Auf Kundenwunsch')}>
+            <ActionBtn danger>Stornieren</ActionBtn>
+          </form>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ActionBtn({
+  children,
+  primary,
+  danger,
+}: {
+  children: React.ReactNode;
+  primary?: boolean;
+  danger?: boolean;
+}): React.JSX.Element {
+  const base =
+    'rounded-md px-3 py-1.5 text-xs font-medium transition hover:opacity-90 ';
+  const variant = danger
+    ? 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
+    : primary
+      ? 'bg-emerald-600 text-white'
+      : 'border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50';
+  return (
+    <button type="submit" className={base + variant}>
+      {children}
+    </button>
+  );
+}
+
+function statusLabelShort(s: string): string {
+  const m: Record<string, string> = {
+    BOOKED: 'Gebucht',
+    CONFIRMED: 'Bestätigt',
+    CHECKED_IN: 'Eingecheckt',
+    IN_SERVICE: 'Läuft',
+    COMPLETED: 'Fertig',
+    CANCELLED: 'Storniert',
+    NO_SHOW: 'No-Show',
+    WAITLIST: 'Warteliste',
+  };
+  return m[s] ?? s;
 }
 
 function statusStyle(status: string): string {

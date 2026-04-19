@@ -49,6 +49,7 @@ export class AppointmentsService {
     to: Date;
     locationId?: string;
     staffId?: string;
+    clientId?: string;
   }): Promise<Appointment[]> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
@@ -57,6 +58,7 @@ export class AppointmentsService {
           startAt: { gte: opts.from, lte: opts.to },
           ...(opts.locationId ? { locationId: opts.locationId } : {}),
           ...(opts.staffId ? { staffId: opts.staffId } : {}),
+          ...(opts.clientId ? { clientId: opts.clientId } : {}),
         },
         include: {
           items: { include: { service: { select: { name: true } } } },

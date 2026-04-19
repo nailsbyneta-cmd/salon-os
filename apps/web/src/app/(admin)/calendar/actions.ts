@@ -1,0 +1,35 @@
+'use server';
+import { revalidatePath } from 'next/cache';
+import { apiFetch } from '@/lib/api';
+import { getCurrentTenant } from '@/lib/tenant';
+
+type Transition = 'confirm' | 'check-in' | 'start' | 'complete';
+
+export async function transitionAppointment(
+  appointmentId: string,
+  to: Transition,
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/appointments/${appointmentId}/${to}`, {
+    method: 'POST',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+  });
+  revalidatePath('/calendar');
+}
+
+export async function cancelAppointment(
+  appointmentId: string,
+  reason: string,
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/appointments/${appointmentId}/cancel`, {
+    method: 'POST',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: { reason: reason || 'Auf Kundenwunsch storniert', notifyClient: false },
+  });
+  revalidatePath('/calendar');
+}

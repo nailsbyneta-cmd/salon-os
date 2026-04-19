@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
@@ -79,9 +80,14 @@ export default async function ClientsPage({
             </thead>
             <tbody>
               {clients.map((c) => (
-                <tr key={c.id} className="border-b border-neutral-100 last:border-0">
+                <tr
+                  key={c.id}
+                  className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
+                >
                   <td className="px-4 py-3 font-medium">
-                    {c.firstName} {c.lastName}
+                    <Link href={`/clients/${c.id}`} className="hover:underline">
+                      {c.firstName} {c.lastName}
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-neutral-600">
                     {c.email ?? '—'}
