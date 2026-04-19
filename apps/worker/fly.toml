@@ -1,0 +1,24 @@
+# fly.toml für @salon-os/worker (BullMQ background-workers)
+# Kein HTTP-Port. Keine public routes. Nur Redis-Connection.
+
+app = "salon-os-worker"
+primary_region = "zrh"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  LOG_LEVEL = "info"
+
+# Kein [http_service] — der Worker ist reiner Queue-Consumer.
+# Fly stellt trotzdem TCP-Checks bereit, wenn wir später bei Bedarf
+# ein Metrics-Endpoint hinzufügen.
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+[processes]
+  app = "node dist/index.js"
