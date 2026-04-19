@@ -9,6 +9,7 @@ import { LocationsModule } from './locations/locations.module.js';
 import { PublicBookingsModule } from './public-bookings/public-bookings.module.js';
 import { RoomsModule } from './rooms/rooms.module.js';
 import { ServicesModule } from './services/services.module.js';
+import { ShiftsModule } from './shifts/shifts.module.js';
 import { StaffModule } from './staff/staff.module.js';
 import { TenantModule } from './tenant/tenant.module.js';
 
@@ -23,6 +24,7 @@ import { TenantModule } from './tenant/tenant.module.js';
     ServicesModule,
     AppointmentsModule,
     PublicBookingsModule,
+    ShiftsModule,
   ],
   controllers: [HealthController],
   providers: [

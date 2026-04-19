@@ -6,6 +6,7 @@ const nav = [
   { href: '/clients', label: 'Kunden' },
   { href: '/services', label: 'Services' },
   { href: '/staff', label: 'Team' },
+  { href: '/reports', label: 'Reports' },
 ];
 
 export default function AdminLayout({

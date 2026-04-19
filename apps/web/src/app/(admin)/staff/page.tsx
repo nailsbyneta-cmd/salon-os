@@ -96,16 +96,24 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
                   <div>{s.email}</div>
                   {s.phone ? <div>{s.phone}</div> : null}
                 </div>
-                {s.role !== 'OWNER' ? (
-                  <form action={deleteStaff.bind(null, s.id)} className="mt-3">
-                    <button
-                      type="submit"
-                      className="text-xs text-red-600 hover:underline"
-                    >
-                      Entfernen
-                    </button>
-                  </form>
-                ) : null}
+                <div className="mt-3 flex items-center justify-between">
+                  <Link
+                    href={`/staff/${s.id}/shifts`}
+                    className="text-xs text-neutral-600 hover:underline"
+                  >
+                    Arbeitszeiten →
+                  </Link>
+                  {s.role !== 'OWNER' ? (
+                    <form action={deleteStaff.bind(null, s.id)}>
+                      <button
+                        type="submit"
+                        className="text-xs text-red-600 hover:underline"
+                      >
+                        Entfernen
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
               </article>
             );
           })}

@@ -1,5 +1,6 @@
 'use server';
 import { redirect } from 'next/navigation';
+import { toLocalIso } from '@salon-os/utils';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
@@ -73,9 +74,8 @@ export async function createAppointment(form: FormData): Promise<void> {
     fetchFirstLocation(),
   ]);
 
-  // Lokal (Europe/Zurich) als Offset — Salon-Zeit.
-  // MVP: UTC+02:00 im Sommer. Sauber wäre tz-aware, kommt in Phase 2.
-  const startAtIso = `${date}T${time}:00+02:00`;
+  // Salon-Zeit (Europe/Zurich) mit korrektem DST-Offset.
+  const startAtIso = toLocalIso(date, time, 'Europe/Zurich');
   const endDate = new Date(startAtIso);
   endDate.setMinutes(endDate.getMinutes() + service.durationMinutes);
   const endAtIso = endDate.toISOString();
