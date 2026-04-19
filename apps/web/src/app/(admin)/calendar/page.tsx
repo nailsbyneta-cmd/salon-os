@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
@@ -83,20 +84,28 @@ export default async function CalendarPage({
             {appts.length} Termine · Studio 1, St. Gallen Winkeln
           </p>
         </div>
-        <form method="get" className="flex items-center gap-2">
-          <input
-            type="date"
-            name="date"
-            defaultValue={day}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
+        <div className="flex items-center gap-2">
+          <form method="get" className="flex items-center gap-2">
+            <input
+              type="date"
+              name="date"
+              defaultValue={day}
+              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+            >
+              Anzeigen
+            </button>
+          </form>
+          <Link
+            href={`/calendar/new?date=${day}`}
+            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
           >
-            Anzeigen
-          </button>
-        </form>
+            + Neuer Termin
+          </Link>
+        </div>
       </header>
 
       <section className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
