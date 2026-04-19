@@ -2,13 +2,14 @@ FROM node:22.12-alpine AS deps
 RUN corepack enable pnpm
 WORKDIR /repo
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json tsconfig.base.json ./
+COPY package.json pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY pnpm-lock.yaml* ./
 COPY apps/worker/package.json apps/worker/
 COPY packages/db/package.json packages/db/
 COPY packages/types/package.json packages/types/
 COPY packages/utils/package.json packages/utils/
 
-RUN pnpm install --frozen-lockfile --filter '@salon-os/worker...'
+RUN pnpm install --filter '@salon-os/worker...'
 
 FROM deps AS build
 COPY . .

@@ -47,7 +47,7 @@ jobs:
         with: { version: 9.15.0 }
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --no-frozen-lockfile
       - run: pnpm typecheck
 
   # ─── Lint ───────────────────────────────────────────────────
@@ -61,7 +61,7 @@ jobs:
         with: { version: 9.15.0 }
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --no-frozen-lockfile
       - run: pnpm lint
       - run: pnpm format:check
 
@@ -76,7 +76,7 @@ jobs:
         with: { version: 9.15.0 }
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --no-frozen-lockfile
       - run: pnpm build
 
   # ─── Test ───────────────────────────────────────────────────
@@ -106,7 +106,7 @@ jobs:
         with: { version: 9.15.0 }
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --no-frozen-lockfile
       - run: pnpm test
         env:
           DATABASE_URL: postgresql://salon:salon@localhost:5432/salon_os_test?schema=public

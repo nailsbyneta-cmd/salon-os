@@ -6,7 +6,10 @@ FROM node:22.12-alpine AS deps
 RUN corepack enable pnpm
 WORKDIR /repo
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json tsconfig.base.json ./
+COPY package.json pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+# pnpm-lock.yaml wird beim ersten Deploy automatisch erzeugt.
+# Sobald es commited ist, kann hier wieder `--frozen-lockfile` + COPY pnpm-lock.yaml rein.
+COPY pnpm-lock.yaml* ./
 COPY apps/api/package.json apps/api/
 COPY packages/db/package.json packages/db/
 COPY packages/auth/package.json packages/auth/
@@ -14,7 +17,7 @@ COPY packages/types/package.json packages/types/
 COPY packages/utils/package.json packages/utils/
 COPY packages/config/package.json packages/config/
 
-RUN pnpm install --frozen-lockfile --filter '@salon-os/api...'
+RUN pnpm install --filter '@salon-os/api...'
 
 # ─── Stage 2: build ─────────────────────────────────────────
 FROM deps AS build
