@@ -1,0 +1,14 @@
+# Railway Service Config — @salon-os/api
+# In Railway UI unter "Config-as-code → Railway Config File":
+#   apps/api/railway.toml
+# eintragen. Root Directory bleibt "/" (monorepo build context).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "apps/api/Dockerfile"
+
+[deploy]
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+healthcheckPath = "/health"
+healthcheckTimeout = 30

@@ -1,0 +1,12 @@
+# Railway Service Config — @salon-os/web (Next.js)
+# Web hat kein Dockerfile — wir lassen Railpack auf Monorepo-Root laufen
+# und überschreiben Install/Build/Start per pnpm --filter.
+
+[build]
+builder = "RAILPACK"
+buildCommand = "corepack enable && corepack prepare pnpm@9.15.0 --activate && pnpm install --no-frozen-lockfile && pnpm --filter @salon-os/web build"
+
+[deploy]
+startCommand = "pnpm --filter @salon-os/web start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
