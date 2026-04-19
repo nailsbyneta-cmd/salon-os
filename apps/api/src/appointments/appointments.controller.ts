@@ -6,9 +6,11 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
+import { z } from 'zod';
 import {
   cancelAppointmentSchema,
   createAppointmentSchema,
@@ -99,5 +101,21 @@ export class AppointmentsController {
   @Post(':id/complete')
   async complete(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<Appointment> {
     return this.svc.transition(id, 'COMPLETED');
+  }
+
+  @Patch(':id/notes')
+  async updateNotes(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+    @Body(
+      new ZodValidationPipe(
+        z.object({
+          notes: z.string().max(2000).nullable().optional(),
+          internalNotes: z.string().max(2000).nullable().optional(),
+        }),
+      ),
+    )
+    patch: { notes?: string | null; internalNotes?: string | null },
+  ): Promise<Appointment> {
+    return this.svc.updateNotes(id, patch);
   }
 }

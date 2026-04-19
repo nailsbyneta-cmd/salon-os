@@ -142,9 +142,10 @@ export default async function CalendarPage({
               const serviceNames = a.items.map((i) => i.service.name).join(', ') || '—';
               const staffName = `${a.staff.firstName} ${a.staff.lastName[0]}.`;
               return (
-                <article
+                <Link
                   key={a.id}
-                  className={`absolute left-1 right-2 rounded-md border px-2 py-1 text-xs shadow-sm ${statusStyle(a.status)}`}
+                  href={`/calendar/${a.id}`}
+                  className={`absolute left-1 right-2 block rounded-md border px-2 py-1 text-xs shadow-sm transition hover:shadow-md ${statusStyle(a.status)}`}
                   style={{
                     top: (offset / 60) * ROW_HEIGHT,
                     height: Math.max((dur / 60) * ROW_HEIGHT - 2, 24),
@@ -161,7 +162,7 @@ export default async function CalendarPage({
                     ·{' '}
                     {staffName}
                   </div>
-                </article>
+                </Link>
               );
             })}
           </div>
@@ -204,18 +205,12 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
     <div className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
       <span className="w-16 tabular-nums font-medium text-neutral-700">{start}</span>
       <div className="flex-1 min-w-[200px]">
-        <div className="font-medium">
-          {a.clientId ? (
-            <Link href={`/clients/${a.clientId}`} className="hover:underline">
-              {clientName}
-            </Link>
-          ) : (
-            clientName
-          )}
-        </div>
-        <div className="text-xs text-neutral-500">
-          {services} · {a.staff.firstName} {a.staff.lastName[0]}.
-        </div>
+        <Link href={`/calendar/${a.id}`} className="block hover:underline">
+          <div className="font-medium">{clientName}</div>
+          <div className="text-xs text-neutral-500">
+            {services} · {a.staff.firstName} {a.staff.lastName[0]}.
+          </div>
+        </Link>
       </div>
       <span
         className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyle(a.status)}`}

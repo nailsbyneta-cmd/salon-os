@@ -75,7 +75,20 @@ export class AppointmentsService {
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
       const appt = await tx.appointment.findFirst({
         where: { id },
-        include: { items: true },
+        include: {
+          items: { include: { service: { select: { name: true } } } },
+          client: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+          },
+          staff: { select: { firstName: true, lastName: true, color: true } },
+          location: { select: { name: true } },
+        },
       });
       if (!appt) throw new NotFoundException(`Appointment ${id} not found`);
       return appt;
@@ -123,6 +136,26 @@ export class AppointmentsService {
       }
       throw err;
     }
+  }
+
+  async updateNotes(
+    id: string,
+    patch: { notes?: string | null; internalNotes?: string | null },
+  ): Promise<Appointment> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.appointment.findFirst({ where: { id } });
+      if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
+      return tx.appointment.update({
+        where: { id },
+        data: {
+          ...(patch.notes !== undefined ? { notes: patch.notes || null } : {}),
+          ...(patch.internalNotes !== undefined
+            ? { internalNotes: patch.internalNotes || null }
+            : {}),
+        },
+      });
+    });
   }
 
   async reschedule(id: string, input: RescheduleAppointmentInput): Promise<Appointment> {
