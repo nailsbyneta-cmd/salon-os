@@ -1,0 +1,17 @@
+{
+  "name": "@salon-os/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared configs — ESLint, TS, Tailwind presets.",
+  "type": "module",
+  "files": [
+    "eslint/",
+    "tsconfig/",
+    "tailwind/"
+  ],
+  "exports": {
+    "./eslint/base": "./eslint/base.mjs",
+    "./eslint/react": "./eslint/react.mjs",
+    "./tailwind/preset": "./tailwind/preset.mjs"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "@salon-os/worker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "BullMQ background workers — reminders, emails, exports, receipts, retries.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint src --max-warnings 0",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@salon-os/db": "workspace:*",
+    "@salon-os/types": "workspace:*",
+    "@salon-os/utils": "workspace:*",
+    "bullmq": "^5.34.0",
+    "ioredis": "^5.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

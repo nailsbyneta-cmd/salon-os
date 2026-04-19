@@ -1,0 +1,81 @@
+name: salon-os-dev
+
+# Lokale Dev-Umgebung für SALON OS.
+# Siehe specs/tech-stack.md für die Stack-Entscheidungen.
+
+services:
+  # ─── PostgreSQL 16 mit pgvector ─────────────────────────────
+  # pgvector für Embeddings (AI-Layer, RAG, semantic search).
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: salon-os-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: salon
+      POSTGRES_PASSWORD: salon
+      POSTGRES_DB: salon_os
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U salon -d salon_os"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis 7 ────────────────────────────────────────────────
+  # Cache + BullMQ job queue + rate-limits + sessions.
+  redis:
+    image: redis:7-alpine
+    container_name: salon-os-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── Mailhog ────────────────────────────────────────────────
+  # SMTP sink for local dev — alle Mails landen hier, nicht im Internet.
+  # UI: http://localhost:8025
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: salon-os-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+
+  # ─── Minio (S3-kompatibel) ──────────────────────────────────
+  # Photo storage, receipts, exports. In prod: AWS S3 oder Cloudflare R2.
+  # Console: http://localhost:9001  (admin/admin)
+  minio:
+    image: minio/minio:latest
+    container_name: salon-os-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

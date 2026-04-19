@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Mobile (Expo)
+.expo/
+.expo-shared/
+web-build/
+
+# Env / secrets (never commit)
+.env
+.env.local
+.env.*.local
+!.env.example
+.doppler/
+
+# Logs & runtime
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+
+# OS / editor
+.DS_Store
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.recommended.json
+.idea/
+*.swp
+*.swo
+
+# Docker volumes (if mounted locally)
+infra/docker/data/
+
+# Vercel
+.vercel
+
+# Database
+*.sqlite
+*.sqlite-journal
+
+# Misc
+tmp/
+.cache/

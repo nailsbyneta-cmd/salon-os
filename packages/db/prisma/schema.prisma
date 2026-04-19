@@ -1,0 +1,171 @@
+// SALON OS — Prisma Schema
+// Phase 0: Kernentitäten für Multi-Tenant + Auth.
+// Vollständiges Datenmodell: siehe specs/data-model.md.
+// Jede tenant-skoped Tabelle MUSS RLS haben — enforced via SQL-Migrations
+// unter prisma/migrations/*/rls.sql.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgcrypto, pg_trgm, unaccent, vector]
+}
+
+// ─── Multi-Tenancy ─────────────────────────────────────────────
+
+model Tenant {
+  id           String       @id @default(uuid()) @db.Uuid
+  slug         String       @unique
+  name         String
+  legalName    String?
+  countryCode  String       @db.Char(2) // ISO 3166 alpha-2 (z. B. "CH")
+  currency     String       @db.Char(3) // ISO 4217 (z. B. "CHF")
+  timezone     String       // IANA (z. B. "Europe/Zurich")
+  locale       String       // BCP 47 (z. B. "de-CH")
+  vatId        String?
+  plan         Plan         @default(STARTER)
+  status       TenantStatus @default(TRIAL)
+  billingEmail String?
+  createdAt    DateTime     @default(now()) @db.Timestamptz
+  updatedAt    DateTime     @updatedAt @db.Timestamptz
+  deletedAt    DateTime?    @db.Timestamptz
+
+  locations   Location[]
+  users       TenantMembership[]
+  auditLogs   AuditLog[]
+
+  @@index([status])
+  @@map("tenant")
+}
+
+enum Plan {
+  STARTER
+  PRO
+  BUSINESS
+  ENTERPRISE
+  MEDSPA
+}
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  SUSPENDED
+}
+
+// ─── Locations ─────────────────────────────────────────────────
+
+model Location {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  name         String
+  slug         String
+  address1     String?
+  address2     String?
+  city         String?
+  postalCode   String?
+  region       String?
+  countryCode  String   @db.Char(2)
+  latitude     Decimal? @db.Decimal(10, 7)
+  longitude    Decimal? @db.Decimal(10, 7)
+  phone        String?
+  email        String?
+  timezone     String
+  currency     String   @db.Char(3)
+  taxConfig    Json
+  openingHours Json
+  publicProfile     Boolean @default(true)
+  marketplaceListed Boolean @default(false)
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  updatedAt DateTime  @updatedAt @db.Timestamptz
+  deletedAt DateTime? @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("location")
+}
+
+// ─── Users + Memberships ───────────────────────────────────────
+// Ein User kann zu mehreren Tenants gehören (Beauty-Coach, Multi-Salon-Owner).
+// Authentifizierung läuft über WorkOS; die User-Row ist die Projektion davon.
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  workosUserId  String?  @unique
+  email         String   @unique
+  firstName     String?
+  lastName      String?
+  locale        String?
+  status        UserStatus @default(ACTIVE)
+  lastLoginAt   DateTime? @db.Timestamptz
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @updatedAt @db.Timestamptz
+
+  memberships TenantMembership[]
+
+  @@map("user")
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DELETED
+}
+
+model TenantMembership {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @db.Uuid
+  userId    String    @db.Uuid
+  role      StaffRole
+  isPrimary Boolean   @default(false)
+  createdAt DateTime  @default(now()) @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("tenant_membership")
+}
+
+enum StaffRole {
+  OWNER
+  MANAGER
+  FRONT_DESK
+  STYLIST
+  BOOTH_RENTER
+  TRAINEE
+  ASSISTANT
+}
+
+// ─── Audit-Log (append-only, signed monthly) ───────────────────
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String?  @db.Uuid
+  actorId   String?  @db.Uuid
+  actorType String? // "user" | "api" | "system"
+  entity    String
+  entityId  String
+  action    String // "create" | "update" | "delete" | "login" | ...
+  diff      Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, entity, entityId])
+  @@index([tenantId, createdAt])
+  @@map("audit_log")
+}
