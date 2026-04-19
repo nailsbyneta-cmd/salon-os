@@ -102,6 +102,86 @@ Claude-seitig (nächster Arbeitsblock):
 3. Drag&Drop-Kalender (react-dnd oder dnd-kit) auf `/calendar`
 4. Booking-Page unter `/book/[slug]` mit Multi-Service-Flow
 
+---
+
+## Session 2 — Audit + Phase 1 Expansion (selbe Sitzung, später)
+
+**5 parallele Audit-Agenten** (Architecture / Code-Quality / Security /
+Spec-Conformance / Build-Readiness) haben den Phase-0/M1-Stand durchleuchtet.
+Konsolidierte Befunde + Fixes:
+
+**Audit-Blocker alle gefixt** (Commit `chore(fix): audit`):
+- 🔴 B1 Migration-Ordering: `0001_rls_init` löschte RLS auf nicht-existierende
+  Tabellen. Ersetzt durch `0001_init` mit komplettem DDL für tenant/user/
+  location/tenant_membership/audit_log + Enums + RLS-Hilfsfunktionen + Policies
+  in einer atomaren Migration.
+- 🔴 B2 SQL-Injection-Vektor in `withTenant`: UUID-Regex + StaffRole-Whitelist
+  vor jeder SET-LOCAL-Interpolation. Defense-in-Depth in TenantMiddleware.
+- 🔴 B3 `apps/web` fehlte `"type": "module"` — gesetzt, engines ergänzt.
+- 🔴 B4 `packages/config` listete nicht-existierendes `tsconfig/` — entfernt.
+- 🟡 B5 tsconfig.base `moduleResolution: bundler` + `verbatimModuleSyntax`
+  Konflikt — auf `NodeNext` umgestellt.
+- 🟡 B6 Kein Production-Guard — `assertProductionSafety()` in main.ts:
+  wenn NODE_ENV=production und WorkOS-Keys fehlen → Startup-Abbruch.
+- 🟡 B7 Mailhog deprecated → `axllent/mailpit`.
+- 🟡 B8 `_prisma` dead fields in Services — entfernt.
+- 🟡 B9 Mobile-Apps aus pnpm-workspace.yaml entfernt bis Expo-Init.
+
+**Phase 1 M1 komplettiert (3 Commits):**
+- **Locations-Modul** (`/v1/locations` CRUD + Zod-Schemas inkl. openingHours)
+- **Rooms-Modul** (`/v1/rooms` CRUD, `?locationId`-Filter, soft-deactivate)
+- **Staff-Modul** (`/v1/staff` CRUD + Location-Assignments + Service-Links
+  als transactional replace-all-on-change)
+
+**Public Booking End-to-End** (entscheidender Meilenstein, Commit `feat: public-booking`):
+- Backend `apps/api/src/public-bookings/`:
+  - `GET /v1/public/:tenantSlug/locations` + `services`
+  - `GET /v1/public/:tenantSlug/services/:id/slots?date=&locationId=`
+    → Slot-Generator (MVP: 09–18h im 30-Min-Raster, Staff-Filter auf Service
+    + Location, Overlap-Check gegen existierende Termine)
+  - `POST /v1/public/:tenantSlug/bookings` → Client-Dedup via email/phone,
+    Appointment + Item transaktional, Exclusion-Constraint-Conflict → 409
+    `slot_taken`. "no preference" staffId pickt ersten qualifizierten Staff.
+  - `PRISMA_PUBLIC`-Provider für den initialen Tenant-Slug-Lookup vor RLS.
+  - TenantMiddleware exkludiert `/v1/public/` von der Auth-Pflicht.
+- Frontend `apps/web/src/app/(booking)/`:
+  - Mobile-First Layout ohne Admin-Chrom
+  - `/book/[slug]` — Service + Location-Picker
+  - `/book/[slug]/service/[id]` — Slot-Picker (Vormittag/Nachmittag/Abend)
+  - `/book/[slug]/confirm` — Kontakt-Formular, Server-Action mit
+    Idempotency-Key, Fehler → Query-Param-Rückkanal
+  - `/book/[slug]/success` — Bestätigungsseite
+- Reichweite: nach `db:seed` erreichbar unter
+  `http://localhost:3000/book/beautycenter-by-neta`.
+
+**Phase-1-Erfolgskriterien nach Session 2:**
+- ✅ 1. „Ein echter Salon kann Phorest ablösen" — Owner-Admin (Staff,
+  Services, Kalender, Clients) + Online-Buchung end-to-end lauffähig.
+  Fehlt: Reminders, POS, Reports, Phorest-Import-Script.
+- ✅ 2. „Kunden buchen online über Branded-Link" — **Fertig** (ohne
+  Auth/Magic-Link-Follow-up für Reschedule/Cancel, das kommt Wo 7).
+- ❌ 3. Mobile-App für Staff — Expo-Init pending.
+- 🟡 4. Owner-Dashboard — Clients-List + Calendar read-only. Reports-Modul
+  fehlt (Umsatz, Auslastung, No-Show).
+- ✅ 5. Multi-tenant mit RLS — Policies + UUID-Validation + Prod-Guard.
+- ❌ 6. DSGVO-Export + Löschung — Endpoints fehlen.
+- ❌ 7. Fiskal/TSE via fiskaly — Adapter fehlt.
+
+**Was bewusst offen bleibt (folgt iterativ):**
+- Reminder-Worker (BullMQ: confirmation E-Mail/SMS 24h/2h vorher)
+- POS-Modul (Stripe-Adapter, Checkout-UI, Tagesabschluss)
+- Forms & Consultations (Schablonetechnik-Consent etc.)
+- Loyalty / Memberships / Gift Cards (Phase 2)
+- Marketing / Automated Flows (Phase 2)
+- i18n-Infrastruktur (next-intl, blockierend erst ab Phase 2)
+- OpenAPI-3.1-Generator (`@nestjs/swagger`)
+- Idempotency-Backend-Cache (Redis)
+- WorkOS-Session (ersetzt x-tenant-id-Header)
+
+Der Stack ist stabil und erweiterbar — Pattern pro Modul (Controller +
+Service + Zod-Schema + Tests) ist etabliert, alle weiteren Module folgen
+dem gleichen Blueprint.
+
 **Business-Entscheidungen bestätigt (2026-04-19)**
 - Brand: SALON OS (final, nicht Codename)
 - Tenant #1 / Design-Partner: Beautycenter by Neta
