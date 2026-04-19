@@ -51,9 +51,56 @@ User-seitige Schritte zum Demo-Run:
 - Vercel + Fly.io + Doppler-Projekte einrichten
 
 Claude-seitig (nächster Arbeitsblock):
-- Staff + Services + Appointments-Module analog zu Clients aufbauen
-- Kalender-UI in `apps/web` (Day/Week-View, Drag&Drop)
-- Branded Booking-Page (`/book/[tenant-slug]`)
+- Staff + Services + Appointments-Module analog zu Clients aufbauen ✅ Services + Appointments erledigt (Commit 58b8a0d)
+- Kalender-UI in `apps/web` (Day/Week-View, Drag&Drop) — ✅ Day-View read-only erledigt (Commit 0cc5a87), Drag&Drop folgt in Woche 5
+- Branded Booking-Page (`/book/[tenant-slug]`) — offen (Woche 6)
+
+---
+
+## Session-Ende 2026-04-19 — Gesamtstand
+
+**Repo-Stats**
+- 5 Commits
+- 135 getrackte Files
+- `main`-Branch, noch kein Remote (kein Push)
+
+**Was läuft nach `pnpm install` + `db:up` + `db:migrate` + `db:seed`**
+- API: NestJS + Fastify + RFC-7807-Filter + ZodValidationPipe +
+  TenantMiddleware (Platzhalter-Header) + DbModule
+- API-Module: `/health`, `/v1/clients`, `/v1/services`, `/v1/service-categories`,
+  `/v1/appointments` (mit vollem Lifecycle: create, reschedule, cancel,
+  confirm, check-in, start, complete)
+- Web: Next.js 15 Admin-Layout + Clients-Liste + Kalender-Tagesansicht
+  (read-only, Server-Components, eigener API-Client)
+- Worker: BullMQ-Bootstrap-Stub (Heartbeat, Queues folgen)
+- DB: 13 Tabellen mit RLS, GiST-Exclusion-Constraint gegen Staff-Doppelbuchung,
+  Trigram-Index auf Client-Namen, vollständige Policies pro Rolle
+
+**Noch nicht gebaut (Phase-1-Fortsetzung)**
+- Staff-CRUD-Modul (analog Clients)
+- Rooms-CRUD-Modul
+- Shifts / TimeOff-Admin-UI
+- Drag&Drop-Kalender-Komponente (client-side)
+- Branded Booking-Page (public, Magic-Link-Buchung)
+- WorkOS-Session-Integration (ersetzt `x-tenant-id`-Header)
+- POS-Modul, Forms, Giftcards, Invoices, Reports, Marketing, Loyalty, AI
+- Mobile-Apps (`apps/mobile-staff`, `apps/mobile-client`) — Expo-Init offen
+- Observability-Hooks (Sentry/OTel/PostHog) — no-op bis Keys da sind
+
+**Deliverable-Checkliste (PROMPT.md § "Woran wir den Erfolg messen")**
+- [ ] 1. Echter Salon löst Phorest ab — UI/Flows fehlen
+- [ ] 2. Kunden buchen online über Branded-Link — Booking-Page fehlt
+- [ ] 3. Mobile-App für Staff — Apps leer, Expo-Init fehlt
+- [ ] 4. Owner-Dashboard — Reports-Modul fehlt
+- [x] 5. Multi-tenant mit RLS — Policies & Middleware fertig, noch nicht E2E-getestet
+- [ ] 6. DSGVO-Export + Löschung — Endpoints fehlen
+- [ ] 7. Fiskal/TSE via fiskaly — Adapter fehlt
+
+**Klare nächste Iteration (wenn du „weiter" sagst)**
+1. Staff-Modul + Rooms-Modul + Staff-UI auf `/staff` und `/locations`
+2. WorkOS-Integration → Auth-Flow → TenantMiddleware auf Cookie-Session
+3. Drag&Drop-Kalender (react-dnd oder dnd-kit) auf `/calendar`
+4. Booking-Page unter `/book/[slug]` mit Multi-Service-Flow
 
 **Business-Entscheidungen bestätigt (2026-04-19)**
 - Brand: SALON OS (final, nicht Codename)
