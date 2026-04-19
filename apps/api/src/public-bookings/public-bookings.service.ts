@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Appointment, Location, PrismaClient, Service } from '@salon-os/db';
 import { WITH_TENANT } from '../db/db.module.js';
+import { RemindersService } from '../reminders/reminders.service.js';
 
 type WithTenantFn = <T>(
   tenantId: string,
@@ -57,6 +58,7 @@ export class PublicBookingsService {
   constructor(
     @Inject('PRISMA_PUBLIC') private readonly prismaPublic: PrismaClient,
     @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
+    private readonly reminders: RemindersService,
   ) {}
 
   /** Löst den Tenant aus dem URL-Slug auf (BYPASS-RLS via Admin-Connection). */
@@ -176,7 +178,7 @@ export class PublicBookingsService {
   async createBooking(slug: string, input: PublicBookingInput): Promise<Appointment> {
     const tenant = await this.resolveTenant(slug);
     try {
-      return await this.withTenant(tenant.id, null, null, async (tx) => {
+      const created = await this.withTenant(tenant.id, null, null, async (tx) => {
         const service = await tx.service.findFirst({
           where: { id: input.serviceId, deletedAt: null, bookable: true },
         });
@@ -257,6 +259,18 @@ export class PublicBookingsService {
           include: { items: true },
         });
       });
+
+      this.reminders
+        .scheduleEmailReminder({
+          appointmentId: created.id,
+          tenantId: tenant.id,
+          startAt: created.startAt,
+        })
+        .catch(() => {
+          /* logged in RemindersService */
+        });
+
+      return created;
     } catch (err) {
       if (isConflictError(err)) {
         throw new ConflictException({

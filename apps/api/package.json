@@ -23,6 +23,7 @@
     "@salon-os/db": "workspace:*",
     "@salon-os/types": "workspace:*",
     "@salon-os/utils": "workspace:*",
+    "bullmq": "^5.34.0",
     "fastify": "^5.2.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

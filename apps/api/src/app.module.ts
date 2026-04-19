@@ -7,6 +7,7 @@ import { DbModule } from './db/db.module.js';
 import { HealthController } from './health/health.controller.js';
 import { LocationsModule } from './locations/locations.module.js';
 import { PublicBookingsModule } from './public-bookings/public-bookings.module.js';
+import { RemindersModule } from './reminders/reminders.module.js';
 import { RoomsModule } from './rooms/rooms.module.js';
 import { ServicesModule } from './services/services.module.js';
 import { ShiftsModule } from './shifts/shifts.module.js';
@@ -25,6 +26,7 @@ import { TenantModule } from './tenant/tenant.module.js';
     AppointmentsModule,
     PublicBookingsModule,
     ShiftsModule,
+    RemindersModule,
   ],
   controllers: [HealthController],
   providers: [

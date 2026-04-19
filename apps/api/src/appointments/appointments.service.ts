@@ -11,6 +11,7 @@ import type {
   CancelAppointmentInput,
 } from '@salon-os/types';
 import { WITH_TENANT } from '../db/db.module.js';
+import { RemindersService } from '../reminders/reminders.service.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 
 type WithTenantFn = <T>(
@@ -39,7 +40,10 @@ function isConflictError(err: unknown): boolean {
 
 @Injectable()
 export class AppointmentsService {
-  constructor(@Inject(WITH_TENANT) private readonly withTenant: WithTenantFn) {}
+  constructor(
+    @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
+    private readonly reminders: RemindersService,
+  ) {}
 
   /**
    * Kalender-Feed. Range-Query über `startAt`, optional nach Staff/Location.
@@ -98,33 +102,52 @@ export class AppointmentsService {
   async create(input: CreateAppointmentInput): Promise<Appointment> {
     const ctx = requireTenantContext();
     try {
-      return await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
-        return tx.appointment.create({
-          data: {
-            tenantId: ctx.tenantId,
-            locationId: input.locationId,
-            clientId: input.clientId ?? null,
-            staffId: input.staffId,
-            roomId: input.roomId ?? null,
-            startAt: new Date(input.startAt),
-            endAt: new Date(input.endAt),
-            bookedVia: input.bookedVia,
-            notes: input.notes ?? null,
-            internalNotes: input.internalNotes ?? null,
-            items: {
-              create: input.items.map((it) => ({
-                serviceId: it.serviceId,
-                staffId: it.staffId,
-                price: it.price,
-                duration: it.duration,
-                taxClass: it.taxClass ?? null,
-                notes: it.notes ?? null,
-              })),
+      const created = await this.withTenant(
+        ctx.tenantId,
+        ctx.userId,
+        ctx.role,
+        async (tx) => {
+          return tx.appointment.create({
+            data: {
+              tenantId: ctx.tenantId,
+              locationId: input.locationId,
+              clientId: input.clientId ?? null,
+              staffId: input.staffId,
+              roomId: input.roomId ?? null,
+              startAt: new Date(input.startAt),
+              endAt: new Date(input.endAt),
+              bookedVia: input.bookedVia,
+              notes: input.notes ?? null,
+              internalNotes: input.internalNotes ?? null,
+              items: {
+                create: input.items.map((it) => ({
+                  serviceId: it.serviceId,
+                  staffId: it.staffId,
+                  price: it.price,
+                  duration: it.duration,
+                  taxClass: it.taxClass ?? null,
+                  notes: it.notes ?? null,
+                })),
+              },
             },
-          },
-          include: { items: true },
+            include: { items: true },
+          });
+        },
+      );
+
+      // Reminder-Job 24h vor startAt einplanen.
+      // Fehler hier dürfen den Buchungsflow nicht killen.
+      this.reminders
+        .scheduleEmailReminder({
+          appointmentId: created.id,
+          tenantId: ctx.tenantId,
+          startAt: created.startAt,
+        })
+        .catch(() => {
+          /* logged in RemindersService */
         });
-      });
+
+      return created;
     } catch (err) {
       if (isConflictError(err)) {
         throw new ConflictException({
@@ -191,20 +214,31 @@ export class AppointmentsService {
 
   async cancel(id: string, input: CancelAppointmentInput): Promise<Appointment> {
     const ctx = requireTenantContext();
-    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
-      const existing = await tx.appointment.findFirst({ where: { id } });
-      if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
-      return tx.appointment.update({
-        where: { id },
-        data: {
-          status: input.noShow ? 'NO_SHOW' : 'CANCELLED',
-          cancelledAt: new Date(),
-          cancelReason: input.reason ?? null,
-          noShow: input.noShow,
-        },
-        include: { items: true },
-      });
+    const cancelled = await this.withTenant(
+      ctx.tenantId,
+      ctx.userId,
+      ctx.role,
+      async (tx) => {
+        const existing = await tx.appointment.findFirst({ where: { id } });
+        if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
+        return tx.appointment.update({
+          where: { id },
+          data: {
+            status: input.noShow ? 'NO_SHOW' : 'CANCELLED',
+            cancelledAt: new Date(),
+            cancelReason: input.reason ?? null,
+            noShow: input.noShow,
+          },
+          include: { items: true },
+        });
+      },
+    );
+
+    this.reminders.cancelReminder(id).catch(() => {
+      /* logged in RemindersService */
     });
+
+    return cancelled;
   }
 
   async transition(
