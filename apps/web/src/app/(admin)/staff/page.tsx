@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { deleteStaff } from './actions';
 
 interface StaffRow {
   id: string;
@@ -44,12 +46,22 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
 
   return (
     <div className="p-8">
-      <header className="mb-6">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
-          Team
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Mitarbeiterinnen</h1>
-        <p className="mt-1 text-sm text-neutral-500">{staff.length} aktive Teammitglieder</p>
+      <header className="mb-6 flex items-start justify-between">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+            Team
+          </p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Mitarbeiterinnen</h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            {staff.length} aktive Teammitglieder
+          </p>
+        </div>
+        <Link
+          href="/staff/new"
+          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
+        >
+          + Neue Mitarbeiterin
+        </Link>
       </header>
 
       {staff.length === 0 ? (
@@ -84,6 +96,16 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
                   <div>{s.email}</div>
                   {s.phone ? <div>{s.phone}</div> : null}
                 </div>
+                {s.role !== 'OWNER' ? (
+                  <form action={deleteStaff.bind(null, s.id)} className="mt-3">
+                    <button
+                      type="submit"
+                      className="text-xs text-red-600 hover:underline"
+                    >
+                      Entfernen
+                    </button>
+                  </form>
+                ) : null}
               </article>
             );
           })}

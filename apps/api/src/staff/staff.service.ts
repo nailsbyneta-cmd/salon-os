@@ -43,10 +43,26 @@ export class StaffService {
   async create(input: CreateStaffInput): Promise<Staff> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      // User inline upserten, wenn keine userId übergeben wurde.
+      const userId =
+        input.userId ??
+        (
+          await tx.user.upsert({
+            where: { email: input.email },
+            update: {},
+            create: {
+              email: input.email,
+              firstName: input.firstName,
+              lastName: input.lastName,
+              status: 'ACTIVE',
+            },
+          })
+        ).id;
+
       return tx.staff.create({
         data: {
           tenantId: ctx.tenantId,
-          userId: input.userId,
+          userId,
           firstName: input.firstName,
           lastName: input.lastName,
           displayName: input.displayName ?? null,

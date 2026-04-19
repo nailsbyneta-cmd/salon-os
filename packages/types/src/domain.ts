@@ -261,7 +261,7 @@ export const employmentTypeSchema = z.enum([
 export type EmploymentType = z.infer<typeof employmentTypeSchema>;
 
 export const createStaffSchema = z.object({
-  userId: uuidSchema,
+  userId: uuidSchema.optional(),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   displayName: z.string().max(100).optional(),
