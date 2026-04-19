@@ -29,6 +29,17 @@ Ziel: **Nr. 1 weltweit** für Nägel, Haar, Kosmetik, Spa, Barber, Medspa, Tatto
 | `specs/go-to-market.md`       | Pricing, Positionierung, Vertrieb, Content, Partnerprogramm              |
 | `specs/glossary.md`           | Fachbegriffe Beauty-Industrie (backbar, booth rental, formula, etc.)     |
 
+## Live gehen — Deploy
+
+**Kürzeste Variante (Railway, ~10 Min):**
+Komplette Schritt-für-Schritt-Anleitung: [`DEPLOY.md`](./DEPLOY.md).
+
+Ein-Klick-Button (nach erstem Push auf GitHub einsetzbar):
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new)
+
+Fly.io + Vercel Alternative ebenfalls in [`DEPLOY.md`](./DEPLOY.md).
+
 ## So startest du mit Claude Code
 
 ```bash
