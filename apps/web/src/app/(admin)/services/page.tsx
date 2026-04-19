@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { deleteService } from './actions';
 
 interface ServiceRow {
   id: string;
@@ -54,14 +56,22 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
 
   return (
     <div className="p-8">
-      <header className="mb-6">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
-          Katalog
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Services</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          {services.length} Services in {categories.length} Kategorien
-        </p>
+      <header className="mb-6 flex items-start justify-between">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+            Katalog
+          </p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Services</h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            {services.length} Services in {categories.length} Kategorien
+          </p>
+        </div>
+        <Link
+          href="/services/new"
+          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
+        >
+          + Neuer Service
+        </Link>
       </header>
 
       {services.length === 0 ? (
@@ -83,6 +93,7 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
                       <th className="px-4 py-3 w-24">Dauer</th>
                       <th className="px-4 py-3 w-28 text-right">Preis</th>
                       <th className="px-4 py-3 w-24">Status</th>
+                      <th className="px-4 py-3 w-20"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -112,6 +123,16 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
                               Inaktiv
                             </span>
                           )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <form action={deleteService.bind(null, s.id)}>
+                            <button
+                              type="submit"
+                              className="text-xs text-red-600 hover:underline"
+                            >
+                              Löschen
+                            </button>
+                          </form>
                         </td>
                       </tr>
                     ))}
