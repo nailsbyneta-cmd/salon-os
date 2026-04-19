@@ -19,15 +19,41 @@
 **Blockiert**
 - Keine Blocker.
 
-**Nächste Woche (Phase 0 Ende)**
-- `pnpm install` muss sauber durchlaufen (User-Task)
-- `pnpm db:up && pnpm db:migrate && pnpm db:seed` erfolgreich
-- `pnpm dev` startet web + api + worker lokal
-- WorkOS-Integration fertig — Login-Flow funktioniert
-- Sentry + PostHog in `apps/api` + `apps/web` eingehängt
-- Vercel-Projekt für `apps/web`, Fly.io-App für `apps/api` angelegt
-- Erster grüner CI-Run auf `main`
-- Demo-Run: `npm run dev` → Login mit Seed-User → Dashboard zeigt „SALON OS" + Health-Check grün
+**Fertig — Phase 0 Abschluss + Start Modul 1 (selber Tag)**
+- ESLint-Configs + Vitest-Configs + erste grüne Tests (utils/types/api-health)
+- Deploy: `apps/api/fly.toml` + `Dockerfile`, `apps/worker/fly.toml` + `Dockerfile`,
+  `apps/web/vercel.json` (alle Zürich-Region)
+- API-Infrastruktur:
+  - `ProblemDetailsFilter` (RFC 7807) als globaler Exception-Filter
+  - `ZodValidationPipe` für Controller-Input
+  - `TenantMiddleware` + AsyncLocalStorage-Context
+  - `DbModule` (prisma + withTenant als DI-Provider)
+- Prisma-Schema erweitert um Modul 1 (Calendar & Scheduling): Staff, StaffLocation,
+  Room, ServiceCategory, Service, ServiceVariant, StaffService, Client,
+  Appointment, AppointmentItem, Shift, TimeOff (+ zugehörige Enums).
+- Migration `0002_phase1_module1`: DDL + vollständige RLS-Policies +
+  GiST-Exclusion-Constraint `appointment_no_overlap_per_staff` gegen
+  Staff-Doppelbuchung.
+- Zod-Domain-Schemas in `@salon-os/types`: Client, Service, Appointment
+  (create/update/reschedule/cancel).
+- Erstes vollständiges API-Modul: `/v1/clients` (Controller + Service +
+  Zod-Validation + RLS-aware Prisma via withTenant).
+- Docs: `docs/modules/clients.md`, `docs/modules/calendar-scheduling.md`.
+
+**Nächste Woche (Phase 0 final → Phase 1 Fortsetzung)**
+User-seitige Schritte zum Demo-Run:
+- `pnpm install`
+- `pnpm db:up && pnpm --filter @salon-os/db db:migrate && pnpm --filter @salon-os/db db:seed`
+- `pnpm dev`
+- WorkOS-Account anlegen, API-Keys in `.env` → Tenant-Middleware auf
+  Cookie-Session umstellen (aktuell Platzhalter via `x-tenant-id`-Header)
+- Sentry/PostHog/Datadog-Accounts bei Bedarf
+- Vercel + Fly.io + Doppler-Projekte einrichten
+
+Claude-seitig (nächster Arbeitsblock):
+- Staff + Services + Appointments-Module analog zu Clients aufbauen
+- Kalender-UI in `apps/web` (Day/Week-View, Drag&Drop)
+- Branded Booking-Page (`/book/[tenant-slug]`)
 
 **Business-Entscheidungen bestätigt (2026-04-19)**
 - Brand: SALON OS (final, nicht Codename)

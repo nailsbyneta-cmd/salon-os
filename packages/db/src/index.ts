@@ -3,12 +3,38 @@
  */
 import { PrismaClient } from '@prisma/client';
 
-export type { Tenant, Location, User, TenantMembership, AuditLog } from '@prisma/client';
-export { Plan, TenantStatus, UserStatus, StaffRole } from '@prisma/client';
+export type {
+  Tenant,
+  Location,
+  Room,
+  User,
+  TenantMembership,
+  Staff,
+  StaffLocation,
+  ServiceCategory,
+  Service,
+  ServiceVariant,
+  StaffService,
+  Client,
+  Appointment,
+  AppointmentItem,
+  Shift,
+  TimeOff,
+  AuditLog,
+} from '@prisma/client';
 
-/**
- * Singleton Prisma client (avoid pool exhaustion in dev hot-reload).
- */
+export {
+  Plan,
+  TenantStatus,
+  UserStatus,
+  StaffRole,
+  EmploymentType,
+  Gender,
+  AppointmentStatus,
+  BookingChannel,
+  TimeOffStatus,
+} from '@prisma/client';
+
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 export const prisma: PrismaClient =

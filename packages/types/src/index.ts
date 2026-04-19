@@ -43,3 +43,6 @@ export const pageInfoSchema = z.object({
   endCursor: z.string().nullable(),
   hasNextPage: z.boolean(),
 });
+
+// ─── Domain-Schemas ────────────────────────────────────────────
+export * from './domain.js';
