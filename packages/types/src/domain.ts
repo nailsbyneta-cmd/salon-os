@@ -183,3 +183,137 @@ export const cancelAppointmentSchema = z.object({
   noShow: z.boolean().default(false),
 });
 export type CancelAppointmentInput = z.infer<typeof cancelAppointmentSchema>;
+
+// ─── Location ──────────────────────────────────────────────────
+
+const openingHoursDaySchema = z.array(
+  z.object({
+    open: z.string().regex(/^\d{2}:\d{2}$/, 'HH:mm'),
+    close: z.string().regex(/^\d{2}:\d{2}$/, 'HH:mm'),
+  }),
+);
+
+export const openingHoursSchema = z.object({
+  mon: openingHoursDaySchema,
+  tue: openingHoursDaySchema,
+  wed: openingHoursDaySchema,
+  thu: openingHoursDaySchema,
+  fri: openingHoursDaySchema,
+  sat: openingHoursDaySchema,
+  sun: openingHoursDaySchema,
+});
+
+export const createLocationSchema = z.object({
+  name: z.string().min(1).max(200),
+  slug: z
+    .string()
+    .min(1)
+    .max(120)
+    .regex(/^[a-z0-9-]+$/),
+  address1: z.string().max(200).optional(),
+  address2: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  postalCode: z.string().max(20).optional(),
+  region: z.string().max(100).optional(),
+  countryCode: z.string().length(2).toUpperCase(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  phone: z.string().max(30).optional(),
+  email: z.string().email().optional(),
+  timezone: z.string().min(1),
+  currency: currencyCodeSchema,
+  taxConfig: z.object({
+    vatRate: z.number().min(0).max(100),
+    vatId: z.string().nullable().optional(),
+  }),
+  openingHours: openingHoursSchema,
+  publicProfile: z.boolean().default(true),
+  marketplaceListed: z.boolean().default(false),
+});
+export type CreateLocationInput = z.infer<typeof createLocationSchema>;
+
+export const updateLocationSchema = createLocationSchema.partial();
+export type UpdateLocationInput = z.infer<typeof updateLocationSchema>;
+
+// ─── Room ──────────────────────────────────────────────────────
+
+export const createRoomSchema = z.object({
+  locationId: uuidSchema,
+  name: z.string().min(1).max(100),
+  capacity: z.number().int().min(1).max(10).default(1),
+  features: z.array(z.string().max(50)).default([]),
+  active: z.boolean().default(true),
+});
+export type CreateRoomInput = z.infer<typeof createRoomSchema>;
+
+export const updateRoomSchema = createRoomSchema.partial().omit({ locationId: true });
+export type UpdateRoomInput = z.infer<typeof updateRoomSchema>;
+
+// ─── Staff ─────────────────────────────────────────────────────
+
+export const employmentTypeSchema = z.enum([
+  'EMPLOYEE',
+  'CONTRACTOR',
+  'BOOTH_RENTER',
+  'COMMISSION',
+  'OWNER',
+]);
+export type EmploymentType = z.infer<typeof employmentTypeSchema>;
+
+export const createStaffSchema = z.object({
+  userId: uuidSchema,
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  displayName: z.string().max(100).optional(),
+  email: z.string().email(),
+  phone: z.string().max(30).optional(),
+  role: staffRoleSchema,
+  employmentType: employmentTypeSchema,
+  commissionRate: z.number().min(0).max(100).optional(),
+  boothRent: z.number().min(0).optional(),
+  hourlyRate: z.number().min(0).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
+  photoUrl: z.string().url().optional(),
+  bio: z.string().max(2000).optional(),
+  startsAt: z.string().datetime({ offset: true }).optional(),
+  locationIds: z.array(uuidSchema).min(1).max(50),
+  serviceIds: z.array(uuidSchema).default([]),
+});
+export type CreateStaffInput = z.infer<typeof createStaffSchema>;
+
+export const updateStaffSchema = createStaffSchema
+  .partial()
+  .omit({ userId: true });
+export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
+
+// ─── Shift + TimeOff ───────────────────────────────────────────
+
+export const createShiftSchema = z
+  .object({
+    staffId: uuidSchema,
+    locationId: uuidSchema,
+    startAt: z.string().datetime({ offset: true }),
+    endAt: z.string().datetime({ offset: true }),
+    isOpen: z.boolean().default(false),
+  })
+  .refine((v) => new Date(v.endAt) > new Date(v.startAt), {
+    message: 'endAt must be after startAt',
+    path: ['endAt'],
+  });
+export type CreateShiftInput = z.infer<typeof createShiftSchema>;
+
+export const createTimeOffSchema = z
+  .object({
+    staffId: uuidSchema,
+    startAt: z.string().datetime({ offset: true }),
+    endAt: z.string().datetime({ offset: true }),
+    reason: z.string().max(500).optional(),
+  })
+  .refine((v) => new Date(v.endAt) > new Date(v.startAt), {
+    message: 'endAt must be after startAt',
+    path: ['endAt'],
+  });
+export type CreateTimeOffInput = z.infer<typeof createTimeOffSchema>;

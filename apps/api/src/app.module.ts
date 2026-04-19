@@ -5,11 +5,23 @@ import { ClientsModule } from './clients/clients.module.js';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter.js';
 import { DbModule } from './db/db.module.js';
 import { HealthController } from './health/health.controller.js';
+import { LocationsModule } from './locations/locations.module.js';
+import { RoomsModule } from './rooms/rooms.module.js';
 import { ServicesModule } from './services/services.module.js';
+import { StaffModule } from './staff/staff.module.js';
 import { TenantModule } from './tenant/tenant.module.js';
 
 @Module({
-  imports: [DbModule, TenantModule, ClientsModule, ServicesModule, AppointmentsModule],
+  imports: [
+    DbModule,
+    TenantModule,
+    LocationsModule,
+    RoomsModule,
+    StaffModule,
+    ClientsModule,
+    ServicesModule,
+    AppointmentsModule,
+  ],
   controllers: [HealthController],
   providers: [
     {
