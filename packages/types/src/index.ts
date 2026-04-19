@@ -4,14 +4,9 @@
  * BEVOR die Service-Schicht läuft (siehe CLAUDE.md — Coding-Standards).
  */
 import { z } from 'zod';
+import { currencyCodeSchema } from './primitives.js';
 
-// ─── Primitives ────────────────────────────────────────────────
-
-export const uuidSchema = z.string().uuid();
-export const isoDateTimeSchema = z.string().datetime({ offset: true });
-export const currencyCodeSchema = z.string().length(3).toUpperCase();
-export const countryCodeSchema = z.string().length(2).toUpperCase();
-export const timezoneSchema = z.string().min(1);
+export * from './primitives.js';
 
 /** ISO 4217-normed money. Betrag in "minor units" (Rappen / Cent). */
 export const moneySchema = z.object({

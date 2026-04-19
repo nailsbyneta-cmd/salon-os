@@ -2,8 +2,8 @@
 # Build aus Repo-Root: `docker build -f apps/api/Dockerfile -t salon-os-api .`
 
 # ─── Stage 1: deps ──────────────────────────────────────────
-FROM node:22.12-alpine AS deps
-RUN corepack enable pnpm
+FROM node:22-alpine AS deps
+RUN npm install -g pnpm@9.15.0
 WORKDIR /repo
 
 COPY package.json pnpm-workspace.yaml turbo.json tsconfig.base.json ./
@@ -23,21 +23,16 @@ RUN pnpm install --filter '@salon-os/api...'
 FROM deps AS build
 COPY . .
 RUN pnpm --filter @salon-os/db db:generate
-RUN pnpm --filter @salon-os/api build
+RUN pnpm --filter "@salon-os/api..." build
 
 # ─── Stage 3: runtime ───────────────────────────────────────
-FROM node:22.12-alpine AS runtime
+FROM node:22-alpine AS runtime
 RUN apk add --no-cache tini
-RUN corepack enable pnpm
-
-WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=build /repo/node_modules /app/node_modules
-COPY --from=build /repo/apps/api/dist /app/dist
-COPY --from=build /repo/apps/api/package.json /app/package.json
-COPY --from=build /repo/packages /app/packages
+COPY --from=build /repo /repo
+WORKDIR /repo/apps/api
 
 EXPOSE 4000
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "cd /repo/packages/db && npx prisma migrate deploy --schema=./prisma/schema.prisma && npx tsx prisma/seed.ts && cd /repo/apps/api && node dist/main.js"]

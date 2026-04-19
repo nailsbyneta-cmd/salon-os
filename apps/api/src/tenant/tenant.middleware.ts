@@ -38,8 +38,15 @@ export class TenantMiddleware implements NestMiddleware {
   use(req: FastifyRequest['raw'], _res: unknown, next: (err?: unknown) => void): void {
     const headers = req.headers;
 
-    // Health/Ready-Endpoints dürfen ohne Tenant passieren.
-    if (req.url?.startsWith('/health')) {
+    // Health/Ready- und Public-Endpoints dürfen ohne Tenant passieren.
+    // Public-Bookings lösen Tenant selbst über den URL-Slug auf.
+    const originalUrl = (req as unknown as { originalUrl?: string }).originalUrl ?? '';
+    const path = originalUrl || req.url || '';
+    if (
+      path.startsWith('/health') ||
+      path.startsWith('/v1/public/') ||
+      path.startsWith('/public/')
+    ) {
       next();
       return;
     }

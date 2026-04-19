@@ -4,7 +4,7 @@ const nav = [
   { href: '/calendar', label: 'Kalender' },
   { href: '/clients', label: 'Kunden' },
   { href: '/services', label: 'Services' },
-  { href: '/settings', label: 'Einstellungen' },
+  { href: '/staff', label: 'Team' },
 ];
 
 export default function AdminLayout({

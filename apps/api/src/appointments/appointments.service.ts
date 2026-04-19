@@ -58,7 +58,11 @@ export class AppointmentsService {
           ...(opts.locationId ? { locationId: opts.locationId } : {}),
           ...(opts.staffId ? { staffId: opts.staffId } : {}),
         },
-        include: { items: true },
+        include: {
+          items: { include: { service: { select: { name: true } } } },
+          client: { select: { firstName: true, lastName: true } },
+          staff: { select: { firstName: true, lastName: true, color: true } },
+        },
         orderBy: { startAt: 'asc' },
       });
     });

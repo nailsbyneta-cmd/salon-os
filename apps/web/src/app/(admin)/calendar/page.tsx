@@ -9,13 +9,12 @@ interface Appt {
   staffId: string;
   clientId: string | null;
   notes: string | null;
+  client: { firstName: string; lastName: string } | null;
+  staff: { firstName: string; lastName: string; color: string | null };
+  items: Array<{ service: { name: string } }>;
 }
 
 function dayRange(dateIso: string): { from: string; to: string } {
-  // Der Tag in Europe/Zurich beginnt um 00:00 und endet 23:59:59.
-  // Für MVP nehmen wir den UTC-Offset des lokalen `Date` her — solange
-  // der Browser in CH läuft, passt das. Phase 2: serverseitig via
-  // Intl.DateTimeFormat + timezone.
   const d = new Date(dateIso);
   const start = new Date(d);
   start.setHours(0, 0, 0, 0);
@@ -43,6 +42,19 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+const HOURS = Array.from({ length: 11 }, (_, i) => i + 8); // 08 - 18
+const ROW_HEIGHT = 60; // px per hour
+const CAL_START = 8 * 60; // minutes from midnight
+
+function minutesFromStart(iso: string): number {
+  const d = new Date(iso);
+  return d.getHours() * 60 + d.getMinutes() - CAL_START;
+}
+
+function durationMinutes(startIso: string, endIso: string): number {
+  return (new Date(endIso).getTime() - new Date(startIso).getTime()) / 60000;
+}
+
 export default async function CalendarPage({
   searchParams,
 }: {
@@ -67,6 +79,9 @@ export default async function CalendarPage({
               year: 'numeric',
             })}
           </h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            {appts.length} Termine · Studio 1, St. Gallen Winkeln
+          </p>
         </div>
         <form method="get" className="flex items-center gap-2">
           <input
@@ -84,62 +99,90 @@ export default async function CalendarPage({
         </form>
       </header>
 
-      <section className="rounded-xl border border-neutral-200">
-        {appts.length === 0 ? (
-          <div className="p-10 text-center">
-            <p className="text-sm text-neutral-500">
-              Heute keine Termine. Neue Termine legst du via API an (UI folgt in
-              Woche 5).
-            </p>
-          </div>
-        ) : (
-          <ul className="divide-y divide-neutral-100">
-            {appts.map((a) => (
-              <li key={a.id} className="flex items-center gap-4 px-5 py-3 text-sm">
-                <span className="w-28 tabular-nums text-neutral-500">
-                  {new Date(a.startAt).toLocaleTimeString('de-CH', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                  {' – '}
-                  {new Date(a.endAt).toLocaleTimeString('de-CH', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-                <span className="flex-1">
-                  {a.clientId ? `Kundin ${a.clientId.slice(0, 8)}` : 'Blockzeit'}
-                </span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColor(a.status)}`}
-                >
-                  {a.status}
-                </span>
-              </li>
+      <section className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
+        <div className="relative grid grid-cols-[60px_1fr]">
+          {/* Stunden-Spalte */}
+          <div className="border-r border-neutral-200 bg-neutral-50">
+            {HOURS.map((h) => (
+              <div
+                key={h}
+                className="border-b border-neutral-100 px-2 py-1 text-right text-xs font-medium text-neutral-500"
+                style={{ height: ROW_HEIGHT }}
+              >
+                {String(h).padStart(2, '0')}:00
+              </div>
             ))}
-          </ul>
-        )}
+          </div>
+          {/* Termin-Spalte */}
+          <div className="relative">
+            {HOURS.map((h) => (
+              <div
+                key={h}
+                className="border-b border-neutral-100"
+                style={{ height: ROW_HEIGHT }}
+              />
+            ))}
+            {appts.map((a) => {
+              const offset = minutesFromStart(a.startAt);
+              const dur = durationMinutes(a.startAt, a.endAt);
+              if (offset < 0 || offset >= HOURS.length * 60) return null;
+              const clientName = a.client
+                ? `${a.client.firstName} ${a.client.lastName}`
+                : 'Blockzeit';
+              const serviceNames = a.items.map((i) => i.service.name).join(', ') || '—';
+              const staffName = `${a.staff.firstName} ${a.staff.lastName[0]}.`;
+              return (
+                <article
+                  key={a.id}
+                  className={`absolute left-1 right-2 rounded-md border px-2 py-1 text-xs shadow-sm ${statusStyle(a.status)}`}
+                  style={{
+                    top: (offset / 60) * ROW_HEIGHT,
+                    height: Math.max((dur / 60) * ROW_HEIGHT - 2, 24),
+                    borderLeft: `4px solid ${a.staff.color ?? '#737373'}`,
+                  }}
+                >
+                  <div className="font-medium truncate">{clientName}</div>
+                  <div className="text-neutral-600 truncate">{serviceNames}</div>
+                  <div className="text-[10px] text-neutral-500 truncate">
+                    {new Date(a.startAt).toLocaleTimeString('de-CH', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}{' '}
+                    ·{' '}
+                    {staffName}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
       </section>
+
+      {appts.length === 0 ? (
+        <p className="mt-4 text-center text-sm text-neutral-400">
+          Keine Termine heute.
+        </p>
+      ) : null}
     </div>
   );
 }
 
-function statusColor(status: string): string {
+function statusStyle(status: string): string {
   switch (status) {
     case 'BOOKED':
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-blue-50 text-blue-900 border-blue-200';
     case 'CONFIRMED':
-      return 'bg-emerald-100 text-emerald-800';
+      return 'bg-emerald-50 text-emerald-900 border-emerald-200';
     case 'CHECKED_IN':
-      return 'bg-amber-100 text-amber-800';
+      return 'bg-amber-50 text-amber-900 border-amber-200';
     case 'IN_SERVICE':
-      return 'bg-purple-100 text-purple-800';
+      return 'bg-purple-50 text-purple-900 border-purple-200';
     case 'COMPLETED':
-      return 'bg-neutral-100 text-neutral-700';
+      return 'bg-neutral-50 text-neutral-700 border-neutral-200';
     case 'CANCELLED':
     case 'NO_SHOW':
-      return 'bg-red-100 text-red-800';
+      return 'bg-red-50 text-red-900 border-red-200 opacity-70';
     default:
-      return 'bg-neutral-100 text-neutral-700';
+      return 'bg-neutral-50 text-neutral-700 border-neutral-200';
   }
 }

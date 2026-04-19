@@ -4,7 +4,7 @@
  * BEVOR die Service-Schicht läuft.
  */
 import { z } from 'zod';
-import { uuidSchema } from './index.js';
+import { uuidSchema, currencyCodeSchema } from './primitives.js';
 
 // ─── Enums ─────────────────────────────────────────────────────
 

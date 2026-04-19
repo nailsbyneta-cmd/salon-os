@@ -3,6 +3,8 @@
  */
 import { PrismaClient } from '@prisma/client';
 
+export { PrismaClient };
+
 export type {
   Tenant,
   Location,
@@ -96,7 +98,7 @@ export async function withTenant<T>(
   return prisma.$transaction(async (tx) => {
     await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant_id = '${tenantId}'`);
     if (userId) await tx.$executeRawUnsafe(`SET LOCAL app.current_user_id = '${userId}'`);
-    if (role) await tx.$executeRawUnsafe(`SET LOCAL app.current_role = '${role}'`);
+    if (role) await tx.$executeRawUnsafe(`SET LOCAL app.current_user_role = '${role}'`);
     return fn(tx as unknown as PrismaClient);
   });
 }
