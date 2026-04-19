@@ -1,9 +1,33 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import { ThemeProvider, ThemeScript } from '@salon-os/ui';
 import './globals.css';
 
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
 export const metadata: Metadata = {
-  title: 'SALON OS',
-  description: 'Die globale Plattform für Beauty-, Wellness- und Spa-Businesses.',
+  title: {
+    default: 'Beautycenter by Neta',
+    template: '%s · Beautycenter by Neta',
+  },
+  description: 'Termine online buchen bei Beautycenter by Neta.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Beautyneta',
+  },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FAFAF9' },
+    { media: '(prefers-color-scheme: dark)', color: '#0A0A0A' },
+  ],
 };
 
 export default function RootLayout({
@@ -12,8 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <html lang="de-CH">
-      <body className="min-h-screen bg-white text-neutral-900 antialiased">{children}</body>
+    <html lang="de-CH" className={inter.variable} suppressHydrationWarning>
+      <body className="min-h-screen bg-background font-sans text-text-primary antialiased">
+        <ThemeScript />
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

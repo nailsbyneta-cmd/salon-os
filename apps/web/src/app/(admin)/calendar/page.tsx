@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AppointmentCard, Badge, Button, Card, CardBody, EmptyState } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { transitionAppointment, cancelAppointment } from './actions';
@@ -7,7 +8,15 @@ interface Appt {
   id: string;
   startAt: string;
   endAt: string;
-  status: string;
+  status:
+    | 'BOOKED'
+    | 'CONFIRMED'
+    | 'CHECKED_IN'
+    | 'IN_SERVICE'
+    | 'COMPLETED'
+    | 'CANCELLED'
+    | 'NO_SHOW'
+    | 'WAITLIST';
   staffId: string;
   clientId: string | null;
   notes: string | null;
@@ -44,9 +53,9 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-const HOURS = Array.from({ length: 11 }, (_, i) => i + 8); // 08 - 18
-const ROW_HEIGHT = 60; // px per hour
-const CAL_START = 8 * 60; // minutes from midnight
+const HOURS = Array.from({ length: 11 }, (_, i) => i + 8);
+const ROW_HEIGHT = 72;
+const CAL_START = 8 * 60;
 
 function minutesFromStart(iso: string): number {
   const d = new Date(iso);
@@ -67,13 +76,13 @@ export default async function CalendarPage({
   const appts = await loadAppointments(day);
 
   return (
-    <div className="p-8">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="mx-auto max-w-6xl p-8">
+      <header className="mb-6 flex items-end justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Kalender
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
             {new Date(day).toLocaleDateString('de-CH', {
               weekday: 'long',
               day: '2-digit',
@@ -81,7 +90,7 @@ export default async function CalendarPage({
               year: 'numeric',
             })}
           </h1>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-text-secondary">
             {appts.length} Termine · Studio 1, St. Gallen Winkeln
           </p>
         </div>
@@ -91,44 +100,38 @@ export default async function CalendarPage({
               type="date"
               name="date"
               defaultValue={day}
-              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
+              className="h-10 rounded-sm border border-border bg-surface px-3 text-sm text-text-primary focus:border-accent"
             />
-            <button
-              type="submit"
-              className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-            >
+            <Button type="submit" variant="secondary" size="md">
               Anzeigen
-            </button>
+            </Button>
           </form>
-          <Link
-            href={`/calendar/new?date=${day}`}
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
-          >
-            + Neuer Termin
+          <Link href={`/calendar/new?date=${day}`}>
+            <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
+              Neuer Termin
+            </Button>
           </Link>
         </div>
       </header>
 
-      <section className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-        <div className="relative grid grid-cols-[60px_1fr]">
-          {/* Stunden-Spalte */}
-          <div className="border-r border-neutral-200 bg-neutral-50">
+      <Card className="overflow-hidden">
+        <div className="relative grid grid-cols-[72px_1fr]">
+          <div className="border-r border-border bg-background/50">
             {HOURS.map((h) => (
               <div
                 key={h}
-                className="border-b border-neutral-100 px-2 py-1 text-right text-xs font-medium text-neutral-500"
+                className="border-b border-border/60 px-3 pt-1 text-right text-[10px] font-medium text-text-muted tabular-nums"
                 style={{ height: ROW_HEIGHT }}
               >
                 {String(h).padStart(2, '0')}:00
               </div>
             ))}
           </div>
-          {/* Termin-Spalte */}
           <div className="relative">
             {HOURS.map((h) => (
               <div
                 key={h}
-                className="border-b border-neutral-100"
+                className="border-b border-border/60"
                 style={{ height: ROW_HEIGHT }}
               />
             ))}
@@ -139,50 +142,66 @@ export default async function CalendarPage({
               const clientName = a.client
                 ? `${a.client.firstName} ${a.client.lastName}`
                 : 'Blockzeit';
-              const serviceNames = a.items.map((i) => i.service.name).join(', ') || '—';
-              const staffName = `${a.staff.firstName} ${a.staff.lastName[0]}.`;
+              const services = a.items.map((i) => i.service.name).join(', ') || '—';
+              const staff = `${a.staff.firstName} ${a.staff.lastName[0]}.`;
+              const timeLabel = new Date(a.startAt).toLocaleTimeString('de-CH', {
+                hour: '2-digit',
+                minute: '2-digit',
+              });
               return (
-                <Link
+                <div
                   key={a.id}
-                  href={`/calendar/${a.id}`}
-                  className={`absolute left-1 right-2 block rounded-md border px-2 py-1 text-xs shadow-sm transition hover:shadow-md ${statusStyle(a.status)}`}
+                  className="absolute left-1.5 right-2"
                   style={{
-                    top: (offset / 60) * ROW_HEIGHT,
-                    height: Math.max((dur / 60) * ROW_HEIGHT - 2, 24),
-                    borderLeft: `4px solid ${a.staff.color ?? '#737373'}`,
+                    top: (offset / 60) * ROW_HEIGHT + 2,
+                    height: Math.max((dur / 60) * ROW_HEIGHT - 4, 28),
                   }}
                 >
-                  <div className="font-medium truncate">{clientName}</div>
-                  <div className="text-neutral-600 truncate">{serviceNames}</div>
-                  <div className="text-[10px] text-neutral-500 truncate">
-                    {new Date(a.startAt).toLocaleTimeString('de-CH', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}{' '}
-                    ·{' '}
-                    {staffName}
-                  </div>
-                </Link>
+                  <Link href={`/calendar/${a.id}`} className="block h-full">
+                    <AppointmentCard
+                      clientName={clientName}
+                      serviceLabel={services}
+                      staffLabel={staff}
+                      timeLabel={timeLabel}
+                      status={a.status}
+                      staffColor={a.staff.color}
+                      compact={dur < 45}
+                      className="h-full"
+                    />
+                  </Link>
+                </div>
               );
             })}
           </div>
         </div>
-      </section>
+      </Card>
 
       {appts.length === 0 ? (
-        <p className="mt-4 text-center text-sm text-neutral-400">
-          Keine Termine heute.
-        </p>
+        <Card className="mt-6">
+          <EmptyState
+            title="Heute frei"
+            description="Keine Termine gebucht. Neue Kundin eingetragen? Lege sofort einen Termin an."
+            action={
+              <Link href={`/calendar/new?date=${day}`}>
+                <Button variant="accent">+ Neuer Termin</Button>
+              </Link>
+            }
+          />
+        </Card>
       ) : (
         <section className="mt-8">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-neutral-500">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
             Termin-Details
           </h2>
-          <div className="rounded-xl border border-neutral-200 bg-white divide-y divide-neutral-100">
-            {appts.map((a) => (
-              <ApptActions key={a.id} a={a} />
-            ))}
-          </div>
+          <Card>
+            <CardBody className="p-0">
+              <ul className="divide-y divide-border">
+                {appts.map((a) => (
+                  <ApptActions key={a.id} a={a} />
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
         </section>
       )}
     </div>
@@ -202,77 +221,62 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
   const cancel = cancelAppointment.bind(null, a.id);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
-      <span className="w-16 tabular-nums font-medium text-neutral-700">{start}</span>
+    <li className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
+      <span className="w-16 tabular-nums font-semibold text-text-primary">
+        {start}
+      </span>
       <div className="flex-1 min-w-[200px]">
         <Link href={`/calendar/${a.id}`} className="block hover:underline">
-          <div className="font-medium">{clientName}</div>
-          <div className="text-xs text-neutral-500">
+          <div className="font-medium text-text-primary">{clientName}</div>
+          <div className="text-xs text-text-muted">
             {services} · {a.staff.firstName} {a.staff.lastName[0]}.
           </div>
         </Link>
       </div>
-      <span
-        className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyle(a.status)}`}
-      >
-        {statusLabelShort(a.status)}
-      </span>
-      <div className="flex gap-1">
+      <StatusBadge status={a.status} />
+      <div className="flex gap-1.5">
         {a.status === 'BOOKED' ? (
           <form action={transition.bind(null, 'confirm')}>
-            <ActionBtn>Bestätigen</ActionBtn>
+            <Button type="submit" variant="secondary" size="sm">
+              Bestätigen
+            </Button>
           </form>
         ) : null}
         {(a.status === 'BOOKED' || a.status === 'CONFIRMED') ? (
           <form action={transition.bind(null, 'check-in')}>
-            <ActionBtn>Eingecheckt</ActionBtn>
+            <Button type="submit" variant="secondary" size="sm">
+              Eingecheckt
+            </Button>
           </form>
         ) : null}
         {a.status === 'CHECKED_IN' ? (
           <form action={transition.bind(null, 'start')}>
-            <ActionBtn>Starten</ActionBtn>
+            <Button type="submit" variant="secondary" size="sm">
+              Starten
+            </Button>
           </form>
         ) : null}
         {a.status === 'IN_SERVICE' ? (
           <form action={transition.bind(null, 'complete')}>
-            <ActionBtn primary>Abschliessen</ActionBtn>
+            <Button type="submit" variant="accent" size="sm">
+              Abschliessen
+            </Button>
           </form>
         ) : null}
         {a.status !== 'COMPLETED' && a.status !== 'CANCELLED' ? (
           <form action={cancel.bind(null, 'Auf Kundenwunsch')}>
-            <ActionBtn danger>Stornieren</ActionBtn>
+            <Button type="submit" variant="danger" size="sm">
+              Stornieren
+            </Button>
           </form>
         ) : null}
       </div>
-    </div>
+    </li>
   );
 }
 
-function ActionBtn({
-  children,
-  primary,
-  danger,
-}: {
-  children: React.ReactNode;
-  primary?: boolean;
-  danger?: boolean;
-}): React.JSX.Element {
-  const base =
-    'rounded-md px-3 py-1.5 text-xs font-medium transition hover:opacity-90 ';
-  const variant = danger
-    ? 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
-    : primary
-      ? 'bg-emerald-600 text-white'
-      : 'border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50';
-  return (
-    <button type="submit" className={base + variant}>
-      {children}
-    </button>
-  );
-}
-
-function statusLabelShort(s: string): string {
-  const m: Record<string, string> = {
+function StatusBadge({ status }: { status: Appt['status'] }): React.JSX.Element {
+  const labels: Record<Appt['status'], string> = {
     BOOKED: 'Gebucht',
     CONFIRMED: 'Bestätigt',
     CHECKED_IN: 'Eingecheckt',
@@ -282,25 +286,19 @@ function statusLabelShort(s: string): string {
     NO_SHOW: 'No-Show',
     WAITLIST: 'Warteliste',
   };
-  return m[s] ?? s;
-}
-
-function statusStyle(status: string): string {
-  switch (status) {
-    case 'BOOKED':
-      return 'bg-blue-50 text-blue-900 border-blue-200';
-    case 'CONFIRMED':
-      return 'bg-emerald-50 text-emerald-900 border-emerald-200';
-    case 'CHECKED_IN':
-      return 'bg-amber-50 text-amber-900 border-amber-200';
-    case 'IN_SERVICE':
-      return 'bg-purple-50 text-purple-900 border-purple-200';
-    case 'COMPLETED':
-      return 'bg-neutral-50 text-neutral-700 border-neutral-200';
-    case 'CANCELLED':
-    case 'NO_SHOW':
-      return 'bg-red-50 text-red-900 border-red-200 opacity-70';
-    default:
-      return 'bg-neutral-50 text-neutral-700 border-neutral-200';
-  }
+  const tones: Record<Appt['status'], 'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'> = {
+    BOOKED: 'info',
+    CONFIRMED: 'success',
+    CHECKED_IN: 'warning',
+    IN_SERVICE: 'accent',
+    COMPLETED: 'neutral',
+    CANCELLED: 'danger',
+    NO_SHOW: 'danger',
+    WAITLIST: 'neutral',
+  };
+  return (
+    <Badge tone={tones[status]} dot>
+      {labels[status]}
+    </Badge>
+  );
 }

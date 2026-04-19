@@ -1,0 +1,131 @@
+/**
+ * SALON OS — Design-Tokens als CSS-Variablen.
+ * Werte aus specs/design-system.md.
+ * Light + Dark Mode über data-theme Attribut oder prefers-color-scheme.
+ */
+
+@layer base {
+  :root {
+    /* Farben — Light */
+    --background: 37 15% 98%;           /* #FAFAF9 warm off-white */
+    --surface: 0 0% 100%;                /* #FFFFFF */
+    --surface-raised: 0 0% 100%;
+    --border: 24 6% 90%;                 /* #E7E5E4 */
+    --border-strong: 24 6% 80%;
+    --text-primary: 0 0% 4%;             /* #0A0A0A */
+    --text-secondary: 30 5% 35%;         /* #57534E */
+    --text-muted: 30 6% 64%;             /* #A8A29E */
+
+    --brand: 222 47% 11%;                /* #0F172A deep slate */
+    --brand-foreground: 0 0% 98%;
+    --brand-accent: 32 48% 65%;          /* #D4A574 warm gold */
+    --brand-accent-foreground: 222 47% 11%;
+
+    --success: 142 71% 45%;
+    --warning: 45 93% 47%;
+    --danger: 0 72% 51%;
+    --info: 199 89% 48%;
+
+    /* Glow / Focus */
+    --ring: 32 48% 65%;
+    --ring-offset: 0 0% 100%;
+
+    /* Radii */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+
+    /* Shadows: 2-layer (soft + sharp) */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+    --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.04);
+    --shadow-glow: 0 0 0 4px rgba(212, 165, 116, 0.12);
+  }
+
+  [data-theme='dark'] {
+    /* Farben — Dark */
+    --background: 0 0% 4%;               /* #0A0A0A */
+    --surface: 0 0% 9%;                  /* #171717 */
+    --surface-raised: 0 0% 13%;
+    --border: 0 0% 17%;                  /* #262626 */
+    --border-strong: 0 0% 24%;
+    --text-primary: 0 0% 98%;
+    --text-secondary: 0 0% 72%;
+    --text-muted: 0 0% 52%;
+
+    --brand: 32 48% 65%;                 /* auf Dark Gold als primary */
+    --brand-foreground: 0 0% 4%;
+    --brand-accent: 32 48% 72%;
+    --brand-accent-foreground: 0 0% 4%;
+
+    --success: 142 71% 55%;
+    --warning: 45 93% 57%;
+    --danger: 0 72% 61%;
+    --info: 199 89% 58%;
+
+    --ring: 32 48% 65%;
+    --ring-offset: 0 0% 4%;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 0 4px rgba(212, 165, 116, 0.2);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --background: 0 0% 4%;
+      --surface: 0 0% 9%;
+      --surface-raised: 0 0% 13%;
+      --border: 0 0% 17%;
+      --border-strong: 0 0% 24%;
+      --text-primary: 0 0% 98%;
+      --text-secondary: 0 0% 72%;
+      --text-muted: 0 0% 52%;
+
+      --brand: 32 48% 65%;
+      --brand-foreground: 0 0% 4%;
+      --brand-accent: 32 48% 72%;
+      --brand-accent-foreground: 0 0% 4%;
+
+      --ring-offset: 0 0% 4%;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
+      --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  html {
+    font-feature-settings: 'cv11', 'ss01', 'calt';
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--text-primary));
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Focus ring — nie outline: none */
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring-offset)),
+      0 0 0 4px hsl(var(--ring));
+  }
+}

@@ -1,8 +1,133 @@
 @import 'tailwindcss';
 
-@theme {
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-display: 'Playfair Display', Georgia, serif;
+@layer base {
+  :root {
+    --background: 37 15% 98%;
+    --surface: 0 0% 100%;
+    --surface-raised: 0 0% 100%;
+    --border: 24 6% 90%;
+    --border-strong: 24 6% 80%;
+    --text-primary: 0 0% 4%;
+    --text-secondary: 30 5% 35%;
+    --text-muted: 30 6% 64%;
+    --brand: 222 47% 11%;
+    --brand-foreground: 0 0% 98%;
+    --brand-accent: 32 48% 65%;
+    --brand-accent-foreground: 222 47% 11%;
+    --success: 142 71% 45%;
+    --warning: 45 93% 47%;
+    --danger: 0 72% 51%;
+    --info: 199 89% 48%;
+    --ring: 32 48% 65%;
+    --ring-offset: 0 0% 100%;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+    --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.04);
+    --shadow-glow: 0 0 0 4px rgba(212, 165, 116, 0.12);
+  }
+
+  [data-theme='dark'] {
+    --background: 0 0% 4%;
+    --surface: 0 0% 9%;
+    --surface-raised: 0 0% 13%;
+    --border: 0 0% 17%;
+    --border-strong: 0 0% 24%;
+    --text-primary: 0 0% 98%;
+    --text-secondary: 0 0% 72%;
+    --text-muted: 0 0% 52%;
+    --brand: 32 48% 65%;
+    --brand-foreground: 0 0% 4%;
+    --brand-accent: 32 48% 72%;
+    --brand-accent-foreground: 0 0% 4%;
+    --ring-offset: 0 0% 4%;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  html {
+    font-feature-settings: 'cv11', 'ss01', 'calt';
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--text-primary));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring-offset)), 0 0 0 4px hsl(var(--ring));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-surface: hsl(var(--surface));
+  --color-surface-raised: hsl(var(--surface-raised));
+  --color-border: hsl(var(--border));
+  --color-border-strong: hsl(var(--border-strong));
+  --color-text-primary: hsl(var(--text-primary));
+  --color-text-secondary: hsl(var(--text-secondary));
+  --color-text-muted: hsl(var(--text-muted));
+  --color-brand: hsl(var(--brand));
+  --color-brand-foreground: hsl(var(--brand-foreground));
+  --color-accent: hsl(var(--brand-accent));
+  --color-accent-foreground: hsl(var(--brand-accent-foreground));
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
+  --color-danger: hsl(var(--danger));
+  --color-info: hsl(var(--info));
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-glow: var(--shadow-glow);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --animate-fade-in: fade-in 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shimmer: shimmer 2s infinite linear;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 html,

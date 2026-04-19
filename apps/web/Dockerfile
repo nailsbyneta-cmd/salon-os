@@ -26,4 +26,4 @@ WORKDIR /repo/apps/web
 
 EXPOSE 3000
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node_modules/.bin/next", "start", "--port", "3000"]
+CMD ["sh", "-c", "node_modules/.bin/next start --port ${PORT:-3000} --hostname 0.0.0.0"]
