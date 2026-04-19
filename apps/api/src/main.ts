@@ -5,7 +5,26 @@ import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import { AppModule } from './app.module.js';
 
+/**
+ * Production-Guard: In Production MUSS WorkOS konfiguriert sein.
+ * TenantMiddleware ist in Phase 0 ein Header-Placeholder — ohne echten
+ * Session-Check-Mechanismus darf der Server nicht public laufen.
+ */
+function assertProductionSafety(): void {
+  if (process.env['NODE_ENV'] !== 'production') return;
+  const required = ['WORKOS_API_KEY', 'WORKOS_CLIENT_ID', 'WORKOS_COOKIE_PASSWORD'];
+  const missing = required.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    throw new Error(
+      `[api] Production-Abbruch: Auth nicht konfiguriert. Fehlende env vars: ${missing.join(', ')}. ` +
+        `TenantMiddleware im Header-Modus ist NICHT production-safe.`,
+    );
+  }
+}
+
 async function bootstrap(): Promise<void> {
+  assertProductionSafety();
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ logger: false, trustProxy: true }),

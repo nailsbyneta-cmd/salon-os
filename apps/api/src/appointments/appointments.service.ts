@@ -10,7 +10,7 @@ import type {
   RescheduleAppointmentInput,
   CancelAppointmentInput,
 } from '@salon-os/types';
-import { PRISMA, WITH_TENANT } from '../db/db.module.js';
+import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 
 type WithTenantFn = <T>(
@@ -39,10 +39,7 @@ function isConflictError(err: unknown): boolean {
 
 @Injectable()
 export class AppointmentsService {
-  constructor(
-    @Inject(PRISMA) private readonly _prisma: PrismaClient,
-    @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
-  ) {}
+  constructor(@Inject(WITH_TENANT) private readonly withTenant: WithTenantFn) {}
 
   /**
    * Kalender-Feed. Range-Query über `startAt`, optional nach Staff/Location.

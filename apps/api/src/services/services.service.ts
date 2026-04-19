@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { PrismaClient, Service, ServiceCategory } from '@salon-os/db';
 import type { CreateServiceInput, UpdateServiceInput } from '@salon-os/types';
-import { PRISMA, WITH_TENANT } from '../db/db.module.js';
+import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 
 type WithTenantFn = <T>(
@@ -13,10 +13,7 @@ type WithTenantFn = <T>(
 
 @Injectable()
 export class ServicesService {
-  constructor(
-    @Inject(PRISMA) private readonly _prisma: PrismaClient,
-    @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
-  ) {}
+  constructor(@Inject(WITH_TENANT) private readonly withTenant: WithTenantFn) {}
 
   async listCategories(): Promise<ServiceCategory[]> {
     const ctx = requireTenantContext();
