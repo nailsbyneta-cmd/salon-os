@@ -83,11 +83,9 @@ interface GalleryImage {
   caption: string | null;
 }
 
-interface OpeningHoursEntry {
-  open?: string;
-  close?: string;
-  closed?: boolean;
-}
+type OpeningHoursEntry =
+  | { open?: string; close?: string; closed?: boolean }
+  | Array<{ open: string; close: string }>;
 
 const WEEKDAYS: Array<{ key: string; label: string }> = [
   { key: 'mon', label: 'Montag' },
@@ -170,21 +168,33 @@ function todayWeekdayKey(): string {
   return WEEKDAYS[idx]!.key;
 }
 
+function formatHoursForDay(entry: OpeningHoursEntry | undefined): string {
+  if (!entry) return 'geschlossen';
+  if (Array.isArray(entry)) {
+    if (entry.length === 0) return 'geschlossen';
+    return entry
+      .filter((i) => i.open && i.close)
+      .map((i) => `${i.open}–${i.close}`)
+      .join(' & ') || 'geschlossen';
+  }
+  if (entry.closed || !entry.open || !entry.close) return 'geschlossen';
+  return `${entry.open}–${entry.close}`;
+}
+
 function openingHoursArray(
   raw: unknown,
-): Array<{ key: string; label: string; text: string; isToday: boolean }> {
-  const hours = (raw ?? {}) as Record<string, OpeningHoursEntry>;
+): Array<{ key: string; label: string; text: string; isToday: boolean }> | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const hours = raw as Record<string, OpeningHoursEntry>;
+  const hasAnyKey = WEEKDAYS.some(({ key }) => key in hours);
+  if (!hasAnyKey) return null;
   const todayKey = todayWeekdayKey();
-  return WEEKDAYS.map(({ key, label }) => {
-    const e = hours[key];
-    const closed = !e || e.closed || !e.open || !e.close;
-    return {
-      key,
-      label,
-      text: closed ? 'geschlossen' : `${e!.open}–${e!.close}`,
-      isToday: key === todayKey,
-    };
-  });
+  return WEEKDAYS.map(({ key, label }) => ({
+    key,
+    label,
+    text: formatHoursForDay(hours[key]),
+    isToday: key === todayKey,
+  }));
 }
 
 export default async function BookingStart({
@@ -209,7 +219,7 @@ export default async function BookingStart({
   const primaryLocation = locations[0] ?? null;
   const hours = primaryLocation
     ? openingHoursArray(primaryLocation.openingHours)
-    : [];
+    : null;
 
   return (
     <main className="space-y-10">
@@ -427,17 +437,19 @@ export default async function BookingStart({
                 ) : null}
               </div>
 
-              {hours.length > 0 ? (
-                <div>
-                  <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-text-muted">
-                    Öffnungszeiten
-                  </div>
+              <div>
+                <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  Öffnungszeiten
+                </div>
+                {hours ? (
                   <ul className="space-y-1 text-sm">
                     {hours.map((h) => (
                       <li
                         key={h.key}
                         className={`flex justify-between tabular-nums ${
-                          h.isToday ? 'font-semibold text-text-primary' : 'text-text-secondary'
+                          h.isToday
+                            ? 'font-semibold text-text-primary'
+                            : 'text-text-secondary'
                         }`}
                       >
                         <span className="flex items-center gap-2">
@@ -450,8 +462,12 @@ export default async function BookingStart({
                       </li>
                     ))}
                   </ul>
-                </div>
-              ) : null}
+                ) : (
+                  <p className="text-sm text-text-muted">
+                    Öffnungszeiten auf Anfrage.
+                  </p>
+                )}
+              </div>
             </CardBody>
           </Card>
         </section>
