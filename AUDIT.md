@@ -1,310 +1,214 @@
 # AUDIT — Ehrliche Selbstbewertung von SALON OS
 
-> Stand: 2026-04-19, nach Session-Marathon. Gegenübergestellt mit
-> `specs/differentiation.md`, `specs/design-system.md`,
-> `specs/feature-completeness.md`.
+> **Stand: 2026-04-20**, nach 50+ Commits seit letztem Audit.
+> Gemessen gegen `specs/differentiation.md`, `specs/design-system.md`,
+> `specs/feature-completeness.md`. Ersetzt den Audit vom 2026-04-19.
 
 ## TL;DR
 
-Ich habe in dieser Session die **Plumbing-Schicht** solide hingesetzt
-(Railway-Deploy, Prisma + RLS, NestJS-API, Next-Web, Worker, Reminders,
-Stripe-Stub) und ein **minimal-funktionales Admin + Booking**. Aber gemessen
-an den 3 neuen Specs ist das ein **"Phase 0 + 20 % Phase 1"-Stand**, nicht
-mehr. Design ist Tailwind-Default, 0 der 40 Differenziatoren existieren,
-baseline-Completeness liegt bei geschätzt **15 %**.
+Zwischen 2026-04-19 und 2026-04-20 wurde **massiv Fortschritt erzielt**: Block A
+(Design-System, Dark-Mode, ⌘K), Block B (Drag-to-Reschedule, Click-to-Book,
+Self-Service), mehrere P0-Differenziatoren (#25 ⌘K, #31 DSGVO-Export, #28
+Tip-Picker-Ansatz, #22 Staff-PWA, #37 Celebrations, #24 POS), außerdem
+Loyalty, Gift-Cards, Waitlist, Inventar-Light, Marketing-Automation,
+Audit-Log, Public-Salon-Homepage, Multi-Staff-Tages-+Wochen-Kalender,
+Predictive-No-Show-Scoring, CSV-Import.
 
-**Linear würde das nicht akzeptieren.** Es sieht aus wie ein generischer
-Next.js-Admin, nicht wie eine $100/Monat-SaaS.
+**Das Produkt ist funktional deutlich reifer** als vor 24 h. Aber gegen die
+harte Messlatte („Würde Linear das einstellen?") **fehlt immer noch viel**:
+Storybook/Ladle, Chromatic, echte Expo-Apps, WorkOS-Auth, OpenTelemetry,
+Outbox-Pattern, belastbare Test-Abdeckung (aktuell nur 3 Test-Dateien im
+ganzen Repo), a11y-Audits, i18n, HIPAA/TSE/E-Rechnung.
+
+**Gesamt-Score: 5,5/10** — mittlerer Weg zwischen „funktioniert" und
+„Top 1%". Baseline liegt jetzt bei **~35%**, Differenzierung bei **~20%**.
 
 ## Scoring
 
-| Dimension              | Score | Begründung                                        |
-| ---------------------- | ----: | ------------------------------------------------- |
-| Code-Qualität          | **6/10** | TS strict + Zod + RLS ✓, aber 0 Tests, 0 a11y, kein OTel, Outbox-Pattern fehlt |
-| Design-Polish          | **3/10** | Tailwind-Default, kein Dark-Mode, kein Motion-System, keine Micro-Interactions, keine Brand-Tokens |
-| Feature-Vollständigkeit | **~15/100** | Siehe Matrix unten. Das meiste fehlt. |
-| Einzigartigkeit        | **0/10** | Null der 40 Differenziatoren implementiert |
+| Dimension               | Score (vorher) | Score (jetzt) | Begründung |
+| ----------------------- | -------------: | ------------: | ---------- |
+| Code-Qualität           | 6/10           | **6/10**      | TS strict + Zod + RLS ✓, eigene Tokens ✓. Immer noch nur 3 Test-Dateien, kein OTel, keine Outbox, kein WorkOS. |
+| Design-Polish           | 3/10           | **6/10**      | Tokens + Dark-Mode + Motion-Grundlagen + eigene Komponenten existieren. Aber: kein Storybook, keine Visual-Regression, keine Illustrationen, Empty-States noch text-only an vielen Stellen. |
+| Feature-Vollständigkeit | ~15/100        | **~35/100**   | Kalender, Booking, CRM, POS-Lite, Reminders, DSGVO-Export, Loyalty, Gift-Cards, Waitlist, Inventar-Light, Marketing-Automation, Audit-Log da. Siehe Matrix. |
+| Einzigartigkeit         | 0/10           | **4/10**      | P0-Differenziatoren teilweise: ⌘K, DSGVO-1-Klick, Tip-Picker, Staff-PWA, Celebrations, Predictive-No-Show-Scoring (!). Noch fehlt echte Offline, echte Tap-to-Pay, echte Tip-Split-Automation, Expo-Apps. |
 
-## Was existiert (ehrliche Bestandsaufnahme)
+## Was NEU existiert (seit letztem Audit)
 
-### Infrastruktur (das ist solide)
-- Turborepo + pnpm 9 Monorepo ✓
-- Docker-Compose für lokales Dev ✓
-- GitHub Actions CI ✓
-- Railway-Deploy mit 5 Services (Postgres + Redis + api + worker + web) ✓
-- 3 Prisma-Migrations inkl. RLS-Policies und GiST-Exclusion ✓
-- Env-Var-Driven Config (dry-run wenn Key fehlt für Stripe / Postmark) ✓
+### Design-System (`packages/ui/`)
+- `tokens.css` mit Brand-Tokens (Farben, Typo, Spacing, Radius, Shadows)
+- `theme-provider.tsx` + Dark-Mode-Toggle
+- Komponenten: Button, Input, Card, Badge, Avatar, Skeleton, Toast,
+  CommandPalette, EmptyState, Stat, Price, AppointmentCard
+- Tailwind 4 + eigene Design-Tokens
+- **Fehlt immer noch:** Storybook/Ladle, Chromatic, Modal/Drawer/Popover
+  als dedizierte Komponenten, DataTable, Combobox, DatePicker, TimePicker,
+  ErrorBoundary, ClientAvatar (mit VIP-Ring), ServiceBadge (Kategorie-Farbe),
+  StaffScheduleGrid, TreatmentTimer, BeforeAfterSlider
 
-### API (funktional, aber schmal)
-- NestJS 11 + Fastify 5 ✓
-- RFC 7807 Problem Details Filter ✓
-- Zod-Validation-Pipe ✓
-- Tenant-Middleware mit AsyncLocalStorage ✓
-- Module: clients, services, appointments (+ detail, transitions, notes),
-  locations, rooms, staff (+ inline user upsert), public-bookings,
-  shifts (minimal CRUD), reminders (BullMQ + Postmark stub),
-  payments (Stripe stub für Deposits + Webhook) ✓
-- `app.current_user_role` statt `current_role` (Postgres-Reserved-Keyword-Bug behoben) ✓
-- Reminders: Enqueue 24h vor startAt, Cancel bei Appointment-Cancel ✓
-- Staff-Create mit inline User-Upsert ✓
+### Admin-Web (`apps/web/src/app/(admin)/`)
+- Kalender: Tagesansicht + Wochenansicht + Monatsansicht mit Multi-Staff-
+  Sub-Spalten, Drag-to-Reschedule, Click-to-Book, Zoom, Nur-Aktive-Toggle
+- POS-Tablet-Checkout (`/pos/[id]`) mit Trinkgeld-Picker + Payment-Methods
+- Audit-Log-Seite (`/audit`)
+- Gift-Cards, Inventar, Waitlist als eigene Module
+- Clients: Detail + Edit + Create + CSV-Import + CSV-Export + Client-Brief + Quick-Rebook
+- Services: List + Create + Edit + Delete
+- Staff: List + Create + Edit + Shifts
+- Reports: Umsatz-Sparkline + KPIs
+- Settings-Seite
 
-### Web (pragmatisch, hässlich)
-- Next.js 15 App Router, Tailwind 4 ✓
-- Dashboard (`/`): 4 KPIs + Nächster-Termin-Panel ✓
-- Kalender (`/calendar`): 08–18 Stundenraster + Termin-Liste mit Status-Transitionen ✓
-- Appointment-Detail (`/calendar/:id`): Kontakt, Leistungen, Notizen-Edit ✓
-- Kunden (`/clients`, `/clients/:id`): Liste + Detail mit Verlauf ✓
-- Services (`/services`, `/services/new`): Liste + Create + Delete ✓
-- Staff (`/staff`, `/staff/new`, `/staff/:id/shifts`): Liste + Create + Delete + Shifts ✓
-- Reports (`/reports`): 30 Tage Umsatz-Chart + Top-5-Services + Channels ✓
-- Public Booking (`/book/:slug`): Location → Service → Slot → Confirm → Success ✓
-- PWA Manifest + Apple-Icon (gerade deployed) ✓
+### Mobile-Staff-PWA (`apps/web/src/app/(mobile)/m/`)
+- Route-Prefix `/m/*` — iPhone-installierbar, separater PWA-Scope
+- Seiten: `calendar`, `clients`, `more`
+- **Fehlt:** echte Expo-Staff-App (nur Web-PWA).
 
-### Worker (gerade läuft)
-- BullMQ ✓
-- Reminders-Consumer → Postmark (real) oder Dry-Run-Log ✓
+### Public-Booking (`apps/web/src/app/(booking)/`)
+- Salon-Homepage `/book/[slug]` mit Hero, Team, FAQ, Reviews, Galerie,
+  Öffnungszeiten, Kontakt, Branding
+- Confirm + Success-Flow
+- .ics Add-to-Calendar bei jeder Buchung
+- `/appointment/*` für Self-Service (Cancel/Reschedule via Link)
 
-## Was **NICHT** existiert
+### API (`apps/api/src/`)
+- Neue Module: `audit`, `gift-cards`, `products`, `salon-settings`,
+  `waitlist`
+- Bestehende erweitert: payments (Stripe Deposit + Webhook), reminders
+  (BullMQ), public-bookings, clients (Export/Import)
+- `app.current_user_role` statt `current_role` ✓
+- GiST-Exclusion-Constraint gegen Doppelbuchung ✓
 
-### Design-System (Null)
+### Worker (`apps/worker/`)
+- BullMQ: Reminders (24h vor startAt)
+- Marketing-Automation-Job (täglich): Birthday, Rebook, Win-Back
+- Lifetime-Counters + Predictive-No-Show-Scoring
 
-Gegen `specs/design-system.md` schaue ich alt aus:
+### Prisma-Migrations (8 Stück)
+`0001_init`, `0002_phase1_module1`, `0003_rename_role_setting`,
+`0004_pos_payment`, `0005_gift_cards`, `0006_waitlist`, `0007_inventory`,
+`0008_branding_faq_reviews_gallery`.
 
-- ❌ **Design-Tokens**: ich benutze Tailwind-Default `bg-neutral-900`, `text-neutral-500`.
-  Spec verlangt eigene Tokens (`--color-brand`, `--color-brand-accent`, `--space-*`, `--radius-*`, 2-Layer-Shadows).
-- ❌ **Dark-Mode**: existiert nicht. Spec sagt "First-Class".
-- ❌ **Typografie**: Kein Inter Display + Inter + JetBrains Mono. Fluid-Type nicht gesetzt.
-- ❌ **Motion-System**: Keine Ease-Funktionen definiert, kein Respect für `prefers-reduced-motion`.
-- ❌ **Haptics / Sound-Design**: fehlen komplett.
-- ❌ **Signature-Moves**: Drag-to-Reschedule (mit spring-ease + scale-bounce) existiert nicht.
-  Checkout-Erfolg (Konfetti bei > 50 € Tip) existiert nicht.
-- ❌ **shadcn/ui**: nicht initialisiert. Komponenten sind ad-hoc im Page-File.
-- ❌ **Storybook / Ladle**: existiert nicht.
-- ❌ **Chromatic / Visual-Regression**: existiert nicht.
-- ❌ **Command-Palette (⌘K)**: existiert nicht.
-- ❌ **Empty-State-Illustrationen**: ich habe nur Text ("Noch keine Services angelegt").
-- ❌ **Skeleton-States**: ich nutze Next.js Server-Render, keine Loading-States.
-- ❌ **Celebration-Micro-Interactions**: nichts.
-- ❌ **a11y**: kein Axe-Core, kein Focus-Ring-Styling, kein Keyboard-Nav-Test, kein VoiceOver-Test.
-- ❌ **Salon-spezifische Komponenten**: AppointmentCard, ClientAvatar, ServiceBadge, PriceDisplay, StaffScheduleGrid, TreatmentTimer, BeforeAfterSlider — alle fehlen.
+## Was NOCH IMMER FEHLT
 
-### Differenziatoren (0 / 40)
+### Design-System — **Polish fehlt**
+- ❌ Storybook/Ladle — Komponenten sind nicht isoliert dokumentiert
+- ❌ Chromatic / Percy — keine Visual-Regression in CI
+- ❌ Modal/Drawer/Popover als dedizierte Komponenten (oft ad-hoc im Page)
+- ❌ DataTable-Komponente
+- ❌ Combobox, DatePicker, TimePicker
+- ❌ Empty-State-Illustrationen (meist nur Text)
+- ❌ Salon-spezifisch: ClientAvatar mit VIP-Ring, ServiceBadge mit
+  Kategorie-Farbe, StaffScheduleGrid, TreatmentTimer, BeforeAfterSlider
+- ❌ Keyboard-Shortcut-Hilfe (`?`-Dialog)
+- ❌ a11y-Audit (axe-core in CI), VoiceOver-Test, Focus-Ring-Check
+- ❌ Micro-Interactions-Katalog größtenteils unbedient (Shake bei
+  Validation-Error, Swipe-Delete, Skeleton > 1s, Sync-wieder-da-Banner)
 
-Gegen `specs/differentiation.md`:
+### Differenziatoren — **7 von 40 teilweise, 33 fehlen**
 
-| # | Feature | P | Status |
-|---|---------|---|--------|
-| 21 | Drag-to-Reschedule mit Haptics + Undo | P0 | ❌ |
-| 22 | Single-Thumb-Staff-App | P0 | ❌ (keine Staff-App überhaupt) |
-| 23 | Offline-First | P0 | ❌ |
-| 24 | Tap-to-Pay on Phone | P0 | ❌ (nur Stripe-Checkout-Dryrun) |
-| 25 | Universal Command Palette (⌘K) | P0 | ❌ |
-| 28 | Tip-Split-Automation | P0 | ❌ (keine Tipps überhaupt) |
-| 31 | 1-Klick-DSGVO-Export | P0 | ❌ |
+P0 (7 Stück — Ziel: alle im MVP):
+| # | Feature | Status |
+|---|---------|--------|
+| 21 | Drag-to-Reschedule mit Haptics + Undo | ⚠️ Drag-Drop da, Haptics-Hook fehlt, Undo-Toast unklar |
+| 22 | Single-Thumb-Staff-App | ⚠️ PWA-Skeleton existiert, nicht „Single-Thumb optimiert", keine echte Expo-App |
+| 23 | Offline-First | ❌ kein Service-Worker-Sync, keine Offline-Queue |
+| 24 | Tap-to-Pay on Phone | ⚠️ POS-UI da, Stripe Tap-to-Pay-Integration nicht verdrahtet |
+| 25 | Universal Command Palette (⌘K) | ✅ existiert mit Clients + Services Live-Search |
+| 28 | Tip-Split-Automation | ⚠️ Tip-Picker im POS da, Auto-Split nach Rollen fehlt |
+| 31 | 1-Klick-DSGVO-Export | ✅ existiert |
 
-P1- und P2-Differenziatoren: alle 33 fehlen.
+P1 (18 Stück — Ziel V1):
+- #1 Predictive No-Show ✅ (Scoring da, Auto-Deposit-Request fehlt)
+- #4 AI Voice Receptionist ❌
+- #14 Cross-Salon Wallet ❌
+- #15 Verified-Reviews ❌
+- #16 Live-Availability-Map ❌
+- #18 Branded-App pro Salon ❌ (keine Expo-Automation)
+- #19 Digital Gift-Cards via iMessage/WhatsApp ✅ (Share-Link da)
+- #20 Social-Booking-First ❌
+- #26 Color-Formula-Library ❌
+- #27 Foto-Vor-Jeden-Service ❌
+- #29 Staff-Self-Service-Scheduling ❌ (Shift-Swap/Time-Off fehlen)
+- #32 TSE-Live-Monitoring ❌
+- #33 E-Rechnung ❌
+- #36 Payment-Dispute-Auto-Defender ❌
+- #37 Celebration-Micro-Interactions ⚠️ (Toast da, Konfetti-Trigger fehlt noch)
+- #38 Smart-Loyalty-Reminders ⚠️ (Loyalty-Basis da, gezielte 1x/Monat-Logik fehlt)
 
-### Feature-Completeness-Baseline
+P2 (15 Stück): alle fehlen bewusst (AR, AI-Photo-to-Service, Technique
+Coach, Dynamic Pricing, Supply-Prediction, Auto-Marketing-Generator,
+Sustainability, HIPAA, Consent pro Behandlung).
 
-Siehe detaillierte Matrix in Sektion unten. Kurz:
+## Feature-Completeness-Matrix (aktualisiert)
 
-- **Kalender** 4/20 (Day-View, List-View, Color-Status, Click-to-Book-teilweise)
-- **Online-Booking** 8/22
-- **POS / Payments** 1/23 (nur Stripe-Checkout-Stub)
-- **CRM** 4/21
-- **Forms & Consent** 0/13
-- **Staff / Team / HR** 4/15
-- **Inventar** 0/13
-- **Marketing** 1/17 (nur 24h-Reminder-Email-Stub)
-- **Loyalty / Gift-Cards / Memberships** 0/11
-- **Reporting** 5/16
-- **Kommunikation** 0/9
-- **Multi-Location** 1/8 (schema vorhanden, UI fehlt)
-- **Marketplace** 0/12
-- **Mobile Apps** 1/10 (gerade PWA-Tags dazu)
-- **AI-Layer** 0/12
-- **Integrations** 2/15 (Stripe-Stub, Postmark-Stub)
-- **Compliance & Security** 1/15 (nur RLS)
-- **Developer / API** 3/11 (REST ja, OpenAPI/GraphQL/Webhooks/SDK/Partner-Portal/Zapier/Make — nein)
+| # | Kategorie | Vor 24h | Jetzt | Lücken |
+|---|-----------|--------:|------:|--------|
+| 1 | Kalender | 5/20 | **10/20** | Month-View ✓, Recurring/Group/Resource/Buffer-UI/Break/Unavailability/Print/Sync/Keyboard fehlen |
+| 2 | Online-Booking | 8/22 | **14/22** | Widget, Multi-Service-Flow, Formular-Step, Magic-Link, Coupon, Multi-Language, WCAG-AA-geprüft fehlen |
+| 3 | POS/Payments | 1/23 | **6/23** | Tap-to-Pay real, Split-Payment, Retail-Scan, Refund, Receipt-Formate, TSE, Cash-Drawer, Recurring-Billing, Dunning fehlen |
+| 4 | CRM | 5/21 | **10/21** | Foto-Historie, Color-Formula, Allergien-Flag, VIP-Ring, Merge, Portal, Chat, Blacklist, Familien, CLV-Scoring fehlen |
+| 5 | Forms & Consent | 0/13 | **0/13** | Komplett offen |
+| 6 | Staff/HR | 5/15 | **6/15** | RBAC, Time-Clock, Shift-Swap, Time-Off, Commission, Payroll, Performance, Cert-Reminders, Self-Service fehlen |
+| 7 | Inventar | 0/13 | **5/13** | Barcode, Supplier, POs, Auto-Reorder, Backbar-Usage, Audit, Waste, COGS, Integrations fehlen |
+| 8 | Marketing | 1/17 | **6/17** | Campaign-Editor, SMS/WhatsApp, Segmentation, Landing-Pages, UTM, Pixels, Deliverability, Referral, Brand-Kit fehlen |
+| 9 | Loyalty/Gift/Memberships | 0/11 | **4/11** | Punch-Card, Packages, Memberships, Proration, Corporate-Accounts fehlen |
+| 10 | Reporting | 5/16 | **7/16** | Auslastung, Rebook-Rate, Cohorts, CLV, Marge, Inventar-Turnover, Custom-Dashboard, Scheduled-Reports, Benchmarks fehlen |
+| 11 | Kommunikation | 0/9 | **0/9** | Komplett offen |
+| 12 | Multi-Location | 1/8 | **1/8** | Kein Switcher, keine Cross-Reports, kein Head-Office-View |
+| 13 | Marketplace | 0/12 | **0/12** | Phase 2 |
+| 14 | Mobile Apps | 1/10 | **3/10** | PWA ✓, Push-Notifications, echte Expo-Apps, White-Label, Offline, Biometric, Deep-Links fehlen |
+| 15 | AI-Layer | 0/12 | **1/12** | Nur No-Show-Scoring; alles andere P2 |
+| 16 | Integrations | 2/15 | **3/15** | Stripe + Postmark Stubs, sonst fast nichts |
+| 17 | Compliance/Security | 1/15 | **3/15** | RLS ✓, Audit-Log ✓, DSGVO-Export ✓. 2FA, SSO, HIPAA, PCI, TSE, E-Rechnung, SOC2, Pentests fehlen |
+| 18 | Developer/API | 3/11 | **3/11** | OpenAPI, GraphQL, Webhooks, OAuth, SDK, Sandbox, Partner-Portal, Zapier/Make fehlen |
 
-## Code-Qualitäts-Probleme, die ich jetzt schon sehe
+**Summe Baseline: ~82 / ~236 ≈ 35 %** (vorher ~15 %).
 
-1. **Keine Tests.** Null Unit, null Integration, null E2E. Das widerspricht
-   `CLAUDE.md` Punkt 7 ("Keine Features ohne Tests"). Muss sofort nachgeholt
-   werden.
-2. **Outbox-Pattern fehlt.** Reminder-Enqueue passiert direkt in
-   `AppointmentsService.create` nach dem Commit. Wenn der BullMQ-Call fehlschlägt
-   nach erfolgreichem DB-Commit, verliere ich den Reminder. `CLAUDE.md` fordert Outbox.
-3. **OpenTelemetry fehlt.** `CLAUDE.md` fordert "von Anfang an".
-4. **Keine i18n.** Alles deutsch, trotz `multi-language` in den Specs.
-5. **Timezone-Fix ist Pflaster, nicht Lösung.** `toLocalIso()` arbeitet am
-   Tag-Offset, aber für Multi-Location-Salons mit unterschiedlichen Zonen
-   brauchen wir tenant-level Zone-Handling.
-6. **`@Get ':id'` auf Staff ohne UUID-Guard** — ich habe es eilig auditiert,
-   bin aber nicht sicher, ob alle Controller das haben.
-7. **Server Actions senden Role/Tenant als HTTP-Header statt Session** —
-   Phase-0-Shortcut, ist bekannt. Muss mit WorkOS raus.
-8. **Keine Idempotency für admin-seitige POSTs.** `apiFetch()` generiert
-   Idempotency-Key, aber Server validiert/dedupliziert nicht.
-9. **Keine Rate-Limits.** `/v1/public/*` ist offen, könnte spam-geflutet werden.
-10. **Problem-Details aus Catches nicht konsistent.** Manche werfen String,
-    manche RFC 7807 object.
+## Code-Qualitäts-Schulden (offen)
 
-## Positive Anerkennung (was gut ist)
+1. **Tests immer noch dünn.** Nur `health.controller.test.ts`,
+   `types/index.test.ts`, `utils/money.test.ts`. Keine E2E/Playwright,
+   keine Component-Tests. Widerspricht `CLAUDE.md §7`.
+2. **Outbox-Pattern fehlt.** Reminder-Enqueue + Marketing-Jobs passieren
+   immer noch direkt nach Commit. Widerspricht `CLAUDE.md §Coding`.
+3. **OpenTelemetry fehlt.** Widerspricht `CLAUDE.md §OTel`.
+4. **Keine i18n.** Alles deutsch. Spec fordert Multi-Language.
+5. **Kein WorkOS.** Tenant-Middleware liest weiterhin HTTP-Header —
+   Phase-0-Shortcut, ist Tech-Debt.
+6. **Idempotency serverseitig nicht dedupliziert.** Clients senden Key,
+   Server wertet nicht aus.
+7. **Keine Rate-Limits** auf `/v1/public/*`.
+8. **Server-Actions als Durchreichung** zum API-Layer ohne eigene
+   Auth-Session — funktioniert nur bis WorkOS aktiv ist.
 
-- **RLS + `withTenant()` + SQL-Injection-Schutz** (UUID + Role-Whitelist) sind sauber.
-- **GiST-Exclusion-Constraint** für Staff-No-Overlap ist das richtige Werkzeug.
-- **Production-Guard** in `main.ts` (assertProductionSafety) verhindert dumme Deploys.
-- **Dry-Run-Pattern** in Reminders + Payments ist elegant — Service läuft ohne Env-Secrets weiter.
-- **Monorepo-Struktur** mit geteilten Packages (`@salon-os/types`, `@salon-os/utils`, `@salon-os/db`) ist korrekt.
+## Positive Anerkennung
 
-## Baseline-Matrix (Feature-Completeness)
-
-### 1. Kalender & Termine — **5 / 20**
-
-| Feature | Status |
-|---|---|
-| Day-Ansicht | ✅ |
-| Week / Month / List-Ansicht | ❌ |
-| Multi-Staff-Ansicht | ❌ |
-| Drag-to-Reschedule | ❌ |
-| Drag-to-Extend | ❌ |
-| Color-Coding | ⚠️ (nur status, nicht pro service-kategorie) |
-| Click-to-Book | ❌ (Button "Neuer Termin" ja, aber kein Click-auf-Slot) |
-| Recurring-Appointments | ❌ |
-| Multi-Service-Appointments | ⚠️ (Schema ja, UI nein) |
-| Group-Appointments | ❌ |
-| Resource-Booking | ⚠️ (Room im Schema, UI nein) |
-| Buffer-Time automatisch | ⚠️ (Schema ja, UI nein) |
-| Break-Blocking | ❌ |
-| Unavailability | ❌ |
-| Conflict-Detection | ✅ (GiST-Exclusion) |
-| Waitlist | ❌ |
-| No-Show-Tracking | ⚠️ (Status ja, Penalty nein) |
-| Print-View | ❌ |
-| iCal/Google/Outlook-Sync | ❌ |
-| Timezone-Handling | ⚠️ (toLocalIso helper, nicht per-Tenant) |
-| Keyboard-Navigation | ❌ |
-
-### 2. Online-Booking — **8 / 22**
-
-| Feature | Status |
-|---|---|
-| Widget einbettbar | ❌ |
-| Stand-alone Booking-Page | ✅ |
-| Multi-Service-Auswahl | ❌ (1 Service pro Flow) |
-| Stylist-Auswahl mit Fotos/Reviews | ⚠️ (IDs, keine Fotos/Reviews) |
-| "Nächster verfügbarer Stylist" | ✅ |
-| Service-Filter | ❌ |
-| Preis-Anzeige | ✅ |
-| Deposit-Einforderung | ❌ (Stripe-Checkout-Stub da, nicht verdrahtet) |
-| Guest-Checkout | ✅ |
-| Account-Flow | ❌ |
-| Magic-Link-Login | ❌ |
-| Gutschein/Voucher | ❌ |
-| Coupon-Code | ❌ |
-| Formular-Ausfüllen | ❌ |
-| Confirmation-Email + SMS | ⚠️ (24h-Reminder ja, sofort-Confirm nein) |
-| Add-to-Calendar | ❌ |
-| Cancellation-Link | ❌ |
-| Reschedule-Link | ❌ |
-| Multi-Language | ❌ |
-| Multi-Currency | ⚠️ (Schema ja, UI nein) |
-| Mobile-First | ✅ |
-| WCAG AA | ❌ (nicht getestet) |
-
-### 3. POS / Payments — **1 / 23**
-
-Nur Stripe-Checkout-Session-Endpoint als Dry-Run-Stub. Alles andere fehlt.
-
-### 4. CRM — **5 / 21**
-
-Full-Profile ✅, Service-Historie ✅, Client-Import ❌, Photo-Historie ❌,
-Color-Formula ❌, Allergien-Flag ❌, VIP/Tags-UI ❌, Merge ❌, Portal ❌,
-In-App-Chat ❌, Notiz-Timeline ❌, Blacklist ❌, Familien ❌,
-Birthday/Win-Back ❌.
-
-### 5. Forms & Consent — **0 / 13**
-
-Nichts.
-
-### 6. Staff / Team / HR — **5 / 15**
-
-Profile ✅, Schichten-MVP ✅, Time-Clock ❌, Commission-Rules ❌, Payroll ❌,
-RBAC ❌, Staff-Portal ❌.
-
-### 7. Inventar — **0 / 13**
-
-Nichts.
-
-### 8. Marketing — **1 / 17**
-
-Nur 24h-Email-Reminder-Stub.
-
-### 9. Loyalty / Gift / Memberships — **0 / 11**
-
-Nichts.
-
-### 10. Reporting — **5 / 16**
-
-Umsatz, Top-Services, Channels ✅. Auslastung/Rebook/CLV/Cohorts/Custom-Dashboard ❌.
-
-### 11. Kommunikation — **0 / 9**
-
-Nichts.
-
-### 12. Multi-Location — **1 / 8**
-
-Schema unterstützt, UI nicht.
-
-### 13. Marketplace — **0 / 12**
-
-Nichts.
-
-### 14. Mobile Apps — **1 / 10**
-
-Nur PWA-Manifest heute hinzugefügt. Keine echte Staff-App, keine
-Consumer-App, keine White-Label.
-
-### 15. AI-Layer — **0 / 12**
-
-Nichts.
-
-### 16. Integrations — **2 / 15**
-
-Stripe-Stub + Postmark-Stub.
-
-### 17. Compliance & Security — **1 / 15**
-
-Nur RLS. DSGVO-Export ❌, HIPAA ❌, PCI ❌, TSE ❌, E-Rechnung ❌,
-Audit-Log ❌, 2FA/Passkeys ❌.
-
-### 18. Developer / API — **3 / 11**
-
-REST endpoints ✅, OpenAPI-doc ❌, GraphQL ❌, Webhooks-System ❌,
-OAuth ❌, SDK ❌, Sandbox ❌, Partner-Portal ❌, Zapier/Make-App ❌.
+- **Design-Tokens als CSS-Vars** in `packages/ui/tokens.css` sind das
+  richtige Fundament. Dark-Mode-Variante mit gespiegelten Tokens funktioniert.
+- **Kalender-Wochen-+Tages-Multi-Staff-Ansicht** mit GiST-Exclusion + Drag
+  + Click-to-Book ist bereits weit über Baseline — das macht Konkurrenz
+  nicht besser.
+- **Predictive No-Show-Scoring** ist ein echter P1-Differenziator (#1),
+  der jetzt Grundlage gelegt hat.
+- **Salon-Homepage** unter `/book/[slug]` mit Reviews/FAQ/Gallery/Team
+  ist bereits SEO-tauglich.
+- **Modulare API-Struktur** bleibt sauber — jede neue Domain hat ihren
+  Controller/Service/Module-Tripel.
+- **Mobile-PWA-Scope-Split** (`/m/*` separater Manifest-Scope) ist
+  korrekt implementiert.
+- **Predictive-No-Show + Audit-Log + DSGVO-Export + ⌘K** sind alles
+  Features, die Phorest/Fresha **nicht** in der Tiefe haben.
 
 ## Fazit
 
-Ich habe in ~4h eine **funktionale Phase-0 + kleine Phase-1-Stub** deployed.
-Das Produkt läuft, Kunden können buchen, Termine sehen, stornieren. Das ist
-real. Aber:
+Das Produkt steht gemessen an **funktionaler Breite** jetzt auf
+ausreichendem Level, um Alpha-Tests beim Beautycenter zu fahren. Gemessen
+an **Top-1%-Qualität** bleibt die Hauptlücke jetzt in dieser Reihenfolge:
 
-1. **Nichts davon überrascht jemanden.** Design-seitig ist es generisch.
-2. **Nichts davon ist einzigartig.** Phorest hat alles bessere außer Design.
-3. **Viel fehlt auch an Baseline.** Recurring, Multi-Staff-View,
-   Offline, POS, Loyalty, Inventar, Marketing, Chat — das ist das,
-   was Salon-Inhaber wirklich buchen. Ohne das sind wir nicht im Spiel.
+1. **Test-Coverage + OTel + Outbox + WorkOS** (Produktionsreife)
+2. **Storybook/Ladle + Chromatic + a11y-Gate** (Design-System-Härtung)
+3. **Echte Expo-Apps + Offline-Sync** (P0-Differenziator #22 + #23)
+4. **Tap-to-Pay real + Tip-Split real + TSE** (P0 #24, #28 + DE-Compliance)
+5. **Forms & Consent + Unified-Inbox + Multi-Location-Switcher** (Baseline-Gaps)
+6. **P1-Differenziatoren: Voice-Receptionist, Color-Formula, Branded-App**
 
-Ich schlage vor im **UPGRADE-PLAN.md**:
-- **Behalten**: Plumbing, Prisma-Schema, RLS, Deploy-Pipeline, Public-Booking-API,
-  Staff-Module, Reminders-Architektur, Stripe-Adapter-Shape.
-- **Rewriten**: komplettes Design-System (packages/ui neu, shadcn-Setup),
-  Kalender-UI (mit dnd-kit Drag-to-Reschedule), Admin-Layout (Sidebar nach Spec).
-- **Neu bauen**: Command-Palette, Dark-Mode, Motion-Layer, Offline-Sync,
-  Tap-to-Pay-Stub, Tip-Split, 1-Klick-DSGVO, Staff-Mobile-App (Expo),
-  Consumer-App (Expo), Marketplace-Skeleton.
-- **Streng pausieren**: AI-Features (P2), AR (P2), Dynamic-Pricing (P2) —
-  erst nachdem Baseline + P0-Differenziatoren stehen.
-
-Details im `UPGRADE-PLAN.md`.
+Details in `UPGRADE-PLAN.md`.

@@ -28,6 +28,24 @@ const publicAddSchema = z.object({
   }),
 });
 
+const adminAddSchema = z.object({
+  serviceId: uuidSchema,
+  locationId: uuidSchema,
+  preferredStaffId: uuidSchema.optional().nullable(),
+  earliestAt: z.string().datetime({ offset: true }),
+  latestAt: z.string().datetime({ offset: true }),
+  notes: z.string().max(1000).optional(),
+  clientId: uuidSchema.optional(),
+  newClient: z
+    .object({
+      firstName: z.string().min(1).max(100),
+      lastName: z.string().min(1).max(100),
+      email: z.string().email().optional().or(z.literal('')),
+      phone: z.string().max(30).optional(),
+    })
+    .optional(),
+});
+
 const slugSchema = z.string().min(1).max(120).regex(/^[a-z0-9-]+$/);
 
 @Controller('v1/waitlist')
@@ -37,6 +55,23 @@ export class WaitlistController {
   @Get()
   async list(): Promise<{ entries: WaitlistEntry[] }> {
     return { entries: await this.svc.listActive() };
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async add(
+    @Body(new ZodValidationPipe(adminAddSchema))
+    body: z.infer<typeof adminAddSchema>,
+  ): Promise<WaitlistEntry> {
+    return this.svc.adminAdd({
+      ...body,
+      newClient: body.newClient
+        ? {
+            ...body.newClient,
+            email: body.newClient.email || undefined,
+          }
+        : undefined,
+    });
   }
 
   @Post(':id/fulfill')

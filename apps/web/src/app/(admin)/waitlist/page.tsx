@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Avatar, Badge, Button, Card, CardBody, EmptyState } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
@@ -48,16 +49,26 @@ export default async function WaitlistPage(): Promise<React.JSX.Element> {
 
   return (
     <div className="mx-auto max-w-5xl p-8">
-      <header className="mb-6">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Warteliste
-        </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
-          Warten auf Termin
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          {entries.length} aktiv — wird ein Slot frei, ruf hier an.
-        </p>
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+            Warteliste
+          </p>
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+            Warten auf Termin
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            {entries.length} aktiv — wird ein Slot frei, ruf hier an.
+          </p>
+        </div>
+        <Link href="/waitlist/new">
+          <Button
+            variant="primary"
+            iconLeft={<span className="text-base leading-none">+</span>}
+          >
+            Neuer Eintrag
+          </Button>
+        </Link>
       </header>
 
       {entries.length === 0 ? (

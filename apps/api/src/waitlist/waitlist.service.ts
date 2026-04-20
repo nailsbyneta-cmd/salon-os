@@ -37,6 +37,68 @@ export class WaitlistService {
     @Inject('PRISMA_PUBLIC') private readonly prismaPublic: PrismaClient,
   ) {}
 
+  /**
+   * Admin-seitiger Eintrag (Telefon-Anruf: „Kannst du mich eintragen
+   * falls Fr frei wird?"). clientId falls bestehende Kundin, sonst
+   * firstName/lastName/email → anlegen oder dedupen.
+   */
+  async adminAdd(input: {
+    serviceId: string;
+    locationId: string;
+    preferredStaffId?: string | null;
+    earliestAt: string;
+    latestAt: string;
+    notes?: string;
+    clientId?: string;
+    newClient?: {
+      firstName: string;
+      lastName: string;
+      email?: string;
+      phone?: string;
+    };
+  }): Promise<WaitlistEntry> {
+    const ctx = requireTenantContext();
+    const earliest = new Date(input.earliestAt);
+    const latest = new Date(input.latestAt);
+    if (!(latest > earliest)) {
+      throw new BadRequestException('latestAt muss nach earliestAt liegen.');
+    }
+    if (!input.clientId && !input.newClient) {
+      throw new BadRequestException(
+        'Entweder clientId oder newClient-Daten angeben.',
+      );
+    }
+
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      let clientId = input.clientId;
+      if (!clientId && input.newClient) {
+        const created = await tx.client.create({
+          data: {
+            tenantId: ctx.tenantId,
+            firstName: input.newClient.firstName,
+            lastName: input.newClient.lastName,
+            email: input.newClient.email ?? null,
+            phone: input.newClient.phone ?? null,
+            source: 'waitlist-admin',
+          },
+        });
+        clientId = created.id;
+      }
+      return tx.waitlistEntry.create({
+        data: {
+          tenantId: ctx.tenantId,
+          clientId: clientId!,
+          serviceId: input.serviceId,
+          locationId: input.locationId,
+          preferredStaffId: input.preferredStaffId ?? null,
+          earliestAt: earliest,
+          latestAt: latest,
+          notes: input.notes ?? null,
+        },
+      });
+    });
+  }
+
   async listActive(): Promise<WaitlistEntry[]> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {

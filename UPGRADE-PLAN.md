@@ -1,7 +1,8 @@
-# UPGRADE-PLAN — Von „generic SaaS" zu „Top 1%"
+# UPGRADE-PLAN — Von „funktional" zu „Top 1%"
 
-> Nach `AUDIT.md`. Reihenfolge ist streng: **Design-System zuerst, dann
-> Baseline schliessen, dann P0-Differenziatoren, erst dann P1.**
+> Nach `AUDIT.md` (Stand 2026-04-20). Ersetzt den Plan vom 2026-04-19.
+> Reihenfolge ist streng: **Härtung zuerst, dann Lücken schließen, dann
+> P0-Differenziatoren vertiefen, erst dann P1.**
 
 ---
 
@@ -9,183 +10,192 @@
 
 | Stück | Warum |
 |-------|-------|
-| Turborepo + pnpm Monorepo | Struktur passt zur Spec |
-| Docker-Compose (Postgres + Redis + Mailpit + Minio) | Solides lokales Dev |
-| Prisma Schema + 3 Migrations inkl. RLS | Das Datenmodell + RLS-Policies sind richtig |
-| `withTenant()` mit UUID- und Role-Whitelist (Defense-in-Depth) | Korrekt gegen SQL-Injection geschützt |
-| GiST-Exclusion-Constraint `appointment_no_overlap_per_staff` | Das ist der richtige Weg gegen Doppelbuchung |
-| Railway-Deploy-Pipeline (Dockerfile pro Service, Monorepo-Runtime) | Funktioniert, sauber |
-| Env-Var-Driven Dry-Run-Pattern (Stripe + Postmark) | Elegant; behalten auch in „echt" |
-| NestJS + Fastify-Adapter-Setup | Schnell genug, gute Middleware-Unterstützung |
-| Problem-Details-Filter (RFC 7807) | Bleibt |
-| Zod-Validation-Pipe + Schemas in `@salon-os/types` | Bleibt |
-| Tenant-Context via AsyncLocalStorage | Korrekt |
-| BullMQ-Reminders-Architektur (Producer in API, Consumer in Worker) | Bleibt — nur Outbox davor einfügen |
+| Turborepo + pnpm Monorepo | Struktur passt |
+| Prisma Schema (8 Migrations) + RLS + GiST-Exclusion | Datenmodell ist solide, RLS sauber |
+| `withTenant()` + UUID- + Role-Whitelist | Defense-in-Depth korrekt |
+| Railway-Deploy (Postgres, Redis, api, worker, web) | Funktioniert |
+| Env-driven Dry-Run (Stripe + Postmark) | Elegant, bleibt |
+| NestJS 11 + Fastify 5 + RFC 7807 Filter + Zod-Pipe | Bleibt |
+| Tenant-Context via AsyncLocalStorage | Bleibt |
+| BullMQ-Reminders-Architektur + Marketing-Automation-Job | Bleibt, Outbox davor |
 | Stripe-Payments-Adapter-Shape | Bleibt |
+| `packages/ui/tokens.css` + `theme-provider` + Dark-Mode-Basis | Bleibt, wird erweitert |
+| Multi-Staff-Kalender-View (Tag/Woche/Monat) + Drag-to-Reschedule | Bleibt, wird poliert |
+| Public-Salon-Homepage (Branding, FAQ, Reviews, Gallery) | Bleibt |
+| Audit-Log + DSGVO-Export | Bleibt |
+| Gift-Cards + Waitlist + Inventar-Light + Marketing-Automation | Bleibt |
+| Predictive-No-Show-Scoring | Bleibt, Auto-Deposit-Trigger anbauen |
+| Mobile-PWA unter `/m/*` | Bleibt, wird vorerst weiter ausgebaut, parallel Expo planen |
 
 ## Anpassen (Code bleibt, wird verbessert)
 
 | Stück | Was ändern | Warum |
 |-------|------------|-------|
-| Public-Booking-Flow | Multi-Service + Magic-Link-Login + Voucher-Feld + Formular-Step | Baseline-Completeness 2.x |
-| Appointment-Schema | Felder `recurring_group_id`, `multi_service_group_id`, `waitlist_rank` | Recurring + Group + Waitlist |
-| Tenant-Middleware | Fallback auf WorkOS-Session-Cookie sobald konfiguriert | Phase-0-Header-Mode ist bekanntes Tech-Debt |
-| `toLocalIso()` | Per-Tenant / Per-Location-Timezone statt hardcoded `Europe/Zurich` | Multi-Location |
-| Reminders-Service | Outbox-Pattern: Event in DB-Transaktion → Outbox-Worker poolt in Queue | `CLAUDE.md` fordert Outbox |
-| Calendar (`/calendar`) | Von Text-Liste zu echtem Grid mit Multi-Staff-Spalten | Baseline 1.x |
-| Admin-Layout | Sidebar 240 px einklappbar → 56 px Icons, Top-Bar mit ⌘K, Bottom-Status-Bar | `design-system.md` §Layout-Prinzipien |
-| `apiFetch()` | Optimistic-Updates + Client-side-Query-Cache (TanStack Query) | `design-system.md` §UX-Prinzipien #1 |
+| Tenant-Middleware | WorkOS-Session-Cookie statt HTTP-Header | Phase-0-Shortcut ist bekanntes Tech-Debt |
+| `toLocalIso()` | Per-Location-Timezone statt hardcoded `Europe/Zurich` | Multi-Location |
+| Reminders-Service + Marketing-Jobs | Outbox-Pattern: DB-Event → Outbox-Worker poolt | `CLAUDE.md` fordert Outbox |
+| API global | OpenTelemetry-Traces/Metrics/Logs | `CLAUDE.md` fordert OTel |
+| `apiFetch()` | Server-seitige Idempotency-Deduplizierung + Rate-Limits | Missing-Control |
+| Public-Booking-Flow | Multi-Service + Magic-Link-Login + Voucher/Coupon + Formular-Step | Baseline 2.3/2.11/2.12/2.13/2.14 |
+| Kalender | Recurring-Group, Multi-Service-Group, Buffer-UI, Break-Blocking | Baseline 1.7/1.8/1.11/1.12 |
 | Empty-States (alle Seiten) | Text → Illustration + Next-Action-CTA | `design-system.md` §Empty-State |
-| Error-UX | String-Errors → Structured mit Copy-ID + Retry-CTA | `design-system.md` §Error-Screen |
+| Error-UX | Strings → structured mit Copy-ID + Retry | `design-system.md` §Error-Screen |
+| Toast-Komponente | Swipe-to-Dismiss + Variants (success/error/info) | `design-system.md` §Components |
+| Staff-PWA (`/m/*`) | Bottom-Tab-Nav + Floating-Action-Button + Haptic-Vibration-API | `design-system.md` §Staff-Mobile |
+| Tip-Picker im POS | Auto-Split nach konfigurierten Rollen (Stylist/Assistent/Shampoo) | Diff #28 vollenden |
+| Predictive-No-Show | Threshold-Actions: >60 Deposit-Request, >80 Waitlist-Parallel | Diff #1 komplett |
 
-## Rewriten (wegwerfen, neu mit Spec-Compliance)
+## Rewriten (wegwerfen, neu)
 
 | Stück | Warum |
 |-------|-------|
-| **Komplettes UI-Design** | Tailwind-Default ist nicht die Messlatte. Neu: shadcn/ui + eigene Design-Tokens in `packages/ui/` + Tailwind-Config mit Brand-Palette |
-| **Alle Buttons / Inputs / Cards** | Ad-hoc im Page-File → 10 Basis-Komponenten in `packages/ui/` mit Varianten + Storybook-Stories |
-| **Kalender-Komponente** | Aktuelle absolute-positionierte Divs → dnd-kit mit Drag-to-Reschedule + spring-ease + Haptics (mobile) + Undo-Toast |
-| **Dashboard** | Aktueller Hallo-Dashboard → Stripe-Dashboard-Dichte mit echten Charts (Recharts oder Tremor) |
-| **Booking-Flow** | Aktueller Fullscreen-Flow → Bottom-Sheet-Flow nach Resy/OpenTable (`design-system.md` §Layout Consumer) |
-| **Kunden-Liste** | Einfache Tabelle → DataTable-Komponente mit Sort/Filter/Search/Bulk-Actions (`design-system.md` §DataTable) |
-| **Public-Booking-Page** | Aktueller Flow → SEO-optimiert + Add-to-Calendar + Cancellation-/Reschedule-Link + Multi-Language + Schema.org-Markup |
+| **Modal/Drawer/Popover** ad-hoc im Page-File | → dedizierte `packages/ui/`-Komponenten mit Radix-UI-Primitives |
+| **Kunden-Liste (aktuelle Table)** | → `DataTable`-Komponente mit Sort/Filter/Search/Bulk |
+| **Empty-States** | Aktuell „Noch keine X" → Illustration + CTA, einheitlich über `<EmptyState>` |
+| **Reports** (aktuelle Sparkline) | → Tremor/Recharts-basierte Dashboard-Tiles (Stripe-Dashboard-Dichte) |
 
-## Neu bauen (existiert nicht)
+## Neu bauen
 
-### Block A — Design-System + Plumbing (Wochen 1–2)
+### Block A — Härtung (Woche 1)
 
-1. `packages/ui/` initialisieren:
-   - Tailwind-Config mit Design-Tokens aus `design-system.md`
-   - shadcn/ui init
-   - 10 Basis-Komponenten: Button, Input, Select, Combobox, DatePicker,
-     TimePicker, Badge, Card, Modal, Drawer, Toast, Avatar, Skeleton,
-     DataTable, CommandPalette, EmptyState, ErrorBoundary
-   - Salon-spezifisch: AppointmentCard, ClientAvatar, ServiceBadge,
-     PriceDisplay, StaffScheduleGrid, TreatmentTimer, BeforeAfterSlider
-2. **Ladle** (schneller als Storybook) als Komponenten-Showcase
-3. **Chromatic** oder Percy für Visual-Regression in CI
-4. **Dark-Mode** via `next-themes`, Tokens gespiegelt (`dark:` + CSS-Vars)
-5. **Motion-Layer** via `motion` (früher Framer Motion) + Ease-Presets in `packages/ui/motion.ts`
-6. **Hero-Screens neu bauen**: Login, Dashboard, Calendar-Day — pixelgenau,
-   Screenshot + Ladle-Link in PR
-7. **Warten auf „Go-Upgrade"** bevor Block B startet
+**Ziel: Produktionsreife auf „Linear-würde-das-einstellen"-Niveau.**
 
-### Block B — Baseline-P0-Lücken (Wochen 3–6)
+1. **Test-Gate in CI**:
+   - Vitest-Ziel: 80 % Coverage in `packages/db`, `packages/utils`,
+     `packages/types`, `apps/api` (Module je 1 Controller- + 1 Service-Test)
+   - Playwright E2E für 5 Golden-Paths: Login, Create-Appointment,
+     Cancel, Public-Booking, POS-Checkout
+   - CI-Gate: rot = kein Merge
+2. **OpenTelemetry**: `@opentelemetry/*` in `apps/api` + `apps/worker`, OTLP-Export
+3. **Outbox-Pattern**: `outbox_events`-Tabelle + Worker-Poller, Reminders +
+   Marketing-Jobs darüber
+4. **Rate-Limiting** (`@fastify/rate-limit`) auf `/v1/public/*`
+5. **Server-seitige Idempotency-Dedupe** (Redis-Key über 24h)
+6. **WorkOS-Auth**: Magic-Link + Session-Cookie, Tenant-Middleware wechseln
+7. **a11y-Gate**: axe-core in Playwright, 0 Violations auf P0-Flows
 
-(In Reihenfolge der Salon-Critical-Need)
+### Block B — Design-System-Härtung (Woche 2)
 
-1. **Kalender Multi-Staff-Spalten** (Baseline 1.2) mit Day/Week-Ansicht
-2. **Drag-to-Reschedule mit dnd-kit + Haptics + Undo** (Diff #21 + Baseline 1.3)
-3. **Click-to-Book** (leerer Slot → Modal mit Pre-Fill)
-4. **Multi-Service-Appointment-Flow** (Baseline 1.8)
-5. **Recurring-Appointments** (Baseline 1.7)
-6. **Waitlist** (Baseline 1.15)
-7. **Buffer-Time + Break-Blocking + Unavailability** (Baseline 1.11–13)
-8. **iCal-Sync + Add-to-Calendar-Link** (Baseline 1.18 + 2.16)
-9. **POS-Grundgerüst**: Tablet-Checkout-UI + Split-Payment + Trinkgeld-Picker +
-   Tap-to-Pay-Stripe-Stub (Baseline 3.1/3.4/3.9/3.2 + Diff #24)
-10. **Confirmation-Email + Cancellation/Reschedule-Self-Service-Links**
-    (Baseline 2.15/2.17/2.18)
-11. **Forms-Builder (Intake + Consent)** mit Drag-Drop + Conditional-Logic +
-    Signature + Pre-Appointment (Baseline 5.1–8)
+1. **Ladle** aufsetzen (schneller als Storybook) mit Stories für alle
+   `packages/ui/`-Komponenten
+2. **Chromatic** oder Percy für Visual-Regression
+3. **Fehlende Basis-Komponenten**: Modal, Drawer, Popover, Tooltip,
+   Combobox, DatePicker, TimePicker, DataTable, ErrorBoundary,
+   Select, Textarea, AvatarGroup
+4. **Salon-spezifisch**: ClientAvatar (VIP-Ring), ServiceBadge
+   (Kategorie-Farbe), StaffScheduleGrid, TreatmentTimer, BeforeAfterSlider
+5. **Keyboard-Shortcut-Help** (`?`-Dialog)
+6. **Micro-Interactions**: Shake-on-Validation-Error, Swipe-to-Delete,
+   Sync-Banner, Skeleton-on-Load > 1s, Konfetti-Trigger bei Tip ≥ 20 €
+7. **Empty-State-Illustrationen** (SVG, monochrom)
 
-### Block C — P0-Differenziatoren (Wochen 7–9)
+### Block C — Baseline-P0-Lücken (Woche 3–5)
 
-1. **Universal Command Palette (⌘K)** mit Fuzzy-Search über Clients,
-   Services, Staff, Navigation (Diff #25)
-2. **1-Klick-DSGVO-Export + Löschung** mit Audit-Log-Proof (Diff #31,
-   Baseline 17.1)
-3. **Tip-Split-Automation** (Trinkgeld → Stylist + Assistent + Shampoo-
-   Prozentual) (Diff #28, Baseline 3.10)
-4. **Single-Thumb-Staff-App (Expo)** mit Heute/Kalender/Kunden-Tabs,
-   Bottom-Nav, Haptics (Diff #22)
-5. **Offline-First (Staff-App)** mit PowerSync oder MMKV + Sync-Queue
-   (Diff #23)
-6. **Celebration-Micro-Interactions** (Konfetti bei Tip > 20 €, Konfetti
-   bei Tages-Ziel erreicht) (`design-system.md` §Signature-Moves)
+1. **Forms & Consent-Modul** (komplett neu):
+   - Form-Builder (Drag-Drop, 10 Feldtypen inkl. Signature)
+   - Conditional-Logic
+   - Photo-Upload + PDF-Export mit Unterschrift
+   - Mandatory-pre-Service-Gate
+   - Pre-Appointment-Link 24h vorher
+   - Template-Library (10 Starter pro Branche)
+   - Minor-Flag mit Sorgeberechtigten-Unterschrift
+2. **POS-Volltiefe**:
+   - Split-Payment (Karte + Bar + Voucher)
+   - Refund (Full + Partial)
+   - Receipt-Formate (Email + SMS + Print + PDF)
+   - Retail-Barcode-Scan (WebRTC)
+   - Recurring-Billing (Memberships)
+   - Payment-Links (SMS)
+3. **Staff-HR**:
+   - RBAC (Admin, Manager, Stylist, Front-Desk, Assistent)
+   - Time-Clock (Clock-in/out via PWA)
+   - Shift-Swap-Request + Time-Off-Request + Approval-Flow
+   - Commission-Rules (pro Service, pro Staff, gestaffelt)
+4. **Multi-Location-Switcher** im Header + Cross-Location-Reports
+5. **Unified-Inbox** (Email + SMS in V1; WhatsApp/IG später)
 
-### Block D — Marketing / Loyalty / Inventar-Grundlage (Wochen 10–12)
+### Block D — P0-Differenziatoren vertiefen (Woche 6–7)
 
-1. **Loyalty**: Points + Tiers + Punch-Card (Baseline 9.1–3)
-2. **Gift-Cards digital** mit iMessage/WhatsApp-Link (Diff #19, Baseline 9.5)
-3. **Marketing-Automation-Flows**: Rebook + Birthday + Win-Back
-   (Baseline 8.6–9)
-4. **Inventar-Light**: Produkt-Liste, Backbar vs Retail, Low-Stock
-   (Baseline 7.1–5)
+1. **Diff #21 Drag-to-Reschedule Perfekt**: Haptic-Vibration-API,
+   Undo-Toast 5 s, spring-ease-Drop-Animation
+2. **Diff #22 Staff-App**: Expo-App aufsetzen (React Native, shared
+   `packages/ui` via Tamagui oder NativeWind), TestFlight-Build
+3. **Diff #23 Offline-First**: PowerSync oder MMKV + Sync-Queue in
+   Staff-App
+4. **Diff #24 Tap-to-Pay real**: Stripe Terminal SDK (iOS + Android),
+   Salon-Side-Setup
+5. **Diff #28 Tip-Split-Automation**: Rule-Engine (Stylist 100%,
+   Assistent 20% von Farben, Shampoo 10%), Payout-Ledger
 
-### Block E — P1-Differenziatoren (Monat 4)
+### Block E — P1-Differenziatoren (Monat 2)
 
-In dieser Reihenfolge, je 1–2 Wochen:
-
-- #13 Fair Fee Structure (Marketplace-Preise) + Transparenz-Dashboard
-- #4 AI Voice Receptionist (Vapi + Claude Sonnet 4)
-- #18 Branded-App pro Salon (Expo EAS + Fastlane Automatisierung)
-- #32 TSE-Live-Monitoring (DE) + fiskaly-Adapter
-- #33 E-Rechnung automatisch (XRechnung/ZUGFeRD)
-- #1 Predictive No-Show-Scoring (ML-Pipeline)
+- #1 Predictive-No-Show vollenden: Auto-Deposit-Request + Parallel-Waitlist-Offer
+- #4 AI Voice Receptionist (Vapi + Claude Sonnet)
+- #15 Verified-Reviews (Review nur nach bestätigter Buchung)
+- #18 Branded-App pro Salon (Expo EAS + Fastlane Automation)
 - #26 Color-Formula-Library (Client-Profil + Auto-Inventar-Abzug)
-- #36 Payment-Dispute-Auto-Defender (Stripe-Disputes-API + KI-Paket)
-- #19 Digital Gift-Cards via iMessage
-- #38 Smart-Loyalty-Reminders (1×/Monat personalisiert)
+- #29 Staff-Self-Service-Scheduling (Swap/Off in Staff-App)
+- #32 TSE-Live-Monitoring (fiskaly-Adapter, Status-Dashboard)
+- #33 E-Rechnung (XRechnung/ZUGFeRD auto)
+- #36 Payment-Dispute-Auto-Defender (Stripe Disputes API + KI-Paket)
+- #38 Smart-Loyalty-Reminders (1×/Monat, personalisiert)
 
-## Komplett fehlt (Must-in-V1, nicht MVP)
+### Block F — Developer-API (Monat 3)
 
-Liste aller Baseline-Features aus `feature-completeness.md`, die
-**auch nach MVP fehlen würden**, sortiert nach Kategorie — als Phase-2-
-Einstieg für monthly review.
+- OpenAPI 3.1 (auto-generiert aus NestJS-Decorators)
+- GraphQL-Schema (nur Read, V1)
+- Webhooks (30+ Events, HMAC-signed)
+- OAuth 2.0 für Partner-Apps
+- SDK (TypeScript v1)
+- Sandbox-Environment
+- Rate-Limit-Dashboards
 
-Kategorien mit ≥ 80 % Fehlquote nach MVP-Abschluss (müssen in V1 rein):
+### Block G — P2 / V2 (später)
 
-- Forms & Consent (bleibt 0 % nach MVP → Block B2 erweitern)
-- POS-Volltiefe: Split-Payment, Refund, Fiskal, Cash-Drawer, Payment-Links
-- CRM: Photo-Historie, Color-Formula, Allergien-Flag, VIP, Duplicate-Detect
-- Staff: Time-Clock, Commission-Rules, Payroll-Export
-- Kommunikation: Unified-Inbox (SMS + Email + WhatsApp + Instagram-DM)
-- Marketplace: komplett (geplant Phase 2)
-- AI-Layer: alle 12 Features
-- Compliance: HIPAA-Mode, PCI-SAQ-A, 2FA, SOC-2-Prep, Audit-Log,
-  Data-Residency
-- Developer-API: OpenAPI-3.1, GraphQL, Webhooks, OAuth, SDK
+AR Try-On, AI-Photo-to-Service, Dynamic-Pricing, HIPAA-Mode, Marketplace,
+Multi-Location-Franchise-Dashboards, Consumer-App, Sustainability-Tracker.
 
-## Neue MVP-Definition nach diesem Upgrade
+## Neue MVP-Exit-Kriterien
 
-**MVP-Exit-Kriterien (statt dem alten Phase-1-Ziel):**
-
-- [ ] Design-System steht, 10 Basis-Komponenten + 7 Salon-spezifische
-- [ ] Ladle + Chromatic in CI grün
-- [ ] Dark-Mode an allen Screens
-- [ ] Lighthouse ≥ 95 auf allen Admin- und Booking-Flows
-- [ ] a11y axe-core in CI, 0 Violations auf P0-Flows
-- [ ] Drag-to-Reschedule + Undo funktioniert mobile + desktop
-- [ ] ⌘K Command Palette öffnet in < 100 ms
-- [ ] 1-Klick-DSGVO-Export funktioniert
-- [ ] Staff-Expo-App auf TestFlight
-- [ ] 1 echter Salon (Beautycenter by Neta) nutzt es für 7 Tage
-  mit ≥ 10 realen Buchungen
+- [ ] CI-Gate: Tests ≥ 80 % Coverage in Core-Packages, 5 Playwright E2E grün
+- [ ] OTel in API + Worker, Traces sichtbar
+- [ ] Outbox-Pattern für alle Event-Publishes
+- [ ] WorkOS-Auth live (Magic-Link + Session-Cookie)
+- [ ] Ladle läuft, Chromatic grün, 0 axe-Violations auf P0-Flows
+- [ ] Dark-Mode an allen Admin- und Booking-Screens
+- [ ] Lighthouse ≥ 95 auf allen Admin + Booking Flows
+- [ ] Forms-Builder + Signature + Mandatory-Gate funktioniert
+- [ ] POS: Split-Payment + Refund + Receipt-Formate
+- [ ] RBAC + Time-Clock + Shift-Swap in Staff-PWA
+- [ ] Staff-Expo-App auf TestFlight mit Offline-Sync
+- [ ] Tap-to-Pay (Stripe Terminal) live im POS
+- [ ] Beautycenter by Neta nutzt es produktiv für 7 Tage mit ≥ 10 Buchungen
 
 ## Nächste konkrete Schritte (nach „Go-Upgrade")
 
-1. **Branch `upgrade/design-system`** erstellen
-2. `packages/ui/` Setup inkl. Tailwind-Config-Tokens
-3. 10 Basis-Komponenten + Ladle
-4. Hero-Screens neu bauen: Login (WorkOS Magic-Link),
-   Dashboard, Calendar-Day
-5. Screenshots + Ladle-Link in AUDIT reviewen
-6. Bei „OK" → Block B
+1. Branch `upgrade/block-a-haertung` erstellen
+2. Vitest-Tests hinzufügen für `appointments`, `payments`, `public-bookings`,
+   `reminders`, `clients` — je Controller + Service
+3. Playwright-Setup + 5 E2E-Golden-Paths
+4. OTel-Instrumentation
+5. Outbox-Tabelle + Worker-Poller + Reminder/Marketing-Migration darauf
+6. WorkOS-Integration
+7. Screenshot + CI-Grüne in `DISPATCH.md` reporten
+8. Bei OK → Block B (Design-System-Härtung)
 
-## Was **nicht** mehr gebaut wird, bis Design-System steht
+## Was **nicht** mehr gebaut wird, bis Härtung steht
 
-- Keine neuen Feature-Pages im aktuellen Tailwind-Default-Style
+- Keine neuen Feature-Module ohne Test-Coverage
 - Kein AI-Feature (P2), bis Baseline steht
 - Kein Marketplace (Phase 2)
 - Kein AR/HIPAA/Dynamic-Pricing (P2)
 
 ## Verbote bestätigt
 
-- ❌ Eigener Payment-Code → Stripe-Adapter (✓ schon so gemacht)
-- ❌ Eigene SMS/Email → Twilio/Postmark (✓ Postmark)
-- ❌ Eigenes Auth → WorkOS (noch nicht integriert, ist in Anpassen)
-- ❌ Eigene Fiskal-Logik → fiskaly (noch nicht)
-- ❌ Code aus beautyneta-web kopieren (✓ nicht gemacht)
+- ❌ Eigener Payment-Code → Stripe-Adapter (✓ so gemacht)
+- ❌ Eigene SMS/Email → Twilio/Postmark (✓ Postmark stub)
+- ❌ Eigenes Auth → WorkOS (offen, in Block A)
+- ❌ Eigene Fiskal-Logik → fiskaly (offen, in Block E / #32)
+- ❌ Code aus beautyneta-* kopieren (✓ nicht gemacht)
 
 ## Warte auf „Go-Upgrade"
