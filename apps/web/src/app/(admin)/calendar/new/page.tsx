@@ -60,9 +60,21 @@ function todayIso(): string {
 export default async function NewAppointmentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; time?: string; staffId?: string }>;
+  searchParams: Promise<{
+    date?: string;
+    time?: string;
+    staffId?: string;
+    clientId?: string;
+    serviceId?: string;
+  }>;
 }): Promise<React.JSX.Element> {
-  const { date, time, staffId: preselectedStaff } = await searchParams;
+  const {
+    date,
+    time,
+    staffId: preselectedStaff,
+    clientId: preselectedClient,
+    serviceId: preselectedService,
+  } = await searchParams;
   const { services, staff, clients } = await loadFormData();
   const day = date ?? todayIso();
   const defaultTime = time ?? '10:00';
@@ -103,7 +115,11 @@ export default async function NewAppointmentPage({
             </div>
 
             <Field label="Service" required>
-              <Select name="serviceId" required defaultValue="">
+              <Select
+                name="serviceId"
+                required
+                defaultValue={preselectedService ?? ''}
+              >
                 <option value="">— wählen —</option>
                 {services.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -133,7 +149,7 @@ export default async function NewAppointmentPage({
                 Kundin
               </legend>
               <Field label="Bestehende Kundin">
-                <Select name="clientId" defaultValue="">
+                <Select name="clientId" defaultValue={preselectedClient ?? ''}>
                   <option value="">— neue Kundin anlegen —</option>
                   {clients.map((c) => (
                     <option key={c.id} value={c.id}>

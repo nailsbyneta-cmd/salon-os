@@ -28,8 +28,9 @@ interface Appt {
   startAt: string;
   endAt: string;
   status: string;
+  staffId: string;
   staff: { firstName: string; lastName: string };
-  items: Array<{ service: { name: string } }>;
+  items: Array<{ serviceId: string; service: { name: string } }>;
 }
 
 async function loadClient(id: string): Promise<Client | null> {
@@ -127,12 +128,20 @@ export default async function ClientDetailPage({
                 {client.firstName} {client.lastName}
               </h1>
             </div>
-            <Link
-              href={`/clients/${client.id}/edit`}
-              className="inline-flex h-9 items-center rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary hover:bg-surface-raised"
-            >
-              Bearbeiten
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/calendar/new?clientId=${client.id}`}
+                className="inline-flex h-9 items-center rounded-md bg-brand px-3 text-xs font-medium text-brand-foreground transition-colors hover:bg-brand/90"
+              >
+                + Neuer Termin
+              </Link>
+              <Link
+                href={`/clients/${client.id}/edit`}
+                className="inline-flex h-9 items-center rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary hover:bg-surface-raised"
+              >
+                Bearbeiten
+              </Link>
+            </div>
           </div>
           <p className="mt-1 text-sm text-text-secondary">
             {client.email ?? '—'}
@@ -245,7 +254,7 @@ export default async function ClientDetailPage({
             <CardBody className="p-0">
               <ul className="divide-y divide-border">
                 {upcoming.map((a) => (
-                  <ApptRow key={a.id} a={a} />
+                  <ApptRow key={a.id} a={a} clientId={client.id} />
                 ))}
               </ul>
             </CardBody>
@@ -268,7 +277,7 @@ export default async function ClientDetailPage({
             <CardBody className="p-0">
               <ul className="divide-y divide-border">
                 {past.map((a) => (
-                  <ApptRow key={a.id} a={a} />
+                  <ApptRow key={a.id} a={a} clientId={client.id} showRebook />
                 ))}
               </ul>
             </CardBody>
@@ -317,9 +326,22 @@ export default async function ClientDetailPage({
   );
 }
 
-function ApptRow({ a }: { a: Appt }): React.JSX.Element {
+function ApptRow({
+  a,
+  clientId,
+  showRebook,
+}: {
+  a: Appt;
+  clientId: string;
+  showRebook?: boolean;
+}): React.JSX.Element {
   const service = a.items.map((i) => i.service.name).join(', ') || '—';
   const staff = `${a.staff.firstName} ${a.staff.lastName[0]}.`;
+  const primaryServiceId = a.items[0]?.serviceId;
+  const rebookHref = primaryServiceId
+    ? `/calendar/new?clientId=${clientId}&serviceId=${primaryServiceId}&staffId=${a.staffId}`
+    : `/calendar/new?clientId=${clientId}&staffId=${a.staffId}`;
+
   return (
     <li className="flex items-center gap-4 px-5 py-3 text-sm">
       <div className="w-32 tabular-nums text-text-secondary">
@@ -336,12 +358,26 @@ function ApptRow({ a }: { a: Appt }): React.JSX.Element {
         </span>
       </div>
       <div className="flex-1">
-        <div className="font-medium text-text-primary">{service}</div>
-        <div className="text-xs text-text-muted">{staff}</div>
+        <Link
+          href={`/calendar/${a.id}`}
+          className="block hover:underline"
+        >
+          <div className="font-medium text-text-primary">{service}</div>
+          <div className="text-xs text-text-muted">{staff}</div>
+        </Link>
       </div>
       <Badge tone={statusTone[a.status] ?? 'neutral'}>
         {statusLabel[a.status] ?? a.status}
       </Badge>
+      {showRebook && a.status !== 'CANCELLED' && a.status !== 'NO_SHOW' ? (
+        <Link
+          href={rebookHref}
+          className="inline-flex h-8 items-center rounded-md border border-border bg-surface px-2.5 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+          title="Gleichen Service erneut buchen"
+        >
+          ↻ Rebook
+        </Link>
+      ) : null}
     </li>
   );
 }
