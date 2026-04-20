@@ -25,6 +25,30 @@ export class RemindersService implements OnModuleDestroy {
     });
   }
 
+  async sendConfirmationNow(args: {
+    appointmentId: string;
+    tenantId: string;
+  }): Promise<void> {
+    if (!this.queue) return;
+    await this.queue.add(
+      `confirmation:${args.appointmentId}`,
+      {
+        appointmentId: args.appointmentId,
+        tenantId: args.tenantId,
+        channel: 'email',
+        kind: 'confirmation',
+      },
+      {
+        jobId: `confirmation:${args.appointmentId}`,
+        removeOnComplete: true,
+        removeOnFail: false,
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 30_000 },
+      },
+    );
+    this.logger.log(`Confirmation enqueued: appt=${args.appointmentId}`);
+  }
+
   async scheduleEmailReminder(args: {
     appointmentId: string;
     tenantId: string;
@@ -32,18 +56,16 @@ export class RemindersService implements OnModuleDestroy {
     leadTimeMs?: number;
   }): Promise<void> {
     if (!this.queue) return;
-    const leadTimeMs = args.leadTimeMs ?? 24 * 60 * 60 * 1000; // 24h
+    const leadTimeMs = args.leadTimeMs ?? 24 * 60 * 60 * 1000;
     const delay = args.startAt.getTime() - Date.now() - leadTimeMs;
-    if (delay <= 0) {
-      // Termin ist schon innerhalb des Lead-Fensters → kein Reminder.
-      return;
-    }
+    if (delay <= 0) return;
     await this.queue.add(
       `reminder:${args.appointmentId}`,
       {
         appointmentId: args.appointmentId,
         tenantId: args.tenantId,
         channel: 'email',
+        kind: 'reminder-24h',
       },
       {
         delay,

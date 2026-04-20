@@ -4,9 +4,14 @@
  */
 export const QUEUE_REMINDERS = 'reminders';
 
+export type ReminderKind =
+  | 'confirmation' // direkt nach Buchung
+  | 'reminder-24h' // 24 h vorher
+  | 'reminder-2h'; // 2 h vorher (Phase 2: SMS)
+
 export interface ReminderJob {
   appointmentId: string;
   tenantId: string;
-  /** 24h before startAt → email only. Später: +2h → SMS. */
   channel: 'email' | 'sms';
+  kind?: ReminderKind;
 }

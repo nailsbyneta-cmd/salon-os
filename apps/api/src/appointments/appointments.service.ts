@@ -135,17 +135,21 @@ export class AppointmentsService {
         },
       );
 
-      // Reminder-Job 24h vor startAt einplanen.
-      // Fehler hier dürfen den Buchungsflow nicht killen.
+      // Confirmation sofort + 24h-Reminder. Fehler dürfen den Buchungsflow
+      // nicht killen.
+      this.reminders
+        .sendConfirmationNow({
+          appointmentId: created.id,
+          tenantId: ctx.tenantId,
+        })
+        .catch(() => undefined);
       this.reminders
         .scheduleEmailReminder({
           appointmentId: created.id,
           tenantId: ctx.tenantId,
           startAt: created.startAt,
         })
-        .catch(() => {
-          /* logged in RemindersService */
-        });
+        .catch(() => undefined);
 
       return created;
     } catch (err) {

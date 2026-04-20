@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { prisma } from '@salon-os/db';
 import { PublicBookingsController } from './public-bookings.controller.js';
 import { PublicBookingsService } from './public-bookings.service.js';
+import { SelfServiceController } from './self-service.controller.js';
 
 /**
  * Public-Bookings-Module.
@@ -10,7 +11,7 @@ import { PublicBookingsService } from './public-bookings.service.js';
  * tenant-scoped Connection via withTenant() gewechselt.
  */
 @Module({
-  controllers: [PublicBookingsController],
+  controllers: [PublicBookingsController, SelfServiceController],
   providers: [
     PublicBookingsService,
     { provide: 'PRISMA_PUBLIC', useValue: prisma },

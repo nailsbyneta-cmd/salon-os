@@ -261,14 +261,18 @@ export class PublicBookingsService {
       });
 
       this.reminders
+        .sendConfirmationNow({
+          appointmentId: created.id,
+          tenantId: tenant.id,
+        })
+        .catch(() => undefined);
+      this.reminders
         .scheduleEmailReminder({
           appointmentId: created.id,
           tenantId: tenant.id,
           startAt: created.startAt,
         })
-        .catch(() => {
-          /* logged in RemindersService */
-        });
+        .catch(() => undefined);
 
       return created;
     } catch (err) {

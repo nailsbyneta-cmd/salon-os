@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   DndContext,
   PointerSensor,
@@ -54,10 +55,18 @@ export function CalendarDnd({
   appts: DndAppt[];
   day: string;
 }): React.JSX.Element {
+  const router = useRouter();
   const [appts, setAppts] = React.useState(initialAppts);
   const [undo, setUndo] = React.useState<UndoBanner | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
+
+  const handleSlotClick = (minute: number): void => {
+    const hours = Math.floor((CAL_START_MIN + minute) / 60);
+    const mins = (CAL_START_MIN + minute) % 60;
+    const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    router.push(`/calendar/new?date=${day}&time=${timeStr}`);
+  };
 
   React.useEffect(() => {
     setAppts(initialAppts);
@@ -184,13 +193,14 @@ export function CalendarDnd({
             ))}
           </div>
           <div className="relative">
-            {/* Drop-Slots (15-min Raster) */}
+            {/* Drop-Slots (15-min Raster) + Click-to-book */}
             {slots.map((m) => (
               <Slot
                 key={m}
                 minute={m}
                 topPx={m * PX_PER_MINUTE}
                 isHourBoundary={m % 60 === 0 && m > 0}
+                onClick={handleSlotClick}
               />
             ))}
             {/* Aktuelle Zeit-Linie, wenn Tag = heute */}
@@ -247,24 +257,31 @@ function Slot({
   minute,
   topPx,
   isHourBoundary,
+  onClick,
 }: {
   minute: number;
   topPx: number;
   isHourBoundary: boolean;
+  onClick: (minute: number) => void;
 }): React.JSX.Element {
   const { setNodeRef, isOver } = useDroppable({
     id: `slot:${minute}`,
   });
   return (
-    <div
+    <button
+      type="button"
       ref={setNodeRef}
-      className={`absolute left-0 right-0 transition-colors ${
-        isOver ? 'bg-accent/15' : ''
+      onClick={() => onClick(minute)}
+      className={`absolute left-0 right-0 text-left transition-colors cursor-pointer ${
+        isOver ? 'bg-accent/15' : 'hover:bg-accent/5'
       } ${isHourBoundary ? 'border-t border-border/60' : 'border-t border-border/20'}`}
       style={{
         top: topPx,
         height: SLOT_MINUTES * PX_PER_MINUTE,
       }}
+      aria-label={`Neuer Termin um ${Math.floor((CAL_START_MIN + minute) / 60)
+        .toString()
+        .padStart(2, '0')}:${((CAL_START_MIN + minute) % 60).toString().padStart(2, '0')}`}
     />
   );
 }

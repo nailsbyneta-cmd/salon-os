@@ -60,11 +60,12 @@ function todayIso(): string {
 export default async function NewAppointmentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; time?: string }>;
 }): Promise<React.JSX.Element> {
-  const { date } = await searchParams;
+  const { date, time } = await searchParams;
   const { services, staff, clients } = await loadFormData();
   const day = date ?? todayIso();
+  const defaultTime = time ?? '10:00';
 
   return (
     <div className="mx-auto max-w-2xl p-8">
@@ -94,7 +95,7 @@ export default async function NewAppointmentPage({
                 <Input
                   type="time"
                   name="time"
-                  defaultValue="10:00"
+                  defaultValue={defaultTime}
                   step="900"
                   required
                 />
