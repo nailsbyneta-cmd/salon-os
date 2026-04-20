@@ -11,6 +11,7 @@ import {
   Avatar,
 } from '@salon-os/ui';
 import { searchCommand } from '@/app/search-action';
+import { Celebrate } from '@/components/celebrate';
 
 interface NavItem {
   href: string;
@@ -200,6 +201,9 @@ export function AdminShell({
         onOpenChange={setPaletteOpen}
         asyncItems={asyncLoader}
       />
+      <React.Suspense fallback={null}>
+        <Celebrate />
+      </React.Suspense>
     </div>
   );
 }

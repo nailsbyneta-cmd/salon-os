@@ -1,4 +1,5 @@
 'use server';
+import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { apiFetch } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
@@ -17,6 +18,11 @@ export async function transitionAppointment(
     role: ctx.role,
   });
   revalidatePath('/calendar');
+  revalidatePath(`/calendar/${appointmentId}`);
+  // Celebrate-Trigger bei „complete"
+  if (to === 'complete') {
+    redirect(`/calendar/${appointmentId}?celebrate=complete`);
+  }
 }
 
 export async function cancelAppointment(
@@ -32,4 +38,5 @@ export async function cancelAppointment(
     body: { reason: reason || 'Auf Kundenwunsch storniert', notifyClient: false },
   });
   revalidatePath('/calendar');
+  revalidatePath(`/calendar/${appointmentId}`);
 }

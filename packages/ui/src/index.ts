@@ -22,6 +22,7 @@ export {
 } from './appointment-card.js';
 export { Stat, type StatProps } from './stat.js';
 export { ThemeProvider, ThemeScript, useTheme } from './theme-provider.js';
+export { ToastProvider, useToast, type ToastItem } from './toast.js';
 export {
   CommandPalette,
   type CommandPaletteProps,

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import { ThemeProvider, ThemeScript } from '@salon-os/ui';
+import { ThemeProvider, ThemeScript, ToastProvider } from '@salon-os/ui';
 import './globals.css';
 
 const inter = Inter({
@@ -39,7 +39,9 @@ export default function RootLayout({
     <html lang="de-CH" className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-text-primary antialiased">
         <ThemeScript />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

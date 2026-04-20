@@ -113,5 +113,5 @@ export async function createAppointment(form: FormData): Promise<void> {
     throw err;
   }
 
-  redirect(`/calendar?date=${date}`);
+  redirect(`/calendar?date=${date}&celebrate=booking`);
 }
