@@ -1,31 +1,46 @@
 import Link from 'next/link';
-import { Badge, Button, Card, CardBody, EmptyState } from '@salon-os/ui';
+import { Badge, Button, Card, CardBody, EmptyState, cn } from '@salon-os/ui';
 import { CalendarDnd, type DndAppt } from '@/components/calendar-dnd';
+import { CalendarWeek } from '@/components/calendar-week';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { transitionAppointment, cancelAppointment } from './actions';
 
 type Status = DndAppt['status'];
+type View = 'day' | 'week';
 
 interface Appt extends DndAppt {
   notes: string | null;
 }
 
-function dayRange(dateIso: string): { from: string; to: string } {
+function dayRange(dateIso: string): { from: Date; to: Date } {
   const d = new Date(dateIso);
   const start = new Date(d);
   start.setHours(0, 0, 0, 0);
   const end = new Date(d);
   end.setHours(23, 59, 59, 999);
-  return { from: start.toISOString(), to: end.toISOString() };
+  return { from: start, to: end };
 }
 
-async function loadAppointments(date: string): Promise<Appt[]> {
+function weekRange(dateIso: string): { from: Date; to: Date; weekStart: Date } {
+  const d = new Date(dateIso);
+  d.setHours(0, 0, 0, 0);
+  // Woche startet Montag (ISO)
+  const day = d.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const weekStart = new Date(d);
+  weekStart.setDate(d.getDate() + diffToMonday);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+  return { from: weekStart, to: weekEnd, weekStart };
+}
+
+async function loadAppointments(from: Date, to: Date): Promise<Appt[]> {
   const ctx = getCurrentTenant();
-  const { from, to } = dayRange(date);
   try {
     const res = await apiFetch<{ appointments: Appt[] }>(
-      `/v1/appointments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      `/v1/appointments?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`,
       { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
     );
     return res.appointments;
@@ -39,36 +54,94 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function addDays(iso: string, days: number): string {
+  const d = new Date(iso);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function weekNumber(d: Date): number {
+  const target = new Date(d.valueOf());
+  const dayNr = (d.getDay() + 6) % 7;
+  target.setDate(target.getDate() - dayNr + 3);
+  const firstThursday = new Date(target.getFullYear(), 0, 4);
+  const diff = target.getTime() - firstThursday.getTime();
+  return 1 + Math.round(diff / 604800000);
+}
+
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; view?: string }>;
 }): Promise<React.JSX.Element> {
-  const { date } = await searchParams;
+  const { date, view: viewParam } = await searchParams;
+  const view: View = viewParam === 'week' ? 'week' : 'day';
   const day = date ?? todayIso();
-  const appts = await loadAppointments(day);
+
+  let from: Date;
+  let to: Date;
+  let weekStart: Date | null = null;
+  if (view === 'week') {
+    const r = weekRange(day);
+    from = r.from;
+    to = r.to;
+    weekStart = r.weekStart;
+  } else {
+    const r = dayRange(day);
+    from = r.from;
+    to = r.to;
+  }
+  const appts = await loadAppointments(from, to);
+
+  const title =
+    view === 'week' && weekStart
+      ? `KW ${weekNumber(weekStart)} · ${weekStart.toLocaleDateString('de-CH', { day: '2-digit', month: 'short' })} – ${new Date(weekStart.getTime() + 6 * 86_400_000).toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: 'numeric' })}`
+      : new Date(day).toLocaleDateString('de-CH', {
+          weekday: 'long',
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+        });
+
+  const prevDate = addDays(day, view === 'week' ? -7 : -1);
+  const nextDate = addDays(day, view === 'week' ? 7 : 1);
 
   return (
     <div className="mx-auto max-w-6xl p-8">
-      <header className="mb-6 flex items-end justify-between">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Kalender
           </p>
           <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
-            {new Date(day).toLocaleDateString('de-CH', {
-              weekday: 'long',
-              day: '2-digit',
-              month: 'long',
-              year: 'numeric',
-            })}
+            {title}
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
-            {appts.length} Termine · Studio 1, St. Gallen Winkeln · Ziehen zum Umbuchen
+            {appts.length} Termine · Studio 1
+            {view === 'day' ? ' · Ziehen zum Umbuchen' : ''}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <ViewToggle current={view} day={day} />
+          <div className="flex items-center gap-1">
+            <Link href={`/calendar?view=${view}&date=${prevDate}`}>
+              <Button variant="secondary" size="md" aria-label="Vorherige">
+                ←
+              </Button>
+            </Link>
+            <Link href={`/calendar?view=${view}&date=${todayIso()}`}>
+              <Button variant="secondary" size="md">
+                Heute
+              </Button>
+            </Link>
+            <Link href={`/calendar?view=${view}&date=${nextDate}`}>
+              <Button variant="secondary" size="md" aria-label="Nächste">
+                →
+              </Button>
+            </Link>
+          </div>
           <form method="get" className="flex items-center gap-2">
+            <input type="hidden" name="view" value={view} />
             <input
               type="date"
               name="date"
@@ -87,9 +160,13 @@ export default async function CalendarPage({
         </div>
       </header>
 
-      <CalendarDnd appts={appts} day={day} />
+      {view === 'week' && weekStart ? (
+        <CalendarWeek appts={appts} weekStart={weekStart} />
+      ) : (
+        <CalendarDnd appts={appts} day={day} />
+      )}
 
-      {appts.length === 0 ? (
+      {view === 'day' && appts.length === 0 ? (
         <Card className="mt-6">
           <EmptyState
             title="Heute frei"
@@ -101,7 +178,9 @@ export default async function CalendarPage({
             }
           />
         </Card>
-      ) : (
+      ) : null}
+
+      {view === 'day' && appts.length > 0 ? (
         <section className="mt-8">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
             Termin-Details
@@ -116,7 +195,38 @@ export default async function CalendarPage({
             </CardBody>
           </Card>
         </section>
-      )}
+      ) : null}
+    </div>
+  );
+}
+
+function ViewToggle({
+  current,
+  day,
+}: {
+  current: View;
+  day: string;
+}): React.JSX.Element {
+  const opts: Array<{ id: View; label: string }> = [
+    { id: 'day', label: 'Tag' },
+    { id: 'week', label: 'Woche' },
+  ];
+  return (
+    <div className="inline-flex items-center rounded-md border border-border bg-surface p-0.5">
+      {opts.map((o) => (
+        <Link
+          key={o.id}
+          href={`/calendar?view=${o.id}&date=${day}`}
+          className={cn(
+            'rounded-sm px-3 py-1.5 text-xs font-medium transition-colors',
+            current === o.id
+              ? 'bg-brand text-brand-foreground'
+              : 'text-text-secondary hover:text-text-primary',
+          )}
+        >
+          {o.label}
+        </Link>
+      ))}
     </div>
   );
 }
@@ -170,11 +280,11 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
           </form>
         ) : null}
         {a.status === 'IN_SERVICE' ? (
-          <form action={transition.bind(null, 'complete')}>
-            <Button type="submit" variant="accent" size="sm">
-              Abschliessen
+          <Link href={`/pos/${a.id}`}>
+            <Button variant="accent" size="sm">
+              Kassieren →
             </Button>
-          </form>
+          </Link>
         ) : null}
         {a.status !== 'COMPLETED' && a.status !== 'CANCELLED' ? (
           <form action={cancel.bind(null, 'Auf Kundenwunsch')}>
