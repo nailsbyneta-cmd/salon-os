@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Button, Card, CardBody, Input } from '@salon-os/ui';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -52,29 +53,28 @@ export default async function BookingSlots({
 
   const grouped = new Map<string, Slot[]>();
   for (const s of slots) {
-    const hour = new Date(s.startAt).toISOString().slice(11, 13);
-    const bucket = hour < '12' ? 'Vormittag' : hour < '17' ? 'Nachmittag' : 'Abend';
+    const hour = new Date(s.startAt).getHours();
+    const bucket = hour < 12 ? 'Vormittag' : hour < 17 ? 'Nachmittag' : 'Abend';
     if (!grouped.has(bucket)) grouped.set(bucket, []);
     grouped.get(bucket)!.push(s);
   }
 
   return (
     <main className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link
-          href={`/book/${slug}`}
-          className="text-sm text-neutral-500 hover:text-neutral-900"
-        >
-          ← Zurück
-        </Link>
-      </div>
+      <Link
+        href={`/book/${slug}`}
+        className="inline-flex text-sm text-text-muted transition-colors hover:text-text-primary"
+      >
+        ← Zurück
+      </Link>
 
       <header>
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
           Termin wählen
         </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-          Freie Zeiten am {new Date(selectedDate).toLocaleDateString('de-CH', {
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-text-primary">
+          Freie Zeiten am{' '}
+          {new Date(selectedDate).toLocaleDateString('de-CH', {
             weekday: 'long',
             day: '2-digit',
             month: 'long',
@@ -82,31 +82,30 @@ export default async function BookingSlots({
         </h1>
       </header>
 
-      <form method="get" className="flex items-center gap-2">
+      <form method="get" className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="location" value={location} />
-        <input
+        <Input
           type="date"
           name="date"
           defaultValue={selectedDate}
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          className="w-44"
         />
-        <button
-          type="submit"
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
-        >
+        <Button type="submit" variant="secondary">
           Anzeigen
-        </button>
+        </Button>
       </form>
 
       {slots.length === 0 ? (
-        <p className="rounded-xl border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500">
-          An diesem Tag sind keine Termine frei. Wähle ein anderes Datum.
-        </p>
+        <Card>
+          <CardBody className="py-10 text-center text-sm text-text-secondary">
+            An diesem Tag sind keine Termine frei. Wähle ein anderes Datum.
+          </CardBody>
+        </Card>
       ) : (
         <div className="space-y-6">
           {[...grouped.entries()].map(([label, list]) => (
             <section key={label}>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-neutral-500">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
                 {label}
               </h2>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -114,15 +113,15 @@ export default async function BookingSlots({
                   <Link
                     key={`${s.staffId}-${s.startAt}`}
                     href={`/book/${slug}/confirm?serviceId=${serviceId}&locationId=${location}&staffId=${s.staffId}&startAt=${encodeURIComponent(s.startAt)}`}
-                    className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-center text-sm hover:border-neutral-900"
+                    className="group flex flex-col items-center rounded-lg border border-border bg-surface px-3 py-3 text-center shadow-sm transition-all hover:-translate-y-[1px] hover:border-accent hover:bg-accent/5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   >
-                    <div className="font-medium tabular-nums">
+                    <div className="text-base font-semibold tabular-nums text-text-primary group-hover:text-accent">
                       {new Date(s.startAt).toLocaleTimeString('de-CH', {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
                     </div>
-                    <div className="mt-0.5 truncate text-[11px] text-neutral-500">
+                    <div className="mt-0.5 w-full truncate text-[11px] text-text-secondary">
                       {s.staffDisplayName}
                     </div>
                   </Link>
