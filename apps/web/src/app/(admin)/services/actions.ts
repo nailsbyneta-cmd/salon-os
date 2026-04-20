@@ -85,3 +85,38 @@ export async function deleteService(id: string): Promise<void> {
   });
   revalidatePath('/services');
 }
+
+export async function updateService(id: string, form: FormData): Promise<void> {
+  const ctx = getCurrentTenant();
+  const name = form.get('name')?.toString().trim();
+  const durationMinutes = Number(form.get('durationMinutes'));
+  const basePrice = Number(form.get('basePrice'));
+  const description = form.get('description')?.toString().trim() || undefined;
+  const bookable = form.get('bookable') === 'on';
+
+  if (!name) throw new Error('Name fehlt.');
+
+  try {
+    await apiFetch(`/v1/services/${id}`, {
+      method: 'PATCH',
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+      body: {
+        name,
+        description,
+        durationMinutes,
+        basePrice,
+        bookable,
+      },
+    });
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw new Error(err.problem?.title ?? err.message);
+    }
+    throw err;
+  }
+
+  revalidatePath('/services');
+  redirect('/services');
+}

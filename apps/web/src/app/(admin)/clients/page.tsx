@@ -1,5 +1,13 @@
 import Link from 'next/link';
-import { Avatar, Badge, Button, Card, CardBody, EmptyState, Input } from '@salon-os/ui';
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  EmptyState,
+  Input,
+} from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
@@ -50,17 +58,27 @@ export default async function ClientsPage({
             {clients.length} {clients.length === 1 ? 'Kundin' : 'Kundinnen'} im System
           </p>
         </div>
-        <form className="flex gap-2" method="get">
-          <Input
-            name="q"
-            defaultValue={q ?? ''}
-            placeholder="Suchen…"
-            className="w-56"
-          />
-          <Button type="submit" variant="secondary">
-            Suchen
-          </Button>
-        </form>
+        <div className="flex flex-wrap items-center gap-2">
+          <form className="flex gap-2" method="get">
+            <Input
+              name="q"
+              defaultValue={q ?? ''}
+              placeholder="Suchen…"
+              className="w-56"
+            />
+            <Button type="submit" variant="secondary">
+              Suchen
+            </Button>
+          </form>
+          <Link href="/clients/new">
+            <Button
+              variant="primary"
+              iconLeft={<span className="text-base leading-none">+</span>}
+            >
+              Neue Kundin
+            </Button>
+          </Link>
+        </div>
       </header>
 
       <Card>

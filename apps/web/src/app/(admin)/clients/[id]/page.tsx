@@ -117,13 +117,23 @@ export default async function ClientDetailPage({
           color="hsl(var(--brand-accent))"
           vip={client.totalVisits >= 10}
         />
-        <div className="flex-1">
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-            Kundin
-          </p>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
-            {client.firstName} {client.lastName}
-          </h1>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+                Kundin
+              </p>
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+                {client.firstName} {client.lastName}
+              </h1>
+            </div>
+            <Link
+              href={`/clients/${client.id}/edit`}
+              className="inline-flex h-9 items-center rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary hover:bg-surface-raised"
+            >
+              Bearbeiten
+            </Link>
+          </div>
           <p className="mt-1 text-sm text-text-secondary">
             {client.email ?? '—'}
             {client.phone ? ` · ${client.phone}` : ''}

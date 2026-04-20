@@ -114,7 +114,12 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
                           className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
                         >
                           <td className="px-5 py-3">
-                            <div className="font-medium text-text-primary">{s.name}</div>
+                            <Link
+                              href={`/services/${s.id}`}
+                              className="font-medium text-text-primary hover:underline"
+                            >
+                              {s.name}
+                            </Link>
                             {s.description ? (
                               <div className="mt-0.5 text-xs text-text-muted">
                                 {s.description}
