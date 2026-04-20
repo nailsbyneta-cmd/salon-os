@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Badge, Button, Card, CardBody, EmptyState, cn } from '@salon-os/ui';
 import { CalendarDnd, type DndAppt, type DndStaff } from '@/components/calendar-dnd';
+import { CalendarDateJumper } from '@/components/calendar-date-jumper';
 import { CalendarWeek } from '@/components/calendar-week';
 import { CalendarMonth } from '@/components/calendar-month';
 import { apiFetch, ApiError } from '@/lib/api';
@@ -206,18 +207,7 @@ export default async function CalendarPage({
               </Button>
             </Link>
           </div>
-          <form method="get" className="flex items-center gap-2">
-            <input type="hidden" name="view" value={view} />
-            <input
-              type="date"
-              name="date"
-              defaultValue={day}
-              className="h-10 rounded-sm border border-border bg-surface px-3 text-sm text-text-primary focus:border-accent"
-            />
-            <Button type="submit" variant="secondary" size="md">
-              Anzeigen
-            </Button>
-          </form>
+          <CalendarDateJumper currentDate={day} view={view} />
           <Link href={`/calendar/new?date=${day}`}>
             <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
               Neuer Termin

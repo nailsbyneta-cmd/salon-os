@@ -386,24 +386,40 @@ function Slot({
   const { setNodeRef, isOver } = useDroppable({
     id: `slot:${staffId}:${minute}`,
   });
+  const hh = Math.floor((CAL_START_MIN + minute) / 60)
+    .toString()
+    .padStart(2, '0');
+  const mm = ((CAL_START_MIN + minute) % 60).toString().padStart(2, '0');
+  const timeLabel = `${hh}:${mm}`;
   return (
-    <button
-      type="button"
-      ref={setNodeRef}
-      onClick={() => onClick(staffId, minute)}
-      className={`absolute left-0 right-0 text-left transition-colors cursor-pointer ${
-        isOver ? 'bg-accent/15' : 'hover:bg-accent/5'
-      } ${isHourBoundary ? 'border-t border-border/60' : 'border-t border-border/20'}`}
-      style={{
-        top: topPx,
-        height: SLOT_MINUTES * PX_PER_MINUTE,
-      }}
-      aria-label={`Neuer Termin um ${Math.floor((CAL_START_MIN + minute) / 60)
-        .toString()
-        .padStart(2, '0')}:${((CAL_START_MIN + minute) % 60)
-        .toString()
-        .padStart(2, '0')}`}
-    />
+    <>
+      <button
+        type="button"
+        ref={setNodeRef}
+        onClick={() => onClick(staffId, minute)}
+        className={`absolute left-0 right-0 text-left transition-colors cursor-pointer ${
+          isOver ? 'bg-danger/10' : 'hover:bg-accent/5'
+        } ${isHourBoundary ? 'border-t border-border/60' : 'border-t border-border/20'}`}
+        style={{
+          top: topPx,
+          height: SLOT_MINUTES * PX_PER_MINUTE,
+        }}
+        aria-label={`Neuer Termin um ${timeLabel}`}
+      />
+      {isOver ? (
+        <div
+          className="pointer-events-none absolute left-0 right-0 z-30"
+          style={{ top: topPx - 1 }}
+        >
+          <div className="relative h-0.5 bg-danger shadow-[0_0_8px_rgba(239,68,68,0.6)]">
+            <div className="absolute -left-1 -top-1 h-2.5 w-2.5 rounded-full bg-danger" />
+            <span className="absolute -top-2.5 right-1 rounded-sm bg-danger px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-white shadow-md">
+              {timeLabel}
+            </span>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
