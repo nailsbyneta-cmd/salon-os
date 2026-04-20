@@ -23,6 +23,7 @@ export type {
   Shift,
   TimeOff,
   AuditLog,
+  GiftCard,
 } from '@prisma/client';
 
 export {

@@ -45,9 +45,35 @@ model Tenant {
   services         Service[]
   clients          Client[]
   appointments     Appointment[]
+  giftCards        GiftCard[]
 
   @@index([status])
   @@map("tenant")
+}
+
+model GiftCard {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @db.Uuid
+  code           String    @unique
+  amount         Decimal   @db.Decimal(10, 2)
+  balance        Decimal   @db.Decimal(10, 2)
+  currency       String    @default("CHF") @db.Char(3)
+  purchasedById  String?   @db.Uuid
+  purchasedAt    DateTime  @default(now()) @db.Timestamptz
+  redeemedAt     DateTime? @db.Timestamptz
+  expiresAt      DateTime? @db.Timestamptz
+  recipientEmail String?
+  recipientName  String?
+  message        String?
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @db.Timestamptz
+
+  tenant       Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchasedBy  Client? @relation(fields: [purchasedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([code])
+  @@map("gift_card")
 }
 
 enum Plan {
@@ -363,6 +389,7 @@ model Client {
 
   tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   appointments Appointment[]
+  giftCards    GiftCard[]
   family       Client[]      @relation("Family")
   parent       Client?       @relation("Family", fields: [familyParentId], references: [id])
 
