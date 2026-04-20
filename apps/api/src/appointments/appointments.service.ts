@@ -10,6 +10,7 @@ import type {
   RescheduleAppointmentInput,
   CancelAppointmentInput,
 } from '@salon-os/types';
+import { AuditService } from '../audit/audit.service.js';
 import { WITH_TENANT } from '../db/db.module.js';
 import { RemindersService } from '../reminders/reminders.service.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
@@ -43,6 +44,7 @@ export class AppointmentsService {
   constructor(
     @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
     private readonly reminders: RemindersService,
+    private readonly audit: AuditService,
   ) {}
 
   /**
@@ -107,7 +109,7 @@ export class AppointmentsService {
         ctx.userId,
         ctx.role,
         async (tx) => {
-          return tx.appointment.create({
+          const appt = await tx.appointment.create({
             data: {
               tenantId: ctx.tenantId,
               locationId: input.locationId,
@@ -132,6 +134,18 @@ export class AppointmentsService {
             },
             include: { items: true },
           });
+          await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+            entity: 'Appointment',
+            entityId: appt.id,
+            action: 'create',
+            diff: {
+              startAt: appt.startAt.toISOString(),
+              staffId: appt.staffId,
+              clientId: appt.clientId,
+              bookedVia: appt.bookedVia,
+            },
+          });
+          return appt;
         },
       );
 
@@ -220,7 +234,7 @@ export class AppointmentsService {
       return await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
         const existing = await tx.appointment.findFirst({ where: { id } });
         if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
-        return tx.appointment.update({
+        const updated = await tx.appointment.update({
           where: { id },
           data: {
             startAt: new Date(input.startAt),
@@ -231,6 +245,16 @@ export class AppointmentsService {
           },
           include: { items: true },
         });
+        await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+          entity: 'Appointment',
+          entityId: id,
+          action: 'reschedule',
+          diff: {
+            from: { startAt: existing.startAt.toISOString(), staffId: existing.staffId },
+            to: { startAt: updated.startAt.toISOString(), staffId: updated.staffId },
+          },
+        });
+        return updated;
       });
     } catch (err) {
       if (isConflictError(err)) {
@@ -267,6 +291,12 @@ export class AppointmentsService {
         if (existing.clientId) {
           await this.recomputeNoShowRisk(tx, existing.clientId);
         }
+        await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+          entity: 'Appointment',
+          entityId: id,
+          action: input.noShow ? 'no-show' : 'cancel',
+          diff: { reason: input.reason ?? null },
+        });
         return updated;
       },
     );

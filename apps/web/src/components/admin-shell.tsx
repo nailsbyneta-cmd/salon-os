@@ -29,6 +29,7 @@ const nav: NavItem[] = [
   { href: '/gift-cards', label: 'Gutscheine', icon: <IconGift /> },
   { href: '/inventory', label: 'Inventar', icon: <IconBox /> },
   { href: '/reports', label: 'Reports', icon: <IconReports /> },
+  { href: '/audit', label: 'Audit-Log', icon: <IconShield /> },
 ];
 
 export function AdminShell({
@@ -385,6 +386,25 @@ function IconReports(): React.JSX.Element {
     >
       <path d="M3 3v18h18" />
       <path d="m7 15 4-4 4 4 6-6" />
+    </svg>
+  );
+}
+
+function IconShield(): React.JSX.Element {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 2 4 5v7c0 5.25 3.5 9 8 10 4.5-1 8-4.75 8-10V5l-8-3Z" />
+      <path d="m9 12 2 2 4-4" />
     </svg>
   );
 }

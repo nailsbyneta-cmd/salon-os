@@ -4,6 +4,7 @@ import type {
   CreateClientInput,
   UpdateClientInput,
 } from '@salon-os/types';
+import { AuditService } from '../audit/audit.service.js';
 import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 
@@ -16,7 +17,10 @@ type WithTenantFn = <T>(
 
 @Injectable()
 export class ClientsService {
-  constructor(@Inject(WITH_TENANT) private readonly withTenant: WithTenantFn) {}
+  constructor(
+    @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
+    private readonly audit: AuditService,
+  ) {}
 
   async list(query?: string, limit = 50): Promise<Client[]> {
     const ctx = requireTenantContext();
@@ -55,7 +59,7 @@ export class ClientsService {
   async create(input: CreateClientInput): Promise<Client> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
-      return tx.client.create({
+      const created = await tx.client.create({
         data: {
           tenantId: ctx.tenantId,
           firstName: input.firstName,
@@ -77,6 +81,17 @@ export class ClientsService {
           notesInternal: input.notesInternal ?? null,
         },
       });
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Client',
+        entityId: created.id,
+        action: 'create',
+        diff: {
+          firstName: created.firstName,
+          lastName: created.lastName,
+          source: created.source,
+        },
+      });
+      return created;
     });
   }
 
@@ -202,6 +217,11 @@ export class ClientsService {
         where: { id },
         data: { deletedAt: new Date() },
       });
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Client',
+        entityId: id,
+        action: 'soft-delete',
+      });
     });
   }
 
@@ -267,6 +287,12 @@ export class ClientsService {
             reason ? ': ' + reason : ''
           }]\n\n${existing.notesInternal ?? ''}`,
         },
+      });
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Client',
+        entityId: id,
+        action: 'gdpr-forget',
+        diff: { reason: reason ?? null },
       });
     });
   }
