@@ -314,39 +314,50 @@ export class PublicBookingsService {
         select: { staffId: true, startAt: true, endAt: true },
       });
 
-      // Einfache Öffnungszeiten-Heuristik: 09:00–18:00 im locationTz.
-      // Phase 2: echte openingHours-JSON aus location.openingHours parsen.
-      const duration = service.durationMinutes + service.bufferAfterMin + service.bufferBeforeMin;
+      const duration =
+        service.durationMinutes +
+        service.bufferAfterMin +
+        service.bufferBeforeMin;
+      const slotMinutes = 30;
+
+      // Echte Öffnungszeiten aus location.openingHours nutzen.
+      // Format: { mon: [{open:"09:00",close:"19:00"}], ... }
+      // Fallback: 09:00–18:00 wenn Tag leer/fehlt.
+      const intervals = resolveOpeningIntervals(
+        location.openingHours,
+        opts.date,
+      );
+      if (intervals.length === 0) return [];
+
       const slots: AvailabilitySlot[] = [];
-      const slotMinutes = 30; // Raster
-      const openHour = 9;
-      const closeHour = 18;
-
       for (const staff of eligibleStaff) {
-        for (let h = openHour; h < closeHour; h++) {
-          for (let m = 0; m < 60; m += slotMinutes) {
-            const start = new Date(`${opts.date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00Z`);
+        for (const iv of intervals) {
+          for (
+            let t = iv.startMin;
+            t + duration <= iv.endMin;
+            t += slotMinutes
+          ) {
+            const start = localTimeToUtc(opts.date, t, location.timezone);
             const end = new Date(start.getTime() + duration * 60_000);
-            if (end.getHours() >= closeHour) continue;
-
             const overlaps = existing.some(
               (a) =>
                 a.staffId === staff.id &&
                 !(new Date(a.endAt) <= start || new Date(a.startAt) >= end),
             );
             if (overlaps) continue;
-
             slots.push({
               startAt: start.toISOString(),
               endAt: end.toISOString(),
               staffId: staff.id,
-              staffDisplayName: staff.displayName ?? `${staff.firstName} ${staff.lastName}`,
+              staffDisplayName:
+                staff.displayName ?? `${staff.firstName} ${staff.lastName}`,
               priceMinor: Math.round(Number(service.basePrice) * 100),
               currency: location.currency,
             });
           }
         }
       }
+      slots.sort((a, b) => a.startAt.localeCompare(b.startAt));
       return slots.slice(0, 50);
     });
   }
@@ -463,4 +474,98 @@ export class PublicBookingsService {
       throw err;
     }
   }
+}
+
+// ─── Helpers für Öffnungszeiten + Timezone ────────────────────
+
+const WEEKDAY_KEYS = [
+  'sun',
+  'mon',
+  'tue',
+  'wed',
+  'thu',
+  'fri',
+  'sat',
+] as const;
+
+type OpeningDay =
+  | { open?: string; close?: string; closed?: boolean }
+  | Array<{ open: string; close: string }>
+  | undefined;
+
+function hhmmToMinutes(s: string): number {
+  const [h, m] = s.split(':').map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+}
+
+/** Liest openingHours-JSON für den Wochentag des gegebenen Datums. */
+function resolveOpeningIntervals(
+  openingHoursRaw: unknown,
+  dateIso: string,
+): Array<{ startMin: number; endMin: number }> {
+  const d = new Date(`${dateIso}T12:00:00Z`);
+  const weekday = WEEKDAY_KEYS[d.getUTCDay()];
+  const map = (openingHoursRaw ?? {}) as Record<string, OpeningDay>;
+  const entry = map[weekday];
+  if (!entry) return []; // kein Key = zu. Fallback nur wenn kompletter Map leer.
+  if (Array.isArray(entry)) {
+    const out: Array<{ startMin: number; endMin: number }> = [];
+    for (const iv of entry) {
+      if (!iv.open || !iv.close) continue;
+      const s = hhmmToMinutes(iv.open);
+      const e = hhmmToMinutes(iv.close);
+      if (e > s) out.push({ startMin: s, endMin: e });
+    }
+    return out;
+  }
+  if (entry.closed || !entry.open || !entry.close) return [];
+  return [
+    {
+      startMin: hhmmToMinutes(entry.open),
+      endMin: hhmmToMinutes(entry.close),
+    },
+  ];
+}
+
+/**
+ * Rechnet lokale Zeit (Datum + Minuten-ab-Mitternacht) im Tenant-TZ
+ * in UTC-Date um. Nutzt Intl.DateTimeFormat um den TZ-Offset für den
+ * konkreten Tag zu bestimmen (DST-sicher).
+ */
+function localTimeToUtc(
+  dateIso: string,
+  minutesFromMidnight: number,
+  timezone: string,
+): Date {
+  const hh = Math.floor(minutesFromMidnight / 60);
+  const mm = minutesFromMidnight % 60;
+  // Start: naive UTC
+  const naive = new Date(
+    `${dateIso}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00Z`,
+  );
+  // Wie spät wäre es in `timezone`, wenn die UTC-Zeit genau `naive` wäre?
+  // Differenz zwischen diesem Zeigestand und `naive` = Offset.
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  const parts = fmt.formatToParts(naive);
+  const pick = (t: string): number =>
+    Number(parts.find((p) => p.type === t)?.value ?? '0');
+  const asUtcFromZoned = Date.UTC(
+    pick('year'),
+    pick('month') - 1,
+    pick('day'),
+    pick('hour') === 24 ? 0 : pick('hour'),
+    pick('minute'),
+    pick('second'),
+  );
+  const offsetMs = asUtcFromZoned - naive.getTime();
+  return new Date(naive.getTime() - offsetMs);
 }
