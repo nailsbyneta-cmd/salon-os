@@ -29,24 +29,37 @@ export class RemindersService implements OnModuleDestroy {
     appointmentId: string;
     tenantId: string;
   }): Promise<void> {
-    if (!this.queue) return;
-    await this.queue.add(
-      `confirmation:${args.appointmentId}`,
-      {
-        appointmentId: args.appointmentId,
-        tenantId: args.tenantId,
-        channel: 'email',
-        kind: 'confirmation',
-      },
-      {
-        jobId: `confirmation:${args.appointmentId}`,
-        removeOnComplete: true,
-        removeOnFail: false,
-        attempts: 5,
-        backoff: { type: 'exponential', delay: 30_000 },
-      },
-    );
-    this.logger.log(`Confirmation enqueued: appt=${args.appointmentId}`);
+    if (!this.queue) {
+      this.logger.warn(
+        `sendConfirmationNow: queue null → skip appt=${args.appointmentId}`,
+      );
+      return;
+    }
+    try {
+      this.logger.log(`sendConfirmationNow: enqueue appt=${args.appointmentId}`);
+      await this.queue.add(
+        `confirmation-${args.appointmentId}`,
+        {
+          appointmentId: args.appointmentId,
+          tenantId: args.tenantId,
+          channel: 'email',
+          kind: 'confirmation',
+        },
+        {
+          jobId: `confirmation-${args.appointmentId}`,
+          removeOnComplete: true,
+          removeOnFail: false,
+          attempts: 5,
+          backoff: { type: 'exponential', delay: 30_000 },
+        },
+      );
+      this.logger.log(`Confirmation enqueued: appt=${args.appointmentId}`);
+    } catch (err) {
+      this.logger.error(
+        `Confirmation enqueue FAILED: ${(err as Error).message}`,
+      );
+      throw err;
+    }
   }
 
   async scheduleEmailReminder(args: {
@@ -60,7 +73,7 @@ export class RemindersService implements OnModuleDestroy {
     const delay = args.startAt.getTime() - Date.now() - leadTimeMs;
     if (delay <= 0) return;
     await this.queue.add(
-      `reminder:${args.appointmentId}`,
+      `reminder-${args.appointmentId}`,
       {
         appointmentId: args.appointmentId,
         tenantId: args.tenantId,
@@ -69,7 +82,7 @@ export class RemindersService implements OnModuleDestroy {
       },
       {
         delay,
-        jobId: `reminder:${args.appointmentId}:email`,
+        jobId: `reminder-email-${args.appointmentId}`,
         removeOnComplete: true,
         removeOnFail: false,
         attempts: 3,
@@ -83,8 +96,13 @@ export class RemindersService implements OnModuleDestroy {
 
   async cancelReminder(appointmentId: string): Promise<void> {
     if (!this.queue) return;
-    const job = await this.queue.getJob(`reminder:${appointmentId}:email`);
-    if (job) await job.remove();
+    for (const id of [
+      `reminder-email-${appointmentId}`,
+      `confirmation-${appointmentId}`,
+    ]) {
+      const job = await this.queue.getJob(id);
+      if (job) await job.remove();
+    }
   }
 
   async onModuleDestroy(): Promise<void> {
