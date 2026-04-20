@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { Button, Card, CardBody, Field, Input, Textarea } from '@salon-os/ui';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -24,7 +25,10 @@ async function submitBooking(
     const data = (await res.json()) as { id: string };
     return { ok: true, appointmentId: data.id };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Netzwerk-Fehler' };
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : 'Netzwerk-Fehler',
+    };
   }
 }
 
@@ -38,6 +42,7 @@ export default async function BookingConfirm({
     locationId?: string;
     staffId?: string;
     startAt?: string;
+    error?: string;
   }>;
 }): Promise<React.JSX.Element> {
   const { slug } = await params;
@@ -82,10 +87,10 @@ export default async function BookingConfirm({
   return (
     <main className="space-y-6">
       <header>
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
           Bestätigen
         </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-text-primary">
           {new Date(sp.startAt!).toLocaleString('de-CH', {
             weekday: 'long',
             day: '2-digit',
@@ -96,70 +101,55 @@ export default async function BookingConfirm({
         </h1>
       </header>
 
-      <form action={onSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-              Vorname
-            </span>
-            <input
-              required
-              name="firstName"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="block">
-            <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-              Nachname
-            </span>
-            <input
-              required
-              name="lastName"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </label>
-        </div>
-        <label className="block">
-          <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            E-Mail
-          </span>
-          <input
-            required
-            type="email"
-            name="email"
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="block">
-          <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            Telefon (optional)
-          </span>
-          <input
-            type="tel"
-            name="phone"
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="block">
-          <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            Bemerkung (optional)
-          </span>
-          <textarea
-            name="notes"
-            rows={3}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <button
-          type="submit"
-          className="w-full rounded-md bg-neutral-900 px-4 py-3 text-sm font-medium text-white"
+      {sp.error ? (
+        <div
+          role="alert"
+          className="rounded-md border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger"
         >
-          Termin verbindlich buchen
-        </button>
-        <p className="text-center text-[11px] text-neutral-400">
-          Mit der Buchung stimmst Du unseren AGB und der Datenschutzerklärung zu.
-        </p>
-      </form>
+          {sp.error}
+        </div>
+      ) : null}
+
+      <Card>
+        <CardBody>
+          <form action={onSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Vorname" required>
+                <Input required name="firstName" autoComplete="given-name" />
+              </Field>
+              <Field label="Nachname" required>
+                <Input required name="lastName" autoComplete="family-name" />
+              </Field>
+            </div>
+            <Field label="E-Mail" required>
+              <Input
+                required
+                type="email"
+                name="email"
+                autoComplete="email"
+                inputMode="email"
+              />
+            </Field>
+            <Field label="Telefon (optional)">
+              <Input
+                type="tel"
+                name="phone"
+                autoComplete="tel"
+                inputMode="tel"
+              />
+            </Field>
+            <Field label="Bemerkung (optional)">
+              <Textarea name="notes" rows={3} />
+            </Field>
+            <Button type="submit" variant="primary" className="w-full">
+              Termin verbindlich buchen
+            </Button>
+            <p className="text-center text-[11px] text-text-muted">
+              Mit der Buchung stimmst Du unseren AGB und der Datenschutzerklärung zu.
+            </p>
+          </form>
+        </CardBody>
+      </Card>
     </main>
   );
 }
