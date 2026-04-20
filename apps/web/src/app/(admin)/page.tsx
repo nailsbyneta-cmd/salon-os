@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Badge, Button, Card, CardBody, PriceDisplay, Stat } from '@salon-os/ui';
+import { Sparkline } from '@/components/sparkline';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
@@ -7,6 +8,7 @@ interface Dashboard {
   servicesCount: number;
   staffCount: number;
   clientsCount: number;
+  revenueLast7DaysCents: number[];
   giftCardsOutstanding: number;
   waitlistCount: number;
   lowStockCount: number;
@@ -30,19 +32,35 @@ async function loadDashboard(): Promise<Dashboard> {
   const end = new Date();
   end.setHours(23, 59, 59, 999);
 
+  const weekStart = new Date(start);
+  weekStart.setDate(weekStart.getDate() - 6);
+
   const safe = <T,>(p: Promise<T>, fallback: T): Promise<T> =>
     p.catch((err) => {
       if (err instanceof ApiError) return fallback;
       throw err;
     });
 
-  const [svc, stf, cli, appts, gc, wl, lowStock] = await Promise.all([
+  const [svc, stf, cli, appts, weekAppts, gc, wl, lowStock] = await Promise.all([
     safe(apiFetch<{ services: unknown[] }>('/v1/services', auth), { services: [] }),
     safe(apiFetch<{ staff: unknown[] }>('/v1/staff', auth), { staff: [] }),
     safe(apiFetch<{ clients: unknown[] }>('/v1/clients?limit=200', auth), { clients: [] }),
     safe(
       apiFetch<{ appointments: Dashboard['todayAppts'] }>(
         `/v1/appointments?from=${start.toISOString()}&to=${end.toISOString()}`,
+        auth,
+      ),
+      { appointments: [] },
+    ),
+    safe(
+      apiFetch<{
+        appointments: Array<{
+          startAt: string;
+          status: string;
+          items: Array<{ price: string }>;
+        }>;
+      }>(
+        `/v1/appointments?from=${weekStart.toISOString()}&to=${end.toISOString()}`,
         auth,
       ),
       { appointments: [] },
@@ -58,10 +76,29 @@ async function loadDashboard(): Promise<Dashboard> {
     ),
   ]);
 
+  const revenueByDay = new Map<string, number>();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    revenueByDay.set(d.toISOString().slice(0, 10), 0);
+  }
+  for (const a of weekAppts.appointments) {
+    if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') continue;
+    const key = a.startAt.slice(0, 10);
+    if (!revenueByDay.has(key)) continue;
+    const cents = a.items.reduce(
+      (s, i) => s + Math.round(Number(i.price) * 100),
+      0,
+    );
+    revenueByDay.set(key, (revenueByDay.get(key) ?? 0) + cents);
+  }
+  const revenueLast7DaysCents = Array.from(revenueByDay.values());
+
   return {
     servicesCount: svc.services.length,
     staffCount: stf.staff.length,
     clientsCount: cli.clients.length,
+    revenueLast7DaysCents,
     giftCardsOutstanding: gc.giftCards.reduce(
       (s, c) => s + Number(c.balance),
       0,
@@ -143,6 +180,31 @@ export default async function Home(): Promise<React.JSX.Element> {
         <Stat label="Kundinnen" value={d.clientsCount} href="/clients" />
         <Stat label="Services" value={d.servicesCount} href="/services" />
       </section>
+
+      <Card className="mb-4" elevation="flat">
+        <CardBody className="flex items-end justify-between gap-6">
+          <div>
+            <div className="text-xs font-medium uppercase tracking-wider text-text-muted">
+              Umsatz · letzte 7 Tage
+            </div>
+            <div className="mt-1 font-display text-2xl font-semibold tabular-nums">
+              {(
+                d.revenueLast7DaysCents.reduce((s, c) => s + c, 0) / 100
+              ).toLocaleString('de-CH', { minimumFractionDigits: 0 })}{' '}
+              <span className="text-sm font-normal text-text-muted">CHF</span>
+            </div>
+            <div className="mt-0.5 text-xs text-text-muted">
+              Ø{' '}
+              {(
+                d.revenueLast7DaysCents.reduce((s, c) => s + c, 0) /
+                700
+              ).toLocaleString('de-CH', { maximumFractionDigits: 0 })}{' '}
+              CHF pro Tag
+            </div>
+          </div>
+          <Sparkline data={d.revenueLast7DaysCents} width={240} height={56} />
+        </CardBody>
+      </Card>
 
       <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
         <Stat
