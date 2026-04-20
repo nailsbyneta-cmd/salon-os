@@ -1,0 +1,489 @@
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  Field,
+  Input,
+  Textarea,
+} from '@salon-os/ui';
+import { apiFetch, ApiError } from '@/lib/api';
+import { getCurrentTenant } from '@/lib/tenant';
+import {
+  createFaq,
+  createGalleryImage,
+  createReview,
+  deleteFaq,
+  deleteGalleryImage,
+  deleteReview,
+  toggleReviewFeatured,
+  updateBranding,
+} from './actions';
+
+interface Tenant {
+  id: string;
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  logoUrl: string | null;
+  heroImageUrl: string | null;
+  brandColor: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  tiktokUrl: string | null;
+  whatsappE164: string | null;
+  googleBusinessUrl: string | null;
+}
+
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  order: number;
+  active: boolean;
+}
+
+interface Review {
+  id: string;
+  authorName: string;
+  rating: number;
+  text: string;
+  sourceUrl: string | null;
+  featured: boolean;
+  createdAt: string;
+}
+
+interface GalleryImage {
+  id: string;
+  imageUrl: string;
+  caption: string | null;
+  order: number;
+}
+
+async function loadData(): Promise<{
+  tenant: Tenant | null;
+  faqs: FAQ[];
+  reviews: Review[];
+  gallery: GalleryImage[];
+}> {
+  const ctx = getCurrentTenant();
+  const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
+  try {
+    const [t, f, r, g] = await Promise.all([
+      apiFetch<Tenant>('/v1/salon/tenant', auth),
+      apiFetch<{ faqs: FAQ[] }>('/v1/salon/faqs', auth),
+      apiFetch<{ reviews: Review[] }>('/v1/salon/reviews', auth),
+      apiFetch<{ images: GalleryImage[] }>('/v1/salon/gallery', auth),
+    ]);
+    return { tenant: t, faqs: f.faqs, reviews: r.reviews, gallery: g.images };
+  } catch (err) {
+    if (err instanceof ApiError) {
+      return { tenant: null, faqs: [], reviews: [], gallery: [] };
+    }
+    throw err;
+  }
+}
+
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>;
+}): Promise<React.JSX.Element> {
+  const { saved } = await searchParams;
+  const { tenant, faqs, reviews, gallery } = await loadData();
+
+  return (
+    <div className="mx-auto max-w-4xl p-8">
+      <header className="mb-8">
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+          Salon-Einstellungen
+        </p>
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+          Öffentliches Profil
+        </h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          Alles was Kundinnen auf deiner Buchungs-Seite sehen: Branding, Team,
+          FAQ, Bewertungen, Gallerie. Änderungen sind sofort live.
+        </p>
+        {saved ? (
+          <div className="mt-3 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-xs text-success">
+            ✓ Gespeichert.
+          </div>
+        ) : null}
+      </header>
+
+      <nav className="mb-8 flex flex-wrap gap-2 text-xs">
+        {[
+          { id: 'branding', label: 'Branding' },
+          { id: 'faq', label: 'FAQ' },
+          { id: 'reviews', label: 'Bewertungen' },
+          { id: 'gallery', label: 'Gallerie' },
+        ].map((t) => (
+          <a
+            key={t.id}
+            href={`#${t.id}`}
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-text-secondary hover:bg-surface-raised"
+          >
+            {t.label}
+          </a>
+        ))}
+      </nav>
+
+      {/* ─── Branding ─── */}
+      <section id="branding" className="mb-12 scroll-mt-24">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text-muted">
+          Branding &amp; Social Media
+        </h2>
+        <Card>
+          <CardBody>
+            <form action={updateBranding} className="space-y-5">
+              <Field
+                label="Tagline"
+                hint="Ein Satz der beschreibt, was ihr macht — erscheint unter dem Salon-Namen im Hero."
+              >
+                <Input
+                  name="tagline"
+                  defaultValue={tenant?.tagline ?? ''}
+                  placeholder="Das ruhigste Brauen-Studio in St.Gallen"
+                  maxLength={300}
+                />
+              </Field>
+              <Field
+                label="Beschreibung"
+                hint="Längerer Text für „Über uns". Zeilenumbrüche werden übernommen."
+              >
+                <Textarea
+                  name="description"
+                  rows={4}
+                  defaultValue={tenant?.description ?? ''}
+                  placeholder="Seit 2019 behandle ich Augenbrauen & Wimpern mit Fokus auf natürlichem Look…"
+                />
+              </Field>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Logo-URL" hint="Quadratisches PNG/SVG, idealerweise ≥ 256×256">
+                  <Input
+                    name="logoUrl"
+                    defaultValue={tenant?.logoUrl ?? ''}
+                    placeholder="https://…/logo.png"
+                  />
+                </Field>
+                <Field label="Hero-Bild-URL" hint="Breites Titelbild, ≥ 1600×900">
+                  <Input
+                    name="heroImageUrl"
+                    defaultValue={tenant?.heroImageUrl ?? ''}
+                    placeholder="https://…/hero.jpg"
+                  />
+                </Field>
+              </div>
+
+              <Field label="Markenfarbe (optional)" hint="HEX oder CSS-Farbwert">
+                <Input
+                  name="brandColor"
+                  defaultValue={tenant?.brandColor ?? ''}
+                  placeholder="#A38F6B"
+                />
+              </Field>
+
+              <div className="border-t border-border pt-4">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+                  Social Media
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label="Instagram">
+                    <Input
+                      name="instagramUrl"
+                      defaultValue={tenant?.instagramUrl ?? ''}
+                      placeholder="https://instagram.com/…"
+                    />
+                  </Field>
+                  <Field label="TikTok">
+                    <Input
+                      name="tiktokUrl"
+                      defaultValue={tenant?.tiktokUrl ?? ''}
+                      placeholder="https://tiktok.com/@…"
+                    />
+                  </Field>
+                  <Field label="Facebook">
+                    <Input
+                      name="facebookUrl"
+                      defaultValue={tenant?.facebookUrl ?? ''}
+                      placeholder="https://facebook.com/…"
+                    />
+                  </Field>
+                  <Field label="WhatsApp-Nummer (E.164)">
+                    <Input
+                      name="whatsappE164"
+                      defaultValue={tenant?.whatsappE164 ?? ''}
+                      placeholder="+41791234567"
+                    />
+                  </Field>
+                  <Field label="Google Business-Profil URL">
+                    <Input
+                      name="googleBusinessUrl"
+                      defaultValue={tenant?.googleBusinessUrl ?? ''}
+                      placeholder="https://g.page/…"
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button type="submit" variant="primary">
+                  Branding speichern
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+      </section>
+
+      {/* ─── FAQ ─── */}
+      <section id="faq" className="mb-12 scroll-mt-24">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text-muted">
+          FAQ · Häufige Fragen
+        </h2>
+        <Card className="mb-4">
+          <CardBody>
+            <form action={createFaq} className="space-y-3">
+              <Field label="Frage" required>
+                <Input
+                  name="question"
+                  placeholder="Muss ich eine Anzahlung leisten?"
+                  required
+                />
+              </Field>
+              <Field label="Antwort" required>
+                <Textarea
+                  name="answer"
+                  rows={3}
+                  placeholder="Nein — bei neuen Kundinnen bitten wir aber um Bestätigung per Email."
+                  required
+                />
+              </Field>
+              <Field label="Reihenfolge (niedrig = oben)">
+                <Input name="order" type="number" defaultValue={faqs.length} />
+              </Field>
+              <div className="flex justify-end">
+                <Button type="submit" variant="secondary">
+                  + Frage hinzufügen
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+
+        {faqs.length === 0 ? (
+          <p className="text-xs text-text-muted">
+            Keine FAQ angelegt. Antworte auf die 3–5 Fragen, die dir am
+            häufigsten gestellt werden.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {faqs.map((f) => (
+              <li key={f.id}>
+                <Card>
+                  <CardBody className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-text-primary">
+                        #{f.order} · {f.question}
+                      </div>
+                      <div className="mt-1 text-sm text-text-secondary whitespace-pre-line">
+                        {f.answer}
+                      </div>
+                      {!f.active ? (
+                        <Badge tone="warning">Inaktiv</Badge>
+                      ) : null}
+                    </div>
+                    <form action={deleteFaq.bind(null, f.id)}>
+                      <Button type="submit" variant="ghost" size="sm">
+                        Löschen
+                      </Button>
+                    </form>
+                  </CardBody>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* ─── Reviews ─── */}
+      <section id="reviews" className="mb-12 scroll-mt-24">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text-muted">
+          Bewertungen
+        </h2>
+        <Card className="mb-4">
+          <CardBody>
+            <form action={createReview} className="space-y-3">
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field label="Name" required>
+                  <Input name="authorName" placeholder="Anna M." required />
+                </Field>
+                <Field label="Sterne (1–5)" required>
+                  <Input
+                    name="rating"
+                    type="number"
+                    min={1}
+                    max={5}
+                    defaultValue={5}
+                    required
+                  />
+                </Field>
+              </div>
+              <Field label="Text" required>
+                <Textarea
+                  name="text"
+                  rows={3}
+                  placeholder="Beste Behandlung meines Lebens…"
+                  required
+                />
+              </Field>
+              <Field label="Quelle (optional)" hint="Google-Link z.B.">
+                <Input name="sourceUrl" placeholder="https://g.page/…/review/…" />
+              </Field>
+              <label className="flex items-center gap-2 text-xs text-text-secondary">
+                <input
+                  type="checkbox"
+                  name="featured"
+                  className="h-3.5 w-3.5 accent-accent"
+                />
+                Auf Booking-Seite prominent zeigen
+              </label>
+              <div className="flex justify-end">
+                <Button type="submit" variant="secondary">
+                  + Bewertung hinzufügen
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+
+        {reviews.length === 0 ? (
+          <p className="text-xs text-text-muted">
+            Noch keine Bewertungen übertragen. Kopiere sie aus Google oder tippe
+            sie ab.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {reviews.map((r) => (
+              <li key={r.id}>
+                <Card>
+                  <CardBody className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-text-primary">
+                          {r.authorName}
+                        </span>
+                        <span className="text-xs tabular-nums text-accent">
+                          {'★'.repeat(r.rating)}
+                          {'☆'.repeat(5 - r.rating)}
+                        </span>
+                        {r.featured ? (
+                          <Badge tone="accent">Featured</Badge>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-sm text-text-secondary whitespace-pre-line">
+                        {r.text}
+                      </p>
+                      {r.sourceUrl ? (
+                        <a
+                          href={r.sourceUrl}
+                          target="_blank"
+                          rel="noopener"
+                          className="mt-1 inline-block text-[11px] text-accent hover:underline"
+                        >
+                          Quelle →
+                        </a>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <form
+                        action={toggleReviewFeatured.bind(null, r.id, !r.featured)}
+                      >
+                        <Button type="submit" variant="ghost" size="sm">
+                          {r.featured ? 'Unfeature' : 'Feature'}
+                        </Button>
+                      </form>
+                      <form action={deleteReview.bind(null, r.id)}>
+                        <Button type="submit" variant="ghost" size="sm">
+                          Löschen
+                        </Button>
+                      </form>
+                    </div>
+                  </CardBody>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* ─── Gallery ─── */}
+      <section id="gallery" className="mb-12 scroll-mt-24">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text-muted">
+          Gallerie
+        </h2>
+        <p className="mb-3 text-xs text-text-muted">
+          Füge Bilder per URL hinzu — z.B. Links aus Instagram-CDN, Imgur,
+          Cloudinary. Direkter Upload kommt später.
+        </p>
+        <Card className="mb-4">
+          <CardBody>
+            <form action={createGalleryImage} className="space-y-3">
+              <Field label="Bild-URL" required>
+                <Input
+                  name="imageUrl"
+                  type="url"
+                  placeholder="https://…/bild.jpg"
+                  required
+                />
+              </Field>
+              <Field label="Bildunterschrift (optional)">
+                <Input name="caption" placeholder="Braunlaminierung auf Anna" />
+              </Field>
+              <Field label="Reihenfolge">
+                <Input name="order" type="number" defaultValue={gallery.length} />
+              </Field>
+              <div className="flex justify-end">
+                <Button type="submit" variant="secondary">
+                  + Bild hinzufügen
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+
+        {gallery.length === 0 ? (
+          <p className="text-xs text-text-muted">Keine Bilder.</p>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+            {gallery.map((g) => (
+              <li key={g.id} className="group relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={g.imageUrl}
+                  alt={g.caption ?? 'Gallerie'}
+                  className="aspect-square w-full rounded-md border border-border object-cover"
+                />
+                {g.caption ? (
+                  <div className="mt-1 text-xs text-text-muted truncate">
+                    {g.caption}
+                  </div>
+                ) : null}
+                <form
+                  action={deleteGalleryImage.bind(null, g.id)}
+                  className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <Button type="submit" variant="danger" size="sm">
+                    ×
+                  </Button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}

@@ -106,6 +106,16 @@ export class PublicBookingsService {
       countryCode: string;
       timezone: string;
       currency: string;
+      tagline: string | null;
+      description: string | null;
+      logoUrl: string | null;
+      heroImageUrl: string | null;
+      brandColor: string | null;
+      instagramUrl: string | null;
+      facebookUrl: string | null;
+      tiktokUrl: string | null;
+      whatsappE164: string | null;
+      googleBusinessUrl: string | null;
     };
     locations: Array<{
       id: string;
@@ -130,6 +140,17 @@ export class PublicBookingsService {
       photoUrl: string | null;
       color: string | null;
     }>;
+    faqs: Array<{ id: string; question: string; answer: string }>;
+    reviews: Array<{
+      id: string;
+      authorName: string;
+      rating: number;
+      text: string;
+      sourceUrl: string | null;
+      featured: boolean;
+      createdAt: Date;
+    }>;
+    gallery: Array<{ id: string; imageUrl: string; caption: string | null }>;
   }> {
     const tenantFull = await this.prismaPublic.tenant.findUnique({
       where: { slug },
@@ -141,6 +162,16 @@ export class PublicBookingsService {
         timezone: true,
         currency: true,
         status: true,
+        tagline: true,
+        description: true,
+        logoUrl: true,
+        heroImageUrl: true,
+        brandColor: true,
+        instagramUrl: true,
+        facebookUrl: true,
+        tiktokUrl: true,
+        whatsappE164: true,
+        googleBusinessUrl: true,
       },
     });
     if (
@@ -151,7 +182,7 @@ export class PublicBookingsService {
       throw new NotFoundException(`Unknown or inactive tenant: ${slug}`);
     }
     return this.withTenant(tenantFull.id, null, null, async (tx) => {
-      const [locations, staff] = await Promise.all([
+      const [locations, staff, faqs, reviews, gallery] = await Promise.all([
         tx.location.findMany({
           where: { deletedAt: null, publicProfile: true },
           orderBy: { name: 'asc' },
@@ -183,6 +214,29 @@ export class PublicBookingsService {
             color: true,
           },
         }),
+        tx.salonFAQ.findMany({
+          where: { active: true },
+          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+          select: { id: true, question: true, answer: true },
+        }),
+        tx.salonReview.findMany({
+          orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+          take: 12,
+          select: {
+            id: true,
+            authorName: true,
+            rating: true,
+            text: true,
+            sourceUrl: true,
+            featured: true,
+            createdAt: true,
+          },
+        }),
+        tx.salonGalleryImage.findMany({
+          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+          take: 24,
+          select: { id: true, imageUrl: true, caption: true },
+        }),
       ]);
       return {
         tenant: {
@@ -191,6 +245,16 @@ export class PublicBookingsService {
           countryCode: tenantFull.countryCode,
           timezone: tenantFull.timezone,
           currency: tenantFull.currency,
+          tagline: tenantFull.tagline,
+          description: tenantFull.description,
+          logoUrl: tenantFull.logoUrl,
+          heroImageUrl: tenantFull.heroImageUrl,
+          brandColor: tenantFull.brandColor,
+          instagramUrl: tenantFull.instagramUrl,
+          facebookUrl: tenantFull.facebookUrl,
+          tiktokUrl: tenantFull.tiktokUrl,
+          whatsappE164: tenantFull.whatsappE164,
+          googleBusinessUrl: tenantFull.googleBusinessUrl,
         },
         locations: locations.map((l) => ({
           ...l,
@@ -198,6 +262,9 @@ export class PublicBookingsService {
           longitude: l.longitude ? Number(l.longitude) : null,
         })),
         staff,
+        faqs,
+        reviews,
+        gallery,
       };
     });
   }

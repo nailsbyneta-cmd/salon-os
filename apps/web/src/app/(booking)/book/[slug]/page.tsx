@@ -49,6 +49,38 @@ interface TenantInfo {
   countryCode: string;
   timezone: string;
   currency: string;
+  tagline: string | null;
+  description: string | null;
+  logoUrl: string | null;
+  heroImageUrl: string | null;
+  brandColor: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  tiktokUrl: string | null;
+  whatsappE164: string | null;
+  googleBusinessUrl: string | null;
+}
+
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+interface Review {
+  id: string;
+  authorName: string;
+  rating: number;
+  text: string;
+  sourceUrl: string | null;
+  featured: boolean;
+  createdAt: string;
+}
+
+interface GalleryImage {
+  id: string;
+  imageUrl: string;
+  caption: string | null;
 }
 
 interface OpeningHoursEntry {
@@ -73,6 +105,9 @@ async function loadTenantData(slug: string): Promise<{
   services: Service[];
   categories: Category[];
   staff: StaffPublic[];
+  faqs: FAQ[];
+  reviews: Review[];
+  gallery: GalleryImage[];
 } | null> {
   try {
     const [infoRes, svcRes, catRes] = await Promise.all([
@@ -87,6 +122,9 @@ async function loadTenantData(slug: string): Promise<{
       tenant: TenantInfo;
       locations: Location[];
       staff: StaffPublic[];
+      faqs: FAQ[];
+      reviews: Review[];
+      gallery: GalleryImage[];
     };
     const svcData = (await svcRes.json()) as { services: Service[] };
     const catData =
@@ -99,6 +137,9 @@ async function loadTenantData(slug: string): Promise<{
       services: svcData.services,
       categories: catData.categories,
       staff: info.staff,
+      faqs: info.faqs,
+      reviews: info.reviews,
+      gallery: info.gallery,
     };
   } catch {
     return null;
@@ -154,7 +195,7 @@ export default async function BookingStart({
   const { slug } = await params;
   const data = await loadTenantData(slug);
   if (!data) notFound();
-  const { tenant, locations, services, categories, staff } = data;
+  const { tenant, locations, services, categories, staff, faqs, reviews, gallery } = data;
 
   const catById = new Map(categories.map((c) => [c.id, c.name]));
   const byCategory = new Map<string, Service[]>();
@@ -173,23 +214,61 @@ export default async function BookingStart({
   return (
     <main className="space-y-10">
       {/* Hero */}
-      <header className="rounded-2xl bg-gradient-to-br from-accent/10 via-brand/5 to-transparent px-6 py-10 text-center">
+      <header
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent/10 via-brand/5 to-transparent px-6 py-10 text-center"
+        style={
+          tenant.heroImageUrl
+            ? {
+                backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.55)), url(${tenant.heroImageUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                color: 'white',
+              }
+            : undefined
+        }
+      >
+        {tenant.logoUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={tenant.logoUrl}
+            alt={tenant.name}
+            className="mx-auto mb-4 h-16 w-16 rounded-full object-cover shadow-lg"
+          />
+        ) : null}
         <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
           Online buchen
         </p>
         <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight md:text-5xl">
           {tenant.name}
         </h1>
+        {tenant.tagline ? (
+          <p className="mt-3 text-base font-medium">{tenant.tagline}</p>
+        ) : null}
         {primaryLocation ? (
-          <p className="mt-2 text-sm text-text-secondary">
+          <p className="mt-2 text-sm opacity-80">
             {primaryLocation.name}
             {primaryLocation.city ? ` · ${primaryLocation.city}` : ''}
           </p>
         ) : null}
-        <p className="mt-4 text-xs text-text-muted">
+        <p className="mt-4 text-xs opacity-70">
           Wähle deine Behandlung, Datum &amp; Uhrzeit — alles in unter 60 Sek.
         </p>
       </header>
+
+      {tenant.description ? (
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Über uns
+          </h2>
+          <Card>
+            <CardBody>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-text-secondary">
+                {tenant.description}
+              </p>
+            </CardBody>
+          </Card>
+        </section>
+      ) : null}
 
       {locations.length > 1 ? (
         <section>
@@ -378,7 +457,155 @@ export default async function BookingStart({
         </section>
       ) : null}
 
-      <footer className="border-t border-border pt-6 text-center text-[11px] tracking-wider text-text-muted">
+      {/* Gallery */}
+      {gallery.length > 0 ? (
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Gallerie
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {gallery.map((g) => (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                key={g.id}
+                src={g.imageUrl}
+                alt={g.caption ?? 'Gallerie'}
+                className="aspect-square w-full rounded-md border border-border object-cover transition-transform hover:scale-[1.02]"
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Reviews */}
+      {reviews.length > 0 ? (
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Das sagen unsere Kundinnen
+          </h2>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {reviews.map((r) => (
+              <Card key={r.id}>
+                <CardBody>
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-sm font-medium text-text-primary">
+                      {r.authorName}
+                    </span>
+                    <span className="text-xs tabular-nums text-accent">
+                      {'★'.repeat(r.rating)}
+                      <span className="text-text-muted">
+                        {'☆'.repeat(5 - r.rating)}
+                      </span>
+                    </span>
+                  </div>
+                  <p className="text-sm text-text-secondary whitespace-pre-line">
+                    {r.text}
+                  </p>
+                  {r.sourceUrl ? (
+                    <a
+                      href={r.sourceUrl}
+                      target="_blank"
+                      rel="noopener"
+                      className="mt-2 inline-block text-[11px] text-text-muted hover:text-accent"
+                    >
+                      Auf Google ansehen →
+                    </a>
+                  ) : null}
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* FAQ */}
+      {faqs.length > 0 ? (
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Häufige Fragen
+          </h2>
+          <div className="space-y-2">
+            {faqs.map((f) => (
+              <details
+                key={f.id}
+                className="group rounded-md border border-border bg-surface px-4 py-3 transition-colors hover:bg-surface-raised"
+              >
+                <summary className="cursor-pointer list-none text-sm font-medium text-text-primary">
+                  <span className="mr-2 inline-block transition-transform group-open:rotate-90">
+                    ›
+                  </span>
+                  {f.question}
+                </summary>
+                <div className="mt-2 whitespace-pre-line pl-5 text-sm text-text-secondary">
+                  {f.answer}
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Socials + Footer */}
+      {tenant.instagramUrl ||
+      tenant.facebookUrl ||
+      tenant.tiktokUrl ||
+      tenant.whatsappE164 ||
+      tenant.googleBusinessUrl ? (
+        <section className="flex flex-wrap justify-center gap-3 border-t border-border pt-6">
+          {tenant.instagramUrl ? (
+            <a
+              href={tenant.instagramUrl}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-colors hover:bg-surface-raised"
+            >
+              📸 Instagram
+            </a>
+          ) : null}
+          {tenant.tiktokUrl ? (
+            <a
+              href={tenant.tiktokUrl}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-colors hover:bg-surface-raised"
+            >
+              🎵 TikTok
+            </a>
+          ) : null}
+          {tenant.facebookUrl ? (
+            <a
+              href={tenant.facebookUrl}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-colors hover:bg-surface-raised"
+            >
+              👤 Facebook
+            </a>
+          ) : null}
+          {tenant.whatsappE164 ? (
+            <a
+              href={`https://wa.me/${tenant.whatsappE164.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-success bg-success/10 px-4 text-sm font-medium text-success transition-colors hover:bg-success/20"
+            >
+              💬 WhatsApp
+            </a>
+          ) : null}
+          {tenant.googleBusinessUrl ? (
+            <a
+              href={tenant.googleBusinessUrl}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-colors hover:bg-surface-raised"
+            >
+              ⭐ Google Reviews
+            </a>
+          ) : null}
+        </section>
+      ) : null}
+
+      <footer className="pt-6 text-center text-[11px] tracking-wider text-text-muted">
         <div>
           Powered by <span className="font-semibold">SALON OS</span>
         </div>

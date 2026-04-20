@@ -33,6 +33,17 @@ model Tenant {
   plan         Plan         @default(STARTER)
   status       TenantStatus @default(TRIAL)
   billingEmail String?
+  // Public-Branding (Diff #18 — Kunden-Homepage-Felder)
+  tagline          String?
+  description      String?
+  logoUrl          String?
+  heroImageUrl     String?
+  brandColor       String?
+  instagramUrl     String?
+  facebookUrl      String?
+  tiktokUrl        String?
+  whatsappE164     String?
+  googleBusinessUrl String?
   createdAt    DateTime     @default(now()) @db.Timestamptz
   updatedAt    DateTime     @updatedAt @db.Timestamptz
   deletedAt    DateTime?    @db.Timestamptz
@@ -48,9 +59,62 @@ model Tenant {
   giftCards        GiftCard[]
   waitlistEntries  WaitlistEntry[]
   products         Product[]
+  faqs             SalonFAQ[]
+  reviews          SalonReview[]
+  galleryImages    SalonGalleryImage[]
 
   @@index([status])
   @@map("tenant")
+}
+
+// ─── Public Salon-Homepage: FAQ, Reviews, Gallery ─────────────
+
+model SalonFAQ {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  question  String
+  answer    String
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, order])
+  @@map("salon_faq")
+}
+
+model SalonReview {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  authorName String
+  rating     Int      // 1-5
+  text       String
+  sourceUrl  String?
+  featured   Boolean  @default(false)
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  updatedAt  DateTime @updatedAt @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, featured, createdAt])
+  @@map("salon_review")
+}
+
+model SalonGalleryImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  imageUrl  String
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, order])
+  @@map("salon_gallery_image")
 }
 
 model GiftCard {

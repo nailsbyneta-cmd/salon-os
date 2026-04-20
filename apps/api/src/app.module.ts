@@ -13,6 +13,7 @@ import { ProductsModule } from './products/products.module.js';
 import { PublicBookingsModule } from './public-bookings/public-bookings.module.js';
 import { RemindersModule } from './reminders/reminders.module.js';
 import { RoomsModule } from './rooms/rooms.module.js';
+import { SalonSettingsModule } from './salon-settings/salon-settings.module.js';
 import { ServicesModule } from './services/services.module.js';
 import { ShiftsModule } from './shifts/shifts.module.js';
 import { StaffModule } from './staff/staff.module.js';
@@ -37,6 +38,7 @@ import { WaitlistModule } from './waitlist/waitlist.module.js';
     GiftCardsModule,
     WaitlistModule,
     ProductsModule,
+    SalonSettingsModule,
   ],
   controllers: [HealthController],
   providers: [

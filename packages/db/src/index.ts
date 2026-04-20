@@ -27,6 +27,9 @@ export type {
   GiftCard,
   WaitlistEntry,
   Product,
+  SalonFAQ,
+  SalonReview,
+  SalonGalleryImage,
 } from '@prisma/client';
 
 export {
