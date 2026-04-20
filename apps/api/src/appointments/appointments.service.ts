@@ -254,7 +254,7 @@ export class AppointmentsService {
       async (tx) => {
         const existing = await tx.appointment.findFirst({ where: { id } });
         if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
-        return tx.appointment.update({
+        const updated = await tx.appointment.update({
           where: { id },
           data: {
             status: input.noShow ? 'NO_SHOW' : 'CANCELLED',
@@ -264,6 +264,10 @@ export class AppointmentsService {
           },
           include: { items: true },
         });
+        if (existing.clientId) {
+          await this.recomputeNoShowRisk(tx, existing.clientId);
+        }
+        return updated;
       },
     );
 
@@ -272,6 +276,50 @@ export class AppointmentsService {
     });
 
     return cancelled;
+  }
+
+  /**
+   * Predictive No-Show Scoring (Diff #1 — MVP-Heuristik).
+   *
+   * Score = max(
+   *   base:     no-show-ratio aus letzten 20 completed/no-show-Terminen,
+   *   recency:  +20 Punkte pro no-show in den letzten 90 Tagen, gecappt,
+   *   fresh:    0 wenn Kundin noch keine 3 Termine hatte — zu wenig Daten,
+   * )
+   *
+   * Gespeichert auf Client.noShowRisk (0-100). Wird nach jedem Cancel/
+   * Complete/NoShow aus der Transaktion heraus aktualisiert.
+   */
+  private async recomputeNoShowRisk(
+    tx: PrismaClient,
+    clientId: string,
+  ): Promise<void> {
+    const recent = await tx.appointment.findMany({
+      where: {
+        clientId,
+        status: { in: ['COMPLETED', 'NO_SHOW', 'CANCELLED'] },
+      },
+      orderBy: { startAt: 'desc' },
+      take: 20,
+      select: { status: true, startAt: true },
+    });
+    if (recent.length < 3) {
+      await tx.client.update({ where: { id: clientId }, data: { noShowRisk: null } });
+      return;
+    }
+    const noShowCount = recent.filter((a) => a.status === 'NO_SHOW').length;
+    const cancelCount = recent.filter((a) => a.status === 'CANCELLED').length;
+    const baseRatio = (noShowCount + cancelCount * 0.3) / recent.length;
+    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const recentNoShows = recent.filter(
+      (a) => a.status === 'NO_SHOW' && a.startAt >= cutoff,
+    ).length;
+    const recencyBonus = Math.min(recentNoShows * 20, 40);
+    const score = Math.min(100, Math.round(baseRatio * 100 + recencyBonus));
+    await tx.client.update({
+      where: { id: clientId },
+      data: { noShowRisk: score },
+    });
   }
 
   async transition(
@@ -283,7 +331,7 @@ export class AppointmentsService {
       const existing = await tx.appointment.findFirst({ where: { id } });
       if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
       const now = new Date();
-      return tx.appointment.update({
+      const updated = await tx.appointment.update({
         where: { id },
         data: {
           status: to,
@@ -292,6 +340,17 @@ export class AppointmentsService {
         },
         include: { items: true },
       });
+      if (to === 'COMPLETED' && existing.clientId) {
+        await tx.client.update({
+          where: { id: existing.clientId },
+          data: {
+            totalVisits: { increment: 1 },
+            lastVisitAt: now,
+          },
+        });
+        await this.recomputeNoShowRisk(tx, existing.clientId);
+      }
+      return updated;
     });
   }
 }

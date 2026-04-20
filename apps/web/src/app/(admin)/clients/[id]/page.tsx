@@ -20,6 +20,7 @@ interface Client {
   totalSpent: string;
   lastVisitAt: string | null;
   createdAt: string;
+  noShowRisk: string | null;
 }
 
 interface Appt {
@@ -140,6 +141,11 @@ export default async function ClientDetailPage({
             >
               {loyalty.tier.label} · {loyalty.points} Pkt
             </Badge>
+            {client.noShowRisk !== null && Number(client.noShowRisk) >= 40 ? (
+              <Badge tone="warning" dot>
+                ⚠ No-Show-Risiko {Math.round(Number(client.noShowRisk))}%
+              </Badge>
+            ) : null}
             {client.tags.map((t) => (
               <Badge key={t} tone="accent">
                 {t}
