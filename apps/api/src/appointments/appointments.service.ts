@@ -165,6 +165,35 @@ export class AppointmentsService {
     }
   }
 
+  async checkout(
+    id: string,
+    body: {
+      tipAmount: number;
+      paymentMethod: 'CASH' | 'CARD' | 'TWINT' | 'STRIPE_CHECKOUT';
+      completeAppointment: boolean;
+    },
+  ): Promise<Appointment> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.appointment.findFirst({ where: { id } });
+      if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
+      return tx.appointment.update({
+        where: { id },
+        data: {
+          tipAmount: body.tipAmount,
+          paymentMethod: body.paymentMethod,
+          paidAt: new Date(),
+          ...(body.completeAppointment
+            ? { status: 'COMPLETED', completedAt: new Date() }
+            : {}),
+        },
+        include: {
+          items: { include: { service: { select: { name: true } } } },
+        },
+      });
+    });
+  }
+
   async updateNotes(
     id: string,
     patch: { notes?: string | null; internalNotes?: string | null },

@@ -118,4 +118,26 @@ export class AppointmentsController {
   ): Promise<Appointment> {
     return this.svc.updateNotes(id, patch);
   }
+
+  @Post(':id/checkout')
+  @HttpCode(HttpStatus.OK)
+  async checkout(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+    @Body(
+      new ZodValidationPipe(
+        z.object({
+          tipAmount: z.number().min(0).max(10_000).default(0),
+          paymentMethod: z.enum(['CASH', 'CARD', 'TWINT', 'STRIPE_CHECKOUT']),
+          completeAppointment: z.boolean().default(true),
+        }),
+      ),
+    )
+    body: {
+      tipAmount: number;
+      paymentMethod: 'CASH' | 'CARD' | 'TWINT' | 'STRIPE_CHECKOUT';
+      completeAppointment: boolean;
+    },
+  ): Promise<Appointment> {
+    return this.svc.checkout(id, body);
+  }
 }

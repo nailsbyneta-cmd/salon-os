@@ -391,6 +391,9 @@ model Appointment {
   depositAmount     Decimal?          @db.Decimal(10, 2)
   depositPaid       Boolean           @default(false)
   depositPaidAt     DateTime?         @db.Timestamptz
+  tipAmount         Decimal?          @db.Decimal(10, 2)
+  paidAt            DateTime?         @db.Timestamptz
+  paymentMethod     String?
   cancelledAt       DateTime?         @db.Timestamptz
   cancelReason      String?
   noShow            Boolean           @default(false)

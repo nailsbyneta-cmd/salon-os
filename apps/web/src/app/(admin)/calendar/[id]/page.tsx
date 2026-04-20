@@ -251,9 +251,14 @@ export default async function AppointmentDetailPage({
             </form>
           ) : null}
           {a.status === 'IN_SERVICE' ? (
+            <Link href={`/pos/${a.id}`}>
+              <Button variant="accent">Kassieren →</Button>
+            </Link>
+          ) : null}
+          {(a.status === 'CHECKED_IN' || a.status === 'IN_SERVICE') ? (
             <form action={transition.bind(null, 'complete')}>
-              <Button type="submit" variant="accent">
-                Abschliessen
+              <Button type="submit" variant="secondary">
+                Ohne Kasse abschliessen
               </Button>
             </form>
           ) : null}
