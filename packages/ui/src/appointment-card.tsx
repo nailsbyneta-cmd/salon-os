@@ -71,23 +71,20 @@ export function AppointmentCard({
         className,
       )}
     >
-      <div
-        className={cn(
-          'flex items-baseline gap-2 text-xs font-medium',
-          compact && 'truncate',
-        )}
-      >
+      <div className="flex items-baseline justify-between gap-2 text-xs font-medium">
         <span className="truncate">{clientName}</span>
+        {staffLabel ? (
+          <span className="shrink-0 text-[10px] font-semibold opacity-75 tabular-nums">
+            {staffLabel}
+          </span>
+        ) : null}
       </div>
       {!compact ? (
         <>
           <div className="mt-0.5 text-[11px] truncate opacity-80">
             {serviceLabel}
           </div>
-          <div className="text-[10px] opacity-60 truncate">
-            {timeLabel}
-            {staffLabel ? ` · ${staffLabel}` : ''}
-          </div>
+          <div className="text-[10px] opacity-60 truncate">{timeLabel}</div>
         </>
       ) : null}
     </button>
