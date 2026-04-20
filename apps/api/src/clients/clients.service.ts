@@ -134,6 +134,72 @@ export class ClientsService {
       });
     });
   }
+
+  /**
+   * 1-Klick-DSGVO-Export: alle personenbezogenen Daten einer Kundin
+   * als JSON. Enthält Profil, Termine (inkl. Items + Services), alle
+   * Notizen, Buchungskanal-Historie.
+   *
+   * (Diff #31)
+   */
+  async exportPersonalData(id: string): Promise<unknown> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const client = await tx.client.findFirst({ where: { id } });
+      if (!client) throw new NotFoundException(`Client ${id} not found`);
+      const appointments = await tx.appointment.findMany({
+        where: { clientId: id },
+        orderBy: { startAt: 'desc' },
+        include: {
+          items: {
+            include: { service: { select: { name: true, slug: true } } },
+          },
+          staff: { select: { firstName: true, lastName: true } },
+          location: { select: { name: true } },
+        },
+      });
+      const totalSpent = appointments
+        .filter((a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW')
+        .reduce(
+          (sum, a) => sum + a.items.reduce((s, i) => s + Number(i.price), 0),
+          0,
+        );
+      return {
+        exportedAt: new Date().toISOString(),
+        basisGdpr: 'EU GDPR Art. 15 / Swiss DSG Art. 25',
+        client,
+        appointments,
+        totals: {
+          totalAppointments: appointments.length,
+          totalVisits: client.totalVisits,
+          totalSpent,
+          lastVisitAt: client.lastVisitAt,
+        },
+      };
+    });
+  }
+
+  /**
+   * Forget-me: markiert den Client als zu löschen. Echte Löschung via
+   * Cron-Job in 30 Tagen (Spec: `specs/compliance.md`). MVP: sofort
+   * Soft-Delete + Log.
+   */
+  async requestDeletion(id: string, reason?: string): Promise<void> {
+    const ctx = requireTenantContext();
+    await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.client.findFirst({ where: { id } });
+      if (!existing) throw new NotFoundException(`Client ${id} not found`);
+      await tx.client.update({
+        where: { id },
+        data: {
+          deletedAt: new Date(),
+          notesInternal: `[DSGVO-Löschung angefragt ${new Date().toISOString()}${
+            reason ? ': ' + reason : ''
+          }]\n\n${existing.notesInternal ?? ''}`,
+        },
+      });
+    });
+  }
 }
 
 /**

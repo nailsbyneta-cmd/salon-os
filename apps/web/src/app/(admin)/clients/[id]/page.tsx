@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Avatar, Badge, Card, CardBody, PriceDisplay, Stat } from '@salon-os/ui';
+import { Avatar, Badge, Button, Card, CardBody, PriceDisplay, Stat } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { forgetClient } from './actions';
 
 interface Client {
   id: string;
@@ -208,6 +209,31 @@ export default async function ClientDetailPage({
           </CardBody>
         </Card>
       ) : null}
+
+      <section className="mt-10 rounded-lg border border-border bg-surface/50 p-5">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+          DSGVO · Datenschutz
+        </h2>
+        <p className="mt-2 text-sm text-text-secondary">
+          Kundin fragt nach ihren Daten oder möchte gelöscht werden? Ein Klick.
+          Export enthält Profil + alle Termine, Löschung markiert zur
+          30-Tage-Entfernung.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <a
+            href={`/api/clients/${client.id}/export`}
+            download={`client-${client.id}-export.json`}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-primary transition-colors hover:bg-surface-raised"
+          >
+            ↓ Daten exportieren (JSON)
+          </a>
+          <form action={forgetClient.bind(null, client.id)}>
+            <Button type="submit" variant="danger">
+              Kundin löschen (DSGVO)
+            </Button>
+          </form>
+        </div>
+      </section>
     </div>
   );
 }
