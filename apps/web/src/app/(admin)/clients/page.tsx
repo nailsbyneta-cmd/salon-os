@@ -70,6 +70,12 @@ export default async function ClientsPage({
               Suchen
             </Button>
           </form>
+          <Link
+            href="/clients/import"
+            className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-secondary hover:bg-surface-raised"
+          >
+            ↑ Import
+          </Link>
           <a
             href="/api/clients/export"
             download

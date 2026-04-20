@@ -86,6 +86,20 @@ export type CreateClientInput = z.infer<typeof createClientSchema>;
 export const updateClientSchema = createClientSchema.partial();
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 
+export const importClientsSchema = z.object({
+  clients: z.array(createClientSchema).min(1).max(5000),
+});
+export type ImportClientsInput = z.infer<typeof importClientsSchema>;
+
+export const importClientsResultSchema = z.object({
+  created: z.number().int(),
+  skipped: z.number().int(),
+  errors: z.array(
+    z.object({ row: z.number().int(), message: z.string() }),
+  ),
+});
+export type ImportClientsResult = z.infer<typeof importClientsResultSchema>;
+
 export const clientSchema = createClientSchema.extend({
   id: uuidSchema,
   tenantId: uuidSchema,

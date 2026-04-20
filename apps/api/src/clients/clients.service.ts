@@ -125,6 +125,76 @@ export class ClientsService {
     });
   }
 
+  /**
+   * Bulk-Import mit Email-Dedupe pro Tenant. Rows mit existierender
+   * Email werden übersprungen (nicht überschrieben). Ungültige Rows
+   * sammeln wir statt alles zu canceln — so bekommt Neta einen
+   * Fehlerbericht pro Zeile.
+   */
+  async importBulk(
+    rows: CreateClientInput[],
+  ): Promise<{ created: number; skipped: number; errors: { row: number; message: string }[] }> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existingEmails = new Set(
+        (
+          await tx.client.findMany({
+            where: { email: { not: null }, deletedAt: null },
+            select: { email: true },
+          })
+        )
+          .map((c) => c.email?.toLowerCase())
+          .filter((e): e is string => Boolean(e)),
+      );
+
+      let created = 0;
+      let skipped = 0;
+      const errors: { row: number; message: string }[] = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const input = rows[i]!;
+        const emailKey = input.email?.toLowerCase();
+        if (emailKey && existingEmails.has(emailKey)) {
+          skipped++;
+          continue;
+        }
+        try {
+          await tx.client.create({
+            data: {
+              tenantId: ctx.tenantId,
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: input.email ?? null,
+              phone: input.phone ?? null,
+              phoneE164: input.phone ? normalizePhone(input.phone) : null,
+              birthday: input.birthday ? new Date(input.birthday) : null,
+              pronouns: input.pronouns ?? null,
+              address: input.address ?? undefined,
+              language: input.language ?? 'de-CH',
+              marketingOptIn: input.marketingOptIn,
+              smsOptIn: input.smsOptIn,
+              emailOptIn: input.emailOptIn,
+              allergies: input.allergies,
+              tags: input.tags,
+              preferredStaffId: input.preferredStaffId ?? null,
+              source: input.source ?? 'csv-import',
+              notesInternal: input.notesInternal ?? null,
+            },
+          });
+          if (emailKey) existingEmails.add(emailKey);
+          created++;
+        } catch (err) {
+          errors.push({
+            row: i + 1,
+            message: err instanceof Error ? err.message : 'Unbekannter Fehler',
+          });
+        }
+      }
+
+      return { created, skipped, errors };
+    });
+  }
+
   async softDelete(id: string): Promise<void> {
     const ctx = requireTenantContext();
     await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {

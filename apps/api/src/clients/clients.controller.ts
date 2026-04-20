@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import {
   createClientSchema,
+  importClientsSchema,
   updateClientSchema,
   uuidSchema,
 } from '@salon-os/types';
@@ -60,6 +61,16 @@ export class ClientsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<void> {
     await this.svc.softDelete(id);
+  }
+
+  /** Bulk-Import (CSV-Migration von Phorest/Fresha/Booksy). */
+  @Post('import')
+  @HttpCode(HttpStatus.OK)
+  async importBulk(
+    @Body(new ZodValidationPipe(importClientsSchema))
+    input: import('@salon-os/types').ImportClientsInput,
+  ): Promise<import('@salon-os/types').ImportClientsResult> {
+    return this.svc.importBulk(input.clients);
   }
 
   /** 1-Klick-DSGVO-Export: JSON mit allen Daten einer Kundin. */
