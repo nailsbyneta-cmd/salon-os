@@ -8,6 +8,7 @@ import { HealthController } from './health/health.controller.js';
 import { GiftCardsModule } from './gift-cards/gift-cards.module.js';
 import { LocationsModule } from './locations/locations.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { ProductsModule } from './products/products.module.js';
 import { PublicBookingsModule } from './public-bookings/public-bookings.module.js';
 import { RemindersModule } from './reminders/reminders.module.js';
 import { RoomsModule } from './rooms/rooms.module.js';
@@ -33,6 +34,7 @@ import { WaitlistModule } from './waitlist/waitlist.module.js';
     PaymentsModule,
     GiftCardsModule,
     WaitlistModule,
+    ProductsModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -27,6 +27,7 @@ const nav: NavItem[] = [
   { href: '/services', label: 'Services', icon: <IconScissors /> },
   { href: '/staff', label: 'Team', icon: <IconTeam /> },
   { href: '/gift-cards', label: 'Gutscheine', icon: <IconGift /> },
+  { href: '/inventory', label: 'Inventar', icon: <IconBox /> },
   { href: '/reports', label: 'Reports', icon: <IconReports /> },
 ];
 
@@ -345,6 +346,26 @@ function IconGift(): React.JSX.Element {
     >
       <rect width="20" height="14" x="2" y="7" rx="2" />
       <path d="M12 7v14M6 11.5c-1 0-2 -0.5-2-2s1-2 2-2c2 0 3 4 3 4h-3Zm12 0c1 0 2-0.5 2-2s-1-2-2-2c-2 0-3 4-3 4h3Z" />
+    </svg>
+  );
+}
+
+function IconBox(): React.JSX.Element {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M21 8V18a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 18V8" />
+      <path d="m3.3 7 8.7 5 8.7-5" />
+      <path d="M12 22V12" />
     </svg>
   );
 }

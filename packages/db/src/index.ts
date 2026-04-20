@@ -25,6 +25,7 @@ export type {
   AuditLog,
   GiftCard,
   WaitlistEntry,
+  Product,
 } from '@prisma/client';
 
 export {
