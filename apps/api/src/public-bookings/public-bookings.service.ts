@@ -504,7 +504,7 @@ function resolveOpeningIntervals(
   dateIso: string,
 ): Array<{ startMin: number; endMin: number }> {
   const d = new Date(`${dateIso}T12:00:00Z`);
-  const weekday = WEEKDAY_KEYS[d.getUTCDay()];
+  const weekday = WEEKDAY_KEYS[d.getUTCDay() % 7]!;
   const map = (openingHoursRaw ?? {}) as Record<string, OpeningDay>;
   const entry = map[weekday];
   if (!entry) return []; // kein Key = zu. Fallback nur wenn kompletter Map leer.
