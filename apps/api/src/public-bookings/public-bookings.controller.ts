@@ -51,6 +51,13 @@ export class PublicBookingsController {
     return { locations: await this.svc.listLocations(slug) };
   }
 
+  @Get('info')
+  async publicInfo(
+    @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
+  ): Promise<Awaited<ReturnType<PublicBookingsService['getPublicProfile']>>> {
+    return this.svc.getPublicProfile(slug);
+  }
+
   @Get('services')
   async listServices(
     @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,

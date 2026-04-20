@@ -94,6 +94,115 @@ export class PublicBookingsService {
   }
 
   /**
+   * Öffentliches Profil: Tenant-Meta + aktive Standorte mit
+   * Öffnungszeiten/Adresse + buchbare Staff mit Name/Bio/Foto.
+   * Alle Infos, die eine Salon-Homepage braucht — ohne Umsatz,
+   * Anstellungsart oder interne Kommentare.
+   */
+  async getPublicProfile(slug: string): Promise<{
+    tenant: {
+      slug: string;
+      name: string;
+      countryCode: string;
+      timezone: string;
+      currency: string;
+    };
+    locations: Array<{
+      id: string;
+      name: string;
+      city: string | null;
+      address1: string | null;
+      address2: string | null;
+      postalCode: string | null;
+      countryCode: string;
+      phone: string | null;
+      email: string | null;
+      latitude: number | null;
+      longitude: number | null;
+      openingHours: unknown;
+    }>;
+    staff: Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      displayName: string | null;
+      bio: string | null;
+      photoUrl: string | null;
+      color: string | null;
+    }>;
+  }> {
+    const tenantFull = await this.prismaPublic.tenant.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        countryCode: true,
+        timezone: true,
+        currency: true,
+        status: true,
+      },
+    });
+    if (
+      !tenantFull ||
+      tenantFull.status === 'SUSPENDED' ||
+      tenantFull.status === 'CANCELLED'
+    ) {
+      throw new NotFoundException(`Unknown or inactive tenant: ${slug}`);
+    }
+    return this.withTenant(tenantFull.id, null, null, async (tx) => {
+      const [locations, staff] = await Promise.all([
+        tx.location.findMany({
+          where: { deletedAt: null, publicProfile: true },
+          orderBy: { name: 'asc' },
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            address1: true,
+            address2: true,
+            postalCode: true,
+            countryCode: true,
+            phone: true,
+            email: true,
+            latitude: true,
+            longitude: true,
+            openingHours: true,
+          },
+        }),
+        tx.staff.findMany({
+          where: { deletedAt: null, active: true },
+          orderBy: { firstName: 'asc' },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            displayName: true,
+            bio: true,
+            photoUrl: true,
+            color: true,
+          },
+        }),
+      ]);
+      return {
+        tenant: {
+          slug: tenantFull.slug,
+          name: tenantFull.name,
+          countryCode: tenantFull.countryCode,
+          timezone: tenantFull.timezone,
+          currency: tenantFull.currency,
+        },
+        locations: locations.map((l) => ({
+          ...l,
+          latitude: l.latitude ? Number(l.latitude) : null,
+          longitude: l.longitude ? Number(l.longitude) : null,
+        })),
+        staff,
+      };
+    });
+  }
+
+  /**
    * Slot-Vorschläge für einen Service an einem Tag + Location.
    * Einfacher Algorithmus (MVP): nimm Öffnungszeiten der Location, teile
    * in Service-Dauer-Intervalle, filtere gegen bestehende Termine.
