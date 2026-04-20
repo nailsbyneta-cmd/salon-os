@@ -5,7 +5,10 @@
 **Fortschritt Phase 1:** ~35 % Baseline, ~20 % Differenzierung (siehe AUDIT.md)
 
 ## In Arbeit
-- [ ] Warten auf „Go-Upgrade" von Lorenc, dann Block A starten
+- [ ] P0-02 Time-Slot-Kontrast (nach P0-01 gestartet)
+
+## P0-Bugfix-Run (2026-04-20)
+- ✅ **P0-01 Business-Hours-Bug** — Booking-Seite zeigte alle Tage „geschlossen"; Slot-Generator ignorierte openingHours. Fix in `fix/p0-01-business-hours`, merged in main. Web-Parser handelt jetzt Array-of-Intervals-Shape, API availability() respektiert openingHours + TZ (DST-sicher via Intl.DateTimeFormat). Fallback „Öffnungszeiten auf Anfrage" wenn kein Datensatz.
 
 ## Fertig seit letztem Audit (2026-04-19 → 2026-04-20)
 - ✅ Block A Design-System-Grundlagen: Tokens, Dark-Mode, ⌘K, Hero-Screens
