@@ -139,7 +139,9 @@ export default async function CalendarPage({
   }
   const [appts, staff] = await Promise.all([
     loadAppointments(from, to),
-    view === 'day' ? loadStaff() : Promise.resolve([] as DndStaff[]),
+    view === 'day' || view === 'week'
+      ? loadStaff()
+      : Promise.resolve([] as DndStaff[]),
   ]);
 
   const title =
@@ -227,7 +229,7 @@ export default async function CalendarPage({
       {view === 'month' && monthAnchor ? (
         <CalendarMonth appts={appts} anchor={monthAnchor} />
       ) : view === 'week' && weekStart ? (
-        <CalendarWeek appts={appts} weekStart={weekStart} />
+        <CalendarWeek appts={appts} weekStart={weekStart} staff={staff} />
       ) : (
         <CalendarDnd appts={appts} day={day} staff={staff} />
       )}
