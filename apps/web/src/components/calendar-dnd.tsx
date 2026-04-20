@@ -16,6 +16,7 @@ import { rescheduleAppointment } from '@/app/(admin)/calendar/reschedule-action'
 import { CalendarZoomControls } from './calendar-zoom-controls';
 import { useCalendarZoom } from './use-calendar-zoom';
 import { useIsMobile } from './use-is-mobile';
+import { useOnlyActiveStaff } from './use-only-active-staff';
 
 export interface DndAppt {
   id: string;
@@ -87,11 +88,12 @@ export function CalendarDnd({
   const router = useRouter();
   const isMobile = useIsMobile();
   const [zoom, , zoomControls] = useCalendarZoom();
+  const [onlyActive, setOnlyActive] = useOnlyActiveStaff();
   const base = isMobile ? MOBILE : DESKTOP;
   const cfg = {
-    pxPerMin: base.pxPerMin * zoom,
-    colMinWidth: Math.round(base.colMinWidth * zoom),
-    timeColWidth: Math.round(base.timeColWidth),
+    pxPerMin: base.pxPerMin,
+    colWidth: Math.max(50, Math.round(base.colMinWidth * zoom)),
+    timeColWidth: base.timeColWidth,
   };
   const [appts, setAppts] = React.useState(initialAppts);
   const [undo, setUndo] = React.useState<UndoBanner | null>(null);
@@ -264,11 +266,27 @@ export function CalendarDnd({
     );
   }
 
-  const gridCols = `${cfg.timeColWidth}px repeat(${staffList.length}, minmax(${cfg.colMinWidth}px, 1fr))`;
+  const activeStaffIds = new Set(appts.map((a) => a.staffId));
+  const visibleStaff = onlyActive
+    ? staffList.filter((s) => activeStaffIds.has(s.id))
+    : staffList;
+  const shownStaff = visibleStaff.length === 0 ? staffList : visibleStaff;
+  const hiddenCount = staffList.length - shownStaff.length;
+
+  const gridCols = `${cfg.timeColWidth}px repeat(${shownStaff.length}, ${cfg.colWidth}px)`;
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="mb-2 flex justify-end">
+      <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-surface-raised">
+          <input
+            type="checkbox"
+            checked={onlyActive}
+            onChange={(e) => setOnlyActive(e.target.checked)}
+            className="h-3.5 w-3.5 accent-accent"
+          />
+          Nur aktive {hiddenCount > 0 ? `(${hiddenCount} versteckt)` : ''}
+        </label>
         <CalendarZoomControls controls={zoomControls} />
       </div>
       <div className="relative overflow-x-auto rounded-lg border border-border bg-surface">
@@ -278,7 +296,7 @@ export function CalendarDnd({
         >
           {/* Header-Zeile */}
           <div className="sticky top-0 z-20 border-b border-border bg-surface" />
-          {staffList.map((s) => (
+          {shownStaff.map((s) => (
             <div
               key={`h-${s.id}`}
               className="sticky top-0 z-20 flex items-center gap-2 border-b border-l border-border bg-surface px-3 py-2"
@@ -313,7 +331,7 @@ export function CalendarDnd({
           </div>
 
           {/* Eine Spalte pro Staff */}
-          {staffList.map((s) => {
+          {shownStaff.map((s) => {
             const staffAppts = appts.filter((a) => a.staffId === s.id);
             return (
               <div

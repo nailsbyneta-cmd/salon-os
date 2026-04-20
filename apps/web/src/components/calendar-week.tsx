@@ -21,6 +21,7 @@ import { rescheduleAppointment } from '@/app/(admin)/calendar/reschedule-action'
 import { CalendarZoomControls } from './calendar-zoom-controls';
 import { useCalendarZoom } from './use-calendar-zoom';
 import { useIsMobile } from './use-is-mobile';
+import { useOnlyActiveStaff } from './use-only-active-staff';
 
 interface WeekAppt {
   id: string;
@@ -101,11 +102,12 @@ export function CalendarWeek({
   const router = useRouter();
   const isMobile = useIsMobile();
   const [zoom, , zoomControls] = useCalendarZoom();
+  const [onlyActive, setOnlyActive] = useOnlyActiveStaff();
   const base = isMobile ? MOBILE : DESKTOP;
   const cfg = {
-    pxPerMin: base.pxPerMin * zoom,
-    colMinWidth: Math.round(base.colMinWidth * zoom),
-    timeColWidth: Math.round(base.timeColWidth),
+    pxPerMin: base.pxPerMin,
+    colWidth: Math.max(40, Math.round(base.colMinWidth * zoom)),
+    timeColWidth: base.timeColWidth,
   };
   const totalHeight = HOURS.length * 60 * cfg.pxPerMin;
   const [appts, setAppts] = React.useState(initialAppts);
@@ -127,11 +129,19 @@ export function CalendarWeek({
     [weekStart],
   );
   const todayStr = new Date().toDateString();
-  const hasStaffColumns = staff.length > 0;
-  const cols = hasStaffColumns ? staff.length : 1;
+
+  const activeStaffIds = new Set(initialAppts.map((a) => a.staffId));
+  const visibleStaff = onlyActive
+    ? staff.filter((s) => activeStaffIds.has(s.id))
+    : staff;
+  const shownStaff = visibleStaff.length === 0 ? staff : visibleStaff;
+  const hiddenCount = staff.length - shownStaff.length;
+
+  const hasStaffColumns = shownStaff.length > 0;
+  const cols = hasStaffColumns ? shownStaff.length : 1;
   const totalCols = days.length * cols;
-  const gridTemplate = `${cfg.timeColWidth}px repeat(${totalCols}, minmax(${cfg.colMinWidth}px, 1fr))`;
-  const minWidth = cfg.timeColWidth + totalCols * cfg.colMinWidth;
+  const gridTemplate = `${cfg.timeColWidth}px repeat(${totalCols}, ${cfg.colWidth}px)`;
+  const minWidth = cfg.timeColWidth + totalCols * cfg.colWidth;
 
   const byDay = React.useMemo(() => {
     const m = new Map<string, WeekAppt[]>();
@@ -299,7 +309,16 @@ export function CalendarWeek({
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="mb-2 flex justify-end">
+      <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-surface-raised">
+          <input
+            type="checkbox"
+            checked={onlyActive}
+            onChange={(e) => setOnlyActive(e.target.checked)}
+            className="h-3.5 w-3.5 accent-accent"
+          />
+          Nur aktive {hiddenCount > 0 ? `(${hiddenCount} versteckt)` : ''}
+        </label>
         <CalendarZoomControls controls={zoomControls} />
       </div>
       <div className="overflow-x-auto rounded-lg border border-border bg-surface">
@@ -340,7 +359,7 @@ export function CalendarWeek({
             <>
               <div className="sticky left-0 z-10 border-b border-r border-border bg-surface/90" />
               {days.map((d) =>
-                staff.map((s, si) => (
+                shownStaff.map((s, si) => (
                   <div
                     key={`sh-${d.toISOString()}-${s.id}`}
                     className={cn(
@@ -402,7 +421,7 @@ export function CalendarWeek({
                 />
               );
             }
-            return staff.map((s, si) => {
+            return shownStaff.map((s, si) => {
               const staffAppts = dayAppts.filter((a) => a.staffId === s.id);
               return (
                 <DayStaffColumn
