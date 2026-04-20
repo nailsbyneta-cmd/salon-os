@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Avatar, Badge, Button, Card, CardBody, PriceDisplay, Stat } from '@salon-os/ui';
+import { computeLoyalty } from '@salon-os/utils';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { forgetClient } from './actions';
@@ -97,6 +98,7 @@ export default async function ClientDetailPage({
 
   const upcoming = appts.filter((a) => new Date(a.startAt) >= new Date());
   const past = appts.filter((a) => new Date(a.startAt) < new Date());
+  const loyalty = computeLoyalty(Number(client.totalSpent));
 
   return (
     <div className="mx-auto max-w-4xl p-8">
@@ -125,15 +127,25 @@ export default async function ClientDetailPage({
             {client.email ?? '—'}
             {client.phone ? ` · ${client.phone}` : ''}
           </p>
-          {client.tags.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-1">
-              {client.tags.map((t) => (
-                <Badge key={t} tone="accent">
-                  {t}
-                </Badge>
-              ))}
-            </div>
-          ) : null}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <Badge
+              tone={
+                loyalty.tier.id === 'PLATIN' || loyalty.tier.id === 'GOLD'
+                  ? 'accent'
+                  : loyalty.tier.id === 'SILBER'
+                    ? 'info'
+                    : 'neutral'
+              }
+              dot
+            >
+              {loyalty.tier.label} · {loyalty.points} Pkt
+            </Badge>
+            {client.tags.map((t) => (
+              <Badge key={t} tone="accent">
+                {t}
+              </Badge>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -156,6 +168,57 @@ export default async function ClientDetailPage({
           }
         />
       </section>
+
+      <Card className="mb-8 overflow-hidden">
+        <div className="bg-gradient-to-r from-accent/10 via-accent/5 to-transparent px-5 py-4">
+          <div className="flex items-baseline justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+                Treue-Status
+              </p>
+              <p className="mt-1 text-2xl font-display font-semibold">
+                {loyalty.tier.label}
+              </p>
+              <p className="mt-0.5 text-xs text-text-secondary">
+                {loyalty.tier.benefitHint}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-bold tabular-nums text-text-primary">
+                {loyalty.points}
+              </p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                Punkte
+              </p>
+            </div>
+          </div>
+        </div>
+        {loyalty.nextTier ? (
+          <CardBody className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-text-secondary">
+                {loyalty.tier.label} → {loyalty.nextTier.label}
+              </span>
+              <span className="tabular-nums font-medium text-text-primary">
+                noch {loyalty.toNextCHF?.toFixed(0) ?? '—'} CHF
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-surface-raised">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-accent to-accent/70 transition-all duration-slow ease-out-expo"
+                style={{ width: `${Math.round(loyalty.progressInTier * 100)}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-text-muted">
+              Nächster Vorteil: {loyalty.nextTier.benefitHint}
+            </p>
+          </CardBody>
+        ) : (
+          <CardBody className="text-center text-xs text-text-muted">
+            Höchster Tier erreicht — danke für die Treue 💛
+          </CardBody>
+        )}
+      </Card>
 
       {upcoming.length > 0 ? (
         <section className="mb-8">

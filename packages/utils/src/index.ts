@@ -4,3 +4,4 @@ export * from './timezone.js';
 export * from './queue-names.js';
 export * from './tokens.js';
 export * from './ical.js';
+export * from './loyalty.js';
