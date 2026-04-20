@@ -202,26 +202,20 @@ function fmtChf(cents: number): string {
   return (cents / 100).toLocaleString('de-CH', { minimumFractionDigits: 2 }) + ' CHF';
 }
 
-function trendLabel(current: number, previous: number): React.JSX.Element | null {
+function trendFor(
+  current: number,
+  previous: number,
+): { value: string; direction: 'up' | 'down' | 'flat' } | undefined {
   if (previous === 0) {
-    return current === 0 ? null : (
-      <span className="text-[10px] font-medium text-success">neu</span>
-    );
+    return current === 0 ? undefined : { value: 'neu', direction: 'up' };
   }
   const diff = current - previous;
   const pct = Math.round((diff / previous) * 100);
-  if (pct === 0) return null;
-  const up = pct > 0;
-  return (
-    <span
-      className={cn(
-        'text-[10px] font-medium tabular-nums',
-        up ? 'text-success' : 'text-danger',
-      )}
-    >
-      {up ? '↑' : '↓'} {Math.abs(pct)}%
-    </span>
-  );
+  if (pct === 0) return undefined;
+  return {
+    value: `${Math.abs(pct)}%`,
+    direction: pct > 0 ? 'up' : 'down',
+  };
 }
 
 const channelLabels: Record<string, string> = {
@@ -313,21 +307,17 @@ export default async function ReportsPage({
         <StatCard
           label="Termine"
           value={stats.count}
-          sub={trendLabel(stats.count, prev.count) ?? undefined}
+          trend={trendFor(stats.count, prev.count)}
         />
         <StatCard
           label="Umsatz"
           value={fmtChf(stats.revenueCents)}
-          sub={
-            trendLabel(stats.revenueCents, prev.revenueCents) ?? undefined
-          }
+          trend={trendFor(stats.revenueCents, prev.revenueCents)}
         />
         <StatCard
           label="Abgeschlossen"
           value={stats.completedCount}
-          sub={
-            trendLabel(stats.completedCount, prev.completedCount) ?? undefined
-          }
+          trend={trendFor(stats.completedCount, prev.completedCount)}
         />
         <StatCard
           label="No-Shows + Stornos"
