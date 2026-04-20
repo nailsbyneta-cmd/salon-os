@@ -22,6 +22,11 @@ export interface CommandPaletteProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   placeholder?: string;
+  /**
+   * Async-Loader: wird bei jedem Query-Change mit 150ms Debounce aufgerufen.
+   * Rückgabewert wird zu `items` gemerged.
+   */
+  asyncItems?: (query: string) => Promise<CommandItem[]>;
 }
 
 function matches(item: CommandItem, query: string): boolean {
@@ -44,6 +49,7 @@ export function CommandPalette({
   open: controlledOpen,
   onOpenChange,
   placeholder = 'Suchen oder Befehl eingeben…',
+  asyncItems,
 }: CommandPaletteProps): React.JSX.Element {
   const [uncontrolled, setUncontrolled] = React.useState(false);
   const open = controlledOpen ?? uncontrolled;
@@ -57,8 +63,41 @@ export function CommandPalette({
 
   const [query, setQuery] = React.useState('');
   const [active, setActive] = React.useState(0);
+  const [asyncResults, setAsyncResults] = React.useState<CommandItem[]>([]);
+  const [loading, setLoading] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listRef = React.useRef<HTMLUListElement>(null);
+  const asyncSeq = React.useRef(0);
+
+  // Debounced async loader
+  React.useEffect(() => {
+    if (!asyncItems || !open) {
+      setAsyncResults([]);
+      return;
+    }
+    if (query.trim().length < 2) {
+      setAsyncResults([]);
+      return;
+    }
+    const mySeq = ++asyncSeq.current;
+    setLoading(true);
+    const timer = setTimeout(() => {
+      asyncItems(query)
+        .then((results) => {
+          if (mySeq === asyncSeq.current) {
+            setAsyncResults(results);
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          if (mySeq === asyncSeq.current) {
+            setAsyncResults([]);
+            setLoading(false);
+          }
+        });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [query, asyncItems, open]);
 
   // Keyboard-Shortcut
   React.useEffect(() => {
@@ -83,10 +122,10 @@ export function CommandPalette({
     }
   }, [open]);
 
-  const filtered = React.useMemo(
-    () => items.filter((i) => matches(i, query)),
-    [items, query],
-  );
+  const filtered = React.useMemo(() => {
+    const local = items.filter((i) => matches(i, query));
+    return [...asyncResults, ...local];
+  }, [items, asyncResults, query]);
 
   const grouped = React.useMemo(() => {
     const map = new Map<string, CommandItem[]>();

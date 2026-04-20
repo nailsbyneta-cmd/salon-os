@@ -2,7 +2,15 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { cn, CommandPalette, type CommandItem, useTheme, Kbd } from '@salon-os/ui';
+import {
+  cn,
+  CommandPalette,
+  type CommandItem,
+  useTheme,
+  Kbd,
+  Avatar,
+} from '@salon-os/ui';
+import { searchCommand } from '@/app/search-action';
 
 interface NavItem {
   href: string;
@@ -28,6 +36,26 @@ export function AdminShell({
   const router = useRouter();
   const { toggle, resolved } = useTheme();
   const [paletteOpen, setPaletteOpen] = React.useState(false);
+
+  const asyncLoader = React.useCallback(
+    async (query: string): Promise<CommandItem[]> => {
+      const hits = await searchCommand(query);
+      return hits.map((hit) => ({
+        id: hit.id,
+        label: hit.label,
+        hint: hit.hint,
+        group: hit.kind === 'client' ? 'Kundinnen' : 'Services',
+        icon:
+          hit.kind === 'client' ? (
+            <Avatar name={hit.label} size="sm" color="hsl(var(--brand-accent))" />
+          ) : (
+            <span>🛎️</span>
+          ),
+        action: () => router.push(hit.href as never),
+      }));
+    },
+    [router],
+  );
 
   const items: CommandItem[] = React.useMemo(
     () => [
@@ -170,6 +198,7 @@ export function AdminShell({
         items={items}
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
+        asyncItems={asyncLoader}
       />
     </div>
   );
