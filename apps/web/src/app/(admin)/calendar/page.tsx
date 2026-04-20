@@ -2,12 +2,13 @@ import Link from 'next/link';
 import { Badge, Button, Card, CardBody, EmptyState, cn } from '@salon-os/ui';
 import { CalendarDnd, type DndAppt } from '@/components/calendar-dnd';
 import { CalendarWeek } from '@/components/calendar-week';
+import { CalendarMonth } from '@/components/calendar-month';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { transitionAppointment, cancelAppointment } from './actions';
 
 type Status = DndAppt['status'];
-type View = 'day' | 'week';
+type View = 'day' | 'week' | 'month';
 
 interface Appt extends DndAppt {
   notes: string | null;
@@ -75,17 +76,32 @@ export default async function CalendarPage({
   searchParams: Promise<{ date?: string; view?: string }>;
 }): Promise<React.JSX.Element> {
   const { date, view: viewParam } = await searchParams;
-  const view: View = viewParam === 'week' ? 'week' : 'day';
+  const view: View =
+    viewParam === 'week' ? 'week' : viewParam === 'month' ? 'month' : 'day';
   const day = date ?? todayIso();
 
   let from: Date;
   let to: Date;
   let weekStart: Date | null = null;
+  let monthAnchor: Date | null = null;
   if (view === 'week') {
     const r = weekRange(day);
     from = r.from;
     to = r.to;
     weekStart = r.weekStart;
+  } else if (view === 'month') {
+    monthAnchor = new Date(day);
+    monthAnchor.setHours(0, 0, 0, 0);
+    // Grid reicht ggf. in Vor- und Folgemonat → wir laden einen Monat
+    // gepuffert mit je 7 Tagen oben und unten.
+    const monthStart = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth(), 1);
+    const monthEnd = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 0);
+    from = new Date(monthStart);
+    from.setDate(from.getDate() - 7);
+    from.setHours(0, 0, 0, 0);
+    to = new Date(monthEnd);
+    to.setDate(to.getDate() + 7);
+    to.setHours(23, 59, 59, 999);
   } else {
     const r = dayRange(day);
     from = r.from;
@@ -94,17 +110,32 @@ export default async function CalendarPage({
   const appts = await loadAppointments(from, to);
 
   const title =
-    view === 'week' && weekStart
-      ? `KW ${weekNumber(weekStart)} · ${weekStart.toLocaleDateString('de-CH', { day: '2-digit', month: 'short' })} – ${new Date(weekStart.getTime() + 6 * 86_400_000).toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: 'numeric' })}`
-      : new Date(day).toLocaleDateString('de-CH', {
-          weekday: 'long',
-          day: '2-digit',
+    view === 'month' && monthAnchor
+      ? monthAnchor.toLocaleDateString('de-CH', {
           month: 'long',
           year: 'numeric',
-        });
+        })
+      : view === 'week' && weekStart
+        ? `KW ${weekNumber(weekStart)} · ${weekStart.toLocaleDateString('de-CH', { day: '2-digit', month: 'short' })} – ${new Date(weekStart.getTime() + 6 * 86_400_000).toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: 'numeric' })}`
+        : new Date(day).toLocaleDateString('de-CH', {
+            weekday: 'long',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+          });
 
-  const prevDate = addDays(day, view === 'week' ? -7 : -1);
-  const nextDate = addDays(day, view === 'week' ? 7 : 1);
+  const deltaDays = view === 'month' ? 0 : view === 'week' ? 7 : 1;
+  let prevDate: string;
+  let nextDate: string;
+  if (view === 'month' && monthAnchor) {
+    const prev = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() - 1, 1);
+    const next = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 1);
+    prevDate = prev.toISOString().slice(0, 10);
+    nextDate = next.toISOString().slice(0, 10);
+  } else {
+    prevDate = addDays(day, -deltaDays);
+    nextDate = addDays(day, deltaDays);
+  }
 
   return (
     <div className="mx-auto max-w-6xl p-8">
@@ -160,7 +191,9 @@ export default async function CalendarPage({
         </div>
       </header>
 
-      {view === 'week' && weekStart ? (
+      {view === 'month' && monthAnchor ? (
+        <CalendarMonth appts={appts} anchor={monthAnchor} />
+      ) : view === 'week' && weekStart ? (
         <CalendarWeek appts={appts} weekStart={weekStart} />
       ) : (
         <CalendarDnd appts={appts} day={day} />
@@ -210,6 +243,7 @@ function ViewToggle({
   const opts: Array<{ id: View; label: string }> = [
     { id: 'day', label: 'Tag' },
     { id: 'week', label: 'Woche' },
+    { id: 'month', label: 'Monat' },
   ];
   return (
     <div className="inline-flex items-center rounded-md border border-border bg-surface p-0.5">
