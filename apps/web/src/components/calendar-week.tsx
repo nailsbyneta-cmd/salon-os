@@ -18,6 +18,9 @@ import {
   cn,
 } from '@salon-os/ui';
 import { rescheduleAppointment } from '@/app/(admin)/calendar/reschedule-action';
+import { CalendarZoomControls } from './calendar-zoom-controls';
+import { useCalendarZoom } from './use-calendar-zoom';
+import { useIsMobile } from './use-is-mobile';
 
 interface WeekAppt {
   id: string;
@@ -39,12 +42,11 @@ interface WeekStaff {
 
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 8);
 const SLOT_MINUTES = 15;
-const PX_PER_MINUTE = 48 / 60;
 const SLOTS_PER_HOUR = 60 / SLOT_MINUTES;
 const CAL_START_MIN = 8 * 60;
 const CAL_END_MIN = (8 + HOURS.length) * 60;
-const TOTAL_HEIGHT = HOURS.length * 60 * PX_PER_MINUTE;
-const COL_MIN_WIDTH = 96;
+const DESKTOP = { pxPerMin: 48 / 60, colMinWidth: 96, timeColWidth: 64 };
+const MOBILE = { pxPerMin: 72 / 60, colMinWidth: 68, timeColWidth: 40 };
 
 function minutesFromStart(iso: string): number {
   const d = new Date(iso);
@@ -97,6 +99,15 @@ export function CalendarWeek({
   staff: WeekStaff[];
 }): React.JSX.Element {
   const router = useRouter();
+  const isMobile = useIsMobile();
+  const [zoom, , zoomControls] = useCalendarZoom();
+  const base = isMobile ? MOBILE : DESKTOP;
+  const cfg = {
+    pxPerMin: base.pxPerMin * zoom,
+    colMinWidth: Math.round(base.colMinWidth * zoom),
+    timeColWidth: Math.round(base.timeColWidth),
+  };
+  const totalHeight = HOURS.length * 60 * cfg.pxPerMin;
   const [appts, setAppts] = React.useState(initialAppts);
   const [undo, setUndo] = React.useState<UndoBanner | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -119,8 +130,8 @@ export function CalendarWeek({
   const hasStaffColumns = staff.length > 0;
   const cols = hasStaffColumns ? staff.length : 1;
   const totalCols = days.length * cols;
-  const gridTemplate = `64px repeat(${totalCols}, minmax(${COL_MIN_WIDTH}px, 1fr))`;
-  const minWidth = 64 + totalCols * COL_MIN_WIDTH;
+  const gridTemplate = `${cfg.timeColWidth}px repeat(${totalCols}, minmax(${cfg.colMinWidth}px, 1fr))`;
+  const minWidth = cfg.timeColWidth + totalCols * cfg.colMinWidth;
 
   const byDay = React.useMemo(() => {
     const m = new Map<string, WeekAppt[]>();
@@ -288,6 +299,9 @@ export function CalendarWeek({
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <div className="mb-2 flex justify-end">
+        <CalendarZoomControls controls={zoomControls} />
+      </div>
       <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <div
           className="grid"
@@ -356,13 +370,13 @@ export function CalendarWeek({
           {/* Stunden-Spalte */}
           <div
             className="sticky left-0 z-10 border-r border-border bg-background/50"
-            style={{ height: TOTAL_HEIGHT }}
+            style={{ height: totalHeight }}
           >
             {HOURS.map((h) => (
               <div
                 key={h}
                 className="border-b border-border/60 pr-1 pt-0.5 text-right text-[10px] font-medium tabular-nums text-text-muted"
-                style={{ height: 60 * PX_PER_MINUTE }}
+                style={{ height: 60 * cfg.pxPerMin }}
               >
                 {String(h).padStart(2, '0')}:00
               </div>
@@ -381,6 +395,8 @@ export function CalendarWeek({
                   staffId=""
                   appts={dayAppts}
                   slots={slots}
+                  pxPerMin={cfg.pxPerMin}
+                  totalHeight={totalHeight}
                   onSlotClick={handleSlotClick}
                   dayLeftBorder
                 />
@@ -395,6 +411,8 @@ export function CalendarWeek({
                   staffId={s.id}
                   appts={staffAppts}
                   slots={slots}
+                  pxPerMin={cfg.pxPerMin}
+                  totalHeight={totalHeight}
                   onSlotClick={handleSlotClick}
                   dayLeftBorder={si === 0}
                 />
@@ -442,6 +460,8 @@ function DayStaffColumn({
   staffId,
   appts,
   slots,
+  pxPerMin,
+  totalHeight,
   onSlotClick,
   dayLeftBorder,
 }: {
@@ -449,6 +469,8 @@ function DayStaffColumn({
   staffId: string;
   appts: WeekAppt[];
   slots: number[];
+  pxPerMin: number;
+  totalHeight: number;
   onSlotClick: (day: string, staffId: string, minute: number) => void;
   dayLeftBorder: boolean;
 }): React.JSX.Element {
@@ -460,7 +482,7 @@ function DayStaffColumn({
           ? 'border-l-2 border-l-border-strong'
           : 'border-l border-border',
       )}
-      style={{ height: TOTAL_HEIGHT }}
+      style={{ height: totalHeight }}
     >
       {slots.map((m) => (
         <WeekSlot
@@ -468,7 +490,8 @@ function DayStaffColumn({
           dayKey={dayKey}
           staffId={staffId}
           minute={m}
-          topPx={m * PX_PER_MINUTE}
+          topPx={m * pxPerMin}
+          pxPerMin={pxPerMin}
           isHourBoundary={m % 60 === 0 && m > 0}
           onClick={onSlotClick}
         />
@@ -481,8 +504,8 @@ function DayStaffColumn({
           <WeekDraggableAppt
             key={a.id}
             appt={a}
-            topPx={offset * PX_PER_MINUTE + 2}
-            heightPx={Math.max(dur * PX_PER_MINUTE - 4, 22)}
+            topPx={offset * pxPerMin + 2}
+            heightPx={Math.max(dur * pxPerMin - 4, 22)}
             compact={dur < 60}
           />
         );
@@ -496,6 +519,7 @@ function WeekSlot({
   staffId,
   minute,
   topPx,
+  pxPerMin,
   isHourBoundary,
   onClick,
 }: {
@@ -503,6 +527,7 @@ function WeekSlot({
   staffId: string;
   minute: number;
   topPx: number;
+  pxPerMin: number;
   isHourBoundary: boolean;
   onClick: (day: string, staffId: string, minute: number) => void;
 }): React.JSX.Element {
@@ -523,7 +548,7 @@ function WeekSlot({
         )}
         style={{
           top: topPx,
-          height: SLOT_MINUTES * PX_PER_MINUTE,
+          height: SLOT_MINUTES * pxPerMin,
         }}
         aria-label={`Neuer Termin um ${timeLabel}`}
       />

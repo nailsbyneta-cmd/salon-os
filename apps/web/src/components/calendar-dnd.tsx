@@ -13,6 +13,9 @@ import {
 } from '@dnd-kit/core';
 import { AppointmentCard, type AppointmentStatus, Avatar, Button } from '@salon-os/ui';
 import { rescheduleAppointment } from '@/app/(admin)/calendar/reschedule-action';
+import { CalendarZoomControls } from './calendar-zoom-controls';
+import { useCalendarZoom } from './use-calendar-zoom';
+import { useIsMobile } from './use-is-mobile';
 
 export interface DndAppt {
   id: string;
@@ -35,11 +38,12 @@ export interface DndStaff {
 
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 8);
 const SLOT_MINUTES = 15;
-const PX_PER_MINUTE = 72 / 60;
 const SLOTS_PER_HOUR = 60 / SLOT_MINUTES;
 const CAL_START_MIN = 8 * 60;
 const CAL_END_MIN = (8 + HOURS.length) * 60;
-const COL_MIN_WIDTH = 180;
+// Responsive values; actual numbers picked at render time via useIsMobile.
+const DESKTOP = { pxPerMin: 72 / 60, colMinWidth: 180, timeColWidth: 72 };
+const MOBILE = { pxPerMin: 96 / 60, colMinWidth: 110, timeColWidth: 48 };
 
 function minutesFromStart(iso: string): number {
   const d = new Date(iso);
@@ -81,6 +85,14 @@ export function CalendarDnd({
   staff: DndStaff[];
 }): React.JSX.Element {
   const router = useRouter();
+  const isMobile = useIsMobile();
+  const [zoom, , zoomControls] = useCalendarZoom();
+  const base = isMobile ? MOBILE : DESKTOP;
+  const cfg = {
+    pxPerMin: base.pxPerMin * zoom,
+    colMinWidth: Math.round(base.colMinWidth * zoom),
+    timeColWidth: Math.round(base.timeColWidth),
+  };
   const [appts, setAppts] = React.useState(initialAppts);
   const [undo, setUndo] = React.useState<UndoBanner | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -238,7 +250,7 @@ export function CalendarDnd({
     { length: HOURS.length * SLOTS_PER_HOUR },
     (_, i) => i * SLOT_MINUTES,
   );
-  const totalHeight = HOURS.length * 60 * PX_PER_MINUTE;
+  const totalHeight = HOURS.length * 60 * cfg.pxPerMin;
 
   if (staffList.length === 0) {
     return (
@@ -252,10 +264,13 @@ export function CalendarDnd({
     );
   }
 
-  const gridCols = `72px repeat(${staffList.length}, minmax(${COL_MIN_WIDTH}px, 1fr))`;
+  const gridCols = `${cfg.timeColWidth}px repeat(${staffList.length}, minmax(${cfg.colMinWidth}px, 1fr))`;
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <div className="mb-2 flex justify-end">
+        <CalendarZoomControls controls={zoomControls} />
+      </div>
       <div className="relative overflow-x-auto rounded-lg border border-border bg-surface">
         <div
           className="grid"
@@ -290,7 +305,7 @@ export function CalendarDnd({
               <div
                 key={h}
                 className="border-b border-border/60 px-3 pt-1 text-right text-[10px] font-medium tabular-nums text-text-muted"
-                style={{ height: 60 * PX_PER_MINUTE }}
+                style={{ height: 60 * cfg.pxPerMin }}
               >
                 {String(h).padStart(2, '0')}:00
               </div>
@@ -311,12 +326,13 @@ export function CalendarDnd({
                     key={`${s.id}-${m}`}
                     staffId={s.id}
                     minute={m}
-                    topPx={m * PX_PER_MINUTE}
+                    topPx={m * cfg.pxPerMin}
                     isHourBoundary={m % 60 === 0 && m > 0}
+                    pxPerMin={cfg.pxPerMin}
                     onClick={handleSlotClick}
                   />
                 ))}
-                <NowLine day={day} />
+                <NowLine day={day} pxPerMin={cfg.pxPerMin} />
                 {staffAppts.map((a) => {
                   const offset = minutesFromStart(a.startAt);
                   const dur = durationMinutes(a.startAt, a.endAt);
@@ -325,8 +341,8 @@ export function CalendarDnd({
                     <DraggableAppt
                       key={a.id}
                       appt={a}
-                      topPx={offset * PX_PER_MINUTE}
-                      heightPx={Math.max(dur * PX_PER_MINUTE - 4, 28)}
+                      topPx={offset * cfg.pxPerMin}
+                      heightPx={Math.max(dur * cfg.pxPerMin - 4, 28)}
                       compact={dur < 45}
                     />
                   );
@@ -375,12 +391,14 @@ function Slot({
   minute,
   topPx,
   isHourBoundary,
+  pxPerMin,
   onClick,
 }: {
   staffId: string;
   minute: number;
   topPx: number;
   isHourBoundary: boolean;
+  pxPerMin: number;
   onClick: (staffId: string, minute: number) => void;
 }): React.JSX.Element {
   const { setNodeRef, isOver } = useDroppable({
@@ -402,7 +420,7 @@ function Slot({
         } ${isHourBoundary ? 'border-t border-border/60' : 'border-t border-border/20'}`}
         style={{
           top: topPx,
-          height: SLOT_MINUTES * PX_PER_MINUTE,
+          height: SLOT_MINUTES * pxPerMin,
         }}
         aria-label={`Neuer Termin um ${timeLabel}`}
       />
@@ -486,7 +504,13 @@ function DraggableAppt({
   );
 }
 
-function NowLine({ day }: { day: string }): React.JSX.Element | null {
+function NowLine({
+  day,
+  pxPerMin,
+}: {
+  day: string;
+  pxPerMin: number;
+}): React.JSX.Element | null {
   const [now, setNow] = React.useState(() => new Date());
   React.useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 60_000);
@@ -501,7 +525,7 @@ function NowLine({ day }: { day: string }): React.JSX.Element | null {
   return (
     <div
       className="pointer-events-none absolute left-0 right-0 z-10"
-      style={{ top: minutes * PX_PER_MINUTE }}
+      style={{ top: minutes * pxPerMin }}
     >
       <div className="relative">
         <div className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-danger" />
