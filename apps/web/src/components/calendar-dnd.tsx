@@ -273,7 +273,7 @@ export function CalendarDnd({
   const shownStaff = visibleStaff.length === 0 ? staffList : visibleStaff;
   const hiddenCount = staffList.length - shownStaff.length;
 
-  const gridCols = `${cfg.timeColWidth}px repeat(${shownStaff.length}, ${cfg.colWidth}px)`;
+  const gridCols = `${cfg.timeColWidth}px repeat(${shownStaff.length}, minmax(${cfg.colWidth}px, 1fr))`;
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>

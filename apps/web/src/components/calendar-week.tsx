@@ -140,7 +140,7 @@ export function CalendarWeek({
   const hasStaffColumns = shownStaff.length > 0;
   const cols = hasStaffColumns ? shownStaff.length : 1;
   const totalCols = days.length * cols;
-  const gridTemplate = `${cfg.timeColWidth}px repeat(${totalCols}, ${cfg.colWidth}px)`;
+  const gridTemplate = `${cfg.timeColWidth}px repeat(${totalCols}, minmax(${cfg.colWidth}px, 1fr))`;
   const minWidth = cfg.timeColWidth + totalCols * cfg.colWidth;
 
   const byDay = React.useMemo(() => {
