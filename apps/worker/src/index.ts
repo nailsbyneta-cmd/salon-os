@@ -3,11 +3,13 @@
  * BullMQ worker bootstrap.
  * Startet alle registrierten Queues.
  */
-import { Worker, type Job } from 'bullmq';
+import { Queue, Worker, type Job } from 'bullmq';
 import { prisma } from '@salon-os/db';
 import {
+  QUEUE_MARKETING,
   QUEUE_REMINDERS,
   signSelfServiceToken,
+  type MarketingScanJob,
   type ReminderJob,
 } from '@salon-os/utils';
 
@@ -130,12 +132,22 @@ async function processReminder(job: Job<ReminderJob>): Promise<void> {
 
   let subject: string;
   let lead: string;
-  if (kind === 'confirmation') {
-    subject = `Bestätigung: dein Termin im ${appt.tenant.name}`;
-    lead = `dein Termin ist gebucht. Hier alle Details:`;
-  } else {
-    subject = `Erinnerung: dein Termin morgen im ${appt.tenant.name}`;
-    lead = `kleine Erinnerung: morgen um ${timeShort} haben wir deinen Termin im ${appt.tenant.name}.`;
+  switch (kind) {
+    case 'confirmation':
+      subject = `Bestätigung: dein Termin im ${appt.tenant.name}`;
+      lead = `dein Termin ist gebucht. Hier alle Details:`;
+      break;
+    case 'marketing-rebook':
+      subject = `Zeit für den nächsten Termin im ${appt.tenant.name}?`;
+      lead = `wir freuen uns, wenn du bald wieder bei uns bist. Dein letzter Besuch war eine Weile her — wähle hier deinen nächsten Termin.`;
+      break;
+    case 'marketing-winback':
+      subject = `Wir vermissen dich im ${appt.tenant.name}`;
+      lead = `wir haben uns eine Weile nicht gesehen. Komm wieder — für dich gibt's 10 % auf den nächsten Termin.`;
+      break;
+    default:
+      subject = `Erinnerung: dein Termin morgen im ${appt.tenant.name}`;
+      lead = `kleine Erinnerung: morgen um ${timeShort} haben wir deinen Termin im ${appt.tenant.name}.`;
   }
 
   const body = `Hallo ${firstName},
@@ -157,15 +169,202 @@ ${appt.tenant.name}`;
   console.log(`[worker][${kind}] sent email for appt=${appointmentId} → ${email}`);
 }
 
+async function sendBirthdayEmail(clientId: string, tenantId: string): Promise<void> {
+  const client = await prisma.client.findFirst({
+    where: { id: clientId, tenantId },
+    include: { tenant: { select: { name: true } } },
+  });
+  if (!client || !client.email) return;
+  const salon = client.tenant.name;
+  await sendEmail({
+    to: client.email,
+    subject: `Alles Gute zum Geburtstag, ${client.firstName}! 🎉`,
+    body: `Hallo ${client.firstName},
+
+herzlichen Glückwunsch von uns im ${salon}! Zur Feier schenken wir
+dir einen kleinen Gutschein über 20 CHF für deinen nächsten Termin.
+
+Wir freuen uns auf dich.
+${salon}`,
+  });
+  console.log(`[worker][birthday] sent to client=${clientId}`);
+}
+
+async function enqueueReminder(
+  queue: Queue<ReminderJob>,
+  args: {
+    appointmentId: string;
+    tenantId: string;
+    kind: 'marketing-rebook' | 'marketing-winback';
+  },
+): Promise<void> {
+  await queue.add(
+    `mk-${args.kind}-${args.appointmentId}`,
+    {
+      appointmentId: args.appointmentId,
+      tenantId: args.tenantId,
+      channel: 'email',
+      kind: args.kind,
+    },
+    {
+      jobId: `mk-${args.kind}-${args.appointmentId}`,
+      removeOnComplete: true,
+      removeOnFail: false,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 60_000 },
+    },
+  );
+}
+
+async function runMarketingScan(
+  remindersQueue: Queue<ReminderJob>,
+): Promise<void> {
+  const now = new Date();
+  const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(now.getUTCDate()).padStart(2, '0');
+
+  // 1) Birthdays — clients whose birthday matches today's month-day.
+  //    Prisma's Date-Filter ist kein SQL-extract(), also machen wir's
+  //    als Raw-Query (tenant-agnostisch, da RLS greift nur in Transaktionen).
+  const birthdayClients = await prisma.$queryRawUnsafe<
+    Array<{ id: string; tenantId: string }>
+  >(
+    `SELECT id, "tenantId" FROM "client"
+     WHERE "birthday" IS NOT NULL
+       AND "deletedAt" IS NULL
+       AND "emailOptIn" = true
+       AND TO_CHAR("birthday", 'MM-DD') = $1
+     LIMIT 500`,
+    `${mm}-${dd}`,
+  );
+  for (const c of birthdayClients) {
+    await sendBirthdayEmail(c.id, c.tenantId).catch((err) =>
+      console.error(`[worker][birthday] failed: ${(err as Error).message}`),
+    );
+  }
+  console.log(`[worker][scan] birthdays: ${birthdayClients.length}`);
+
+  // 2) Rebook — completed appointments 28–35 Tage her, ohne Folge-Termin.
+  const rebookCutoffLow = new Date(now.getTime() - 35 * 24 * 60 * 60 * 1000);
+  const rebookCutoffHigh = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+  const rebookCandidates = await prisma.appointment.findMany({
+    where: {
+      status: 'COMPLETED',
+      completedAt: { gte: rebookCutoffLow, lte: rebookCutoffHigh },
+      client: { emailOptIn: true, deletedAt: null },
+    },
+    include: { client: { select: { id: true, tenantId: true } } },
+    take: 500,
+  });
+  let rebookSent = 0;
+  for (const appt of rebookCandidates) {
+    if (!appt.clientId) continue;
+    // Hat der Kunde schon einen Folge-Termin nach completedAt?
+    const next = await prisma.appointment.findFirst({
+      where: {
+        clientId: appt.clientId,
+        startAt: { gt: appt.completedAt ?? appt.endAt },
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+      },
+      select: { id: true },
+    });
+    if (next) continue;
+    await enqueueReminder(remindersQueue, {
+      appointmentId: appt.id,
+      tenantId: appt.tenantId,
+      kind: 'marketing-rebook',
+    });
+    rebookSent += 1;
+  }
+  console.log(`[worker][scan] rebook candidates: ${rebookSent}`);
+
+  // 3) Win-Back — last visit > 90 Tage, kein zukünftiger Termin.
+  const winbackCutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  const winbackClients = await prisma.client.findMany({
+    where: {
+      lastVisitAt: { lt: winbackCutoff },
+      deletedAt: null,
+      emailOptIn: true,
+      appointments: {
+        none: {
+          startAt: { gt: now },
+          status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        },
+      },
+    },
+    include: {
+      appointments: {
+        where: { status: 'COMPLETED' },
+        orderBy: { completedAt: 'desc' },
+        take: 1,
+      },
+    },
+    take: 500,
+  });
+  let winbackSent = 0;
+  for (const c of winbackClients) {
+    const lastAppt = c.appointments[0];
+    if (!lastAppt) continue;
+    await enqueueReminder(remindersQueue, {
+      appointmentId: lastAppt.id,
+      tenantId: c.tenantId,
+      kind: 'marketing-winback',
+    });
+    winbackSent += 1;
+  }
+  console.log(`[worker][scan] winback candidates: ${winbackSent}`);
+}
+
 console.log(`[worker] ready, Redis = ${redisUrl}`);
 console.log(
   `[worker] postmark ${postmarkToken ? 'configured' : 'NOT set — dry-run mode'}`,
 );
 
+const remindersQueueProducer = new Queue<ReminderJob>(QUEUE_REMINDERS, {
+  connection: parseRedisUrl(redisUrl),
+});
+
 const worker = new Worker<ReminderJob>(QUEUE_REMINDERS, processReminder, {
   connection: parseRedisUrl(redisUrl),
   concurrency: 4,
 });
+
+// Marketing-Queue mit repeatable Daily-Scan (09:00 Europe/Zurich = 07:00 UTC).
+const marketingQueue = new Queue<MarketingScanJob>(QUEUE_MARKETING, {
+  connection: parseRedisUrl(redisUrl),
+});
+
+const marketingWorker = new Worker<MarketingScanJob>(
+  QUEUE_MARKETING,
+  async () => {
+    try {
+      await runMarketingScan(remindersQueueProducer);
+    } catch (err) {
+      console.error(`[worker][marketing] scan failed: ${(err as Error).message}`);
+      throw err;
+    }
+  },
+  { connection: parseRedisUrl(redisUrl), concurrency: 1 },
+);
+
+marketingWorker.on('completed', () => console.log('[worker][marketing] scan done'));
+marketingWorker.on('failed', (_, err) =>
+  console.error(`[worker][marketing] scan failed: ${err.message}`),
+);
+
+void marketingQueue.upsertJobScheduler(
+  'daily-marketing-scan',
+  { pattern: '0 7 * * *' }, // Cron: jeden Tag 07:00 UTC
+  {
+    name: 'marketing-daily',
+    data: { type: 'scan' },
+    opts: {
+      removeOnComplete: true,
+      removeOnFail: false,
+    },
+  },
+);
+
 
 worker.on('completed', (job) => {
   console.log(`[worker][${QUEUE_REMINDERS}] completed ${job.id}`);
@@ -182,7 +381,12 @@ setInterval(() => {
 
 async function shutdown(): Promise<void> {
   console.log('[worker] shutting down…');
-  await worker.close();
+  await Promise.all([
+    worker.close(),
+    marketingWorker.close(),
+    marketingQueue.close(),
+    remindersQueueProducer.close(),
+  ]);
   await prisma.$disconnect();
   process.exit(0);
 }
