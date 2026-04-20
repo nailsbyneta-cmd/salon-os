@@ -15,6 +15,7 @@ import { ServicesModule } from './services/services.module.js';
 import { ShiftsModule } from './shifts/shifts.module.js';
 import { StaffModule } from './staff/staff.module.js';
 import { TenantModule } from './tenant/tenant.module.js';
+import { WaitlistModule } from './waitlist/waitlist.module.js';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { TenantModule } from './tenant/tenant.module.js';
     RemindersModule,
     PaymentsModule,
     GiftCardsModule,
+    WaitlistModule,
   ],
   controllers: [HealthController],
   providers: [

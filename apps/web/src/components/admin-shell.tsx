@@ -22,6 +22,7 @@ interface NavItem {
 const nav: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: <IconHome /> },
   { href: '/calendar', label: 'Kalender', icon: <IconCalendar /> },
+  { href: '/waitlist', label: 'Warteliste', icon: <IconClock /> },
   { href: '/clients', label: 'Kunden', icon: <IconUsers /> },
   { href: '/services', label: 'Services', icon: <IconScissors /> },
   { href: '/staff', label: 'Team', icon: <IconTeam /> },
@@ -306,6 +307,25 @@ function IconTeam(): React.JSX.Element {
     >
       <circle cx="12" cy="7" r="4" />
       <path d="M5 22a7 7 0 0 1 14 0" />
+    </svg>
+  );
+}
+
+function IconClock(): React.JSX.Element {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
     </svg>
   );
 }
