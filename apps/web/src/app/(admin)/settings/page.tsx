@@ -150,7 +150,7 @@ export default async function SettingsPage({
               </Field>
               <Field
                 label="Beschreibung"
-                hint="Längerer Text für „Über uns". Zeilenumbrüche werden übernommen."
+                hint="Längerer Text für „Über uns“. Zeilenumbrüche werden übernommen."
               >
                 <Textarea
                   name="description"
