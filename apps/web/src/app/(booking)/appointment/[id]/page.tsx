@@ -137,11 +137,22 @@ export default async function SelfServicePage({
           Dieser Termin wurde bereits storniert. Bis bald!
         </div>
       ) : (
-        <SelfServiceActions
-          appointmentId={appt.id}
-          token={t}
-          action={appt.action}
-        />
+        <>
+          <div className="flex justify-center">
+            <a
+              href={`${API_URL}/v1/public/appointments/${appt.id}.ics?t=${encodeURIComponent(t)}`}
+              download="termin.ics"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-primary transition-colors hover:bg-surface-raised"
+            >
+              📅 Zum Kalender hinzufügen
+            </a>
+          </div>
+          <SelfServiceActions
+            appointmentId={appt.id}
+            token={t}
+            action={appt.action}
+          />
+        </>
       )}
 
       <footer className="pt-4 text-center text-[11px] tracking-wider text-text-muted">

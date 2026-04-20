@@ -109,6 +109,10 @@ async function processReminder(job: Job<ReminderJob>): Promise<void> {
   });
   const cancelUrl = `${webBaseUrl}/appointment/${appt.id}?t=${cancelToken}`;
   const rescheduleUrl = `${webBaseUrl}/appointment/${appt.id}?t=${rescheduleToken}`;
+  const apiBase =
+    process.env['API_PUBLIC_URL'] ??
+    'https://salon-os-production-2346.up.railway.app';
+  const icalUrl = `${apiBase}/v1/public/appointments/${appt.id}.ics?t=${cancelToken}`;
 
   const when = appt.startAt.toLocaleString('de-CH', {
     dateStyle: 'full',
@@ -142,6 +146,7 @@ Leistung: ${services}
 Bei: ${staffName}
 Wann: ${when}
 
+In Kalender speichern: ${icalUrl}
 Termin stornieren: ${cancelUrl}
 Termin umbuchen: ${rescheduleUrl}
 

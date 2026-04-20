@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Inject,
@@ -13,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 import type { PrismaClient } from '@salon-os/db';
-import { verifySelfServiceToken } from '@salon-os/utils';
+import { buildIcal, verifySelfServiceToken } from '@salon-os/utils';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { RemindersService } from '../reminders/reminders.service.js';
 
@@ -78,6 +79,52 @@ export class SelfServiceController {
       location: appt.location,
       action: payload.action,
     };
+  }
+
+  /** iCal-Datei für „zum Kalender hinzufügen"-Links. */
+  @Get(':id.ics')
+  @Header('Content-Type', 'text/calendar; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="termin.ics"')
+  async ics(
+    @Param('id') rawId: string,
+    @Query('t') token: string,
+  ): Promise<string> {
+    const id = rawId.endsWith('.ics') ? rawId.slice(0, -4) : rawId;
+    if (!token) throw new BadRequestException('Token fehlt.');
+    const payload = verifySelfServiceToken(token);
+    if (!payload || payload.appointmentId !== id) {
+      throw new BadRequestException('Token ungültig oder abgelaufen.');
+    }
+    const appt = await this.prisma.appointment.findFirst({
+      where: { id },
+      include: {
+        items: { include: { service: { select: { name: true } } } },
+        staff: { select: { firstName: true, lastName: true } },
+        tenant: { select: { name: true } },
+        location: { select: { name: true, address1: true, city: true } },
+      },
+    });
+    if (!appt) throw new NotFoundException('Termin nicht gefunden.');
+    const services = appt.items.map((i) => i.service.name).join(', ');
+    const summary = `${appt.tenant.name}: ${services}`;
+    const location = [
+      appt.location.name,
+      appt.location.address1,
+      appt.location.city,
+    ]
+      .filter(Boolean)
+      .join(', ');
+    return buildIcal(appt.tenant.name, [
+      {
+        uid: `${appt.id}@salon-os`,
+        start: appt.startAt,
+        end: appt.endAt,
+        summary,
+        description: `Bei ${appt.staff.firstName} ${appt.staff.lastName}`,
+        location,
+        status: appt.status === 'CANCELLED' ? 'CANCELLED' : 'CONFIRMED',
+      },
+    ]);
   }
 
   @Post(':id/cancel')
