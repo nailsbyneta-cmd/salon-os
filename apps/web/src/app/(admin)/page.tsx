@@ -7,6 +7,9 @@ interface Dashboard {
   servicesCount: number;
   staffCount: number;
   clientsCount: number;
+  giftCardsOutstanding: number;
+  waitlistCount: number;
+  lowStockCount: number;
   todayAppts: Array<{
     id: string;
     startAt: string;
@@ -27,28 +30,46 @@ async function loadDashboard(): Promise<Dashboard> {
   const end = new Date();
   end.setHours(23, 59, 59, 999);
 
-  try {
-    const [svc, stf, cli, appts] = await Promise.all([
-      apiFetch<{ services: unknown[] }>('/v1/services', auth),
-      apiFetch<{ staff: unknown[] }>('/v1/staff', auth),
-      apiFetch<{ clients: unknown[] }>('/v1/clients?limit=200', auth),
+  const safe = <T,>(p: Promise<T>, fallback: T): Promise<T> =>
+    p.catch((err) => {
+      if (err instanceof ApiError) return fallback;
+      throw err;
+    });
+
+  const [svc, stf, cli, appts, gc, wl, lowStock] = await Promise.all([
+    safe(apiFetch<{ services: unknown[] }>('/v1/services', auth), { services: [] }),
+    safe(apiFetch<{ staff: unknown[] }>('/v1/staff', auth), { staff: [] }),
+    safe(apiFetch<{ clients: unknown[] }>('/v1/clients?limit=200', auth), { clients: [] }),
+    safe(
       apiFetch<{ appointments: Dashboard['todayAppts'] }>(
         `/v1/appointments?from=${start.toISOString()}&to=${end.toISOString()}`,
         auth,
       ),
-    ]);
-    return {
-      servicesCount: svc.services.length,
-      staffCount: stf.staff.length,
-      clientsCount: cli.clients.length,
-      todayAppts: appts.appointments,
-    };
-  } catch (err) {
-    if (err instanceof ApiError) {
-      return { servicesCount: 0, staffCount: 0, clientsCount: 0, todayAppts: [] };
-    }
-    throw err;
-  }
+      { appointments: [] },
+    ),
+    safe(
+      apiFetch<{ giftCards: Array<{ balance: string }> }>('/v1/gift-cards', auth),
+      { giftCards: [] },
+    ),
+    safe(apiFetch<{ entries: unknown[] }>('/v1/waitlist', auth), { entries: [] }),
+    safe(
+      apiFetch<{ products: unknown[] }>('/v1/products?lowStock=true', auth),
+      { products: [] },
+    ),
+  ]);
+
+  return {
+    servicesCount: svc.services.length,
+    staffCount: stf.staff.length,
+    clientsCount: cli.clients.length,
+    giftCardsOutstanding: gc.giftCards.reduce(
+      (s, c) => s + Number(c.balance),
+      0,
+    ),
+    waitlistCount: wl.entries.length,
+    lowStockCount: lowStock.products.length,
+    todayAppts: appts.appointments,
+  };
 }
 
 const greetingByHour = (h: number): string => {
@@ -105,7 +126,7 @@ export default async function Home(): Promise<React.JSX.Element> {
         </Link>
       </header>
 
-      <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <section className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-4">
         <Stat
           label="Termine heute"
           value={activeAppts.length}
@@ -121,6 +142,31 @@ export default async function Home(): Promise<React.JSX.Element> {
         />
         <Stat label="Kundinnen" value={d.clientsCount} href="/clients" />
         <Stat label="Services" value={d.servicesCount} href="/services" />
+      </section>
+
+      <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
+        <Stat
+          label="Warteliste"
+          value={d.waitlistCount}
+          sub={d.waitlistCount === 0 ? 'Niemand wartet' : 'Kundinnen eintragen'}
+          href="/waitlist"
+        />
+        <Stat
+          label="Gutscheine offen"
+          value={`${d.giftCardsOutstanding.toFixed(0)} CHF`}
+          sub="Aktives Guthaben"
+          href="/gift-cards"
+        />
+        <Stat
+          label="Low Stock"
+          value={d.lowStockCount}
+          sub={
+            d.lowStockCount === 0
+              ? 'Alles auf Lager'
+              : 'Produkte nachbestellen'
+          }
+          href="/inventory"
+        />
       </section>
 
       <div className="grid gap-6 md:grid-cols-3">
