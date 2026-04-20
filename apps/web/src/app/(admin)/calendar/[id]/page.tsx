@@ -1,18 +1,32 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  PriceDisplay,
+  Textarea,
+} from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
-import {
-  transitionAppointment,
-  cancelAppointment,
-} from '../actions';
+import { transitionAppointment, cancelAppointment } from '../actions';
 import { updateAppointmentNotes } from './actions';
 
 interface Appt {
   id: string;
   startAt: string;
   endAt: string;
-  status: string;
+  status:
+    | 'BOOKED'
+    | 'CONFIRMED'
+    | 'CHECKED_IN'
+    | 'IN_SERVICE'
+    | 'COMPLETED'
+    | 'CANCELLED'
+    | 'NO_SHOW'
+    | 'WAITLIST';
   notes: string | null;
   internalNotes: string | null;
   depositAmount: string | null;
@@ -51,7 +65,21 @@ async function loadAppointment(id: string): Promise<Appt | null> {
   }
 }
 
-const statusLabel: Record<string, string> = {
+const statusTone: Record<
+  Appt['status'],
+  'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'
+> = {
+  BOOKED: 'info',
+  CONFIRMED: 'success',
+  CHECKED_IN: 'warning',
+  IN_SERVICE: 'accent',
+  COMPLETED: 'neutral',
+  CANCELLED: 'danger',
+  NO_SHOW: 'danger',
+  WAITLIST: 'neutral',
+};
+
+const statusLabel: Record<Appt['status'], string> = {
   BOOKED: 'Gebucht',
   CONFIRMED: 'Bestätigt',
   CHECKED_IN: 'Eingecheckt',
@@ -93,24 +121,24 @@ export default async function AppointmentDetailPage({
   const saveNotes = updateAppointmentNotes.bind(null, a.id);
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="mx-auto max-w-4xl p-8">
       <Link
         href={`/calendar?date=${day}`}
-        className="text-sm text-neutral-500 hover:text-neutral-900"
+        className="text-xs text-text-muted transition-colors hover:text-text-primary"
       >
         ← Zum Tagesplan
       </Link>
 
-      <header className="mt-4 mb-8 flex items-start justify-between">
+      <header className="mb-8 mt-4 flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Termin
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
             {a.client ? (
               <Link
                 href={`/clients/${a.client.id}`}
-                className="hover:underline"
+                className="transition-colors hover:text-accent"
               >
                 {a.client.firstName} {a.client.lastName}
               </Link>
@@ -118,200 +146,171 @@ export default async function AppointmentDetailPage({
               'Blockzeit'
             )}
           </h1>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-text-secondary">
             {new Date(a.startAt).toLocaleDateString('de-CH', {
               weekday: 'long',
               day: '2-digit',
               month: 'long',
               year: 'numeric',
             })}{' '}
-            · {start}–{end}
+            · <span className="tabular-nums">{start}–{end}</span>
           </p>
         </div>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill(a.status)}`}
-        >
-          {statusLabel[a.status] ?? a.status}
-        </span>
+        <Badge tone={statusTone[a.status]} dot>
+          {statusLabel[a.status]}
+        </Badge>
       </header>
 
       <section className="mb-6 grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-neutral-200 bg-white p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            Kontakt
-          </p>
-          {a.client ? (
-            <>
-              <p className="mt-2 text-sm">{a.client.email ?? '—'}</p>
-              <p className="text-sm text-neutral-500">{a.client.phone ?? ''}</p>
-            </>
-          ) : (
-            <p className="mt-2 text-sm text-neutral-400">
-              Keine Kundinnendaten.
+        <Card>
+          <CardBody>
+            <p className="text-xs font-medium uppercase tracking-wider text-text-muted">
+              Kontakt
             </p>
-          )}
-        </div>
-        <div className="rounded-xl border border-neutral-200 bg-white p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            Bei
-          </p>
-          <div className="mt-2 flex items-center gap-2 text-sm">
-            <span
-              className="inline-block h-3 w-3 rounded-full"
-              style={{ backgroundColor: a.staff.color ?? '#737373' }}
-            />
-            {a.staff.firstName} {a.staff.lastName}
-          </div>
-          <p className="mt-1 text-xs text-neutral-500">{a.location.name}</p>
-        </div>
+            {a.client ? (
+              <>
+                <p className="mt-2 text-sm text-text-primary">
+                  {a.client.email ?? '—'}
+                </p>
+                <p className="text-sm text-text-muted">{a.client.phone ?? ''}</p>
+              </>
+            ) : (
+              <p className="mt-2 text-sm text-text-muted">Keine Kundinnendaten.</p>
+            )}
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <p className="text-xs font-medium uppercase tracking-wider text-text-muted">
+              Bei
+            </p>
+            <div className="mt-2 flex items-center gap-3">
+              <Avatar
+                name={`${a.staff.firstName} ${a.staff.lastName}`}
+                color={a.staff.color}
+                size="md"
+              />
+              <div>
+                <div className="text-sm font-medium text-text-primary">
+                  {a.staff.firstName} {a.staff.lastName}
+                </div>
+                <div className="text-xs text-text-muted">{a.location.name}</div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
       </section>
 
-      <section className="mb-6 rounded-xl border border-neutral-200 bg-white">
-        <h2 className="border-b border-neutral-100 px-5 py-3 text-sm font-semibold uppercase tracking-wider text-neutral-500">
-          Leistungen
-        </h2>
-        <ul className="divide-y divide-neutral-100">
+      <Card className="mb-6">
+        <div className="border-b border-border px-5 py-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Leistungen
+          </h2>
+        </div>
+        <ul>
           {a.items.map((i) => (
             <li
               key={i.id}
-              className="flex items-center justify-between px-5 py-3 text-sm"
+              className="flex items-center justify-between border-b border-border px-5 py-3 text-sm last:border-0"
             >
               <div>
-                <div className="font-medium">{i.service.name}</div>
-                <div className="text-xs text-neutral-500">{i.duration} Min</div>
+                <div className="font-medium text-text-primary">{i.service.name}</div>
+                <div className="text-xs text-text-muted">{i.duration} Min</div>
               </div>
-              <div className="font-medium tabular-nums">
-                {Number(i.price).toFixed(2)} CHF
-              </div>
+              <PriceDisplay amount={i.price} />
             </li>
           ))}
-          <li className="flex items-center justify-between bg-neutral-50 px-5 py-3 text-sm">
-            <span className="font-semibold">Total</span>
-            <span className="font-semibold tabular-nums">
-              {total.toFixed(2)} CHF
-            </span>
+          <li className="flex items-center justify-between bg-background/40 px-5 py-3 text-sm">
+            <span className="font-semibold text-text-primary">Total</span>
+            <PriceDisplay amount={total} size="lg" />
           </li>
         </ul>
-      </section>
+      </Card>
 
       {a.status !== 'COMPLETED' && a.status !== 'CANCELLED' ? (
         <section className="mb-6 flex flex-wrap gap-2">
           {a.status === 'BOOKED' ? (
             <form action={transition.bind(null, 'confirm')}>
-              <Btn>Bestätigen</Btn>
+              <Button type="submit" variant="secondary">
+                Bestätigen
+              </Button>
             </form>
           ) : null}
           {(a.status === 'BOOKED' || a.status === 'CONFIRMED') ? (
             <form action={transition.bind(null, 'check-in')}>
-              <Btn>Einchecken</Btn>
+              <Button type="submit" variant="secondary">
+                Einchecken
+              </Button>
             </form>
           ) : null}
           {a.status === 'CHECKED_IN' ? (
             <form action={transition.bind(null, 'start')}>
-              <Btn>Behandlung starten</Btn>
+              <Button type="submit" variant="secondary">
+                Behandlung starten
+              </Button>
             </form>
           ) : null}
           {a.status === 'IN_SERVICE' ? (
             <form action={transition.bind(null, 'complete')}>
-              <Btn primary>Abschliessen</Btn>
+              <Button type="submit" variant="accent">
+                Abschliessen
+              </Button>
             </form>
           ) : null}
           <form action={cancel.bind(null, 'Auf Kundenwunsch')}>
-            <Btn danger>Stornieren</Btn>
+            <Button type="submit" variant="danger">
+              Stornieren
+            </Button>
           </form>
         </section>
       ) : null}
 
-      <form
-        action={saveNotes}
-        className="space-y-4 rounded-xl border border-neutral-200 bg-white p-5"
-      >
-        <div>
-          <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            Notizen (sichtbar für Kundin)
-          </label>
-          <textarea
-            name="notes"
-            rows={2}
-            defaultValue={a.notes ?? ''}
-            className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            placeholder="z. B. gewünschte Farbe, Allergien…"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            Interne Notiz (nur Team)
-          </label>
-          <textarea
-            name="internalNotes"
-            rows={2}
-            defaultValue={a.internalNotes ?? ''}
-            className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            placeholder="z. B. stornierte schon 2×, bitte anrufen"
-          />
-        </div>
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
-          >
-            Notizen speichern
-          </button>
-        </div>
-      </form>
+      <Card>
+        <CardBody>
+          <form action={saveNotes} className="space-y-4">
+            <div>
+              <label className="text-xs font-medium uppercase tracking-wider text-text-muted">
+                Notiz für die Kundin
+              </label>
+              <Textarea
+                name="notes"
+                rows={2}
+                defaultValue={a.notes ?? ''}
+                className="mt-2"
+                placeholder="z. B. gewünschte Farbe, Allergien…"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium uppercase tracking-wider text-text-muted">
+                Interne Notiz (nur Team)
+              </label>
+              <Textarea
+                name="internalNotes"
+                rows={2}
+                defaultValue={a.internalNotes ?? ''}
+                className="mt-2"
+                placeholder="z. B. Storno-Historie, Kundin bitte anrufen…"
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" variant="primary">
+                Notizen speichern
+              </Button>
+            </div>
+          </form>
+        </CardBody>
+      </Card>
 
-      <p className="mt-6 text-xs text-neutral-400">
+      <p className="mt-6 text-xs text-text-muted">
         Gebucht am{' '}
-        {new Date(a.bookedAt).toLocaleString('de-CH', {
-          dateStyle: 'short',
-          timeStyle: 'short',
-        })}{' '}
+        <span className="tabular-nums">
+          {new Date(a.bookedAt).toLocaleString('de-CH', {
+            dateStyle: 'short',
+            timeStyle: 'short',
+          })}
+        </span>{' '}
         · via {channelLabel[a.bookedVia] ?? a.bookedVia}
       </p>
     </div>
-  );
-}
-
-function statusPill(s: string): string {
-  switch (s) {
-    case 'BOOKED':
-      return 'bg-blue-100 text-blue-800';
-    case 'CONFIRMED':
-      return 'bg-emerald-100 text-emerald-800';
-    case 'CHECKED_IN':
-      return 'bg-amber-100 text-amber-800';
-    case 'IN_SERVICE':
-      return 'bg-purple-100 text-purple-800';
-    case 'COMPLETED':
-      return 'bg-neutral-200 text-neutral-700';
-    case 'CANCELLED':
-    case 'NO_SHOW':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-neutral-100 text-neutral-700';
-  }
-}
-
-function Btn({
-  children,
-  primary,
-  danger,
-}: {
-  children: React.ReactNode;
-  primary?: boolean;
-  danger?: boolean;
-}): React.JSX.Element {
-  const variant = danger
-    ? 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
-    : primary
-      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-      : 'border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50';
-  return (
-    <button
-      type="submit"
-      className={`rounded-md px-4 py-2 text-sm font-medium transition ${variant}`}
-    >
-      {children}
-    </button>
   );
 }

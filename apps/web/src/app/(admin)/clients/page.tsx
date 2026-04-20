@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Avatar, Badge, Button, Card, CardBody, EmptyState, Input } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
@@ -36,87 +37,99 @@ export default async function ClientsPage({
   const clients = await loadClients(q);
 
   return (
-    <div className="p-8">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="mx-auto max-w-6xl p-8">
+      <header className="mb-6 flex items-end justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             CRM
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Kunden</h1>
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+            Kundinnen
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            {clients.length} {clients.length === 1 ? 'Kundin' : 'Kundinnen'} im System
+          </p>
         </div>
         <form className="flex gap-2" method="get">
-          <input
+          <Input
             name="q"
             defaultValue={q ?? ''}
             placeholder="Suchen…"
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            className="w-56"
           />
-          <button
-            type="submit"
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
-          >
+          <Button type="submit" variant="secondary">
             Suchen
-          </button>
+          </Button>
         </form>
       </header>
 
-      <section className="rounded-xl border border-neutral-200">
+      <Card>
         {clients.length === 0 ? (
-          <div className="p-10 text-center">
-            <p className="text-sm text-neutral-500">
-              Keine Kundinnen gefunden. Lege neue an oder importiere via CSV.
-            </p>
-          </div>
+          <EmptyState
+            title={q ? `Keine Treffer für „${q}"` : 'Noch keine Kundinnen'}
+            description="Lege neue an oder importiere eine CSV aus Phorest/Fresha."
+          />
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
-              <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Kontakt</th>
-                <th className="px-4 py-3">Letzter Besuch</th>
-                <th className="px-4 py-3">Besuche</th>
-                <th className="px-4 py-3">Tags</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clients.map((c) => (
-                <tr
-                  key={c.id}
-                  className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
-                >
-                  <td className="px-4 py-3 font-medium">
-                    <Link href={`/clients/${c.id}`} className="hover:underline">
-                      {c.firstName} {c.lastName}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-600">
-                    {c.email ?? '—'}
-                    {c.phone ? <span className="ml-2 text-neutral-400">· {c.phone}</span> : null}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-600">
-                    {c.lastVisitAt
-                      ? new Date(c.lastVisitAt).toLocaleDateString('de-CH')
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3 tabular-nums">{c.totalVisits}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {c.tags.slice(0, 3).map((t) => (
-                        <span
-                          key={t}
-                          className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
+          <CardBody className="p-0">
+            <table className="w-full text-sm">
+              <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                <tr>
+                  <th className="px-5 py-3">Name</th>
+                  <th className="px-5 py-3">Kontakt</th>
+                  <th className="px-5 py-3">Letzter Besuch</th>
+                  <th className="px-5 py-3 text-right">Besuche</th>
+                  <th className="px-5 py-3">Tags</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {clients.map((c) => (
+                  <tr
+                    key={c.id}
+                    className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
+                  >
+                    <td className="px-5 py-3">
+                      <Link
+                        href={`/clients/${c.id}`}
+                        className="flex items-center gap-3 font-medium text-text-primary hover:underline"
+                      >
+                        <Avatar
+                          name={`${c.firstName} ${c.lastName}`}
+                          size="sm"
+                          color="hsl(var(--brand-accent))"
+                        />
+                        {c.firstName} {c.lastName}
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3 text-text-secondary">
+                      {c.email ?? '—'}
+                      {c.phone ? (
+                        <span className="ml-2 text-text-muted">· {c.phone}</span>
+                      ) : null}
+                    </td>
+                    <td className="px-5 py-3 text-text-secondary">
+                      {c.lastVisitAt
+                        ? new Date(c.lastVisitAt).toLocaleDateString('de-CH')
+                        : '—'}
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums font-medium">
+                      {c.totalVisits}
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {c.tags.slice(0, 3).map((t) => (
+                          <Badge key={t} tone="neutral">
+                            {t}
+                          </Badge>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardBody>
         )}
-      </section>
+      </Card>
     </div>
   );
 }

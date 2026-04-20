@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Badge, Button, Card, CardBody, EmptyState, PriceDisplay } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { deleteService } from './actions';
@@ -55,90 +56,102 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
   }
 
   return (
-    <div className="p-8">
-      <header className="mb-6 flex items-start justify-between">
+    <div className="mx-auto max-w-6xl p-8">
+      <header className="mb-6 flex items-end justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Katalog
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Services</h1>
-          <p className="mt-1 text-sm text-neutral-500">
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+            Services
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
             {services.length} Services in {categories.length} Kategorien
           </p>
         </div>
-        <Link
-          href="/services/new"
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
-        >
-          + Neuer Service
+        <Link href="/services/new">
+          <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
+            Neuer Service
+          </Button>
         </Link>
       </header>
 
       {services.length === 0 ? (
-        <section className="rounded-xl border border-neutral-200 p-10 text-center">
-          <p className="text-sm text-neutral-500">Noch keine Services angelegt.</p>
-        </section>
+        <Card>
+          <EmptyState
+            title="Noch keine Services"
+            description="Lege deinen ersten Service an — Name, Dauer und Preis reichen zum Start."
+            action={
+              <Link href="/services/new">
+                <Button variant="accent">+ Neuer Service</Button>
+              </Link>
+            }
+          />
+        </Card>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {Array.from(byCategory.entries()).map(([catName, items]) => (
             <section key={catName}>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-neutral-500">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
                 {catName}
               </h2>
-              <div className="rounded-xl border border-neutral-200 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
-                    <tr>
-                      <th className="px-4 py-3">Service</th>
-                      <th className="px-4 py-3 w-24">Dauer</th>
-                      <th className="px-4 py-3 w-28 text-right">Preis</th>
-                      <th className="px-4 py-3 w-24">Status</th>
-                      <th className="px-4 py-3 w-20"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((s) => (
-                      <tr key={s.id} className="border-b border-neutral-100 last:border-0">
-                        <td className="px-4 py-3">
-                          <div className="font-medium">{s.name}</div>
-                          {s.description ? (
-                            <div className="mt-0.5 text-xs text-neutral-500">
-                              {s.description}
-                            </div>
-                          ) : null}
-                        </td>
-                        <td className="px-4 py-3 tabular-nums text-neutral-600">
-                          {s.durationMinutes} Min
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums font-medium">
-                          {Number(s.basePrice).toFixed(2)} CHF
-                        </td>
-                        <td className="px-4 py-3">
-                          {s.bookable ? (
-                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">
-                              Buchbar
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500">
-                              Inaktiv
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <form action={deleteService.bind(null, s.id)}>
-                            <button
-                              type="submit"
-                              className="text-xs text-red-600 hover:underline"
-                            >
-                              Löschen
-                            </button>
-                          </form>
-                        </td>
+              <Card>
+                <CardBody className="p-0">
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                      <tr>
+                        <th className="px-5 py-3">Service</th>
+                        <th className="w-24 px-5 py-3">Dauer</th>
+                        <th className="w-28 px-5 py-3 text-right">Preis</th>
+                        <th className="w-24 px-5 py-3">Status</th>
+                        <th className="w-20 px-5 py-3"></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {items.map((s) => (
+                        <tr
+                          key={s.id}
+                          className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
+                        >
+                          <td className="px-5 py-3">
+                            <div className="font-medium text-text-primary">{s.name}</div>
+                            {s.description ? (
+                              <div className="mt-0.5 text-xs text-text-muted">
+                                {s.description}
+                              </div>
+                            ) : null}
+                          </td>
+                          <td className="px-5 py-3 tabular-nums text-text-secondary">
+                            {s.durationMinutes} Min
+                          </td>
+                          <td className="px-5 py-3 text-right">
+                            <PriceDisplay amount={s.basePrice} size="sm" />
+                          </td>
+                          <td className="px-5 py-3">
+                            {s.bookable ? (
+                              <Badge tone="success" dot>
+                                Buchbar
+                              </Badge>
+                            ) : (
+                              <Badge tone="neutral">Inaktiv</Badge>
+                            )}
+                          </td>
+                          <td className="px-5 py-3 text-right">
+                            <form action={deleteService.bind(null, s.id)}>
+                              <button
+                                type="submit"
+                                className="text-xs text-danger transition-colors hover:underline"
+                              >
+                                Löschen
+                              </button>
+                            </form>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardBody>
+              </Card>
             </section>
           ))}
         </div>

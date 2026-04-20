@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Button, Card, CardBody, Field, Input, Select } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { createAppointment } from './actions';
@@ -66,141 +67,100 @@ export default async function NewAppointmentPage({
   const day = date ?? todayIso();
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="mx-auto max-w-2xl p-8">
       <Link
         href={`/calendar?date=${day}`}
-        className="text-sm text-neutral-500 hover:text-neutral-900"
+        className="text-xs text-text-muted transition-colors hover:text-text-primary"
       >
-        ← Zurück zum Kalender
+        ← Zum Tagesplan
       </Link>
-      <header className="mt-4 mb-6">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+      <header className="mb-6 mt-4">
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
           Kalender
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Neuer Termin</h1>
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+          Neuer Termin
+        </h1>
       </header>
 
-      <form action={createAppointment} className="space-y-5 rounded-xl border border-neutral-200 bg-white p-6">
-        <div className="grid grid-cols-2 gap-4">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">Datum</span>
-            <input
-              type="date"
-              name="date"
-              defaultValue={day}
-              required
-              className="rounded-md border border-neutral-300 px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">Uhrzeit</span>
-            <input
-              type="time"
-              name="time"
-              defaultValue="10:00"
-              step="900"
-              required
-              className="rounded-md border border-neutral-300 px-3 py-2"
-            />
-          </label>
-        </div>
+      <Card>
+        <CardBody>
+          <form action={createAppointment} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Datum" required>
+                <Input type="date" name="date" defaultValue={day} required />
+              </Field>
+              <Field label="Uhrzeit" required>
+                <Input
+                  type="time"
+                  name="time"
+                  defaultValue="10:00"
+                  step="900"
+                  required
+                />
+              </Field>
+            </div>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Service</span>
-          <select
-            name="serviceId"
-            required
-            className="rounded-md border border-neutral-300 px-3 py-2"
-          >
-            <option value="">— wählen —</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.durationMinutes} Min · {Number(s.basePrice).toFixed(2)} CHF)
-              </option>
-            ))}
-          </select>
-        </label>
+            <Field label="Service" required>
+              <Select name="serviceId" required defaultValue="">
+                <option value="">— wählen —</option>
+                {services.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.durationMinutes} Min · {Number(s.basePrice).toFixed(2)} CHF)
+                  </option>
+                ))}
+              </Select>
+            </Field>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Mitarbeiterin</span>
-          <select
-            name="staffId"
-            required
-            className="rounded-md border border-neutral-300 px-3 py-2"
-          >
-            <option value="">— wählen —</option>
-            {staff.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.firstName} {s.lastName}
-              </option>
-            ))}
-          </select>
-        </label>
+            <Field label="Mitarbeiterin" required>
+              <Select name="staffId" required defaultValue="">
+                <option value="">— wählen —</option>
+                {staff.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.firstName} {s.lastName}
+                  </option>
+                ))}
+              </Select>
+            </Field>
 
-        <fieldset className="rounded-md border border-neutral-200 p-4">
-          <legend className="px-2 text-xs font-medium uppercase tracking-wider text-neutral-500">
-            Kundin
-          </legend>
-          <label className="mt-2 flex flex-col gap-1 text-sm">
-            <span className="font-medium">Bestehende Kundin</span>
-            <select
-              name="clientId"
-              className="rounded-md border border-neutral-300 px-3 py-2"
-            >
-              <option value="">— neue Kundin anlegen —</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.firstName} {c.lastName}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <input
-              type="text"
-              name="clientFirstName"
-              placeholder="Vorname"
-              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-            <input
-              type="text"
-              name="clientLastName"
-              placeholder="Nachname"
-              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-            <input
-              type="email"
-              name="clientEmail"
-              placeholder="E-Mail (optional)"
-              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-            <input
-              type="tel"
-              name="clientPhone"
-              placeholder="Telefon (optional)"
-              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <p className="mt-2 text-xs text-neutral-500">
-            Wähle eine bestehende Kundin ODER fülle Vor-/Nachname unten aus.
-          </p>
-        </fieldset>
+            <fieldset className="rounded-md border border-border p-4">
+              <legend className="px-2 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                Kundin
+              </legend>
+              <Field label="Bestehende Kundin">
+                <Select name="clientId" defaultValue="">
+                  <option value="">— neue Kundin anlegen —</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.firstName} {c.lastName}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Input type="text" name="clientFirstName" placeholder="Vorname" />
+                <Input type="text" name="clientLastName" placeholder="Nachname" />
+                <Input type="email" name="clientEmail" placeholder="E-Mail (optional)" />
+                <Input type="tel" name="clientPhone" placeholder="Telefon (optional)" />
+              </div>
+              <p className="mt-2 text-xs text-text-muted">
+                Wähle eine bestehende Kundin ODER fülle Vor-/Nachname unten aus.
+              </p>
+            </fieldset>
 
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <Link
-            href={`/calendar?date=${day}`}
-            className="rounded-md px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100"
-          >
-            Abbrechen
-          </Link>
-          <button
-            type="submit"
-            className="rounded-md bg-neutral-900 px-5 py-2 text-sm font-medium text-white hover:bg-neutral-700"
-          >
-            Termin buchen
-          </button>
-        </div>
-      </form>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Link href={`/calendar?date=${day}`}>
+                <Button type="button" variant="ghost">
+                  Abbrechen
+                </Button>
+              </Link>
+              <Button type="submit" variant="primary">
+                Termin buchen
+              </Button>
+            </div>
+          </form>
+        </CardBody>
+      </Card>
     </div>
   );
 }

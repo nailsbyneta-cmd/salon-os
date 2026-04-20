@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Avatar, Button, Card, CardBody, EmptyState, Input } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { createShift, deleteShift } from './actions';
@@ -59,7 +60,6 @@ export default async function StaffShiftsPage({
 
   const add = createShift.bind(null, id);
 
-  // Gruppiere Shifts nach Datum
   const byDate = new Map<string, Shift[]>();
   for (const s of shifts) {
     const dateKey = s.startAt.slice(0, 10);
@@ -69,91 +69,89 @@ export default async function StaffShiftsPage({
   }
 
   return (
-    <div className="p-8 max-w-4xl">
-      <Link href="/staff" className="text-sm text-neutral-500 hover:text-neutral-900">
+    <div className="mx-auto max-w-4xl p-8">
+      <Link
+        href="/staff"
+        className="text-xs text-text-muted transition-colors hover:text-text-primary"
+      >
         ← Team
       </Link>
 
-      <header className="mt-4 mb-8 flex items-center gap-3">
-        <span
-          className="inline-block h-4 w-4 rounded-full"
-          style={{ backgroundColor: staff.color ?? '#737373' }}
+      <header className="mb-8 mt-4 flex items-center gap-4">
+        <Avatar
+          name={`${staff.firstName} ${staff.lastName}`}
+          color={staff.color}
+          size="lg"
         />
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Arbeitszeiten
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
             {staff.firstName} {staff.lastName}
           </h1>
         </div>
       </header>
 
-      <form
-        action={add}
-        className="mb-8 rounded-xl border border-neutral-200 bg-white p-5"
-      >
-        <p className="mb-4 text-sm font-medium">Neue Schicht hinzufügen</p>
-        <div className="grid grid-cols-4 gap-3 items-end">
-          <label className="flex flex-col gap-1 text-xs">
-            <span className="font-medium text-neutral-600">Datum</span>
-            <input
-              type="date"
-              name="date"
-              defaultValue={todayIso()}
-              required
-              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs">
-            <span className="font-medium text-neutral-600">Von</span>
-            <input
-              type="time"
-              name="startTime"
-              defaultValue="09:00"
-              step="1800"
-              required
-              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs">
-            <span className="font-medium text-neutral-600">Bis</span>
-            <input
-              type="time"
-              name="endTime"
-              defaultValue="18:00"
-              step="1800"
-              required
-              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </label>
-          <button
-            type="submit"
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
-          >
-            Hinzufügen
-          </button>
-        </div>
-      </form>
+      <Card className="mb-8">
+        <CardBody>
+          <form action={add}>
+            <p className="mb-4 text-sm font-medium text-text-primary">
+              Neue Schicht hinzufügen
+            </p>
+            <div className="grid grid-cols-[1.2fr_1fr_1fr_auto] items-end gap-3">
+              <label className="flex flex-col gap-1 text-xs">
+                <span className="font-medium text-text-secondary">Datum</span>
+                <Input
+                  type="date"
+                  name="date"
+                  defaultValue={todayIso()}
+                  required
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs">
+                <span className="font-medium text-text-secondary">Von</span>
+                <Input
+                  type="time"
+                  name="startTime"
+                  defaultValue="09:00"
+                  step="1800"
+                  required
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs">
+                <span className="font-medium text-text-secondary">Bis</span>
+                <Input
+                  type="time"
+                  name="endTime"
+                  defaultValue="18:00"
+                  step="1800"
+                  required
+                />
+              </label>
+              <Button type="submit" variant="primary">
+                Hinzufügen
+              </Button>
+            </div>
+          </form>
+        </CardBody>
+      </Card>
 
       {byDate.size === 0 ? (
-        <section className="rounded-xl border border-neutral-200 bg-white p-10 text-center">
-          <p className="text-sm text-neutral-500">
-            Noch keine Schichten. Füge welche hinzu um die Verfügbarkeit zu
-            steuern.
-          </p>
-        </section>
+        <Card>
+          <EmptyState
+            title="Noch keine Schichten"
+            description="Füge Schichten hinzu, damit die Verfügbarkeit im Online-Booking sauber berechnet wird."
+          />
+        </Card>
       ) : (
         <section className="space-y-4">
           {Array.from(byDate.entries())
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([dateKey, list]) => (
-              <div
-                key={dateKey}
-                className="rounded-xl border border-neutral-200 bg-white"
-              >
-                <div className="border-b border-neutral-100 px-5 py-3">
-                  <span className="text-sm font-medium">
+              <Card key={dateKey}>
+                <div className="border-b border-border px-5 py-3">
+                  <span className="text-sm font-medium text-text-primary">
                     {new Date(dateKey).toLocaleDateString('de-CH', {
                       weekday: 'long',
                       day: '2-digit',
@@ -162,7 +160,7 @@ export default async function StaffShiftsPage({
                     })}
                   </span>
                 </div>
-                <ul className="divide-y divide-neutral-100">
+                <ul>
                   {list.map((s) => {
                     const start = new Date(s.startAt).toLocaleTimeString('de-CH', {
                       hour: '2-digit',
@@ -176,15 +174,15 @@ export default async function StaffShiftsPage({
                     return (
                       <li
                         key={s.id}
-                        className="flex items-center justify-between px-5 py-3 text-sm"
+                        className="flex items-center justify-between border-b border-border px-5 py-3 text-sm last:border-0"
                       >
-                        <span className="tabular-nums">
+                        <span className="tabular-nums text-text-primary">
                           {start} – {end}
                         </span>
                         <form action={rm}>
                           <button
                             type="submit"
-                            className="text-xs text-red-600 hover:underline"
+                            className="text-xs text-danger transition-colors hover:underline"
                           >
                             Entfernen
                           </button>
@@ -193,7 +191,7 @@ export default async function StaffShiftsPage({
                     );
                   })}
                 </ul>
-              </div>
+              </Card>
             ))}
         </section>
       )}

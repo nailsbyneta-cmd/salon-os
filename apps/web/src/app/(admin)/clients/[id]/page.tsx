@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Avatar, Badge, Card, CardBody, PriceDisplay, Stat } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
@@ -44,7 +45,6 @@ async function loadClient(id: string): Promise<Client | null> {
 
 async function loadClientAppointments(clientId: string): Promise<Appt[]> {
   const ctx = getCurrentTenant();
-  // Range: letzte 2 Jahre bis 1 Jahr in die Zukunft.
   const from = new Date();
   from.setFullYear(from.getFullYear() - 2);
   const to = new Date();
@@ -62,6 +62,17 @@ async function loadClientAppointments(clientId: string): Promise<Appt[]> {
     throw err;
   }
 }
+
+const statusTone: Record<string, 'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'> = {
+  BOOKED: 'info',
+  CONFIRMED: 'success',
+  CHECKED_IN: 'warning',
+  IN_SERVICE: 'accent',
+  COMPLETED: 'neutral',
+  CANCELLED: 'danger',
+  NO_SHOW: 'danger',
+  WAITLIST: 'neutral',
+};
 
 const statusLabel: Record<string, string> = {
   BOOKED: 'Gebucht',
@@ -87,97 +98,115 @@ export default async function ClientDetailPage({
   const past = appts.filter((a) => new Date(a.startAt) < new Date());
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="mx-auto max-w-4xl p-8">
       <Link
         href="/clients"
-        className="text-sm text-neutral-500 hover:text-neutral-900"
+        className="text-xs text-text-muted transition-colors hover:text-text-primary"
       >
         ← Alle Kundinnen
       </Link>
 
-      <header className="mt-4 mb-8 flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+      <header className="mb-8 mt-4 flex items-start gap-5">
+        <Avatar
+          name={`${client.firstName} ${client.lastName}`}
+          size="xl"
+          color="hsl(var(--brand-accent))"
+          vip={client.totalVisits >= 10}
+        />
+        <div className="flex-1">
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Kundin
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
             {client.firstName} {client.lastName}
           </h1>
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-text-secondary">
             {client.email ?? '—'}
             {client.phone ? ` · ${client.phone}` : ''}
           </p>
+          {client.tags.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-1">
+              {client.tags.map((t) => (
+                <Badge key={t} tone="accent">
+                  {t}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
         </div>
       </header>
 
       <section className="mb-8 grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-neutral-200 bg-white p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            Besuche
-          </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
-            {client.totalVisits}
-          </p>
-        </div>
-        <div className="rounded-xl border border-neutral-200 bg-white p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            Umsatz
-          </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
-            {Number(client.totalSpent).toFixed(2)} CHF
-          </p>
-        </div>
-        <div className="rounded-xl border border-neutral-200 bg-white p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            Letzter Besuch
-          </p>
-          <p className="mt-1 text-sm text-neutral-700">
-            {client.lastVisitAt
-              ? new Date(client.lastVisitAt).toLocaleDateString('de-CH')
-              : '—'}
-          </p>
-        </div>
+        <Stat label="Besuche" value={client.totalVisits} />
+        <Stat
+          label="Umsatz total"
+          value={`${Number(client.totalSpent).toLocaleString('de-CH', { minimumFractionDigits: 2 })} CHF`}
+        />
+        <Stat
+          label="Letzter Besuch"
+          value={
+            client.lastVisitAt
+              ? new Date(client.lastVisitAt).toLocaleDateString('de-CH', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                })
+              : '—'
+          }
+        />
       </section>
 
       {upcoming.length > 0 ? (
         <section className="mb-8">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-neutral-500">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
             Bevorstehende Termine
           </h2>
-          <div className="rounded-xl border border-neutral-200 bg-white divide-y divide-neutral-100">
-            {upcoming.map((a) => (
-              <ApptRow key={a.id} a={a} />
-            ))}
-          </div>
+          <Card>
+            <CardBody className="p-0">
+              <ul className="divide-y divide-border">
+                {upcoming.map((a) => (
+                  <ApptRow key={a.id} a={a} />
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
         </section>
       ) : null}
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-neutral-500">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
           Verlauf
         </h2>
         {past.length === 0 ? (
-          <div className="rounded-xl border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">
-            Noch keine vergangenen Termine.
-          </div>
+          <Card>
+            <CardBody className="py-10 text-center text-sm text-text-muted">
+              Noch keine vergangenen Termine.
+            </CardBody>
+          </Card>
         ) : (
-          <div className="rounded-xl border border-neutral-200 bg-white divide-y divide-neutral-100">
-            {past.map((a) => (
-              <ApptRow key={a.id} a={a} />
-            ))}
-          </div>
+          <Card>
+            <CardBody className="p-0">
+              <ul className="divide-y divide-border">
+                {past.map((a) => (
+                  <ApptRow key={a.id} a={a} />
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
         )}
       </section>
 
       {client.notes ? (
-        <section className="mt-8 rounded-xl border border-neutral-200 bg-amber-50 p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-amber-800">
-            Notizen
-          </p>
-          <p className="mt-1 text-sm text-neutral-700 whitespace-pre-line">
-            {client.notes}
-          </p>
-        </section>
+        <Card className="mt-8 border-l-4 border-l-warning bg-warning/5">
+          <CardBody>
+            <p className="text-xs font-medium uppercase tracking-wider text-warning">
+              Interne Notiz
+            </p>
+            <p className="mt-2 whitespace-pre-line text-sm text-text-primary">
+              {client.notes}
+            </p>
+          </CardBody>
+        </Card>
       ) : null}
     </div>
   );
@@ -187,14 +216,14 @@ function ApptRow({ a }: { a: Appt }): React.JSX.Element {
   const service = a.items.map((i) => i.service.name).join(', ') || '—';
   const staff = `${a.staff.firstName} ${a.staff.lastName[0]}.`;
   return (
-    <div className="flex items-center gap-4 px-4 py-3 text-sm">
-      <div className="w-32 text-neutral-600 tabular-nums">
+    <li className="flex items-center gap-4 px-5 py-3 text-sm">
+      <div className="w-32 tabular-nums text-text-secondary">
         {new Date(a.startAt).toLocaleDateString('de-CH', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
         })}
-        <span className="ml-2 text-xs text-neutral-400">
+        <span className="ml-2 text-xs text-text-muted">
           {new Date(a.startAt).toLocaleTimeString('de-CH', {
             hour: '2-digit',
             minute: '2-digit',
@@ -202,10 +231,12 @@ function ApptRow({ a }: { a: Appt }): React.JSX.Element {
         </span>
       </div>
       <div className="flex-1">
-        <div className="font-medium">{service}</div>
-        <div className="text-xs text-neutral-500">{staff}</div>
+        <div className="font-medium text-text-primary">{service}</div>
+        <div className="text-xs text-text-muted">{staff}</div>
       </div>
-      <div className="text-xs text-neutral-500">{statusLabel[a.status] ?? a.status}</div>
-    </div>
+      <Badge tone={statusTone[a.status] ?? 'neutral'}>
+        {statusLabel[a.status] ?? a.status}
+      </Badge>
+    </li>
   );
 }

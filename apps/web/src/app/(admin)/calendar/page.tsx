@@ -1,28 +1,14 @@
 import Link from 'next/link';
-import { AppointmentCard, Badge, Button, Card, CardBody, EmptyState } from '@salon-os/ui';
+import { Badge, Button, Card, CardBody, EmptyState } from '@salon-os/ui';
+import { CalendarDnd, type DndAppt } from '@/components/calendar-dnd';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { transitionAppointment, cancelAppointment } from './actions';
 
-interface Appt {
-  id: string;
-  startAt: string;
-  endAt: string;
-  status:
-    | 'BOOKED'
-    | 'CONFIRMED'
-    | 'CHECKED_IN'
-    | 'IN_SERVICE'
-    | 'COMPLETED'
-    | 'CANCELLED'
-    | 'NO_SHOW'
-    | 'WAITLIST';
-  staffId: string;
-  clientId: string | null;
+type Status = DndAppt['status'];
+
+interface Appt extends DndAppt {
   notes: string | null;
-  client: { firstName: string; lastName: string } | null;
-  staff: { firstName: string; lastName: string; color: string | null };
-  items: Array<{ service: { name: string } }>;
 }
 
 function dayRange(dateIso: string): { from: string; to: string } {
@@ -53,19 +39,6 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-const HOURS = Array.from({ length: 11 }, (_, i) => i + 8);
-const ROW_HEIGHT = 72;
-const CAL_START = 8 * 60;
-
-function minutesFromStart(iso: string): number {
-  const d = new Date(iso);
-  return d.getHours() * 60 + d.getMinutes() - CAL_START;
-}
-
-function durationMinutes(startIso: string, endIso: string): number {
-  return (new Date(endIso).getTime() - new Date(startIso).getTime()) / 60000;
-}
-
 export default async function CalendarPage({
   searchParams,
 }: {
@@ -91,7 +64,7 @@ export default async function CalendarPage({
             })}
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
-            {appts.length} Termine · Studio 1, St. Gallen Winkeln
+            {appts.length} Termine · Studio 1, St. Gallen Winkeln · Ziehen zum Umbuchen
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -114,73 +87,13 @@ export default async function CalendarPage({
         </div>
       </header>
 
-      <Card className="overflow-hidden">
-        <div className="relative grid grid-cols-[72px_1fr]">
-          <div className="border-r border-border bg-background/50">
-            {HOURS.map((h) => (
-              <div
-                key={h}
-                className="border-b border-border/60 px-3 pt-1 text-right text-[10px] font-medium text-text-muted tabular-nums"
-                style={{ height: ROW_HEIGHT }}
-              >
-                {String(h).padStart(2, '0')}:00
-              </div>
-            ))}
-          </div>
-          <div className="relative">
-            {HOURS.map((h) => (
-              <div
-                key={h}
-                className="border-b border-border/60"
-                style={{ height: ROW_HEIGHT }}
-              />
-            ))}
-            {appts.map((a) => {
-              const offset = minutesFromStart(a.startAt);
-              const dur = durationMinutes(a.startAt, a.endAt);
-              if (offset < 0 || offset >= HOURS.length * 60) return null;
-              const clientName = a.client
-                ? `${a.client.firstName} ${a.client.lastName}`
-                : 'Blockzeit';
-              const services = a.items.map((i) => i.service.name).join(', ') || '—';
-              const staff = `${a.staff.firstName} ${a.staff.lastName[0]}.`;
-              const timeLabel = new Date(a.startAt).toLocaleTimeString('de-CH', {
-                hour: '2-digit',
-                minute: '2-digit',
-              });
-              return (
-                <div
-                  key={a.id}
-                  className="absolute left-1.5 right-2"
-                  style={{
-                    top: (offset / 60) * ROW_HEIGHT + 2,
-                    height: Math.max((dur / 60) * ROW_HEIGHT - 4, 28),
-                  }}
-                >
-                  <Link href={`/calendar/${a.id}`} className="block h-full">
-                    <AppointmentCard
-                      clientName={clientName}
-                      serviceLabel={services}
-                      staffLabel={staff}
-                      timeLabel={timeLabel}
-                      status={a.status}
-                      staffColor={a.staff.color}
-                      compact={dur < 45}
-                      className="h-full"
-                    />
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </Card>
+      <CalendarDnd appts={appts} day={day} />
 
       {appts.length === 0 ? (
         <Card className="mt-6">
           <EmptyState
             title="Heute frei"
-            description="Keine Termine gebucht. Neue Kundin eingetragen? Lege sofort einen Termin an."
+            description="Keine Termine gebucht. Neue Kundin im Telefon? Lege direkt einen Termin an."
             action={
               <Link href={`/calendar/new?date=${day}`}>
                 <Button variant="accent">+ Neuer Termin</Button>
@@ -275,8 +188,8 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
   );
 }
 
-function StatusBadge({ status }: { status: Appt['status'] }): React.JSX.Element {
-  const labels: Record<Appt['status'], string> = {
+function StatusBadge({ status }: { status: Status }): React.JSX.Element {
+  const labels: Record<Status, string> = {
     BOOKED: 'Gebucht',
     CONFIRMED: 'Bestätigt',
     CHECKED_IN: 'Eingecheckt',
@@ -286,7 +199,7 @@ function StatusBadge({ status }: { status: Appt['status'] }): React.JSX.Element 
     NO_SHOW: 'No-Show',
     WAITLIST: 'Warteliste',
   };
-  const tones: Record<Appt['status'], 'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'> = {
+  const tones: Record<Status, 'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'> = {
     BOOKED: 'info',
     CONFIRMED: 'success',
     CHECKED_IN: 'warning',

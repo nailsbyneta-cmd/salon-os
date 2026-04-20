@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Avatar, Badge, Button, Card, CardBody, EmptyState } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { deleteStaff } from './actions';
@@ -45,76 +46,78 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
   const staff = await loadStaff();
 
   return (
-    <div className="p-8">
-      <header className="mb-6 flex items-start justify-between">
+    <div className="mx-auto max-w-6xl p-8">
+      <header className="mb-6 flex items-end justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Team
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Mitarbeiterinnen</h1>
-          <p className="mt-1 text-sm text-neutral-500">
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+            Mitarbeiterinnen
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
             {staff.length} aktive Teammitglieder
           </p>
         </div>
-        <Link
-          href="/staff/new"
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
-        >
-          + Neue Mitarbeiterin
+        <Link href="/staff/new">
+          <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
+            Neue Mitarbeiterin
+          </Button>
         </Link>
       </header>
 
       {staff.length === 0 ? (
-        <section className="rounded-xl border border-neutral-200 p-10 text-center">
-          <p className="text-sm text-neutral-500">Keine Mitarbeiterinnen angelegt.</p>
-        </section>
+        <Card>
+          <EmptyState
+            title="Keine Mitarbeiterinnen"
+            description="Füge die erste Stylistin hinzu, damit Termine vergeben werden können."
+            action={
+              <Link href="/staff/new">
+                <Button variant="accent">+ Mitarbeiterin anlegen</Button>
+              </Link>
+            }
+          />
+        </Card>
       ) : (
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {staff.map((s) => {
             const name = s.displayName ?? `${s.firstName} ${s.lastName}`;
-            const initials = `${s.firstName[0] ?? ''}${s.lastName[0] ?? ''}`.toUpperCase();
             return (
-              <article
-                key={s.id}
-                className="rounded-xl border border-neutral-200 bg-white p-5"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold text-white"
-                    style={{ backgroundColor: s.color ?? '#737373' }}
-                  >
-                    {initials}
-                  </div>
-                  <div>
-                    <div className="font-medium">{name}</div>
-                    <div className="text-xs text-neutral-500">
-                      {roleLabels[s.role] ?? s.role}
+              <Card key={s.id} elevation="hoverable">
+                <CardBody>
+                  <div className="flex items-center gap-3">
+                    <Avatar name={name} color={s.color} size="lg" />
+                    <div>
+                      <div className="font-medium text-text-primary">{name}</div>
+                      <Badge tone={s.role === 'OWNER' ? 'accent' : 'neutral'}>
+                        {roleLabels[s.role] ?? s.role}
+                      </Badge>
                     </div>
                   </div>
-                </div>
-                <div className="mt-4 space-y-1 text-xs text-neutral-500">
-                  <div>{s.email}</div>
-                  {s.phone ? <div>{s.phone}</div> : null}
-                </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <Link
-                    href={`/staff/${s.id}/shifts`}
-                    className="text-xs text-neutral-600 hover:underline"
-                  >
-                    Arbeitszeiten →
-                  </Link>
-                  {s.role !== 'OWNER' ? (
-                    <form action={deleteStaff.bind(null, s.id)}>
-                      <button
-                        type="submit"
-                        className="text-xs text-red-600 hover:underline"
-                      >
-                        Entfernen
-                      </button>
-                    </form>
-                  ) : null}
-                </div>
-              </article>
+                  <div className="mt-4 space-y-1 text-xs text-text-muted">
+                    <div>{s.email}</div>
+                    {s.phone ? <div>{s.phone}</div> : null}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                    <Link
+                      href={`/staff/${s.id}/shifts`}
+                      className="text-xs font-medium text-text-secondary transition-colors hover:text-text-primary"
+                    >
+                      Arbeitszeiten →
+                    </Link>
+                    {s.role !== 'OWNER' ? (
+                      <form action={deleteStaff.bind(null, s.id)}>
+                        <button
+                          type="submit"
+                          className="text-xs text-danger hover:underline"
+                        >
+                          Entfernen
+                        </button>
+                      </form>
+                    ) : null}
+                  </div>
+                </CardBody>
+              </Card>
             );
           })}
         </section>

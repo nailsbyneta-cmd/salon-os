@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Button, Card, CardBody, Field, Input, Select, Textarea } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { createService, createCategory } from '../actions';
@@ -26,134 +27,104 @@ export default async function NewServicePage(): Promise<React.JSX.Element> {
   const categories = await loadCategories();
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="mx-auto max-w-2xl p-8">
       <Link
         href="/services"
-        className="text-sm text-neutral-500 hover:text-neutral-900"
+        className="text-xs text-text-muted transition-colors hover:text-text-primary"
       >
         ← Services
       </Link>
-      <header className="mt-4 mb-6">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+      <header className="mb-6 mt-4">
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
           Katalog
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Neuer Service</h1>
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+          Neuer Service
+        </h1>
       </header>
 
       {categories.length === 0 ? (
-        <form
-          action={createCategory}
-          className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4"
-        >
-          <p className="text-sm font-medium text-amber-900">
-            Noch keine Kategorie — leg erst eine an.
-          </p>
-          <div className="mt-3 flex gap-2">
-            <input
-              name="name"
-              required
-              placeholder="z. B. Nägel, Wimpern, Brauen"
-              className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
-            >
-              Kategorie anlegen
-            </button>
-          </div>
-        </form>
+        <Card className="mb-6 border-l-4 border-l-warning bg-warning/5">
+          <CardBody>
+            <form action={createCategory} className="space-y-3">
+              <p className="text-sm font-medium text-text-primary">
+                Noch keine Kategorie — leg erst eine an.
+              </p>
+              <div className="flex gap-2">
+                <Input name="name" required placeholder="z. B. Nägel, Wimpern, Brauen" className="flex-1" />
+                <Button type="submit" variant="accent">
+                  Kategorie anlegen
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
       ) : null}
 
-      <form
-        action={createService}
-        className="space-y-5 rounded-xl border border-neutral-200 bg-white p-6"
-      >
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Name</span>
-          <input
-            name="name"
-            required
-            placeholder="Nagel-Modellage Gel"
-            className="rounded-md border border-neutral-300 px-3 py-2"
-          />
-        </label>
+      <Card>
+        <CardBody>
+          <form action={createService} className="space-y-5">
+            <Field label="Name" required>
+              <Input name="name" required placeholder="Nagel-Modellage Gel" />
+            </Field>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Kategorie</span>
-          <select
-            name="categoryId"
-            required
-            defaultValue=""
-            className="rounded-md border border-neutral-300 px-3 py-2"
-          >
-            <option value="">— wählen —</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            <Field label="Kategorie" required>
+              <Select name="categoryId" required defaultValue="">
+                <option value="">— wählen —</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Beschreibung (optional)</span>
-          <textarea
-            name="description"
-            rows={3}
-            className="rounded-md border border-neutral-300 px-3 py-2"
-          />
-        </label>
+            <Field label="Beschreibung" hint="Optional — wird auf der Booking-Seite angezeigt.">
+              <Textarea name="description" rows={3} />
+            </Field>
 
-        <div className="grid grid-cols-2 gap-4">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">Dauer (Minuten)</span>
-            <input
-              type="number"
-              name="durationMinutes"
-              min={5}
-              max={600}
-              step={5}
-              defaultValue={60}
-              required
-              className="rounded-md border border-neutral-300 px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">Preis (CHF)</span>
-            <input
-              type="number"
-              name="basePrice"
-              min={0}
-              step="0.01"
-              defaultValue={80}
-              required
-              className="rounded-md border border-neutral-300 px-3 py-2"
-            />
-          </label>
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Dauer (Minuten)" required>
+                <Input
+                  type="number"
+                  name="durationMinutes"
+                  min={5}
+                  max={600}
+                  step={5}
+                  defaultValue={60}
+                  required
+                />
+              </Field>
+              <Field label="Preis (CHF)" required>
+                <Input
+                  type="number"
+                  name="basePrice"
+                  min={0}
+                  step="0.01"
+                  defaultValue={80}
+                  required
+                />
+              </Field>
+            </div>
 
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="bookable" defaultChecked className="h-4 w-4" />
-          <span>Online buchbar</span>
-        </label>
+            <label className="flex items-center gap-2 text-sm text-text-secondary">
+              <input type="checkbox" name="bookable" defaultChecked className="h-4 w-4" />
+              <span>Online buchbar</span>
+            </label>
 
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <Link
-            href="/services"
-            className="rounded-md px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100"
-          >
-            Abbrechen
-          </Link>
-          <button
-            type="submit"
-            disabled={categories.length === 0}
-            className="rounded-md bg-neutral-900 px-5 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-40"
-          >
-            Service anlegen
-          </button>
-        </div>
-      </form>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Link href="/services">
+                <Button type="button" variant="ghost">
+                  Abbrechen
+                </Button>
+              </Link>
+              <Button type="submit" variant="primary" disabled={categories.length === 0}>
+                Service anlegen
+              </Button>
+            </div>
+          </form>
+        </CardBody>
+      </Card>
     </div>
   );
 }
