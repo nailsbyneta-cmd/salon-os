@@ -11,6 +11,7 @@ import {
 } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { ClientBrief } from '@/components/client-brief';
 import { transitionAppointment, cancelAppointment } from '../actions';
 import { updateAppointmentNotes } from './actions';
 
@@ -41,6 +42,7 @@ interface Appt {
     email: string | null;
     phone: string | null;
   } | null;
+  staffId: string;
   staff: { firstName: string; lastName: string; color: string | null };
   location: { name: string };
   items: Array<{
@@ -160,6 +162,13 @@ export default async function AppointmentDetailPage({
           {statusLabel[a.status]}
         </Badge>
       </header>
+
+      {a.client ? (
+        <ClientBrief
+          clientId={a.client.id}
+          appointmentStaffId={a.staffId}
+        />
+      ) : null}
 
       <section className="mb-6 grid grid-cols-2 gap-4">
         <Card>
