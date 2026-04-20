@@ -11,7 +11,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import { AppointmentCard, type AppointmentStatus, Button } from '@salon-os/ui';
+import { AppointmentCard, type AppointmentStatus, Avatar, Button } from '@salon-os/ui';
 import { rescheduleAppointment } from '@/app/(admin)/calendar/reschedule-action';
 
 export interface DndAppt {
@@ -20,9 +20,17 @@ export interface DndAppt {
   endAt: string;
   status: AppointmentStatus;
   clientId: string | null;
+  staffId: string;
   client: { firstName: string; lastName: string } | null;
   staff: { firstName: string; lastName: string; color: string | null };
   items: Array<{ service: { name: string } }>;
+}
+
+export interface DndStaff {
+  id: string;
+  firstName: string;
+  lastName: string;
+  color: string | null;
 }
 
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 8);
@@ -31,6 +39,7 @@ const PX_PER_MINUTE = 72 / 60;
 const SLOTS_PER_HOUR = 60 / SLOT_MINUTES;
 const CAL_START_MIN = 8 * 60;
 const CAL_END_MIN = (8 + HOURS.length) * 60;
+const COL_MIN_WIDTH = 180;
 
 function minutesFromStart(iso: string): number {
   const d = new Date(iso);
@@ -41,19 +50,35 @@ function durationMinutes(startIso: string, endIso: string): number {
   return (new Date(endIso).getTime() - new Date(startIso).getTime()) / 60000;
 }
 
+function parseDropId(
+  raw: string,
+): { staffId: string; minute: number } | null {
+  if (!raw.startsWith('slot:')) return null;
+  const rest = raw.slice('slot:'.length);
+  const sep = rest.lastIndexOf(':');
+  if (sep === -1) return null;
+  const staffId = rest.slice(0, sep);
+  const minute = Number(rest.slice(sep + 1));
+  if (!Number.isFinite(minute)) return null;
+  return { staffId, minute };
+}
+
 interface UndoBanner {
   appointmentId: string;
   previousStart: string;
   previousEnd: string;
+  previousStaffId: string;
   newStartLabel: string;
 }
 
 export function CalendarDnd({
   appts: initialAppts,
   day,
+  staff: staffList,
 }: {
   appts: DndAppt[];
   day: string;
+  staff: DndStaff[];
 }): React.JSX.Element {
   const router = useRouter();
   const [appts, setAppts] = React.useState(initialAppts);
@@ -61,16 +86,18 @@ export function CalendarDnd({
   const [error, setError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
 
-  const handleSlotClick = (minute: number): void => {
-    const hours = Math.floor((CAL_START_MIN + minute) / 60);
-    const mins = (CAL_START_MIN + minute) % 60;
-    const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-    router.push(`/calendar/new?date=${day}&time=${timeStr}`);
-  };
-
   React.useEffect(() => {
     setAppts(initialAppts);
   }, [initialAppts]);
+
+  const handleSlotClick = (staffId: string, minute: number): void => {
+    const hours = Math.floor((CAL_START_MIN + minute) / 60);
+    const mins = (CAL_START_MIN + minute) % 60;
+    const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    router.push(
+      `/calendar/new?date=${day}&time=${timeStr}&staffId=${encodeURIComponent(staffId)}`,
+    );
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -79,13 +106,13 @@ export function CalendarDnd({
   const handleDragEnd = (ev: DragEndEvent): void => {
     const apptId = String(ev.active.id);
     const dropId = ev.over?.id ? String(ev.over.id) : null;
-    if (!dropId || !dropId.startsWith('slot:')) return;
-    const targetMin = Number(dropId.slice('slot:'.length));
+    const parsed = dropId ? parseDropId(dropId) : null;
+    if (!parsed) return;
 
     const current = appts.find((a) => a.id === apptId);
     if (!current) return;
     const dur = durationMinutes(current.startAt, current.endAt);
-    const newStartMin = targetMin;
+    const newStartMin = parsed.minute;
     const newEndMin = newStartMin + dur;
     if (newStartMin < 0 || newEndMin > CAL_END_MIN - CAL_START_MIN) return;
 
@@ -97,17 +124,33 @@ export function CalendarDnd({
     newStart.setMilliseconds(0);
     const newEnd = new Date(newStart.getTime() + dur * 60_000);
 
-    if (newStart.toISOString() === current.startAt) return;
+    const targetStaff = staffList.find((s) => s.id === parsed.staffId);
+    const staffChanged = parsed.staffId !== current.staffId;
+    if (newStart.toISOString() === current.startAt && !staffChanged) return;
 
-    // Haptics (falls Browser es kann)
     if ('vibrate' in navigator) navigator.vibrate?.(8);
 
-    // Optimistic update
-    const previous = { start: current.startAt, end: current.endAt };
+    const previous = {
+      start: current.startAt,
+      end: current.endAt,
+      staffId: current.staffId,
+    };
     setAppts((prev) =>
       prev.map((a) =>
         a.id === apptId
-          ? { ...a, startAt: newStart.toISOString(), endAt: newEnd.toISOString() }
+          ? {
+              ...a,
+              startAt: newStart.toISOString(),
+              endAt: newEnd.toISOString(),
+              staffId: parsed.staffId,
+              staff: targetStaff
+                ? {
+                    firstName: targetStaff.firstName,
+                    lastName: targetStaff.lastName,
+                    color: targetStaff.color,
+                  }
+                : a.staff,
+            }
           : a,
       ),
     );
@@ -117,13 +160,18 @@ export function CalendarDnd({
         apptId,
         newStart.toISOString(),
         newEnd.toISOString(),
+        staffChanged ? parsed.staffId : undefined,
       );
       if (!result.ok) {
-        // Rollback
         setAppts((prev) =>
           prev.map((a) =>
             a.id === apptId
-              ? { ...a, startAt: previous.start, endAt: previous.end }
+              ? {
+                  ...a,
+                  startAt: previous.start,
+                  endAt: previous.end,
+                  staffId: previous.staffId,
+                }
               : a,
           ),
         );
@@ -131,11 +179,11 @@ export function CalendarDnd({
         setTimeout(() => setError(null), 4000);
         return;
       }
-      // Undo-Banner zeigen (5 s)
       setUndo({
         appointmentId: apptId,
         previousStart: previous.start,
         previousEnd: previous.end,
+        previousStaffId: previous.staffId,
         newStartLabel: newStart.toLocaleTimeString('de-CH', {
           hour: '2-digit',
           minute: '2-digit',
@@ -152,11 +200,25 @@ export function CalendarDnd({
     const target = undo;
     const current = appts.find((a) => a.id === target.appointmentId);
     if (!current) return;
+    const prevStaff = staffList.find((s) => s.id === target.previousStaffId);
+    const staffChanged = target.previousStaffId !== current.staffId;
 
     setAppts((prev) =>
       prev.map((a) =>
         a.id === target.appointmentId
-          ? { ...a, startAt: target.previousStart, endAt: target.previousEnd }
+          ? {
+              ...a,
+              startAt: target.previousStart,
+              endAt: target.previousEnd,
+              staffId: target.previousStaffId,
+              staff: prevStaff
+                ? {
+                    firstName: prevStaff.firstName,
+                    lastName: prevStaff.lastName,
+                    color: prevStaff.color,
+                  }
+                : a.staff,
+            }
           : a,
       ),
     );
@@ -167,21 +229,63 @@ export function CalendarDnd({
         target.appointmentId,
         target.previousStart,
         target.previousEnd,
+        staffChanged ? target.previousStaffId : undefined,
       );
     });
   };
 
-  // Render: 44 Slots à 15 min = 11 h * 4
   const slots = Array.from(
     { length: HOURS.length * SLOTS_PER_HOUR },
     (_, i) => i * SLOT_MINUTES,
   );
+  const totalHeight = HOURS.length * 60 * PX_PER_MINUTE;
+
+  if (staffList.length === 0) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-12 text-center text-sm text-text-muted">
+        Keine Mitarbeiterinnen angelegt. Lege unter{' '}
+        <Link href="/staff" className="text-accent hover:underline">
+          Team
+        </Link>{' '}
+        jemanden an.
+      </div>
+    );
+  }
+
+  const gridCols = `72px repeat(${staffList.length}, minmax(${COL_MIN_WIDTH}px, 1fr))`;
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="relative rounded-lg border border-border bg-surface overflow-hidden">
-        <div className="grid grid-cols-[72px_1fr]">
-          <div className="border-r border-border bg-background/50">
+      <div className="relative overflow-x-auto rounded-lg border border-border bg-surface">
+        <div
+          className="grid"
+          style={{ gridTemplateColumns: gridCols, minWidth: 'fit-content' }}
+        >
+          {/* Header-Zeile */}
+          <div className="sticky top-0 z-20 border-b border-border bg-surface" />
+          {staffList.map((s) => (
+            <div
+              key={`h-${s.id}`}
+              className="sticky top-0 z-20 flex items-center gap-2 border-b border-l border-border bg-surface px-3 py-2"
+            >
+              <Avatar
+                name={`${s.firstName} ${s.lastName}`}
+                color={s.color}
+                size="sm"
+              />
+              <div className="min-w-0">
+                <div className="truncate text-xs font-semibold text-text-primary">
+                  {s.firstName}
+                </div>
+                <div className="truncate text-[10px] text-text-muted">
+                  {s.lastName}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Stunden-Spalte */}
+          <div className="relative border-r border-border bg-background/50">
             {HOURS.map((h) => (
               <div
                 key={h}
@@ -192,35 +296,44 @@ export function CalendarDnd({
               </div>
             ))}
           </div>
-          <div className="relative">
-            {/* Drop-Slots (15-min Raster) + Click-to-book */}
-            {slots.map((m) => (
-              <Slot
-                key={m}
-                minute={m}
-                topPx={m * PX_PER_MINUTE}
-                isHourBoundary={m % 60 === 0 && m > 0}
-                onClick={handleSlotClick}
-              />
-            ))}
-            {/* Aktuelle Zeit-Linie, wenn Tag = heute */}
-            <NowLine day={day} />
-            {/* Termine */}
-            {appts.map((a) => {
-              const offset = minutesFromStart(a.startAt);
-              const dur = durationMinutes(a.startAt, a.endAt);
-              if (offset < 0 || offset >= HOURS.length * 60) return null;
-              return (
-                <DraggableAppt
-                  key={a.id}
-                  appt={a}
-                  topPx={offset * PX_PER_MINUTE}
-                  heightPx={Math.max(dur * PX_PER_MINUTE - 4, 28)}
-                  compact={dur < 45}
-                />
-              );
-            })}
-          </div>
+
+          {/* Eine Spalte pro Staff */}
+          {staffList.map((s) => {
+            const staffAppts = appts.filter((a) => a.staffId === s.id);
+            return (
+              <div
+                key={`c-${s.id}`}
+                className="relative border-l border-border"
+                style={{ height: totalHeight }}
+              >
+                {slots.map((m) => (
+                  <Slot
+                    key={`${s.id}-${m}`}
+                    staffId={s.id}
+                    minute={m}
+                    topPx={m * PX_PER_MINUTE}
+                    isHourBoundary={m % 60 === 0 && m > 0}
+                    onClick={handleSlotClick}
+                  />
+                ))}
+                <NowLine day={day} />
+                {staffAppts.map((a) => {
+                  const offset = minutesFromStart(a.startAt);
+                  const dur = durationMinutes(a.startAt, a.endAt);
+                  if (offset < 0 || offset >= HOURS.length * 60) return null;
+                  return (
+                    <DraggableAppt
+                      key={a.id}
+                      appt={a}
+                      topPx={offset * PX_PER_MINUTE}
+                      heightPx={Math.max(dur * PX_PER_MINUTE - 4, 28)}
+                      compact={dur < 45}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -228,7 +341,11 @@ export function CalendarDnd({
         <div className="pointer-events-none fixed bottom-6 left-1/2 z-40 -translate-x-1/2 animate-fade-in">
           <div className="pointer-events-auto flex items-center gap-4 rounded-lg border border-border bg-surface-raised px-4 py-2.5 text-sm shadow-lg">
             <span className="text-text-secondary">
-              Termin auf <span className="font-medium text-text-primary">{undo.newStartLabel}</span> verschoben.
+              Termin auf{' '}
+              <span className="font-medium text-text-primary">
+                {undo.newStartLabel}
+              </span>{' '}
+              verschoben.
             </span>
             <Button
               onClick={handleUndo}
@@ -254,24 +371,26 @@ export function CalendarDnd({
 }
 
 function Slot({
+  staffId,
   minute,
   topPx,
   isHourBoundary,
   onClick,
 }: {
+  staffId: string;
   minute: number;
   topPx: number;
   isHourBoundary: boolean;
-  onClick: (minute: number) => void;
+  onClick: (staffId: string, minute: number) => void;
 }): React.JSX.Element {
   const { setNodeRef, isOver } = useDroppable({
-    id: `slot:${minute}`,
+    id: `slot:${staffId}:${minute}`,
   });
   return (
     <button
       type="button"
       ref={setNodeRef}
-      onClick={() => onClick(minute)}
+      onClick={() => onClick(staffId, minute)}
       className={`absolute left-0 right-0 text-left transition-colors cursor-pointer ${
         isOver ? 'bg-accent/15' : 'hover:bg-accent/5'
       } ${isHourBoundary ? 'border-t border-border/60' : 'border-t border-border/20'}`}
@@ -281,7 +400,9 @@ function Slot({
       }}
       aria-label={`Neuer Termin um ${Math.floor((CAL_START_MIN + minute) / 60)
         .toString()
-        .padStart(2, '0')}:${((CAL_START_MIN + minute) % 60).toString().padStart(2, '0')}`}
+        .padStart(2, '0')}:${((CAL_START_MIN + minute) % 60)
+        .toString()
+        .padStart(2, '0')}`}
     />
   );
 }
@@ -297,14 +418,13 @@ function DraggableAppt({
   heightPx: number;
   compact: boolean;
 }): React.JSX.Element {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: appt.id,
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({ id: appt.id });
   const style: React.CSSProperties = {
     position: 'absolute',
     top: topPx,
-    left: 6,
-    right: 8,
+    left: 4,
+    right: 6,
     height: heightPx,
     transform: transform
       ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
@@ -317,9 +437,7 @@ function DraggableAppt({
   const clientName = appt.client
     ? `${appt.client.firstName} ${appt.client.lastName}`
     : 'Blockzeit';
-  const services =
-    appt.items.map((i) => i.service.name).join(', ') || '—';
-  const staff = `${appt.staff.firstName} ${appt.staff.lastName[0]}.`;
+  const services = appt.items.map((i) => i.service.name).join(', ') || '—';
   const timeLabel = new Date(appt.startAt).toLocaleTimeString('de-CH', {
     hour: '2-digit',
     minute: '2-digit',
@@ -327,11 +445,11 @@ function DraggableAppt({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <div className="h-full [&>button]:h-full">
+      <div className="group h-full [&>button]:h-full">
         <AppointmentCard
           clientName={clientName}
           serviceLabel={services}
-          staffLabel={staff}
+          staffLabel=""
           timeLabel={timeLabel}
           status={appt.status}
           staffColor={appt.staff.color}

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Badge, Button, Card, CardBody, EmptyState, cn } from '@salon-os/ui';
-import { CalendarDnd, type DndAppt } from '@/components/calendar-dnd';
+import { CalendarDnd, type DndAppt, type DndStaff } from '@/components/calendar-dnd';
 import { CalendarWeek } from '@/components/calendar-week';
 import { CalendarMonth } from '@/components/calendar-month';
 import { apiFetch, ApiError } from '@/lib/api';
@@ -45,6 +45,36 @@ async function loadAppointments(from: Date, to: Date): Promise<Appt[]> {
       { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
     );
     return res.appointments;
+  } catch (err) {
+    if (err instanceof ApiError) return [];
+    throw err;
+  }
+}
+
+async function loadStaff(): Promise<DndStaff[]> {
+  const ctx = getCurrentTenant();
+  try {
+    const res = await apiFetch<{
+      staff: Array<{
+        id: string;
+        firstName: string;
+        lastName: string;
+        color: string | null;
+        active: boolean;
+      }>;
+    }>('/v1/staff', {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+    });
+    return res.staff
+      .filter((s) => s.active !== false)
+      .map((s) => ({
+        id: s.id,
+        firstName: s.firstName,
+        lastName: s.lastName,
+        color: s.color,
+      }));
   } catch (err) {
     if (err instanceof ApiError) return [];
     throw err;
@@ -107,7 +137,10 @@ export default async function CalendarPage({
     from = r.from;
     to = r.to;
   }
-  const appts = await loadAppointments(from, to);
+  const [appts, staff] = await Promise.all([
+    loadAppointments(from, to),
+    view === 'day' ? loadStaff() : Promise.resolve([] as DndStaff[]),
+  ]);
 
   const title =
     view === 'month' && monthAnchor
@@ -196,7 +229,7 @@ export default async function CalendarPage({
       ) : view === 'week' && weekStart ? (
         <CalendarWeek appts={appts} weekStart={weekStart} />
       ) : (
-        <CalendarDnd appts={appts} day={day} />
+        <CalendarDnd appts={appts} day={day} staff={staff} />
       )}
 
       {view === 'day' && appts.length === 0 ? (

@@ -12,6 +12,7 @@ export async function rescheduleAppointment(
   appointmentId: string,
   newStartIso: string,
   newEndIso: string,
+  newStaffId?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const ctx = getCurrentTenant();
   try {
@@ -20,7 +21,11 @@ export async function rescheduleAppointment(
       tenantId: ctx.tenantId,
       userId: ctx.userId,
       role: ctx.role,
-      body: { startAt: newStartIso, endAt: newEndIso },
+      body: {
+        startAt: newStartIso,
+        endAt: newEndIso,
+        ...(newStaffId ? { staffId: newStaffId } : {}),
+      },
     });
     revalidatePath('/calendar');
     return { ok: true };

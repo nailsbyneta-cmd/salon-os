@@ -85,7 +85,8 @@ export function AppointmentCard({
             {serviceLabel}
           </div>
           <div className="text-[10px] opacity-60 truncate">
-            {timeLabel} · {staffLabel}
+            {timeLabel}
+            {staffLabel ? ` · ${staffLabel}` : ''}
           </div>
         </>
       ) : null}

@@ -60,9 +60,9 @@ function todayIso(): string {
 export default async function NewAppointmentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; time?: string }>;
+  searchParams: Promise<{ date?: string; time?: string; staffId?: string }>;
 }): Promise<React.JSX.Element> {
-  const { date, time } = await searchParams;
+  const { date, time, staffId: preselectedStaff } = await searchParams;
   const { services, staff, clients } = await loadFormData();
   const day = date ?? todayIso();
   const defaultTime = time ?? '10:00';
@@ -114,7 +114,11 @@ export default async function NewAppointmentPage({
             </Field>
 
             <Field label="Mitarbeiterin" required>
-              <Select name="staffId" required defaultValue="">
+              <Select
+                name="staffId"
+                required
+                defaultValue={preselectedStaff ?? ''}
+              >
                 <option value="">— wählen —</option>
                 {staff.map((s) => (
                   <option key={s.id} value={s.id}>
