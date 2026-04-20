@@ -1,5 +1,11 @@
 @import 'tailwindcss';
 
+/* Content-Sources: Tailwind 4 scannt per Default nur das current cwd.
+ * Im Monorepo müssen Pakete explizit aufgenommen werden, sonst
+ * bleiben Token-Klassen aus @salon-os/ui unerzeugt. */
+@source "../../**/*.{ts,tsx}";
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
+
 @layer base {
   :root {
     --background: 37 15% 98%;
