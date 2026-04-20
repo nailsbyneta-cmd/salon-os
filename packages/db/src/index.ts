@@ -4,6 +4,7 @@
 import { PrismaClient } from '@prisma/client';
 
 export { PrismaClient };
+export { Prisma } from '@prisma/client';
 
 export type {
   Tenant,

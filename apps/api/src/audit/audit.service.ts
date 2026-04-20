@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '@salon-os/db';
+import { Prisma } from '@salon-os/db';
 import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 
@@ -57,7 +58,7 @@ export class AuditService {
         entity: rec.entity,
         entityId: rec.entityId,
         action: rec.action,
-        ...(rec.diff ? { diff: rec.diff } : {}),
+        ...(rec.diff ? { diff: rec.diff as Prisma.InputJsonValue } : {}),
       },
     });
   }
