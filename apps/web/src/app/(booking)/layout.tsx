@@ -1,6 +1,15 @@
+import type { Metadata } from 'next';
+
 /**
  * Public-Booking-Layout. Kein Admin-Sidebar, kein Auth.
+ * Nur dieses Layout setzt das Public-Booking-Manifest — damit
+ * das Admin-Shell und die Staff-Mobile-App NICHT „Beautycenter"
+ * als PWA-Home-Screen-App installieren, wenn man /m speichert.
  */
+export const metadata: Metadata = {
+  manifest: '/manifest.webmanifest',
+};
+
 export default function BookingLayout({
   children,
 }: {

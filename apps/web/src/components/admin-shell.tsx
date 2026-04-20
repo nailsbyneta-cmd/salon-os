@@ -41,6 +41,11 @@ export function AdminShell({
   const router = useRouter();
   const { toggle, resolved } = useTheme();
   const [paletteOpen, setPaletteOpen] = React.useState(false);
+  const [navOpen, setNavOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
 
   const asyncLoader = React.useCallback(
     async (query: string): Promise<CommandItem[]> => {
@@ -116,9 +121,66 @@ export function AdminShell({
   );
 
   return (
-    <div className="grid min-h-screen grid-cols-[240px_1fr] bg-background text-text-primary">
-      <aside className="sticky top-0 h-screen border-r border-border bg-surface/50 backdrop-blur-sm flex flex-col">
-        <div className="flex items-center gap-2 px-5 py-5">
+    <div className="grid min-h-screen grid-cols-1 bg-background text-text-primary md:grid-cols-[240px_1fr]">
+      {/* Mobile Top-Bar */}
+      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/80 px-4 py-3 backdrop-blur-md md:hidden">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-accent to-brand text-brand-foreground text-sm font-bold">
+            S
+          </div>
+          <div>
+            <div className="text-sm font-semibold tracking-tight">SALON OS</div>
+            <div className="text-[9px] uppercase tracking-wider text-text-muted">
+              Beautycenter
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setNavOpen((v) => !v)}
+          aria-label="Menü"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-text-secondary hover:bg-surface-raised"
+        >
+          <svg
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden
+          >
+            {navOpen ? (
+              <path d="M6 6l12 12M18 6L6 18" />
+            ) : (
+              <>
+                <path d="M3 6h18" />
+                <path d="M3 12h18" />
+                <path d="M3 18h18" />
+              </>
+            )}
+          </svg>
+        </button>
+      </div>
+
+      {/* Backdrop */}
+      {navOpen ? (
+        <button
+          type="button"
+          onClick={() => setNavOpen(false)}
+          aria-label="Menü schliessen"
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+        />
+      ) : null}
+
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 w-64 border-r border-border bg-surface flex flex-col transition-transform duration-200',
+          'md:sticky md:top-0 md:h-screen md:w-auto md:translate-x-0 md:backdrop-blur-sm md:bg-surface/50',
+          navOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        <div className="hidden items-center gap-2 px-5 py-5 md:flex">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-accent to-brand text-brand-foreground text-sm font-bold">
             S
           </div>
