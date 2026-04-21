@@ -144,9 +144,58 @@ export default async function ClientDetailPage({
             </div>
           </div>
           <p className="mt-1 text-sm text-text-secondary">
-            {client.email ?? '—'}
-            {client.phone ? ` · ${client.phone}` : ''}
+            {client.email ? (
+              <a href={`mailto:${client.email}`} className="hover:text-accent hover:underline">
+                {client.email}
+              </a>
+            ) : (
+              '—'
+            )}
+            {client.phone ? (
+              <>
+                {' · '}
+                <a href={`tel:${client.phone}`} className="hover:text-accent hover:underline">
+                  {client.phone}
+                </a>
+              </>
+            ) : null}
           </p>
+          {client.phone || client.email ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {client.phone ? (
+                <>
+                  <a
+                    href={`tel:${client.phone}`}
+                    className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                  >
+                    📞 Anrufen
+                  </a>
+                  <a
+                    href={`sms:${client.phone}`}
+                    className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                  >
+                    💬 SMS
+                  </a>
+                  <a
+                    href={`https://wa.me/${client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex h-8 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-2.5 text-[11px] font-medium text-success transition-colors hover:bg-success/20"
+                  >
+                    WhatsApp
+                  </a>
+                </>
+              ) : null}
+              {client.email ? (
+                <a
+                  href={`mailto:${client.email}`}
+                  className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                >
+                  ✉ E-Mail
+                </a>
+              ) : null}
+            </div>
+          ) : null}
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             <Badge
               tone={
