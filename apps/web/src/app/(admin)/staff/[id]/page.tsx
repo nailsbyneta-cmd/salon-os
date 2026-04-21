@@ -28,18 +28,32 @@ interface StaffFull {
   photoUrl: string | null;
   bio: string | null;
   active: boolean;
+  serviceIds: string[];
 }
 
-async function load(id: string): Promise<StaffFull | null> {
+interface ServiceRow {
+  id: string;
+  name: string;
+  durationMinutes: number;
+  basePrice: string;
+}
+
+async function load(id: string): Promise<{
+  staff: StaffFull | null;
+  allServices: ServiceRow[];
+}> {
   const ctx = getCurrentTenant();
+  const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   try {
-    return await apiFetch<StaffFull>(`/v1/staff/${id}`, {
-      tenantId: ctx.tenantId,
-      userId: ctx.userId,
-      role: ctx.role,
-    });
+    const [staff, services] = await Promise.all([
+      apiFetch<StaffFull>(`/v1/staff/${id}`, auth),
+      apiFetch<{ services: ServiceRow[] }>('/v1/services', auth),
+    ]);
+    return { staff, allServices: services.services };
   } catch (err) {
-    if (err instanceof ApiError) return null;
+    if (err instanceof ApiError) {
+      return { staff: null, allServices: [] };
+    }
     throw err;
   }
 }
@@ -50,11 +64,12 @@ export default async function StaffDetailPage({
   params: Promise<{ id: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
-  const s = await load(id);
+  const { staff: s, allServices } = await load(id);
   if (!s) notFound();
 
   const save = updateStaff.bind(null, id);
   const displayName = s.displayName ?? `${s.firstName} ${s.lastName}`;
+  const assignedSet = new Set(s.serviceIds);
 
   return (
     <div className="mx-auto max-w-3xl p-4 md:p-8">
@@ -194,6 +209,50 @@ export default async function StaffDetailPage({
                 placeholder="Seit 2019 bei Beautycenter, Expertin für Brauen-Laminierung…"
               />
             </Field>
+
+            <fieldset className="rounded-md border border-border p-4">
+              <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+                Kann diese Services ausführen
+              </legend>
+              {allServices.length === 0 ? (
+                <p className="text-xs text-text-muted">
+                  Keine Services angelegt. Gehe zu{' '}
+                  <Link
+                    href="/services/new"
+                    className="text-accent hover:underline"
+                  >
+                    /services
+                  </Link>{' '}
+                  um welche anzulegen.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                  {allServices.map((svc) => (
+                    <label
+                      key={svc.id}
+                      className="flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 text-sm text-text-secondary hover:bg-surface-raised"
+                    >
+                      <input
+                        type="checkbox"
+                        name="serviceIds"
+                        value={svc.id}
+                        defaultChecked={assignedSet.has(svc.id)}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
+                      />
+                      <span className="flex-1 min-w-0">
+                        <span className="block truncate text-text-primary">
+                          {svc.name}
+                        </span>
+                        <span className="block text-[11px] text-text-muted">
+                          {svc.durationMinutes} Min ·{' '}
+                          {Number(svc.basePrice).toFixed(2)} CHF
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </fieldset>
 
             <label className="flex items-center gap-2 text-sm text-text-secondary">
               <input

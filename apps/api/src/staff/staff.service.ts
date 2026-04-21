@@ -37,12 +37,19 @@ export class StaffService {
     });
   }
 
-  async get(id: string): Promise<Staff> {
+  async get(id: string): Promise<Staff & { serviceIds: string[] }> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
-      const staff = await tx.staff.findFirst({ where: { id, deletedAt: null } });
+      const staff = await tx.staff.findFirst({
+        where: { id, deletedAt: null },
+        include: { services: { select: { serviceId: true } } },
+      });
       if (!staff) throw new NotFoundException(`Staff ${id} not found`);
-      return staff;
+      const { services, ...rest } = staff;
+      return {
+        ...rest,
+        serviceIds: services.map((s) => s.serviceId),
+      };
     });
   }
 

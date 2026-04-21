@@ -73,6 +73,11 @@ export async function updateStaff(id: string, form: FormData): Promise<void> {
     throw new Error('Vorname, Nachname und E-Mail sind Pflicht.');
   }
 
+  const serviceIds = form
+    .getAll('serviceIds')
+    .map((v) => v.toString())
+    .filter(Boolean);
+
   const body: Record<string, unknown> = {
     firstName,
     lastName,
@@ -80,6 +85,7 @@ export async function updateStaff(id: string, form: FormData): Promise<void> {
     role: form.get('role')?.toString() ?? 'STYLIST',
     employmentType: form.get('employmentType')?.toString() ?? 'EMPLOYEE',
     active: form.get('active') === 'on',
+    serviceIds,
   };
   const opt = (k: string): void => {
     const v = form.get(k)?.toString().trim();
