@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Button, Card, CardBody, Input } from '@salon-os/ui';
+import { Button, Card, CardBody, Input, cn } from '@salon-os/ui';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -34,6 +34,22 @@ async function loadSlots(
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function nextDays(count: number): Array<{ iso: string; weekday: string; day: string }> {
+  const out: Array<{ iso: string; weekday: string; day: string }> = [];
+  const base = new Date();
+  base.setHours(0, 0, 0, 0);
+  for (let i = 0; i < count; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    out.push({
+      iso: d.toISOString().slice(0, 10),
+      weekday: d.toLocaleDateString('de-CH', { weekday: 'short' }),
+      day: d.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' }),
+    });
+  }
+  return out;
 }
 
 export default async function BookingSlots({
@@ -82,18 +98,47 @@ export default async function BookingSlots({
         </h1>
       </header>
 
-      <form method="get" className="flex flex-wrap items-center gap-2">
-        <input type="hidden" name="location" value={location} />
-        <Input
-          type="date"
-          name="date"
-          defaultValue={selectedDate}
-          className="w-44"
-        />
-        <Button type="submit" variant="secondary">
-          Anzeigen
-        </Button>
-      </form>
+      <div className="space-y-3">
+        <div className="-mx-4 overflow-x-auto px-4">
+          <div className="flex gap-2">
+            {nextDays(7).map((d) => {
+              const active = d.iso === selectedDate;
+              return (
+                <Link
+                  key={d.iso}
+                  href={`/book/${slug}/service/${serviceId}?location=${location}&date=${d.iso}`}
+                  className={cn(
+                    'flex min-w-[68px] flex-col items-center rounded-md border px-3 py-2 text-center transition-colors',
+                    active
+                      ? 'border-accent bg-accent text-accent-foreground shadow-sm'
+                      : 'border-border bg-surface text-text-secondary hover:border-accent hover:text-text-primary',
+                  )}
+                >
+                  <span className="text-[10px] font-medium uppercase tracking-wider">
+                    {d.weekday}
+                  </span>
+                  <span className="mt-0.5 text-sm font-semibold tabular-nums">
+                    {d.day}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+        <form method="get" className="flex flex-wrap items-center gap-2">
+          <input type="hidden" name="location" value={location} />
+          <Input
+            type="date"
+            name="date"
+            defaultValue={selectedDate}
+            className="w-44"
+            aria-label="Anderes Datum wählen"
+          />
+          <Button type="submit" variant="secondary" size="sm">
+            Anderes Datum
+          </Button>
+        </form>
+      </div>
 
       {slots.length === 0 ? (
         <Card>
