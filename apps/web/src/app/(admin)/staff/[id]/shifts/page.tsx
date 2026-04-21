@@ -69,7 +69,7 @@ export default async function StaffShiftsPage({
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="mx-auto max-w-4xl p-4 md:p-8">
       <Link
         href="/staff"
         className="text-xs text-text-muted transition-colors hover:text-text-primary"

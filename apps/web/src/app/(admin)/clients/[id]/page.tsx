@@ -103,7 +103,7 @@ export default async function ClientDetailPage({
   const loyalty = computeLoyalty(Number(client.totalSpent));
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="mx-auto max-w-4xl p-4 md:p-8">
       <Link
         href="/clients"
         className="text-xs text-text-muted transition-colors hover:text-text-primary"

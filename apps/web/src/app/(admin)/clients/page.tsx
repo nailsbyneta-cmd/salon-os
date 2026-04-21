@@ -45,7 +45,7 @@ export default async function ClientsPage({
   const clients = await loadClients(q);
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
+    <div className="mx-auto max-w-6xl p-4 md:p-8">
       <header className="mb-6 flex items-end justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
@@ -101,15 +101,21 @@ export default async function ClientsPage({
             description="Lege neue an oder importiere eine CSV aus Phorest/Fresha."
           />
         ) : (
-          <CardBody className="p-0">
+          <CardBody className="overflow-x-auto p-0">
             <table className="w-full text-sm">
               <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
                 <tr>
-                  <th className="px-5 py-3">Name</th>
-                  <th className="px-5 py-3">Kontakt</th>
-                  <th className="px-5 py-3">Letzter Besuch</th>
-                  <th className="px-5 py-3 text-right">Besuche</th>
-                  <th className="px-5 py-3">Tags</th>
+                  <th className="px-4 py-3 sm:px-5">Name</th>
+                  <th className="hidden px-4 py-3 sm:table-cell sm:px-5">
+                    Kontakt
+                  </th>
+                  <th className="hidden px-4 py-3 md:table-cell md:px-5">
+                    Letzter Besuch
+                  </th>
+                  <th className="px-4 py-3 text-right sm:px-5">Besuche</th>
+                  <th className="hidden px-4 py-3 lg:table-cell lg:px-5">
+                    Tags
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -118,7 +124,7 @@ export default async function ClientsPage({
                     key={c.id}
                     className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
                   >
-                    <td className="px-5 py-3">
+                    <td className="px-4 py-3 sm:px-5">
                       <Link
                         href={`/clients/${c.id}`}
                         className="flex items-center gap-3 font-medium text-text-primary hover:underline"
@@ -128,24 +134,32 @@ export default async function ClientsPage({
                           size="sm"
                           color="hsl(var(--brand-accent))"
                         />
-                        {c.firstName} {c.lastName}
+                        <span className="min-w-0">
+                          <span className="block truncate">
+                            {c.firstName} {c.lastName}
+                          </span>
+                          {/* Kontakt auf Mobile unter den Namen */}
+                          <span className="block truncate text-xs font-normal text-text-muted sm:hidden">
+                            {c.email ?? c.phone ?? '—'}
+                          </span>
+                        </span>
                       </Link>
                     </td>
-                    <td className="px-5 py-3 text-text-secondary">
+                    <td className="hidden px-4 py-3 text-text-secondary sm:table-cell sm:px-5">
                       {c.email ?? '—'}
                       {c.phone ? (
                         <span className="ml-2 text-text-muted">· {c.phone}</span>
                       ) : null}
                     </td>
-                    <td className="px-5 py-3 text-text-secondary">
+                    <td className="hidden px-4 py-3 text-text-secondary md:table-cell md:px-5">
                       {c.lastVisitAt
                         ? new Date(c.lastVisitAt).toLocaleDateString('de-CH')
                         : '—'}
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums font-medium">
+                    <td className="px-4 py-3 text-right tabular-nums font-medium sm:px-5">
                       {c.totalVisits}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="hidden px-4 py-3 lg:table-cell lg:px-5">
                       <div className="flex flex-wrap gap-1">
                         {c.tags.slice(0, 3).map((t) => (
                           <Badge key={t} tone="neutral">

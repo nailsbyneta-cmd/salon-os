@@ -67,7 +67,7 @@ export default async function NewWaitlistPage(): Promise<React.JSX.Element> {
   const { services, staff, clients, locations } = await loadFormData();
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
+    <div className="mx-auto max-w-2xl p-4 md:p-8">
       <Link
         href="/waitlist"
         className="text-xs text-text-muted transition-colors hover:text-text-primary"

@@ -136,7 +136,7 @@ export default async function Home(): Promise<React.JSX.Element> {
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
+    <div className="mx-auto max-w-6xl p-4 md:p-8">
       <header className="mb-8 flex items-end justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">

@@ -56,8 +56,8 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
-      <header className="mb-6 flex items-end justify-between">
+    <div className="mx-auto max-w-6xl p-4 md:p-8">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Katalog
@@ -96,15 +96,21 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
                 {catName}
               </h2>
               <Card>
-                <CardBody className="p-0">
+                <CardBody className="overflow-x-auto p-0">
                   <table className="w-full text-sm">
                     <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
                       <tr>
-                        <th className="px-5 py-3">Service</th>
-                        <th className="w-24 px-5 py-3">Dauer</th>
-                        <th className="w-28 px-5 py-3 text-right">Preis</th>
-                        <th className="w-24 px-5 py-3">Status</th>
-                        <th className="w-20 px-5 py-3"></th>
+                        <th className="px-4 py-3 sm:px-5">Service</th>
+                        <th className="hidden w-24 px-4 py-3 sm:table-cell sm:px-5">
+                          Dauer
+                        </th>
+                        <th className="w-24 px-4 py-3 text-right sm:w-28 sm:px-5">
+                          Preis
+                        </th>
+                        <th className="hidden w-24 px-4 py-3 md:table-cell md:px-5">
+                          Status
+                        </th>
+                        <th className="hidden w-20 px-4 py-3 md:table-cell md:px-5"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -113,26 +119,31 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
                           key={s.id}
                           className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
                         >
-                          <td className="px-5 py-3">
+                          <td className="px-4 py-3 sm:px-5">
                             <Link
                               href={`/services/${s.id}`}
-                              className="font-medium text-text-primary hover:underline"
+                              className="block font-medium text-text-primary hover:underline"
                             >
                               {s.name}
                             </Link>
                             {s.description ? (
-                              <div className="mt-0.5 text-xs text-text-muted">
+                              <div className="mt-0.5 text-xs text-text-muted line-clamp-1">
                                 {s.description}
                               </div>
                             ) : null}
+                            {/* Mobile-only: Dauer inline unter Namen */}
+                            <div className="mt-0.5 text-[11px] text-text-muted sm:hidden">
+                              {s.durationMinutes} Min
+                              {!s.bookable ? ' · Inaktiv' : ''}
+                            </div>
                           </td>
-                          <td className="px-5 py-3 tabular-nums text-text-secondary">
+                          <td className="hidden px-4 py-3 tabular-nums text-text-secondary sm:table-cell sm:px-5">
                             {s.durationMinutes} Min
                           </td>
-                          <td className="px-5 py-3 text-right">
+                          <td className="px-4 py-3 text-right sm:px-5">
                             <PriceDisplay amount={s.basePrice} size="sm" />
                           </td>
-                          <td className="px-5 py-3">
+                          <td className="hidden px-4 py-3 md:table-cell md:px-5">
                             {s.bookable ? (
                               <Badge tone="success" dot>
                                 Buchbar
@@ -141,7 +152,7 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
                               <Badge tone="neutral">Inaktiv</Badge>
                             )}
                           </td>
-                          <td className="px-5 py-3 text-right">
+                          <td className="hidden px-4 py-3 text-right md:table-cell md:px-5">
                             <form action={deleteService.bind(null, s.id)}>
                               <button
                                 type="submit"
