@@ -1,7 +1,60 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Button, Card, CardBody, Field, Input, Textarea } from '@salon-os/ui';
+import {
+  Avatar,
+  Button,
+  Card,
+  CardBody,
+  Field,
+  Input,
+  PriceDisplay,
+  Textarea,
+} from '@salon-os/ui';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
+
+interface Service {
+  id: string;
+  name: string;
+  durationMinutes: number;
+  basePrice: string;
+}
+
+interface StaffPublic {
+  id: string;
+  firstName: string;
+  lastName: string;
+  displayName: string | null;
+  color: string | null;
+}
+
+async function loadContext(
+  slug: string,
+  serviceId: string,
+  staffId: string,
+): Promise<{
+  service: Service | null;
+  staff: StaffPublic | null;
+}> {
+  try {
+    const [svcRes, infoRes] = await Promise.all([
+      fetch(`${API_URL}/v1/public/${slug}/services`, { cache: 'no-store' }),
+      fetch(`${API_URL}/v1/public/${slug}/info`, { cache: 'no-store' }),
+    ]);
+    const services: Service[] = svcRes.ok
+      ? ((await svcRes.json()) as { services: Service[] }).services
+      : [];
+    const info = infoRes.ok
+      ? ((await infoRes.json()) as { staff: StaffPublic[] })
+      : { staff: [] };
+    return {
+      service: services.find((s) => s.id === serviceId) ?? null,
+      staff: info.staff.find((s) => s.id === staffId) ?? null,
+    };
+  } catch {
+    return { service: null, staff: null };
+  }
+}
 
 async function submitBooking(
   slug: string,
@@ -51,6 +104,8 @@ export default async function BookingConfirm({
     redirect(`/book/${slug}`);
   }
 
+  const { service, staff } = await loadContext(slug, sp.serviceId!, sp.staffId!);
+
   async function onSubmit(formData: FormData): Promise<void> {
     'use server';
     const firstName = String(formData.get('firstName') ?? '').trim();
@@ -84,22 +139,89 @@ export default async function BookingConfirm({
     }
   }
 
+  const start = new Date(sp.startAt!);
+  const staffName = staff
+    ? staff.displayName ?? `${staff.firstName} ${staff.lastName}`
+    : null;
+
   return (
     <main className="space-y-6">
+      <Link
+        href={`/book/${slug}`}
+        className="inline-flex text-sm text-text-muted transition-colors hover:text-text-primary"
+      >
+        ← Zurück
+      </Link>
+
       <header>
         <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
           Bestätigen
         </p>
         <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-text-primary">
-          {new Date(sp.startAt!).toLocaleString('de-CH', {
-            weekday: 'long',
-            day: '2-digit',
-            month: 'long',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+          Fast geschafft
         </h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          Prüfe deine Auswahl, dann trage deine Daten ein.
+        </p>
       </header>
+
+      {/* Summary */}
+      <Card elevation="flat" className="bg-accent/5">
+        <CardBody className="space-y-4">
+          <div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
+              Termin
+            </div>
+            <div className="mt-1 font-display text-xl font-semibold text-text-primary">
+              {start.toLocaleDateString('de-CH', {
+                weekday: 'long',
+                day: '2-digit',
+                month: 'long',
+              })}{' '}
+              ·{' '}
+              {start.toLocaleTimeString('de-CH', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </div>
+          </div>
+
+          {service ? (
+            <div className="flex items-start justify-between gap-3 border-t border-border pt-3">
+              <div className="min-w-0">
+                <div className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  Leistung
+                </div>
+                <div className="mt-0.5 font-medium text-text-primary">
+                  {service.name}
+                </div>
+                <div className="mt-0.5 text-xs text-text-muted">
+                  {service.durationMinutes} Min
+                </div>
+              </div>
+              <PriceDisplay amount={service.basePrice} size="lg" />
+            </div>
+          ) : null}
+
+          {staff && staffName ? (
+            <div className="flex items-center gap-3 border-t border-border pt-3">
+              <Avatar
+                name={staffName}
+                color={staff.color ?? 'hsl(var(--brand-accent))'}
+                size="sm"
+              />
+              <div className="min-w-0">
+                <div className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  Bei
+                </div>
+                <div className="mt-0.5 font-medium text-text-primary">
+                  {staffName}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </CardBody>
+      </Card>
 
       {sp.error ? (
         <div
