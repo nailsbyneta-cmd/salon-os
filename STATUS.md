@@ -1,11 +1,31 @@
 # Status — SALON OS
 
-**Letzte Aktualisierung:** 2026-04-20 (Session-Start)
-**Aktuelle Phase:** Phase 1 (MVP) — Block A-Härtung steht an
+**Letzte Aktualisierung:** 2026-04-21 (Block A gestartet)
+**Aktuelle Phase:** Phase 1 (MVP) — Block A-Härtung läuft
 **Fortschritt Phase 1:** ~35 % Baseline, ~20 % Differenzierung (siehe AUDIT.md)
 
 ## In Arbeit
-- [ ] Auf P0-04 warten
+- [x] Block A #1 Slice 1a — Testcontainers-Infra + erste RLS-Integration-Tests
+- [ ] Block A #1 Slice 1b — Pact Consumer-Driven-Contracts (web ↔ api)
+- [ ] Block A #1 Slice 1c — Vitest 80% Coverage, Playwright E2E 5 Golden-Paths
+- [ ] Block A #2 OpenTelemetry
+- [ ] Block A #3 Outbox-Pattern
+- [ ] Block A #4 Rate-Limiting auf /v1/public/*
+- [ ] Block A #5 Server-Idempotency-Dedupe (Redis)
+- [ ] Block A #6 WorkOS-Magic-Link-Auth
+- [ ] Block A #7 a11y-Gate (axe-core in Playwright)
+
+## Block A — Fortschritts-Log
+
+### 2026-04-21 — Slice 1a: Test-Infra
+- ✅ `apps/api/src/test-utils/pg-test-db.ts`: Testcontainers-Bootstrap für
+  pgvector/pg16, optional via `TEST_DATABASE_URL` für CI
+- ✅ `vitest.integration.config.ts` neben unit-Config, Include-Splitting
+- ✅ Erster Integration-Test: `with-tenant-rls.integration.test.ts` prüft
+  Row-Level-Security-Isolation + UUID-Validation
+- ✅ CI-Job `integration` mit Postgres-Service + `prisma migrate deploy`
+- ⚠️  Sandbox-Umgebung ohne Docker-Daemon → Testcontainers-Pfad lokal
+  unverifiziert, CI-Pfad (`TEST_DATABASE_URL`) läuft via GH-Actions-Service
 
 ## P0-Bugfix-Run (2026-04-20)
 - ✅ **P0-01 Business-Hours-Bug** — Booking-Seite zeigte alle Tage „geschlossen"; Slot-Generator ignorierte openingHours. Fix in `fix/p0-01-business-hours`, merged in main. Web-Parser handelt jetzt Array-of-Intervals-Shape, API availability() respektiert openingHours + TZ (DST-sicher via Intl.DateTimeFormat). Fallback „Öffnungszeiten auf Anfrage" wenn kein Datensatz. Follow-up-Hotfix: TS2538 weekday-index non-null.

@@ -9,8 +9,9 @@
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "lint": "eslint src --max-warnings 0",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -33,7 +34,9 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@testcontainers/postgresql": "^10.16.0",
     "@types/node": "^22.10.2",
+    "testcontainers": "^10.16.0",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }
