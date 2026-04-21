@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Avatar, Badge, Card, CardBody, PriceDisplay } from '@salon-os/ui';
+import { CookieConsent } from '@/components/cookie-consent';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -733,6 +734,8 @@ export default async function BookingStart({
           Powered by <span className="font-semibold">SALON OS</span>
         </div>
       </footer>
+
+      <CookieConsent privacyHref={`/book/${slug}/datenschutz`} />
     </main>
   );
 }
