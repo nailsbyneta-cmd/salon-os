@@ -72,6 +72,7 @@ async function drainBatch(queues: QueueBundle): Promise<void> {
     `SELECT id, "tenantId", "eventType", payload, attempts
      FROM outbox_event
      WHERE "publishedAt" IS NULL
+       AND "cancelledAt" IS NULL
        AND "availableAt" <= now()
        AND attempts < $1
      ORDER BY "availableAt" ASC

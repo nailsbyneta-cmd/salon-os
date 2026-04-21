@@ -13,9 +13,12 @@
 - [x] Block B #3d DataTable (TanStack-React-Table)
 - [x] Block B #4 ServiceBadge + TreatmentTimer + BeforeAfterSlider (StaffScheduleGrid deferred)
 - [x] Block B #3c DatePicker + TimePicker (native-backed, tokenisiert)
+- [x] Block B #4b StaffScheduleGrid (Week × Staff, Read-only v1)
 - [x] Block B #6 Shake-on-Error + Confetti + SyncBanner
+- [x] Middleware additiv: WorkOS-Cookie ODER Basic-Auth
+- [x] Outbox-Cancellation: `cancelledAt` + `correlationKey`
+- [x] RBAC: `@RequireRole` Decorator + globaler Guard
 - [ ] Block B #2 Chromatic/Percy Visual-Regression (braucht Account)
-- [ ] Block B #4b StaffScheduleGrid (braucht Design-Entscheidung)
 - [ ] Block B #6b Swipe-to-Delete (Gesture-Lib offen)
 - [ ] Block B #7 Empty-State-Illustrationen (SVG, monochrom)
 

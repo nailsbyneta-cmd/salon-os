@@ -70,3 +70,9 @@ export {
   type SyncBannerProps,
   type SyncState,
 } from './sync-banner.js';
+export {
+  StaffScheduleGrid,
+  type StaffScheduleGridProps,
+  type StaffScheduleStaffRow,
+  type StaffScheduleShift,
+} from './staff-schedule-grid.js';

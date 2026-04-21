@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { Prisma, PrismaClient } from '@salon-os/db';
+import { prisma } from '@salon-os/db';
 
 /**
  * Transaktions-sichere Event-Veröffentlichung (Outbox-Pattern).
@@ -10,6 +11,10 @@ import type { Prisma, PrismaClient } from '@salon-os/db';
  *
  * Der Poller in `apps/worker` (`outbox-poller.ts`) liest regelmäßig
  * unpublished Rows und routet sie auf die passende BullMQ-Queue.
+ *
+ * Cancellation: Events mit `correlationKey` können via `cancel()` nachträglich
+ * invalidiert werden — der Poller überspringt `cancelledAt != null` durch
+ * den Partial-Index (Migration 0010).
  */
 @Injectable()
 export class OutboxService {
@@ -30,11 +35,36 @@ export class OutboxService {
         eventType: event.eventType,
         payload: event.payload as Prisma.InputJsonValue,
         availableAt: event.availableAt ?? new Date(),
+        correlationKey: event.correlationKey ?? null,
       },
     });
     this.logger.debug(
-      `emit ${event.eventType} tenant=${event.tenantId ?? '-'} at=${event.availableAt?.toISOString() ?? 'now'}`,
+      `emit ${event.eventType} tenant=${event.tenantId ?? '-'} at=${event.availableAt?.toISOString() ?? 'now'} corr=${event.correlationKey ?? '-'}`,
     );
+  }
+
+  /**
+   * Markiert alle noch nicht publizierten Events mit passendem
+   * `correlationKey` als cancelled. Liefert die Zahl der betroffenen Rows.
+   *
+   * Idempotent: wiederholte Aufrufe ändern nichts an bereits cancelled
+   * Rows.
+   */
+  async cancel(correlationKey: string): Promise<number> {
+    const result = await prisma.outboxEvent.updateMany({
+      where: {
+        correlationKey,
+        publishedAt: null,
+        cancelledAt: null,
+      },
+      data: { cancelledAt: new Date() },
+    });
+    if (result.count > 0) {
+      this.logger.log(
+        `cancelled ${result.count} outbox event(s) for correlationKey=${correlationKey}`,
+      );
+    }
+    return result.count;
   }
 }
 
@@ -44,6 +74,11 @@ export interface OutboxEventInput {
   payload: Record<string, unknown>;
   /** Optional: frühester Zeitpunkt, ab dem der Poller das Event sehen darf. */
   availableAt?: Date;
+  /**
+   * Optional: Business-Identifier, über den dieses Event später per
+   * `cancel()` invalidiert werden kann (z.B. `reminder:<appointmentId>`).
+   */
+  correlationKey?: string;
 }
 
 // Minimales Interface — reicht aus, damit Service-Methoden `tx` aus einer
@@ -57,6 +92,7 @@ export interface OutboxTransactionClient {
         eventType: string;
         payload: Prisma.InputJsonValue;
         availableAt: Date;
+        correlationKey: string | null;
       };
     }) => Promise<unknown>;
   };

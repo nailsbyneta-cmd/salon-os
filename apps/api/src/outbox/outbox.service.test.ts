@@ -56,4 +56,35 @@ describe('OutboxService.emit', () => {
     const [{ data }] = tx.create.mock.calls[0] as [{ data: { availableAt: Date } }];
     expect(data.availableAt).toEqual(future);
   });
+
+  it('schreibt correlationKey in die Row, wenn gesetzt', async () => {
+    const tx = makeTx();
+    const svc = new OutboxService();
+
+    await svc.emit(tx, {
+      eventType: 'reminder.reminder-24h',
+      payload: { appointmentId: 'a1' },
+      correlationKey: 'reminder:appt-42',
+    });
+
+    const [{ data }] = tx.create.mock.calls[0] as [
+      { data: { correlationKey: string | null } },
+    ];
+    expect(data.correlationKey).toBe('reminder:appt-42');
+  });
+
+  it('defaultet correlationKey auf null wenn nicht übergeben', async () => {
+    const tx = makeTx();
+    const svc = new OutboxService();
+
+    await svc.emit(tx, {
+      eventType: 'marketing.scan',
+      payload: { type: 'scan' },
+    });
+
+    const [{ data }] = tx.create.mock.calls[0] as [
+      { data: { correlationKey: string | null } },
+    ];
+    expect(data.correlationKey).toBeNull();
+  });
 });

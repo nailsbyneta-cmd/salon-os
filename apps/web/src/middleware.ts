@@ -2,16 +2,38 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 /**
- * Minimal-Schutz für die Admin-Oberfläche bis WorkOS-Auth steht.
- * HTTP Basic-Auth via ADMIN_USERNAME + ADMIN_PASSWORD env-vars.
- * Wenn Vars leer sind → Auth deaktiviert (Dev-Fallback).
+ * Admin-Zugangs-Gate. Zwei gültige Wege:
  *
- * Public-Booking, Mobile-App-Shell unter /m, API-Health bleiben offen.
+ *   1. `salon_session`-Cookie vorhanden   → pass (WorkOS-Magic-Link-Flow)
+ *   2. HTTP Basic-Auth stimmt             → pass (Dev/Staging-Fallback
+ *                                            solange WorkOS nicht überall aktiv)
+ *
+ * Wichtig: Middleware läuft in Next's Edge-Runtime — keine `node:crypto`-
+ * Primitives. Die kryptographische Session-Verifikation passiert in der
+ * API (`apps/api/src/tenant/tenant.middleware.ts`), das Middleware prüft
+ * hier nur Cookie-Präsenz. Das reicht, um Bot-/Direct-Traffic fernzuhalten;
+ * jeder Datenzugriff wird vom API nochmals gegen das signierte Token geprüft.
+ *
+ * Wenn weder ADMIN_USERNAME/PASSWORD noch Cookie vorhanden sind UND beide
+ * env-Vars fehlen, bleibt der Dev-Fallback offen (lokale Entwicklung ohne
+ * Auth-Setup).
  */
+const SESSION_COOKIE = 'salon_session';
+
 export function middleware(req: NextRequest): NextResponse {
+  // Pfad 1: gültige Session-Cookie → durchlassen.
+  if (req.cookies.has(SESSION_COOKIE)) {
+    return NextResponse.next();
+  }
+
+  // Pfad 2: Basic-Auth gesetzt?
   const user = process.env['ADMIN_USERNAME'];
   const pass = process.env['ADMIN_PASSWORD'];
-  if (!user || !pass) return NextResponse.next();
+  if (!user || !pass) {
+    // Weder Cookie noch Basic-Auth-Creds konfiguriert → Dev-Fallback,
+    // Middleware greift nicht ein.
+    return NextResponse.next();
+  }
 
   const auth = req.headers.get('authorization');
   if (auth?.startsWith('Basic ')) {
@@ -35,13 +57,12 @@ export function middleware(req: NextRequest): NextResponse {
 }
 
 export const config = {
-  // Match admin-Routen — also alles außer (booking), /m, /api, /_next, etc.
   matcher: [
     /*
      * Match all paths except:
      * - /book/... (public booking)
-     * - /login/... (WorkOS-Magic-Link-Login — muss ohne Basic-Auth erreichbar sein)
-     * - /m/... (mobile PWA, braucht später eigenes Auth)
+     * - /login/... (WorkOS-Magic-Link-Login — muss ohne Auth erreichbar sein)
+     * - /m/... (mobile PWA, eigenes Auth kommt später)
      * - /api/... (API-Routes — Next.js internal + exports)
      * - /appointment/... (self-service via HMAC-Token)
      * - /_next/ (next internals)

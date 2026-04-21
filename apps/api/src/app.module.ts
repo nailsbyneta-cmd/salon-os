@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ClientsModule } from './clients/clients.module.js';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter.js';
 import { IdempotencyModule } from './common/idempotency/idempotency.module.js';
+import { RolesGuard } from './common/rbac/roles.guard.js';
 import { DbModule } from './db/db.module.js';
 import { OutboxModule } from './outbox/outbox.module.js';
 import { HealthController } from './health/health.controller.js';
@@ -51,6 +52,10 @@ import { WaitlistModule } from './waitlist/waitlist.module.js';
     {
       provide: APP_FILTER,
       useClass: ProblemDetailsFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })
