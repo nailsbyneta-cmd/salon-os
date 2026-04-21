@@ -13,6 +13,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { AppointmentCard, type AppointmentStatus, Avatar, Button } from '@salon-os/ui';
+import { toLocalIso } from '@salon-os/utils';
 import { rescheduleAppointment } from '@/app/(admin)/calendar/reschedule-action';
 import { CalendarZoomControls } from './calendar-zoom-controls';
 import { useCalendarZoom } from './use-calendar-zoom';
@@ -136,12 +137,17 @@ export function CalendarDnd({
     const newEndMin = newStartMin + dur;
     if (newStartMin < 0 || newEndMin > CAL_END_MIN - CAL_START_MIN) return;
 
+    // Drop-Minute auf Europe/Zurich-Datum des Termins anwenden — damit
+    // die Drag-Geste nicht an der Browser-TZ hängt (z. B. wenn Neta
+    // vom Ferienort arbeitet).
     const base = new Date(current.startAt);
-    const newStart = new Date(base);
-    newStart.setHours(Math.floor((CAL_START_MIN + newStartMin) / 60));
-    newStart.setMinutes((CAL_START_MIN + newStartMin) % 60);
-    newStart.setSeconds(0);
-    newStart.setMilliseconds(0);
+    const dateStr = base.toLocaleDateString('en-CA', {
+      timeZone: 'Europe/Zurich',
+    }); // YYYY-MM-DD in Zurich
+    const totalMin = CAL_START_MIN + newStartMin;
+    const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
+    const mm = String(totalMin % 60).padStart(2, '0');
+    const newStart = new Date(toLocalIso(dateStr, `${hh}:${mm}`, 'Europe/Zurich'));
     const newEnd = new Date(newStart.getTime() + dur * 60_000);
 
     const targetStaff = staffList.find((s) => s.id === parsed.staffId);

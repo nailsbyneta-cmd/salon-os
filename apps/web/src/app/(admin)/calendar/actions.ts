@@ -19,6 +19,8 @@ export async function transitionAppointment(
   });
   revalidatePath('/calendar');
   revalidatePath(`/calendar/${appointmentId}`);
+  revalidatePath('/');
+  revalidatePath('/m');
   // Celebrate-Trigger bei „complete"
   if (to === 'complete') {
     redirect(`/calendar/${appointmentId}?celebrate=complete`);
@@ -39,4 +41,6 @@ export async function cancelAppointment(
   });
   revalidatePath('/calendar');
   revalidatePath(`/calendar/${appointmentId}`);
+  revalidatePath('/');
+  revalidatePath('/m');
 }

@@ -117,7 +117,7 @@ export default async function AuditPage({
             description="Sobald Termine angelegt, umgebucht oder Kundinnen gelöscht werden, erscheinen die Aktionen hier."
           />
         ) : (
-          <CardBody className="p-0">
+          <CardBody className="overflow-x-auto p-0">
             <table className="w-full text-sm">
               <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
                 <tr>

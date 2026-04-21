@@ -85,7 +85,7 @@ export function PosForm({
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
           Zahlungsart
         </p>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {methods.map((m) => (
             <button
               key={m.id}

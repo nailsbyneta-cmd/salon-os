@@ -28,6 +28,9 @@ export async function rescheduleAppointment(
       },
     });
     revalidatePath('/calendar');
+    revalidatePath(`/calendar/${appointmentId}`);
+    revalidatePath('/');
+    revalidatePath('/m');
     return { ok: true };
   } catch (err) {
     if (err instanceof ApiError) {

@@ -18,6 +18,7 @@ import {
   Button,
   cn,
 } from '@salon-os/ui';
+import { toLocalIso } from '@salon-os/utils';
 import { rescheduleAppointment } from '@/app/(admin)/calendar/reschedule-action';
 import { CalendarZoomControls } from './calendar-zoom-controls';
 import { useCalendarZoom } from './use-calendar-zoom';
@@ -183,10 +184,11 @@ export function CalendarWeek({
     const newEndMin = newStartMin + dur;
     if (newStartMin < 0 || newEndMin > CAL_END_MIN - CAL_START_MIN) return;
 
-    const [y, mo, d] = parsed.day.split('-').map(Number);
-    const newStart = new Date(y!, mo! - 1, d!, 0, 0, 0, 0);
-    newStart.setHours(Math.floor((CAL_START_MIN + newStartMin) / 60));
-    newStart.setMinutes((CAL_START_MIN + newStartMin) % 60);
+    // parsed.day ist bereits YYYY-MM-DD (Zurich-Tag der Spalte).
+    const totalMin = CAL_START_MIN + newStartMin;
+    const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
+    const mm = String(totalMin % 60).padStart(2, '0');
+    const newStart = new Date(toLocalIso(parsed.day, `${hh}:${mm}`, 'Europe/Zurich'));
     const newEnd = new Date(newStart.getTime() + dur * 60_000);
 
     const staffChanged = parsed.staffId !== current.staffId;
