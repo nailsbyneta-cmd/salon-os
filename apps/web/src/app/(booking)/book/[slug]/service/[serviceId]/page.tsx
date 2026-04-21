@@ -13,6 +13,28 @@ interface Slot {
   currency: string;
 }
 
+type OpeningDay =
+  | { open?: string; close?: string; closed?: boolean }
+  | Array<{ open: string; close: string }>;
+
+const WEEKDAY_KEY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+
+async function loadInfo(slug: string): Promise<{
+  locations: Array<{ id: string; openingHours: unknown }>;
+} | null> {
+  try {
+    const res = await fetch(`${API_URL}/v1/public/${slug}/info`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as {
+      locations: Array<{ id: string; openingHours: unknown }>;
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function loadSlots(
   slug: string,
   serviceId: string,
@@ -36,8 +58,15 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function nextDays(count: number): Array<{ iso: string; weekday: string; day: string }> {
-  const out: Array<{ iso: string; weekday: string; day: string }> = [];
+function nextDays(
+  count: number,
+): Array<{ iso: string; weekday: string; day: string; weekdayKey: string }> {
+  const out: Array<{
+    iso: string;
+    weekday: string;
+    day: string;
+    weekdayKey: string;
+  }> = [];
   const base = new Date();
   base.setHours(0, 0, 0, 0);
   for (let i = 0; i < count; i++) {
@@ -47,9 +76,35 @@ function nextDays(count: number): Array<{ iso: string; weekday: string; day: str
       iso: d.toISOString().slice(0, 10),
       weekday: d.toLocaleDateString('de-CH', { weekday: 'short' }),
       day: d.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' }),
+      weekdayKey: WEEKDAY_KEY[d.getDay()]!,
     });
   }
   return out;
+}
+
+function isDayOpen(openingHours: unknown, weekdayKey: string): boolean {
+  if (!openingHours || typeof openingHours !== 'object') return true; // unknown → annehmen offen
+  const map = openingHours as Record<string, OpeningDay>;
+  const e = map[weekdayKey];
+  if (!e) return false;
+  if (Array.isArray(e)) return e.some((i) => i.open && i.close);
+  return !e.closed && !!e.open && !!e.close;
+}
+
+/** Nächster offener Tag in den nächsten 14 Tagen. ISO-String oder null. */
+function findNextOpenDay(
+  openingHours: unknown,
+  fromIso: string,
+): string | null {
+  if (!openingHours || typeof openingHours !== 'object') return null;
+  const start = new Date(`${fromIso}T00:00:00Z`);
+  for (let i = 1; i <= 14; i++) {
+    const d = new Date(start);
+    d.setUTCDate(d.getUTCDate() + i);
+    const key = WEEKDAY_KEY[d.getUTCDay()]!;
+    if (isDayOpen(openingHours, key)) return d.toISOString().slice(0, 10);
+  }
+  return null;
 }
 
 export default async function BookingSlots({
@@ -64,8 +119,20 @@ export default async function BookingSlots({
   if (!location) notFound();
 
   const selectedDate = date ?? today();
-  const slots = await loadSlots(slug, serviceId, selectedDate, location);
+  const [slots, info] = await Promise.all([
+    loadSlots(slug, serviceId, selectedDate, location),
+    loadInfo(slug),
+  ]);
   if (slots === null) notFound();
+
+  const openingHours =
+    info?.locations.find((l) => l.id === location)?.openingHours ?? null;
+
+  const selectedWeekdayKey = WEEKDAY_KEY[new Date(selectedDate).getDay()]!;
+  const selectedDayOpen = isDayOpen(openingHours, selectedWeekdayKey);
+  const nextOpen = !selectedDayOpen || slots.length === 0
+    ? findNextOpenDay(openingHours, selectedDate)
+    : null;
 
   const grouped = new Map<string, Slot[]>();
   for (const s of slots) {
@@ -103,15 +170,19 @@ export default async function BookingSlots({
           <div className="flex gap-2">
             {nextDays(7).map((d) => {
               const active = d.iso === selectedDate;
+              const open = isDayOpen(openingHours, d.weekdayKey);
               return (
                 <Link
                   key={d.iso}
                   href={`/book/${slug}/service/${serviceId}?location=${location}&date=${d.iso}`}
+                  aria-disabled={!open}
                   className={cn(
                     'flex min-w-[68px] flex-col items-center rounded-md border px-3 py-2 text-center transition-colors',
                     active
                       ? 'border-accent bg-accent text-accent-foreground shadow-sm'
-                      : 'border-border bg-surface text-text-secondary hover:border-accent hover:text-text-primary',
+                      : open
+                        ? 'border-border bg-surface text-text-secondary hover:border-accent hover:text-text-primary'
+                        : 'border-border bg-surface/50 text-text-muted opacity-60',
                   )}
                 >
                   <span className="text-[10px] font-medium uppercase tracking-wider">
@@ -119,6 +190,9 @@ export default async function BookingSlots({
                   </span>
                   <span className="mt-0.5 text-sm font-semibold tabular-nums">
                     {d.day}
+                  </span>
+                  <span className="text-[9px] font-medium uppercase tracking-wider opacity-75">
+                    {open ? '' : 'Zu'}
                   </span>
                 </Link>
               );
@@ -142,8 +216,25 @@ export default async function BookingSlots({
 
       {slots.length === 0 ? (
         <Card>
-          <CardBody className="py-10 text-center text-sm text-text-secondary">
-            An diesem Tag sind keine Termine frei. Wähle ein anderes Datum.
+          <CardBody className="space-y-3 py-8 text-center">
+            <p className="text-sm text-text-secondary">
+              {selectedDayOpen
+                ? 'An diesem Tag sind keine Termine frei.'
+                : 'An diesem Tag geschlossen.'}
+            </p>
+            {nextOpen ? (
+              <Link
+                href={`/book/${slug}/service/${serviceId}?location=${location}&date=${nextOpen}`}
+                className="inline-flex text-sm font-medium text-accent hover:underline"
+              >
+                → Nächster freier Tag:{' '}
+                {new Date(nextOpen).toLocaleDateString('de-CH', {
+                  weekday: 'long',
+                  day: '2-digit',
+                  month: 'long',
+                })}
+              </Link>
+            ) : null}
           </CardBody>
         </Card>
       ) : (
