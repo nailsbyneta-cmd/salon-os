@@ -146,6 +146,9 @@ export class StaffService {
           ...(rest.startsAt !== undefined
             ? { startsAt: rest.startsAt ? new Date(rest.startsAt) : null }
             : {}),
+          ...((rest as { active?: boolean }).active !== undefined
+            ? { active: (rest as { active?: boolean }).active! }
+            : {}),
         },
       });
     });

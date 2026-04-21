@@ -64,6 +64,54 @@ export async function createStaff(form: FormData): Promise<void> {
   redirect('/staff');
 }
 
+export async function updateStaff(id: string, form: FormData): Promise<void> {
+  const ctx = getCurrentTenant();
+  const firstName = form.get('firstName')?.toString().trim();
+  const lastName = form.get('lastName')?.toString().trim();
+  const email = form.get('email')?.toString().trim();
+  if (!firstName || !lastName || !email) {
+    throw new Error('Vorname, Nachname und E-Mail sind Pflicht.');
+  }
+
+  const body: Record<string, unknown> = {
+    firstName,
+    lastName,
+    email,
+    role: form.get('role')?.toString() ?? 'STYLIST',
+    employmentType: form.get('employmentType')?.toString() ?? 'EMPLOYEE',
+    active: form.get('active') === 'on',
+  };
+  const opt = (k: string): void => {
+    const v = form.get(k)?.toString().trim();
+    if (v) body[k === 'displayName' ? 'displayName' : k] = v;
+  };
+  opt('displayName');
+  opt('phone');
+  opt('color');
+  opt('photoUrl');
+  opt('bio');
+
+  try {
+    await apiFetch(`/v1/staff/${id}`, {
+      method: 'PATCH',
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+      body,
+    });
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw new Error(err.problem?.detail ?? err.problem?.title ?? err.message);
+    }
+    throw err;
+  }
+
+  revalidatePath('/staff');
+  revalidatePath(`/staff/${id}`);
+  revalidatePath('/book/beautycenter-by-neta');
+  redirect('/staff');
+}
+
 export async function deleteStaff(id: string): Promise<void> {
   const ctx = getCurrentTenant();
   await apiFetch(`/v1/staff/${id}`, {

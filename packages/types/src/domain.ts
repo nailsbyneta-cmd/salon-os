@@ -300,7 +300,10 @@ export type CreateStaffInput = z.infer<typeof createStaffSchema>;
 
 export const updateStaffSchema = createStaffSchema
   .partial()
-  .omit({ userId: true });
+  .omit({ userId: true })
+  .extend({
+    active: z.boolean().optional(),
+  });
 export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
 
 // ─── Shift + TimeOff ───────────────────────────────────────────
