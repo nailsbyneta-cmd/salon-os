@@ -131,8 +131,9 @@ export default async function Home(): Promise<React.JSX.Element> {
     0,
   );
   const completed = activeAppts.filter((a) => a.status === 'COMPLETED').length;
+  const running = activeAppts.filter((a) => a.status === 'IN_SERVICE');
   const upcoming = activeAppts
-    .filter((a) => new Date(a.startAt) >= now)
+    .filter((a) => new Date(a.startAt) >= now && a.status !== 'IN_SERVICE')
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
   return (
@@ -230,6 +231,64 @@ export default async function Home(): Promise<React.JSX.Element> {
           href="/inventory"
         />
       </section>
+
+      {running.length > 0 ? (
+        <Card className="mb-4 border-l-4 border-l-accent bg-accent/5" elevation="flat">
+          <CardBody>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="inline-flex h-2 w-2 rounded-full bg-accent motion-safe:animate-pulse" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                Grade läuft · {running.length} {running.length === 1 ? 'Termin' : 'Termine'}
+              </span>
+            </div>
+            <ul className="space-y-2">
+              {running.map((a) => {
+                const startMs = new Date(a.startAt).getTime();
+                const elapsedMin = Math.max(
+                  0,
+                  Math.floor((now.getTime() - startMs) / 60000),
+                );
+                const totalMin =
+                  (new Date(a.endAt).getTime() - startMs) / 60000;
+                const pct = Math.min(
+                  100,
+                  Math.max(0, (elapsedMin / totalMin) * 100),
+                );
+                const client = a.client
+                  ? `${a.client.firstName} ${a.client.lastName}`
+                  : 'Blockzeit';
+                return (
+                  <li key={a.id}>
+                    <Link
+                      href={`/calendar/${a.id}`}
+                      className="block rounded-md bg-surface px-3 py-2 transition-colors hover:bg-surface-raised"
+                    >
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-sm font-medium text-text-primary truncate">
+                          {client}
+                        </span>
+                        <span className="text-xs tabular-nums text-text-muted">
+                          {elapsedMin} / {Math.round(totalMin)} Min
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-text-muted truncate">
+                        {a.items.map((i) => i.service.name).join(', ')} ·{' '}
+                        {a.staff.firstName}
+                      </div>
+                      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-raised">
+                        <div
+                          className="h-full rounded-full bg-accent transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardBody>
+        </Card>
+      ) : null}
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="md:col-span-2" elevation="flat">
