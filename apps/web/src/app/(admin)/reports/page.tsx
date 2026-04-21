@@ -295,13 +295,13 @@ export default async function ReportsPage({
         </a>
       </header>
 
-      <div className="mb-6 inline-flex items-center rounded-md border border-border bg-surface p-0.5">
+      <div className="mb-6 inline-flex items-center rounded-md border border-border bg-surface p-1">
         {(Object.keys(PERIODS) as PeriodKey[]).map((k) => (
           <Link
             key={k}
             href={`/reports?period=${k}`}
             className={cn(
-              'rounded-sm px-3 py-1.5 text-xs font-medium transition-colors',
+              'inline-flex min-h-[40px] items-center rounded-sm px-3 text-xs font-medium transition-colors',
               periodKey === k
                 ? 'bg-brand text-brand-foreground'
                 : 'text-text-secondary hover:text-text-primary',

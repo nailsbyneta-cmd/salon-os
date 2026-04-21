@@ -274,13 +274,13 @@ function ViewToggle({
     { id: 'month', label: 'Monat' },
   ];
   return (
-    <div className="inline-flex items-center rounded-md border border-border bg-surface p-0.5">
+    <div className="inline-flex items-center rounded-md border border-border bg-surface p-1">
       {opts.map((o) => (
         <Link
           key={o.id}
           href={`/calendar?view=${o.id}&date=${day}`}
           className={cn(
-            'rounded-sm px-3 py-1.5 text-xs font-medium transition-colors',
+            'inline-flex min-h-[40px] items-center rounded-sm px-3 text-xs font-medium transition-colors',
             current === o.id
               ? 'bg-brand text-brand-foreground'
               : 'text-text-secondary hover:text-text-primary',

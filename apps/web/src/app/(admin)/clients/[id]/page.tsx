@@ -166,13 +166,13 @@ export default async function ClientDetailPage({
                 <>
                   <a
                     href={`tel:${client.phone}`}
-                    className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                    className="inline-flex h-11 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
                   >
                     📞 Anrufen
                   </a>
                   <a
                     href={`sms:${client.phone}`}
-                    className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                    className="inline-flex h-11 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
                   >
                     💬 SMS
                   </a>
@@ -180,7 +180,7 @@ export default async function ClientDetailPage({
                     href={`https://wa.me/${client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
                     target="_blank"
                     rel="noopener"
-                    className="inline-flex h-8 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-2.5 text-[11px] font-medium text-success transition-colors hover:bg-success/20"
+                    className="inline-flex h-11 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success transition-colors hover:bg-success/20"
                   >
                     WhatsApp
                   </a>
@@ -189,7 +189,7 @@ export default async function ClientDetailPage({
               {client.email ? (
                 <a
                   href={`mailto:${client.email}`}
-                  className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                  className="inline-flex h-11 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
                 >
                   ✉ E-Mail
                 </a>

@@ -144,7 +144,7 @@ export default async function ClientsPage({
               key={f.key}
               href={href}
               className={cn(
-                'inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors',
+                'inline-flex h-10 items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors',
                 filterKey === f.key
                   ? 'border-accent bg-accent text-accent-foreground'
                   : 'border-border bg-surface text-text-secondary hover:border-accent hover:text-text-primary',

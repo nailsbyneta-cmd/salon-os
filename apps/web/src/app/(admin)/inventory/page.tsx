@@ -156,7 +156,7 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                           <form action={minus}>
                             <button
                               type="submit"
-                              className="h-8 w-8 rounded-sm border border-border text-text-secondary hover:bg-surface-raised"
+                              className="h-11 w-11 rounded-sm border border-border text-lg text-text-secondary hover:bg-surface-raised"
                               aria-label="Bestand senken"
                             >
                               −
@@ -172,7 +172,7 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                           <form action={plus}>
                             <button
                               type="submit"
-                              className="h-8 w-8 rounded-sm border border-border text-text-secondary hover:bg-surface-raised"
+                              className="h-11 w-11 rounded-sm border border-border text-lg text-text-secondary hover:bg-surface-raised"
                               aria-label="Bestand erhöhen"
                             >
                               +
