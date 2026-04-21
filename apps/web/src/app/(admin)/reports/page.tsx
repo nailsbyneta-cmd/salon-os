@@ -255,35 +255,44 @@ export default async function ReportsPage({
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-8">
-      <header className="mb-6">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Reports
-        </p>
-        <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
-          {PERIODS[periodKey].label}
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          {range.from.toLocaleDateString('de-CH', {
-            day: '2-digit',
-            month: 'short',
-          })}{' '}
-          –{' '}
-          {range.to.toLocaleDateString('de-CH', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          })}
-          {' · vs. '}
-          {prevRange.from.toLocaleDateString('de-CH', {
-            day: '2-digit',
-            month: 'short',
-          })}{' '}
-          –{' '}
-          {prevRange.to.toLocaleDateString('de-CH', {
-            day: '2-digit',
-            month: 'short',
-          })}
-        </p>
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+            Reports
+          </p>
+          <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
+            {PERIODS[periodKey].label}
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            {range.from.toLocaleDateString('de-CH', {
+              day: '2-digit',
+              month: 'short',
+            })}{' '}
+            –{' '}
+            {range.to.toLocaleDateString('de-CH', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            })}
+            {' · vs. '}
+            {prevRange.from.toLocaleDateString('de-CH', {
+              day: '2-digit',
+              month: 'short',
+            })}{' '}
+            –{' '}
+            {prevRange.to.toLocaleDateString('de-CH', {
+              day: '2-digit',
+              month: 'short',
+            })}
+          </p>
+        </div>
+        <a
+          href={`/api/reports/export?period=${periodKey}`}
+          download
+          className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-secondary hover:bg-surface-raised"
+        >
+          ↓ CSV Export
+        </a>
       </header>
 
       <div className="mb-6 inline-flex items-center rounded-md border border-border bg-surface p-0.5">

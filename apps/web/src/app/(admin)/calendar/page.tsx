@@ -192,25 +192,28 @@ export default async function CalendarPage({
           <ViewToggle current={view} day={day} />
           <div className="flex items-center gap-1">
             <Link href={`/calendar?view=${view}&date=${prevDate}`}>
-              <Button variant="secondary" size="md" aria-label="Vorherige">
+              <Button variant="secondary" size="sm" aria-label="Vorherige">
                 ←
               </Button>
             </Link>
             <Link href={`/calendar?view=${view}&date=${todayIso()}`}>
-              <Button variant="secondary" size="md">
+              <Button variant="secondary" size="sm">
                 Heute
               </Button>
             </Link>
             <Link href={`/calendar?view=${view}&date=${nextDate}`}>
-              <Button variant="secondary" size="md" aria-label="Nächste">
+              <Button variant="secondary" size="sm" aria-label="Nächste">
                 →
               </Button>
             </Link>
           </div>
-          <CalendarDateJumper currentDate={day} view={view} />
+          <div className="hidden sm:block">
+            <CalendarDateJumper currentDate={day} view={view} />
+          </div>
           <Link href={`/calendar/new?date=${day}`}>
             <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
-              Neuer Termin
+              <span className="hidden sm:inline">Neuer Termin</span>
+              <span className="sm:hidden">Neu</span>
             </Button>
           </Link>
         </div>
