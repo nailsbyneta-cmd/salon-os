@@ -4,6 +4,7 @@ import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { ClientsModule } from './clients/clients.module.js';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter.js';
+import { IdempotencyModule } from './common/idempotency/idempotency.module.js';
 import { DbModule } from './db/db.module.js';
 import { HealthController } from './health/health.controller.js';
 import { GiftCardsModule } from './gift-cards/gift-cards.module.js';
@@ -23,6 +24,7 @@ import { WaitlistModule } from './waitlist/waitlist.module.js';
 @Module({
   imports: [
     DbModule,
+    IdempotencyModule,
     TenantModule,
     AuditModule,
     LocationsModule,

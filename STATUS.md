@@ -13,7 +13,7 @@
 - [ ] Block A #2 OpenTelemetry
 - [ ] Block A #3 Outbox-Pattern
 - [x] Block A #4 Rate-Limiting auf /v1/public/*
-- [ ] Block A #5 Server-Idempotency-Dedupe (Redis)
+- [x] Block A #5 Server-Idempotency-Dedupe (Redis)
 - [ ] Block A #6 WorkOS-Magic-Link-Auth
 
 ## Block A — Fortschritts-Log
@@ -46,6 +46,18 @@
   appliziert Migrations auf Postgres-Service und verifiziert alle Interaktionen
 - ⚠️  Lokal nicht smoke-getestet (Sandbox ohne Docker-Daemon) — CI validiert
   den Gesamt-Pfad web→api end-to-end
+
+### 2026-04-21 — Block A #5: Idempotency-Dedupe
+- ✅ `IdempotencyInterceptor` als globaler APP_INTERCEPTOR: Write-Requests
+  mit `Idempotency-Key`-Header werden pro `{tenant, key, method, url}`
+  für 24h gecached; Replays geben identischen Status+Body zurück
+- ✅ Store-Interface + `RedisIdempotencyStore` (ioredis@5) und
+  `InMemoryIdempotencyStore` (für Tests); Factory wählt automatisch
+  anhand `REDIS_URL` / `NODE_ENV`
+- ✅ Fail-open wenn kein Store (lokale Dev ohne Redis läuft weiter)
+- ✅ Key-Whitelist `[A-Za-z0-9_\-:.]`, max 255 Zeichen → 400 bei Verstoß
+- ✅ 6 Unit-Tests: GET bypass, kein Header bypass, Dedup, Tenant-Isolation,
+  400 bei Junk-Keys, Fail-open ohne Store
 
 ### 2026-04-21 — Block A #4: Rate-Limiting
 - ✅ `@fastify/rate-limit@10` in `apps/api`, global via `app.register()` in
