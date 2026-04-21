@@ -39,6 +39,9 @@ test-results/
 pacts/
 pact-logs/
 
+# Playwright browser cache (lokale Installation)
+.playwright-browsers/
+
 # OS / editor
 .DS_Store
 .vscode/

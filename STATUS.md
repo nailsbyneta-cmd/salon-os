@@ -8,8 +8,8 @@
 - [x] Block A #1 Slice 1a — Testcontainers-Infra + erste RLS-Integration-Tests
 - [x] Block A #1 Slice 1b — Pact Consumer-Contracts (web)
 - [x] Block A #1 Slice 1c — Pact Provider-Verify (api)
-- [ ] Block A #1 Slice 1d — Playwright E2E 5 Golden-Paths
-- [ ] Block A #1 Slice 1e — axe-core a11y-Gate
+- [x] Block A #1 Slice 1d — Playwright E2E (1/5 Golden-Path, Rest inkrementell)
+- [x] Block A #1 Slice 1e — axe-core a11y-Gate (WCAG 2.1 AA)
 - [x] Block A #2 OpenTelemetry Traces (Metriken-Exporter folgen, Version-Konflikt)
 - [x] Block A #3 Outbox-Pattern (Infra + Poller; Producer-Migration inkrementell)
 - [x] Block A #4 Rate-Limiting auf /v1/public/*
@@ -46,6 +46,20 @@
   appliziert Migrations auf Postgres-Service und verifiziert alle Interaktionen
 - ⚠️  Lokal nicht smoke-getestet (Sandbox ohne Docker-Daemon) — CI validiert
   den Gesamt-Pfad web→api end-to-end
+
+### 2026-04-21 — Block A #1/1d+1e: Playwright E2E + a11y-Gate
+- ✅ `@playwright/test@1.59` + `@axe-core/playwright@4.11` im Root
+- ✅ `playwright.config.ts` mit `webServer`-Auto-Start für apps/web,
+  `trace/screenshot/video`-on-failure, HTML-Report, 1 Worker (stable)
+- ✅ E2E-#1 `public-booking.spec.ts`: lädt `/book/beautycenter-by-neta`,
+  prüft Tenant-Name + Service-Link, axe-core 0-Violations-Gate
+  (wcag2a + wcag2aa + wcag21a + wcag21aa)
+- ✅ CI-Job `e2e` startet Postgres+Redis-Service, appliziert Migrations,
+  seedet Demo-Tenant, bauten API + startet node dist/main.js,
+  Playwright bringt Web per webServer hoch, lädt Chromium mit Deps
+- ✅ `playwright-report/` als Artifact auf jeder Run-Completion (7 Tage)
+- 🔜 Weitere Golden-Paths (Login, Create-Appointment, Cancel, POS-Checkout)
+  folgen nach WorkOS-Integration (Slice #6)
 
 ### 2026-04-21 — Block A #2: OpenTelemetry (Tracing)
 - ✅ `apps/api/src/otel.ts` + `apps/worker/src/otel.ts`: NodeSDK mit
