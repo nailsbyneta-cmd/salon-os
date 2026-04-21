@@ -9,6 +9,8 @@ import {
 } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { LocationHoursEditor } from '@/components/location-hours-editor';
+import type { Schedule } from '@/components/schedule-editor';
 import {
   createFaq,
   createGalleryImage,
@@ -70,6 +72,38 @@ interface Loc {
   city: string | null;
   phone: string | null;
   email: string | null;
+  openingHours: unknown;
+}
+
+function normalizeHours(raw: unknown): Schedule | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+  const out: Schedule = {
+    mon: [],
+    tue: [],
+    wed: [],
+    thu: [],
+    fri: [],
+    sat: [],
+    sun: [],
+  };
+  let any = false;
+  for (const k of keys) {
+    const v = r[k];
+    if (Array.isArray(v)) {
+      const arr = v.filter(
+        (x): x is { open: string; close: string } =>
+          !!x &&
+          typeof x === 'object' &&
+          typeof (x as { open?: unknown }).open === 'string' &&
+          typeof (x as { close?: unknown }).close === 'string',
+      );
+      out[k] = arr;
+      if (arr.length > 0) any = true;
+    }
+  }
+  return any ? out : out;
 }
 
 async function loadData(): Promise<{
@@ -236,6 +270,13 @@ export default async function SettingsPage({
               </form>
             </CardBody>
           </Card>
+
+          <div className="mt-4">
+            <LocationHoursEditor
+              locationId={primaryLocation.id}
+              initial={normalizeHours(primaryLocation.openingHours)}
+            />
+          </div>
         </section>
       ) : null}
 

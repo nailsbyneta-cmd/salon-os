@@ -32,6 +32,24 @@ function revalidateAll(): void {
 
 // ── Location ────────────────────────────────
 
+export async function saveLocationHours(
+  locationId: string,
+  schedule: Record<string, Array<{ open: string; close: string }>>,
+): Promise<void> {
+  try {
+    await apiFetch(`/v1/locations/${locationId}`, {
+      method: 'PATCH',
+      ...ctxHeaders(),
+      body: { openingHours: schedule },
+    });
+  } catch (err) {
+    if (err instanceof ApiError)
+      throw new Error(err.problem?.title ?? err.message);
+    throw err;
+  }
+  revalidateAll();
+}
+
 export async function updateLocation(
   locationId: string,
   form: FormData,
