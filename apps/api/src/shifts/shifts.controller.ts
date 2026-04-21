@@ -10,6 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { z } from 'zod';
 import { createShiftSchema, uuidSchema } from '@salon-os/types';
 import type { Shift } from '@salon-os/db';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
@@ -51,5 +52,26 @@ export class ShiftsController {
     @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
   ): Promise<void> {
     await this.svc.remove(id);
+  }
+
+  /**
+   * Generiert Schichten für die nächsten `days` Tage basierend auf den
+   * Öffnungszeiten der Location. Body: { staffId, locationId, days }.
+   */
+  @Post('generate-from-location')
+  @HttpCode(HttpStatus.OK)
+  async generateFromLocation(
+    @Body(
+      new ZodValidationPipe(
+        z.object({
+          staffId: uuidSchema,
+          locationId: uuidSchema,
+          days: z.number().int().min(1).max(60).default(28),
+        }),
+      ),
+    )
+    input: { staffId: string; locationId: string; days: number },
+  ): Promise<{ created: number; skipped: number }> {
+    return this.svc.bulkGenerateFromLocation(input);
   }
 }

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Avatar, Button, Card, CardBody, EmptyState, Input } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
-import { createShift, deleteShift } from './actions';
+import { createShift, deleteShift, generateShifts } from './actions';
 
 interface StaffRow {
   id: string;
@@ -59,6 +59,8 @@ export default async function StaffShiftsPage({
   if (!staff) notFound();
 
   const add = createShift.bind(null, id);
+  const gen7 = generateShifts.bind(null, id, 7);
+  const gen28 = generateShifts.bind(null, id, 28);
 
   const byDate = new Map<string, Shift[]>();
   for (const s of shifts) {
@@ -93,11 +95,37 @@ export default async function StaffShiftsPage({
         </div>
       </header>
 
+      <Card className="mb-4 border-l-4 border-l-accent bg-accent/5">
+        <CardBody className="space-y-3">
+          <div>
+            <p className="text-sm font-medium text-text-primary">
+              Schichten auto-generieren
+            </p>
+            <p className="mt-0.5 text-xs text-text-secondary">
+              Erstellt Schichten basierend auf den Öffnungszeiten der Location.
+              Überspringt Tage mit bereits bestehenden Schichten.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <form action={gen7}>
+              <Button type="submit" variant="secondary" size="sm">
+                Diese Woche (7 Tage)
+              </Button>
+            </form>
+            <form action={gen28}>
+              <Button type="submit" variant="secondary" size="sm">
+                Nächste 4 Wochen (28 Tage)
+              </Button>
+            </form>
+          </div>
+        </CardBody>
+      </Card>
+
       <Card className="mb-8">
         <CardBody>
           <form action={add}>
             <p className="mb-4 text-sm font-medium text-text-primary">
-              Neue Schicht hinzufügen
+              Einzelne Schicht hinzufügen
             </p>
             <div className="grid grid-cols-[1.2fr_1fr_1fr_auto] items-end gap-3">
               <label className="flex flex-col gap-1 text-xs">

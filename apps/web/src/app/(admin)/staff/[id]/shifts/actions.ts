@@ -60,3 +60,22 @@ export async function deleteShift(staffId: string, shiftId: string): Promise<voi
   });
   revalidatePath(`/staff/${staffId}/shifts`);
 }
+
+export async function generateShifts(
+  staffId: string,
+  days: number,
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  const locationId = await firstLocation();
+  await apiFetch<{ created: number; skipped: number }>(
+    '/v1/shifts/generate-from-location',
+    {
+      method: 'POST',
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+      body: { staffId, locationId, days },
+    },
+  );
+  revalidatePath(`/staff/${staffId}/shifts`);
+}
