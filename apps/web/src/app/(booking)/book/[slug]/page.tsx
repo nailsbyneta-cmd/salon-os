@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Avatar, Badge, Card, CardBody, PriceDisplay } from '@salon-os/ui';
@@ -195,6 +196,47 @@ function openingHoursArray(
     text: formatHoursForDay(hours[key]),
     isToday: key === todayKey,
   }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const data = await loadTenantData(slug);
+  if (!data) {
+    return {
+      title: 'Online buchen',
+      description: 'Termin online buchen.',
+    };
+  }
+  const { tenant, locations } = data;
+  const title = `${tenant.name} — Online buchen`;
+  const description =
+    tenant.tagline ??
+    tenant.description ??
+    `Termin online buchen bei ${tenant.name}${
+      locations[0]?.city ? ` in ${locations[0].city}` : ''
+    }.`;
+  const image = tenant.heroImageUrl ?? tenant.logoUrl ?? undefined;
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      locale: 'de_CH',
+      ...(image ? { images: [{ url: image, width: 1200, height: 630 }] } : {}),
+    },
+    twitter: {
+      card: image ? 'summary_large_image' : 'summary',
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
 }
 
 export default async function BookingStart({
