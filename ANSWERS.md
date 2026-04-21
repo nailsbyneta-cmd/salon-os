@@ -21,7 +21,11 @@ Kein Live-SSO im MVP. SAML-Hook vorbereitet für Enterprise-Tier.
 Pro-Service-Default in Settings (Farbe=20% Assistent, Schnitt=0%),
 pro Termin override-bar durch Stylist im POS-Checkout. Kein globales A.
 
-### Q-001: Test-Strategie → **offen** (frage Lorenc nach).
+### Q-001: Test-Strategie → **Behavior + Contract-Tests (Pact)**
+Unit- + Integration-Tests gegen Testcontainers-Postgres, **plus**
+Consumer-Driven-Contract-Tests (Pact) zwischen `apps/web` ↔ `apps/api`.
+Keine DTO-Snapshot-Tests. Contract-Tests fangen Frontend-↔-Backend-Drift
+früh, sind in CI-Pipeline als eigener Job.
 
 ## 2026-04-20 21:46 — via iMessage
 Hallo

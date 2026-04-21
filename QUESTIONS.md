@@ -1,15 +1,12 @@
 # Open Questions
 
-## Q-001: Test-Strategie — Snapshot-Tests oder reine Behavior-Tests?
-Bei Block A (Härtung) baue ich Unit-Tests für alle API-Module. Zwei
-Ansätze:
-- **A) Reine Behavior-Tests** (was die Methode tut, gegen fixture-DB mit Testcontainers)
-- **B) Snapshot-Tests für DTOs + Behavior für Logik**
-→ **Vorschlag / Default:** A) — Snapshots in diesem Domain-Modell laden
-zur Fragilität ein. Testcontainers-Postgres für Integration.
-**Blockiert:** nein (Default verwendet, wenn keine Antwort bis Block-A-Start)
+_Keine offenen Fragen._
 
 ## ✅ Beantwortet
+
+### Q-001: Test-Strategie → Behavior + Contract-Tests (Pact) (2026-04-21)
+Behavior-Tests gegen Testcontainers-Postgres + Consumer-Driven-Contracts
+zwischen web und api. Keine DTO-Snapshots.
 
 ### Q-002: Staff-App → Expo + EAS (2026-04-21)
 Native RN-App via Expo/EAS, Share-Layer via Tamagui oder Solito.
