@@ -38,8 +38,8 @@ export default async function GiftCardsPage(): Promise<React.JSX.Element> {
   const totalOutstanding = cards.reduce((s, c) => s + Number(c.balance), 0);
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
-      <header className="mb-6 flex items-end justify-between">
+    <div className="mx-auto max-w-6xl p-4 md:p-8">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Gift-Cards
@@ -76,16 +76,24 @@ export default async function GiftCardsPage(): Promise<React.JSX.Element> {
         </Card>
       ) : (
         <Card>
-          <CardBody className="p-0">
+          <CardBody className="overflow-x-auto p-0">
             <table className="w-full text-sm">
               <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
                 <tr>
-                  <th className="px-5 py-3">Code</th>
-                  <th className="px-5 py-3">Empfänger</th>
-                  <th className="px-5 py-3 text-right">Betrag</th>
-                  <th className="px-5 py-3 text-right">Guthaben</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Gültig bis</th>
+                  <th className="px-4 py-3 sm:px-5">Code</th>
+                  <th className="hidden px-4 py-3 md:table-cell md:px-5">
+                    Empfänger
+                  </th>
+                  <th className="hidden px-4 py-3 text-right sm:table-cell sm:px-5">
+                    Betrag
+                  </th>
+                  <th className="px-4 py-3 text-right sm:px-5">Guthaben</th>
+                  <th className="hidden px-4 py-3 sm:table-cell sm:px-5">
+                    Status
+                  </th>
+                  <th className="hidden px-4 py-3 lg:table-cell lg:px-5">
+                    Gültig bis
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -102,15 +110,21 @@ export default async function GiftCardsPage(): Promise<React.JSX.Element> {
                       key={c.id}
                       className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
                     >
-                      <td className="px-5 py-3 font-mono font-medium text-text-primary">
+                      <td className="px-4 py-3 font-mono font-medium text-text-primary sm:px-5">
                         <Link
                           href={`/gift-cards/${c.code}`}
-                          className="hover:underline"
+                          className="block hover:underline"
                         >
                           {c.code}
                         </Link>
+                        {/* Mobile-only: Empfänger unter Code */}
+                        {c.recipientName ? (
+                          <div className="mt-0.5 font-sans text-[11px] font-normal text-text-muted md:hidden">
+                            {c.recipientName}
+                          </div>
+                        ) : null}
                       </td>
-                      <td className="px-5 py-3 text-text-secondary">
+                      <td className="hidden px-4 py-3 text-text-secondary md:table-cell md:px-5">
                         {c.recipientName ?? '—'}
                         {c.recipientEmail ? (
                           <span className="ml-2 text-xs text-text-muted">
@@ -118,21 +132,21 @@ export default async function GiftCardsPage(): Promise<React.JSX.Element> {
                           </span>
                         ) : null}
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="hidden px-4 py-3 text-right sm:table-cell sm:px-5">
                         <PriceDisplay
                           amount={c.amount}
                           currency={c.currency}
                           size="sm"
                         />
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-4 py-3 text-right sm:px-5">
                         <PriceDisplay
                           amount={c.balance}
                           currency={c.currency}
                           size="sm"
                         />
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="hidden px-4 py-3 sm:table-cell sm:px-5">
                         <Badge
                           tone={
                             status === 'active'
@@ -150,7 +164,7 @@ export default async function GiftCardsPage(): Promise<React.JSX.Element> {
                               : 'Abgelaufen'}
                         </Badge>
                       </td>
-                      <td className="px-5 py-3 text-text-muted text-xs">
+                      <td className="hidden px-4 py-3 text-text-muted text-xs lg:table-cell lg:px-5">
                         {c.expiresAt
                           ? new Date(c.expiresAt).toLocaleDateString('de-CH', {
                               day: '2-digit',

@@ -4,7 +4,7 @@ import { createStaff } from '../actions';
 
 export default function NewStaffPage(): React.JSX.Element {
   return (
-    <div className="mx-auto max-w-2xl p-8">
+    <div className="mx-auto max-w-2xl p-4 md:p-8">
       <Link
         href="/staff"
         className="text-xs text-text-muted transition-colors hover:text-text-primary"

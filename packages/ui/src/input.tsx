@@ -12,7 +12,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         ref={ref}
         aria-invalid={invalid || undefined}
         className={cn(
-          'flex h-10 w-full rounded-sm border bg-surface px-3 py-2 text-sm text-text-primary',
+          'flex h-10 w-full rounded-sm border bg-surface px-3 py-2 text-base text-text-primary md:text-sm',
           'placeholder:text-text-muted',
           'transition-colors duration-fast',
           invalid ? 'border-danger' : 'border-border hover:border-border-strong focus:border-accent',
@@ -34,7 +34,7 @@ export const Textarea = React.forwardRef<
       ref={ref}
       aria-invalid={invalid || undefined}
       className={cn(
-        'flex w-full rounded-sm border bg-surface px-3 py-2 text-sm text-text-primary',
+        'flex w-full rounded-sm border bg-surface px-3 py-2 text-base text-text-primary md:text-sm',
         'placeholder:text-text-muted resize-y min-h-[80px]',
         'transition-colors duration-fast',
         invalid ? 'border-danger' : 'border-border hover:border-border-strong focus:border-accent',
@@ -56,7 +56,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         ref={ref}
         aria-invalid={invalid || undefined}
         className={cn(
-          'flex h-10 w-full rounded-sm border bg-surface px-3 py-2 text-sm text-text-primary',
+          'flex h-10 w-full rounded-sm border bg-surface px-3 py-2 text-base text-text-primary md:text-sm',
           'transition-colors duration-fast',
           invalid ? 'border-danger' : 'border-border hover:border-border-strong focus:border-accent',
           className,

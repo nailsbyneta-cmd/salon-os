@@ -4,7 +4,7 @@ import { ImportForm } from './import-form';
 
 export default function ClientsImportPage(): React.JSX.Element {
   return (
-    <div className="mx-auto max-w-3xl p-8">
+    <div className="mx-auto max-w-3xl p-4 md:p-8">
       <header className="mb-6">
         <Link
           href="/clients"

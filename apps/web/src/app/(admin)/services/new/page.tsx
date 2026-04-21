@@ -27,7 +27,7 @@ export default async function NewServicePage(): Promise<React.JSX.Element> {
   const categories = await loadCategories();
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
+    <div className="mx-auto max-w-2xl p-4 md:p-8">
       <Link
         href="/services"
         className="text-xs text-text-muted transition-colors hover:text-text-primary"

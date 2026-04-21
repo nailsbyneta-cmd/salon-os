@@ -80,7 +80,7 @@ export default async function NewAppointmentPage({
   const defaultTime = time ?? '10:00';
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
+    <div className="mx-auto max-w-2xl p-4 md:p-8">
       <Link
         href={`/calendar?date=${day}`}
         className="text-xs text-text-muted transition-colors hover:text-text-primary"

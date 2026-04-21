@@ -41,8 +41,8 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
   );
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
-      <header className="mb-6 flex items-end justify-between">
+    <div className="mx-auto max-w-6xl p-4 md:p-8">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Inventar
@@ -93,16 +93,24 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
         </Card>
       ) : (
         <Card>
-          <CardBody className="p-0">
+          <CardBody className="overflow-x-auto p-0">
             <table className="w-full text-sm">
               <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
                 <tr>
-                  <th className="px-5 py-3">Produkt</th>
-                  <th className="px-5 py-3 w-24">Typ</th>
-                  <th className="px-5 py-3 w-24 text-right">Kosten</th>
-                  <th className="px-5 py-3 w-24 text-right">Verkauf</th>
-                  <th className="px-5 py-3 w-32 text-center">Bestand</th>
-                  <th className="px-5 py-3 w-40"></th>
+                  <th className="px-4 py-3 sm:px-5">Produkt</th>
+                  <th className="hidden px-4 py-3 md:table-cell md:w-24 md:px-5">
+                    Typ
+                  </th>
+                  <th className="hidden px-4 py-3 text-right lg:table-cell lg:w-24 lg:px-5">
+                    Kosten
+                  </th>
+                  <th className="hidden px-4 py-3 text-right sm:table-cell sm:w-24 sm:px-5">
+                    Verkauf
+                  </th>
+                  <th className="px-4 py-3 text-center sm:w-32 sm:px-5">
+                    Bestand
+                  </th>
+                  <th className="hidden px-4 py-3 md:table-cell md:w-24 md:px-5"></th>
                 </tr>
               </thead>
               <tbody>
@@ -116,29 +124,39 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                       key={p.id}
                       className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
                     >
-                      <td className="px-5 py-3">
-                        <div className="font-medium text-text-primary">{p.name}</div>
+                      <td className="px-4 py-3 sm:px-5">
+                        <div className="font-medium text-text-primary">
+                          {p.name}
+                        </div>
                         <div className="text-xs text-text-muted">
                           {[p.brand, p.sku, p.unit].filter(Boolean).join(' · ') || '—'}
                         </div>
+                        {/* Mobile-only: Verkaufspreis unter Name */}
+                        <div className="mt-1 text-[11px] text-text-secondary sm:hidden">
+                          <PriceDisplay amount={p.retailCents / 100} size="sm" />
+                        </div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="hidden px-4 py-3 md:table-cell md:px-5">
                         <Badge tone={p.type === 'RETAIL' ? 'accent' : 'neutral'}>
-                          {p.type === 'BOTH' ? 'Beides' : p.type === 'RETAIL' ? 'Retail' : 'Backbar'}
+                          {p.type === 'BOTH'
+                            ? 'Beides'
+                            : p.type === 'RETAIL'
+                              ? 'Retail'
+                              : 'Backbar'}
                         </Badge>
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="hidden px-4 py-3 text-right lg:table-cell lg:px-5">
                         <PriceDisplay amount={p.costCents / 100} size="sm" />
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="hidden px-4 py-3 text-right sm:table-cell sm:px-5">
                         <PriceDisplay amount={p.retailCents / 100} size="sm" />
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3 sm:px-5">
                         <div className="flex items-center justify-center gap-2">
                           <form action={minus}>
                             <button
                               type="submit"
-                              className="h-7 w-7 rounded-sm border border-border text-text-secondary hover:bg-surface-raised"
+                              className="h-8 w-8 rounded-sm border border-border text-text-secondary hover:bg-surface-raised"
                               aria-label="Bestand senken"
                             >
                               −
@@ -154,7 +172,7 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                           <form action={plus}>
                             <button
                               type="submit"
-                              className="h-7 w-7 rounded-sm border border-border text-text-secondary hover:bg-surface-raised"
+                              className="h-8 w-8 rounded-sm border border-border text-text-secondary hover:bg-surface-raised"
                               aria-label="Bestand erhöhen"
                             >
                               +
@@ -162,7 +180,7 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                           </form>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="hidden px-4 py-3 text-right md:table-cell md:px-5">
                         <form action={rm}>
                           <button
                             type="submit"

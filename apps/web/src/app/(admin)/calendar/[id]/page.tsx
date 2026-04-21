@@ -123,7 +123,7 @@ export default async function AppointmentDetailPage({
   const saveNotes = updateAppointmentNotes.bind(null, a.id);
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="mx-auto max-w-4xl p-4 md:p-8">
       <Link
         href={`/calendar?date=${day}`}
         className="text-xs text-text-muted transition-colors hover:text-text-primary"
