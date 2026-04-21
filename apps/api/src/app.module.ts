@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AuditModule } from './audit/audit.module.js';
+import { AuthModule } from './auth/auth.module.js';
 import { ClientsModule } from './clients/clients.module.js';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter.js';
 import { IdempotencyModule } from './common/idempotency/idempotency.module.js';
@@ -28,6 +29,7 @@ import { WaitlistModule } from './waitlist/waitlist.module.js';
     IdempotencyModule,
     OutboxModule,
     TenantModule,
+    AuthModule,
     AuditModule,
     LocationsModule,
     RoomsModule,

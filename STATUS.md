@@ -14,7 +14,7 @@
 - [x] Block A #3 Outbox-Pattern (Infra + Poller; Producer-Migration inkrementell)
 - [x] Block A #4 Rate-Limiting auf /v1/public/*
 - [x] Block A #5 Server-Idempotency-Dedupe (Redis)
-- [ ] Block A #6 WorkOS-Magic-Link-Auth
+- [x] Block A #6 WorkOS-Magic-Link-Auth (Backend + dual-mode Middleware)
 
 ## Block A — Fortschritts-Log
 
@@ -46,6 +46,22 @@
   appliziert Migrations auf Postgres-Service und verifiziert alle Interaktionen
 - ⚠️  Lokal nicht smoke-getestet (Sandbox ohne Docker-Daemon) — CI validiert
   den Gesamt-Pfad web→api end-to-end
+
+### 2026-04-21 — Block A #6: WorkOS Magic-Link (Backend)
+- ✅ `@salon-os/auth` erweitert: `sendMagicLink()`, `authenticateWithMagicLink()`,
+  `signSessionToken()` / `verifySessionToken()` (HMAC-SHA256, timing-safe)
+- ✅ `apps/api/src/auth/`: AuthService + AuthController mit Endpoints
+  `POST /v1/auth/magic-link`, `POST /v1/auth/exchange`, `POST /v1/auth/logout`
+- ✅ `@fastify/cookie` registriert; Session als httpOnly-Cookie (`salon_session`),
+  `Secure` in production, `SameSite=Lax`, TTL 12h
+- ✅ `TenantMiddleware` dual-mode: Cookie-Session zuerst, dann
+  `x-tenant-id`-Header-Fallback NUR wenn `NODE_ENV !== 'production'` —
+  in Production wirft fehlendes Cookie direkt 401
+- ✅ Enumeration-Schutz: `/magic-link` antwortet immer 202 `{ dispatched: true }`
+- ✅ 7 Unit-Tests für Session-Token: Roundtrip, Tamper-Detection,
+  Wrong-Secret, Abgelaufen, Weak-Secret, Junk-Payload, Schema-Miss
+- 🔜 Web-UI (`/login`-Seite + Code-Eingabe) + E2E-Test folgen in Slice
+  nach Design-System-Härtung Block B
 
 ### 2026-04-21 — Block A #1/1d+1e: Playwright E2E + a11y-Gate
 - ✅ `@playwright/test@1.59` + `@axe-core/playwright@4.11` im Root

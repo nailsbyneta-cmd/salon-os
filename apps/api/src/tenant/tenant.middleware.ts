@@ -4,8 +4,11 @@ import {
   type NestMiddleware,
   UnauthorizedException,
 } from '@nestjs/common';
+import { verifySessionToken } from '@salon-os/auth';
 import type { FastifyRequest } from 'fastify';
 import { runWithTenant } from './tenant.context.js';
+
+const SESSION_COOKIE_NAME = 'salon_session';
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-7][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -40,20 +43,39 @@ export class TenantMiddleware implements NestMiddleware {
 
     // Health/Ready- und Public-Endpoints dürfen ohne Tenant passieren.
     // Public-Bookings lösen Tenant selbst über den URL-Slug auf.
+    // `/v1/auth/*` muss ohne Session passieren, damit Login-Flow klappt.
     const originalUrl = (req as unknown as { originalUrl?: string }).originalUrl ?? '';
     const path = originalUrl || req.url || '';
     if (
       path.startsWith('/health') ||
       path.startsWith('/v1/public/') ||
-      path.startsWith('/public/')
+      path.startsWith('/public/') ||
+      path.startsWith('/v1/auth/')
     ) {
       next();
       return;
     }
 
-    const tenantId = readHeader(headers, 'x-tenant-id');
-    const userId = readHeader(headers, 'x-user-id');
-    const role = readHeader(headers, 'x-role');
+    // Primärer Pfad: signiertes Session-Cookie. Fallback auf x-tenant-id-
+    // Header (Phase-0-Dev-Mode) nur, solange NODE_ENV !== 'production'.
+    const cookieSession = this.readSessionFromCookie(req);
+    let tenantId: string | undefined;
+    let userId: string | undefined;
+    let role: string | undefined;
+
+    if (cookieSession) {
+      tenantId = cookieSession.tenantId;
+      userId = cookieSession.userId;
+      role = cookieSession.role;
+    } else {
+      if (process.env['NODE_ENV'] === 'production') {
+        next(new UnauthorizedException('Missing session cookie'));
+        return;
+      }
+      tenantId = readHeader(headers, 'x-tenant-id');
+      userId = readHeader(headers, 'x-user-id');
+      role = readHeader(headers, 'x-role');
+    }
 
     if (!tenantId) {
       next(new UnauthorizedException('Missing tenant context'));
@@ -81,6 +103,39 @@ export class TenantMiddleware implements NestMiddleware {
       next();
     });
   }
+
+  private readSessionFromCookie(
+    req: FastifyRequest['raw'],
+  ): { tenantId: string; userId: string; role: string } | null {
+    const secret = process.env['WORKOS_COOKIE_PASSWORD'];
+    if (!secret) return null;
+
+    const cookieHeader = req.headers['cookie'];
+    if (!cookieHeader || typeof cookieHeader !== 'string') return null;
+
+    const token = parseCookie(cookieHeader, SESSION_COOKIE_NAME);
+    if (!token) return null;
+
+    const session = verifySessionToken(token, secret);
+    if (!session) return null;
+
+    return {
+      tenantId: session.tenantId,
+      userId: session.userId,
+      role: session.role,
+    };
+  }
+}
+
+function parseCookie(header: string, name: string): string | undefined {
+  for (const segment of header.split(';')) {
+    const [rawKey, ...rest] = segment.split('=');
+    if (!rawKey) continue;
+    if (rawKey.trim() === name) {
+      return rest.join('=').trim();
+    }
+  }
+  return undefined;
 }
 
 function readHeader(

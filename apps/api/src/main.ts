@@ -4,6 +4,7 @@ import './otel.js';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
@@ -40,6 +41,12 @@ async function bootstrap(): Promise<void> {
   await app.register(cors, {
     origin: (process.env['ALLOWED_ORIGINS'] ?? 'http://localhost:3000').split(','),
     credentials: true,
+  });
+
+  // Cookies für signierte Session-Tokens (WorkOS-Magic-Link-Flow).
+  await app.register(cookie, {
+    secret: process.env['WORKOS_COOKIE_PASSWORD'],
+    parseOptions: { signed: false },
   });
 
   // Rate-Limiting auf Public-Endpoints (Booking, Waitlist, Self-Service).
