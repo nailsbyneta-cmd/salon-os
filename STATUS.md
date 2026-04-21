@@ -10,11 +10,13 @@
 - [x] Block B #3a Radix Overlays (Modal/Drawer/Popover/Tooltip)
 - [x] Block B #3b ErrorBoundary + AvatarGroup + Combobox
 - [x] Block B #5 KeyboardShortcutHelp (`?`-Dialog)
+- [x] Block B #3d DataTable (TanStack-React-Table)
+- [x] Block B #4 ServiceBadge + TreatmentTimer + BeforeAfterSlider (StaffScheduleGrid deferred)
+- [x] Block B #6 Shake-on-Error + Confetti (Swipe-to-Delete + Sync-Banner deferred)
 - [ ] Block B #2 Chromatic/Percy Visual-Regression (braucht Account)
 - [ ] Block B #3c DatePicker + TimePicker
-- [ ] Block B #3d DataTable
-- [ ] Block B #4 Salon-spezifische Komponenten (VIP-Ring, ServiceBadge, TreatmentTimer, BeforeAfterSlider, StaffScheduleGrid)
-- [ ] Block B #6 Micro-Interactions (Shake, Swipe-to-Delete, Sync-Banner, Confetti)
+- [ ] Block B #4b StaffScheduleGrid (braucht Design-Entscheidung)
+- [ ] Block B #6b Swipe-to-Delete + Sync-Banner
 - [ ] Block B #7 Empty-State-Illustrationen (SVG, monochrom)
 
 ## Block A — Fortschritts-Log
@@ -47,6 +49,19 @@
   appliziert Migrations auf Postgres-Service und verifiziert alle Interaktionen
 - ⚠️  Lokal nicht smoke-getestet (Sandbox ohne Docker-Daemon) — CI validiert
   den Gesamt-Pfad web→api end-to-end
+
+### 2026-04-21 — Block B Welle 2: DataTable + Salon-Specifics + Micro-Interactions
+- ✅ `DataTable` via `@tanstack/react-table@8`: Sort, globales Filter-Input,
+  Pagination, leerer State via EmptyState; Typ-generisch über `<TData>`
+- ✅ `ServiceBadge`: farbige Kategorie-Chips, stabiler Hash-Palette-Fallback
+- ✅ `TreatmentTimer`: Countdown mit 3-Stufen-Farb-Progression
+  (grün > gelb > rot > überfällig-Pulse), `role="timer"` für AT
+- ✅ `BeforeAfterSlider`: Drag + Keyboard (←/→), clip-path-Reveal
+- ✅ `ShakeOnError` + `useShake`-Hook: CSS-Keyframes, injiziert einmalig
+  in head; typisches Usage bei gescheiterter Validierung
+- ✅ `burstConfetti(preset)`: dynamic-import auf canvas-confetti, 3 Presets
+  (booking-confirmed / big-tip / milestone)
+- ✅ Ladle-Build: 1.25 MiB, 25 Stories total
 
 ### 2026-04-21 — Block B #1+#3a+#3b+#5: Design-System-Härtung
 - ✅ Ladle@5 in `packages/ui`: `config.mjs` + Provider mit Theme-Toggle,

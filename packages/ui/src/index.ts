@@ -50,3 +50,16 @@ export {
   type KeyboardShortcut,
   type KeyboardShortcutGroup,
 } from './keyboard-shortcut-help.js';
+export { DataTable, type DataTableProps } from './data-table.js';
+export { ServiceBadge, type ServiceBadgeProps } from './service-badge.js';
+export { TreatmentTimer, type TreatmentTimerProps } from './treatment-timer.js';
+export {
+  BeforeAfterSlider,
+  type BeforeAfterSliderProps,
+} from './before-after-slider.js';
+export {
+  ShakeOnError,
+  useShake,
+  type ShakeOnErrorProps,
+} from './shake-animation.js';
+export { burstConfetti, type ConfettiPreset } from './confetti.js';
