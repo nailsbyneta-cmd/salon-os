@@ -274,6 +274,56 @@ export default async function AppointmentDetailPage({
         </Card>
       </section>
 
+      {a.client && (a.client.phone || a.client.email) && a.status !== 'CANCELLED' && a.status !== 'NO_SHOW' && a.status !== 'COMPLETED' ? (
+        <Card className="mb-6 bg-surface-raised/50">
+          <CardBody>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-text-muted">
+              Reminder senden
+            </p>
+            <p className="mb-3 text-xs text-text-secondary">
+              Vorformulierte Nachricht öffnet sich in SMS / WhatsApp / Mail —
+              du kannst sie noch anpassen.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {a.client.phone ? (
+                <>
+                  <a
+                    href={`sms:${a.client.phone}?body=${encodeURIComponent(
+                      `Hallo ${a.client.firstName}, erinnerung an deinen Termin am ${new Date(a.startAt).toLocaleDateString('de-CH', { weekday: 'long', day: '2-digit', month: 'long' })} um ${start}. Bis bald!`,
+                    )}`}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-primary transition-colors hover:bg-surface-raised"
+                  >
+                    💬 SMS
+                  </a>
+                  <a
+                    href={`https://wa.me/${a.client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')}?text=${encodeURIComponent(
+                      `Hallo ${a.client.firstName}, erinnerung an deinen Termin am ${new Date(a.startAt).toLocaleDateString('de-CH', { weekday: 'long', day: '2-digit', month: 'long' })} um ${start}. Bis bald! 💛`,
+                    )}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success transition-colors hover:bg-success/20"
+                  >
+                    💬 WhatsApp
+                  </a>
+                </>
+              ) : null}
+              {a.client.email ? (
+                <a
+                  href={`mailto:${a.client.email}?subject=${encodeURIComponent(
+                    `Termin-Erinnerung ${new Date(a.startAt).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' })}`,
+                  )}&body=${encodeURIComponent(
+                    `Hallo ${a.client.firstName},\n\nnur eine kurze Erinnerung an deinen Termin am ${new Date(a.startAt).toLocaleDateString('de-CH', { weekday: 'long', day: '2-digit', month: 'long' })} um ${start}.\n\nFalls du verhindert bist, gib uns bitte rechtzeitig Bescheid.\n\nBis bald!`,
+                  )}`}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-primary transition-colors hover:bg-surface-raised"
+                >
+                  ✉ E-Mail
+                </a>
+              ) : null}
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
+
       <Card className="mb-6">
         <div className="border-b border-border px-5 py-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
