@@ -200,6 +200,16 @@ export default async function AppointmentDetailPage({
                     </a>
                   </p>
                 ) : null}
+                {!a.client.phone && !a.client.email ? (
+                  <div className="mt-2">
+                    <Link
+                      href={`/clients/${a.client.id}/edit`}
+                      className="inline-flex h-8 items-center rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-accent hover:bg-surface-raised"
+                    >
+                      + Kontakt hinterlegen
+                    </Link>
+                  </div>
+                ) : null}
                 {a.client.phone || a.client.email ? (
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {a.client.phone ? (
