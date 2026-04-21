@@ -7,6 +7,7 @@ import {
   CardBody,
   EmptyState,
   Input,
+  cn,
 } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
@@ -20,13 +21,41 @@ interface ClientRow {
   lastVisitAt: string | null;
   totalVisits: number;
   tags: string[];
+  lifetimeValue: string | number;
+  marketingOptIn: boolean;
+}
+
+type FilterKey = 'all' | 'vip' | 'stamm' | 'neu' | 'marketing';
+
+const FILTERS: Array<{ key: FilterKey; label: string }> = [
+  { key: 'all', label: 'Alle' },
+  { key: 'vip', label: 'VIP (ab Gold)' },
+  { key: 'stamm', label: 'Stammkundinnen (10+)' },
+  { key: 'neu', label: 'Neu (0 Besuche)' },
+  { key: 'marketing', label: 'Marketing-Opt-in' },
+];
+
+function applyFilter(clients: ClientRow[], f: FilterKey): ClientRow[] {
+  switch (f) {
+    case 'vip':
+      return clients.filter((c) => Number(c.lifetimeValue) >= 2000);
+    case 'stamm':
+      return clients.filter((c) => c.totalVisits >= 10);
+    case 'neu':
+      return clients.filter((c) => c.totalVisits === 0);
+    case 'marketing':
+      return clients.filter((c) => c.marketingOptIn);
+    case 'all':
+    default:
+      return clients;
+  }
 }
 
 async function loadClients(q?: string): Promise<ClientRow[]> {
   const ctx = getCurrentTenant();
   try {
     const res = await apiFetch<{ clients: ClientRow[] }>(
-      `/v1/clients${q ? `?q=${encodeURIComponent(q)}` : ''}`,
+      `/v1/clients${q ? `?q=${encodeURIComponent(q)}&limit=500` : '?limit=500'}`,
       { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
     );
     return res.clients;
@@ -39,10 +68,14 @@ async function loadClients(q?: string): Promise<ClientRow[]> {
 export default async function ClientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; filter?: string }>;
 }): Promise<React.JSX.Element> {
-  const { q } = await searchParams;
-  const clients = await loadClients(q);
+  const { q, filter } = await searchParams;
+  const filterKey: FilterKey = (FILTERS.some((f) => f.key === filter)
+    ? filter
+    : 'all') as FilterKey;
+  const allClients = await loadClients(q);
+  const clients = applyFilter(allClients, filterKey);
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-8">
@@ -55,7 +88,11 @@ export default async function ClientsPage({
             Kundinnen
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
-            {clients.length} {clients.length === 1 ? 'Kundin' : 'Kundinnen'} im System
+            {clients.length} von {allClients.length}{' '}
+            {allClients.length === 1 ? 'Kundin' : 'Kundinnen'}
+            {filterKey !== 'all'
+              ? ` · ${FILTERS.find((f) => f.key === filterKey)?.label}`
+              : ''}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -93,6 +130,39 @@ export default async function ClientsPage({
           </Link>
         </div>
       </header>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {FILTERS.map((f) => {
+          const qs = new URLSearchParams();
+          if (q) qs.set('q', q);
+          if (f.key !== 'all') qs.set('filter', f.key);
+          const href = qs.toString() ? `/clients?${qs.toString()}` : '/clients';
+          const count =
+            f.key === 'all' ? allClients.length : applyFilter(allClients, f.key).length;
+          return (
+            <Link
+              key={f.key}
+              href={href}
+              className={cn(
+                'inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors',
+                filterKey === f.key
+                  ? 'border-accent bg-accent text-accent-foreground'
+                  : 'border-border bg-surface text-text-secondary hover:border-accent hover:text-text-primary',
+              )}
+            >
+              {f.label}
+              <span
+                className={cn(
+                  'tabular-nums',
+                  filterKey === f.key ? 'opacity-80' : 'opacity-60',
+                )}
+              >
+                {count}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
 
       <Card>
         {clients.length === 0 ? (
