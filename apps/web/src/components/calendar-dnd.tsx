@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useDraggable,
   useDroppable,
   useSensor,
@@ -113,8 +114,13 @@ export function CalendarDnd({
     );
   };
 
+  // Desktop: Maus startet Drag nach 6px. Mobile: Touch startet Drag
+  // nach 250ms Long-Press (Tap geht normal durch zum Link).
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
+    }),
   );
 
   const handleDragEnd = (ev: DragEndEvent): void => {
@@ -470,6 +476,7 @@ function DraggableAppt({
   heightPx: number;
   compact: boolean;
 }): React.JSX.Element {
+  const router = useRouter();
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: appt.id });
   const style: React.CSSProperties = {
@@ -483,7 +490,10 @@ function DraggableAppt({
       : undefined,
     opacity: isDragging ? 0.85 : 1,
     zIndex: isDragging ? 20 : 1,
-    touchAction: 'none',
+    // Mouse: 'none' damit Maus-Drag frei ziehen kann
+    // Touch: 'manipulation' damit Tap sofort auslöst, Long-Press (TouchSensor)
+    // Drag startet ohne Scroll-Konflikt
+    touchAction: 'manipulation',
     cursor: isDragging ? 'grabbing' : 'grab',
   };
   const clientName = appt.client
@@ -496,7 +506,20 @@ function DraggableAppt({
   });
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={(e) => {
+        if (isDragging) return;
+        // Click nach Drag-Release nicht auswerten (dnd-kit cancelt, aber
+        // zur Sicherheit)
+        const target = e.target as HTMLElement;
+        if (target.closest('a[data-noclick]')) return;
+        router.push(`/calendar/${appt.id}`);
+      }}
+    >
       <div className="group h-full [&>button]:h-full">
         <AppointmentCard
           clientName={clientName}
