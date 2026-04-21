@@ -63,3 +63,10 @@ export {
   type ShakeOnErrorProps,
 } from './shake-animation.js';
 export { burstConfetti, type ConfettiPreset } from './confetti.js';
+export { DatePicker, type DatePickerProps } from './date-picker.js';
+export { TimePicker, type TimePickerProps } from './time-picker.js';
+export {
+  SyncBanner,
+  type SyncBannerProps,
+  type SyncState,
+} from './sync-banner.js';

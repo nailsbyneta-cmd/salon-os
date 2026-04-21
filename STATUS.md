@@ -12,11 +12,11 @@
 - [x] Block B #5 KeyboardShortcutHelp (`?`-Dialog)
 - [x] Block B #3d DataTable (TanStack-React-Table)
 - [x] Block B #4 ServiceBadge + TreatmentTimer + BeforeAfterSlider (StaffScheduleGrid deferred)
-- [x] Block B #6 Shake-on-Error + Confetti (Swipe-to-Delete + Sync-Banner deferred)
+- [x] Block B #3c DatePicker + TimePicker (native-backed, tokenisiert)
+- [x] Block B #6 Shake-on-Error + Confetti + SyncBanner
 - [ ] Block B #2 Chromatic/Percy Visual-Regression (braucht Account)
-- [ ] Block B #3c DatePicker + TimePicker
 - [ ] Block B #4b StaffScheduleGrid (braucht Design-Entscheidung)
-- [ ] Block B #6b Swipe-to-Delete + Sync-Banner
+- [ ] Block B #6b Swipe-to-Delete (Gesture-Lib offen)
 - [ ] Block B #7 Empty-State-Illustrationen (SVG, monochrom)
 
 ## Block A — Fortschritts-Log
