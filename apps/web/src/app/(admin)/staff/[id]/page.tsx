@@ -200,7 +200,7 @@ export default async function StaffDetailPage({
 
             <Field
               label="Kurz-Bio"
-              hint="Zeigt auf Public-Buchungs-Seite unter „Unser Team""
+              hint="Zeigt auf Public-Buchungs-Seite unter ‚Unser Team'"
             >
               <Textarea
                 name="bio"
