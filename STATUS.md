@@ -27,6 +27,16 @@
 - ⚠️  Sandbox-Umgebung ohne Docker-Daemon → Testcontainers-Pfad lokal
   unverifiziert, CI-Pfad (`TEST_DATABASE_URL`) läuft via GH-Actions-Service
 
+### 2026-04-21 — Slice 1b: Pact-Consumer
+- ✅ `@pact-foundation/pact@15` in `apps/web` + `vitest.contract.config.ts`
+- ✅ Erster Consumer-Contract `api.contract.test.ts` für `GET /v1/clients?limit=50`
+  — inkl. Matcher für dynamic ID/Name-Felder
+- ✅ `apiFetch()` liest `PUBLIC_API_URL` lazy (vorher const) → testbar gegen
+  Pact-Mock-Server
+- ✅ `.gitignore`: `pacts/` + `pact-logs/` (Artefakte, keine Quellen)
+- ✅ CI-Job `contract-consumer` uploaded `pacts/` als Artifact für Provider-Verify
+- 🔜 Slice 1c wird Pacts aus Artifact ziehen und `apps/api` gegen sie verifizieren
+
 ## P0-Bugfix-Run (2026-04-20)
 - ✅ **P0-01 Business-Hours-Bug** — Booking-Seite zeigte alle Tage „geschlossen"; Slot-Generator ignorierte openingHours. Fix in `fix/p0-01-business-hours`, merged in main. Web-Parser handelt jetzt Array-of-Intervals-Shape, API availability() respektiert openingHours + TZ (DST-sicher via Intl.DateTimeFormat). Fallback „Öffnungszeiten auf Anfrage" wenn kein Datensatz. Follow-up-Hotfix: TS2538 weekday-index non-null.
 - ✅ **P0-02 Time-Slot-Kontrast** — Slot-Picker hatte harte `neutral-*`-Klassen, unlesbar im Dark Mode. Fix in `fix/p0-02-time-slot-contrast`, merged in main. Jetzt Design-Tokens durchgängig, hover-Translate+Accent, focus-visible-Ring, Empty-State als Card.

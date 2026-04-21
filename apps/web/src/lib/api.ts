@@ -28,7 +28,7 @@ interface ApiOptions {
   idempotencyKey?: string;
 }
 
-const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
+const getApiUrl = (): string => process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
 export async function apiFetch<T>(path: string, opts: ApiOptions): Promise<T> {
   const method = opts.method ?? 'GET';
@@ -44,7 +44,7 @@ export async function apiFetch<T>(path: string, opts: ApiOptions): Promise<T> {
       opts.idempotencyKey ?? crypto.randomUUID();
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${getApiUrl()}${path}`, {
     method,
     headers,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,

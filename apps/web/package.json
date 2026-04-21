@@ -13,7 +13,8 @@
     "dev": "next dev --port 3000",
     "start": "next start --port 3000",
     "lint": "next lint --max-warnings 0",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.config.ts",
+    "test:contract": "vitest run --config vitest.contract.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@pact-foundation/pact": "^15.0.1",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.10.2",

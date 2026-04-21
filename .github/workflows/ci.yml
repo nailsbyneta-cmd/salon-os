@@ -149,6 +149,30 @@ jobs:
       - run: pnpm --filter @salon-os/db run db:migrate:deploy
       - run: pnpm --filter @salon-os/api run test:integration
 
+  # ─── Consumer-Driven-Contracts: web produziert Pact-JSON ────
+  # Provider-Verify (apps/api) kommt in einem späteren Slice. Für jetzt
+  # stellen wir sicher, dass Consumer-Seite grün bleibt + Artifact steht
+  # für den zukünftigen Provider-Job bereit.
+  contract-consumer:
+    name: Contract tests (consumer)
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.15.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm --filter @salon-os/types --filter @salon-os/utils --filter @salon-os/auth build
+      - run: pnpm --filter @salon-os/web run test:contract
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pacts
+          path: pacts/
+          if-no-files-found: error
+          retention-days: 14
+
   # ─── Security-Scan (Trivy für Dependencies + Filesystem) ────
   security:
     name: Security scan

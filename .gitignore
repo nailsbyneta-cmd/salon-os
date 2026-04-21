@@ -35,6 +35,10 @@ coverage/
 playwright-report/
 test-results/
 
+# Pact — generiert in CI, via Artifact an Provider weitergereicht
+pacts/
+pact-logs/
+
 # OS / editor
 .DS_Store
 .vscode/
