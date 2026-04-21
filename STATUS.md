@@ -50,6 +50,18 @@
 - ⚠️  Lokal nicht smoke-getestet (Sandbox ohne Docker-Daemon) — CI validiert
   den Gesamt-Pfad web→api end-to-end
 
+### 2026-04-21 — WorkOS Login-Web-UI + Golden-Path #2
+- ✅ `apps/web/src/app/(auth)/login/`: Seite + `LoginForm` (Client-Component),
+  zweistufiges State-Machine (Email → Code), ShakeOnError + data-testid-Hooks
+- ✅ `AuthService` hat Dev-Bypass via `AUTH_DEV_BYPASS_CODE` für E2E;
+  `main.ts` verhindert den Bypass in Production explizit
+- ✅ `middleware.ts`: `login` aus Basic-Auth-Matcher ausgenommen
+- ✅ E2E `login.spec.ts` mit 3 Tests (Happy-Path, a11y, Error-Shake)
+- ✅ CI-`e2e`-Job setzt `WORKOS_COOKIE_PASSWORD` + `AUTH_DEV_BYPASS_CODE`
+  und `NEXT_PUBLIC_API_URL` → Web kann die Auth-Endpoints erreichen
+- 🔜 Admin-Pages-Middleware-Swap (Basic-Auth → Cookie-Check) kommt, wenn
+  beide Wege live verifiziert sind
+
 ### 2026-04-21 — Block B Welle 2: DataTable + Salon-Specifics + Micro-Interactions
 - ✅ `DataTable` via `@tanstack/react-table@8`: Sort, globales Filter-Input,
   Pagination, leerer State via EmptyState; Typ-generisch über `<TData>`

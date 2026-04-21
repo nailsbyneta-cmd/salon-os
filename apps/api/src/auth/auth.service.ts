@@ -33,16 +33,27 @@ export class AuthService {
   /**
    * Tauscht Magic-Code gegen signiertes Session-Token. Erwartet, dass
    * der User + eine TenantMembership vorhanden sind.
+   *
+   * Test-Bypass: Wenn `AUTH_DEV_BYPASS_CODE` gesetzt ist UND der
+   * übergebene `code` exakt damit übereinstimmt, wird der WorkOS-
+   * Exchange übersprungen — der User wird direkt per Email aufgelöst.
+   * Gedacht für E2E-Tests und lokale Dev ohne WorkOS-Account.
+   * Darf NIE in Production gesetzt sein; `main.ts` prüft das.
    */
   async authenticate(args: {
     email: string;
     code: string;
     tenantSlug?: string;
   }): Promise<{ token: string; session: Session }> {
-    const authenticated = await authenticateWithMagicLink({
-      email: args.email,
-      code: args.code,
-    });
+    const bypassCode = process.env['AUTH_DEV_BYPASS_CODE'];
+    const useBypass = bypassCode && args.code === bypassCode;
+
+    const authenticated = useBypass
+      ? { id: `dev-${args.email}`, email: args.email }
+      : await authenticateWithMagicLink({
+          email: args.email,
+          code: args.code,
+        });
 
     const user = await prisma.user.findUnique({
       where: { email: args.email.toLowerCase() },

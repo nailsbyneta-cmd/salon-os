@@ -40,6 +40,7 @@ export const config = {
     /*
      * Match all paths except:
      * - /book/... (public booking)
+     * - /login/... (WorkOS-Magic-Link-Login — muss ohne Basic-Auth erreichbar sein)
      * - /m/... (mobile PWA, braucht später eigenes Auth)
      * - /api/... (API-Routes — Next.js internal + exports)
      * - /appointment/... (self-service via HMAC-Token)
@@ -47,6 +48,6 @@ export const config = {
      * - /favicon, /robots, /icon, /apple-icon, /manifest.webmanifest
      * - /opengraph-image, /sitemap.xml, statische Assets
      */
-    '/((?!book|m|api|appointment|_next/static|_next/image|favicon|robots|icon|apple-icon|manifest.webmanifest|opengraph-image|sitemap).*)',
+    '/((?!book|login|m|api|appointment|_next/static|_next/image|favicon|robots|icon|apple-icon|manifest.webmanifest|opengraph-image|sitemap).*)',
   ],
 };

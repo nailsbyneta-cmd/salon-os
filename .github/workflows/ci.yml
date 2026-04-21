@@ -243,10 +243,17 @@ jobs:
       DIRECT_URL: postgresql://salon:salon@localhost:5435/salon_os_e2e?schema=public
       REDIS_URL: redis://localhost:6380
       PUBLIC_API_URL: http://127.0.0.1:4000
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
       PORT: '4000'
       NODE_ENV: test
       ALLOWED_ORIGINS: http://127.0.0.1:3000
       CI: 'true'
+      # WorkOS-Setup für Login-E2E (Golden-Path #2):
+      # - COOKIE_PASSWORD signiert Session-Tokens (≥32 Zeichen)
+      # - AUTH_DEV_BYPASS_CODE überspringt den echten WorkOS-Exchange
+      #   in Tests; main.ts verbietet es in Production
+      WORKOS_COOKIE_PASSWORD: e2e-test-cookie-password-at-least-32-chars
+      AUTH_DEV_BYPASS_CODE: '123456'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

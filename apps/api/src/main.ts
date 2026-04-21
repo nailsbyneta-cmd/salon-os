@@ -25,6 +25,11 @@ function assertProductionSafety(): void {
         `TenantMiddleware im Header-Modus ist NICHT production-safe.`,
     );
   }
+  if (process.env['AUTH_DEV_BYPASS_CODE']) {
+    throw new Error(
+      '[api] Production-Abbruch: AUTH_DEV_BYPASS_CODE darf in Production NIE gesetzt sein.',
+    );
+  }
 }
 
 async function bootstrap(): Promise<void> {
