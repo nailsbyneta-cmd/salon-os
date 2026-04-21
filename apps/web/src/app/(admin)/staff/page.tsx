@@ -85,20 +85,27 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
             return (
               <Card key={s.id} elevation="hoverable">
                 <CardBody>
-                  <div className="flex items-center gap-3">
-                    <Avatar name={name} color={s.color} size="lg" />
-                    <div>
-                      <div className="font-medium text-text-primary">{name}</div>
-                      <Badge tone={s.role === 'OWNER' ? 'accent' : 'neutral'}>
-                        {roleLabels[s.role] ?? s.role}
-                      </Badge>
+                  <Link
+                    href={`/staff/${s.id}`}
+                    className="block"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar name={name} color={s.color} size="lg" />
+                      <div>
+                        <div className="font-medium text-text-primary hover:text-accent">
+                          {name}
+                        </div>
+                        <Badge tone={s.role === 'OWNER' ? 'accent' : 'neutral'}>
+                          {roleLabels[s.role] ?? s.role}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-4 space-y-1 text-xs text-text-muted">
-                    <div>{s.email}</div>
-                    {s.phone ? <div>{s.phone}</div> : null}
-                  </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                    <div className="mt-4 space-y-1 text-xs text-text-muted">
+                      <div>{s.email}</div>
+                      {s.phone ? <div>{s.phone}</div> : null}
+                    </div>
+                  </Link>
+                  <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
                     <Link
                       href={`/staff/${s.id}/shifts`}
                       className="text-xs font-medium text-text-secondary transition-colors hover:text-text-primary"

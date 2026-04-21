@@ -18,6 +18,7 @@ import {
   deleteReview,
   toggleReviewFeatured,
   updateBranding,
+  updateLocation,
 } from './actions';
 
 interface Tenant {
@@ -60,25 +61,50 @@ interface GalleryImage {
   order: number;
 }
 
+interface Loc {
+  id: string;
+  name: string;
+  address1: string | null;
+  address2: string | null;
+  postalCode: string | null;
+  city: string | null;
+  phone: string | null;
+  email: string | null;
+}
+
 async function loadData(): Promise<{
   tenant: Tenant | null;
   faqs: FAQ[];
   reviews: Review[];
   gallery: GalleryImage[];
+  locations: Loc[];
 }> {
   const ctx = getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   try {
-    const [t, f, r, g] = await Promise.all([
+    const [t, f, r, g, l] = await Promise.all([
       apiFetch<Tenant>('/v1/salon/tenant', auth),
       apiFetch<{ faqs: FAQ[] }>('/v1/salon/faqs', auth),
       apiFetch<{ reviews: Review[] }>('/v1/salon/reviews', auth),
       apiFetch<{ images: GalleryImage[] }>('/v1/salon/gallery', auth),
+      apiFetch<{ locations: Loc[] }>('/v1/locations', auth),
     ]);
-    return { tenant: t, faqs: f.faqs, reviews: r.reviews, gallery: g.images };
+    return {
+      tenant: t,
+      faqs: f.faqs,
+      reviews: r.reviews,
+      gallery: g.images,
+      locations: l.locations,
+    };
   } catch (err) {
     if (err instanceof ApiError) {
-      return { tenant: null, faqs: [], reviews: [], gallery: [] };
+      return {
+        tenant: null,
+        faqs: [],
+        reviews: [],
+        gallery: [],
+        locations: [],
+      };
     }
     throw err;
   }
@@ -90,7 +116,8 @@ export default async function SettingsPage({
   searchParams: Promise<{ saved?: string }>;
 }): Promise<React.JSX.Element> {
   const { saved } = await searchParams;
-  const { tenant, faqs, reviews, gallery } = await loadData();
+  const { tenant, faqs, reviews, gallery, locations } = await loadData();
+  const primaryLocation = locations[0] ?? null;
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8">
@@ -114,6 +141,7 @@ export default async function SettingsPage({
 
       <nav className="mb-8 flex flex-wrap gap-2 text-xs">
         {[
+          { id: 'standort', label: 'Standort' },
           { id: 'branding', label: 'Branding' },
           { id: 'faq', label: 'FAQ' },
           { id: 'reviews', label: 'Bewertungen' },
@@ -130,6 +158,87 @@ export default async function SettingsPage({
       </nav>
 
       {/* ─── Branding ─── */}
+      {primaryLocation ? (
+        <section id="standort" className="mb-12 scroll-mt-24">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text-muted">
+            Standort · Adresse &amp; Kontakt
+          </h2>
+          <Card>
+            <CardBody>
+              <form
+                action={updateLocation.bind(null, primaryLocation.id)}
+                className="space-y-4"
+              >
+                <Field label="Salon-Name" required>
+                  <Input
+                    name="name"
+                    defaultValue={primaryLocation.name}
+                    required
+                  />
+                </Field>
+                <Field label="Adresse Zeile 1">
+                  <Input
+                    name="address1"
+                    defaultValue={primaryLocation.address1 ?? ''}
+                    placeholder="Musterstrasse 1"
+                  />
+                </Field>
+                <Field label="Adresse Zeile 2 (optional)">
+                  <Input
+                    name="address2"
+                    defaultValue={primaryLocation.address2 ?? ''}
+                    placeholder="2. Stock"
+                  />
+                </Field>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-[120px_1fr]">
+                  <Field label="PLZ">
+                    <Input
+                      name="postalCode"
+                      defaultValue={primaryLocation.postalCode ?? ''}
+                      placeholder="9000"
+                    />
+                  </Field>
+                  <Field label="Ort">
+                    <Input
+                      name="city"
+                      defaultValue={primaryLocation.city ?? ''}
+                      placeholder="St. Gallen"
+                    />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Field label="Telefon">
+                    <Input
+                      type="tel"
+                      name="phone"
+                      defaultValue={primaryLocation.phone ?? ''}
+                      placeholder="+41 71 123 45 67"
+                    />
+                  </Field>
+                  <Field label="E-Mail">
+                    <Input
+                      type="email"
+                      name="email"
+                      defaultValue={primaryLocation.email ?? ''}
+                      placeholder="hallo@salon.ch"
+                    />
+                  </Field>
+                </div>
+                <div className="flex justify-end pt-2">
+                  <Button type="submit" variant="primary">
+                    Standort speichern
+                  </Button>
+                </div>
+                <p className="text-xs text-text-muted">
+                  Wird auf Public-Buchungsseite (/book/…) und in Impressum/
+                  Datenschutz angezeigt.
+                </p>
+              </form>
+            </CardBody>
+          </Card>
+        </section>
+      ) : null}
+
       <section id="branding" className="mb-12 scroll-mt-24">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text-muted">
           Branding &amp; Social Media

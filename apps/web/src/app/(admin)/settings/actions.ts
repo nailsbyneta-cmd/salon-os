@@ -30,6 +30,40 @@ function revalidateAll(): void {
   revalidatePath('/book/beautycenter-by-neta');
 }
 
+// ── Location ────────────────────────────────
+
+export async function updateLocation(
+  locationId: string,
+  form: FormData,
+): Promise<void> {
+  const name = form.get('name')?.toString().trim();
+  if (!name) throw new Error('Name ist Pflicht.');
+
+  const body: Record<string, unknown> = {
+    name,
+    address1: form.get('address1')?.toString().trim() || undefined,
+    address2: form.get('address2')?.toString().trim() || undefined,
+    city: form.get('city')?.toString().trim() || undefined,
+    postalCode: form.get('postalCode')?.toString().trim() || undefined,
+    phone: form.get('phone')?.toString().trim() || undefined,
+    email: form.get('email')?.toString().trim() || undefined,
+  };
+
+  try {
+    await apiFetch(`/v1/locations/${locationId}`, {
+      method: 'PATCH',
+      ...ctxHeaders(),
+      body,
+    });
+  } catch (err) {
+    if (err instanceof ApiError)
+      throw new Error(err.problem?.title ?? err.message);
+    throw err;
+  }
+  revalidateAll();
+  redirect('/settings?saved=1');
+}
+
 // ── Branding ────────────────────────────────
 
 export async function updateBranding(form: FormData): Promise<void> {
