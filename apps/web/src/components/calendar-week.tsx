@@ -599,8 +599,10 @@ function WeekDraggableAppt({
   heightPx: number;
   compact: boolean;
 }): React.JSX.Element {
+  const isMobile = useIsMobile();
+  const router = useRouter();
   const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: appt.id });
+    useDraggable({ id: appt.id, disabled: isMobile });
   const style: React.CSSProperties = {
     position: 'absolute',
     top: topPx,
@@ -612,8 +614,8 @@ function WeekDraggableAppt({
       : undefined,
     opacity: isDragging ? 0.85 : 1,
     zIndex: isDragging ? 20 : 1,
-    touchAction: 'none',
-    cursor: isDragging ? 'grabbing' : 'grab',
+    touchAction: isMobile ? 'manipulation' : 'none',
+    cursor: isMobile ? 'pointer' : isDragging ? 'grabbing' : 'grab',
   };
   const clientName = appt.client
     ? `${appt.client.firstName} ${appt.client.lastName}`
@@ -623,8 +625,31 @@ function WeekDraggableAppt({
     hour: '2-digit',
     minute: '2-digit',
   });
+  const card = (
+    <AppointmentCard
+      clientName={clientName}
+      serviceLabel={services}
+      staffLabel=""
+      timeLabel={timeLabel}
+      status={appt.status}
+      staffColor={appt.staff.color}
+      compact={compact}
+      className={cn('h-full', isDragging && 'shadow-lg ring-2 ring-accent')}
+    />
+  );
 
-  const router = useRouter();
+  if (isMobile) {
+    return (
+      <Link
+        href={`/calendar/${appt.id}`}
+        style={style}
+        className="block [&>button]:h-full"
+      >
+        {card}
+      </Link>
+    );
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -635,21 +660,7 @@ function WeekDraggableAppt({
         if (!isDragging) router.push(`/calendar/${appt.id}`);
       }}
     >
-      <div className="h-full [&>button]:h-full">
-        <AppointmentCard
-          clientName={clientName}
-          serviceLabel={services}
-          staffLabel=""
-          timeLabel={timeLabel}
-          status={appt.status}
-          staffColor={appt.staff.color}
-          compact={compact}
-          className={cn(
-            'h-full',
-            isDragging && 'shadow-lg ring-2 ring-accent',
-          )}
-        />
-      </div>
+      <div className="h-full [&>button]:h-full">{card}</div>
     </div>
   );
 }
