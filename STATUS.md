@@ -5,16 +5,17 @@
 **Fortschritt Phase 1:** ~35 % Baseline, ~20 % Differenzierung (siehe AUDIT.md)
 
 ## In Arbeit
-- [x] Block A #1 Slice 1a — Testcontainers-Infra + erste RLS-Integration-Tests
-- [x] Block A #1 Slice 1b — Pact Consumer-Contracts (web)
-- [x] Block A #1 Slice 1c — Pact Provider-Verify (api)
-- [x] Block A #1 Slice 1d — Playwright E2E (1/5 Golden-Path, Rest inkrementell)
-- [x] Block A #1 Slice 1e — axe-core a11y-Gate (WCAG 2.1 AA)
-- [x] Block A #2 OpenTelemetry Traces (Metriken-Exporter folgen, Version-Konflikt)
-- [x] Block A #3 Outbox-Pattern (Infra + Poller; Producer-Migration inkrementell)
-- [x] Block A #4 Rate-Limiting auf /v1/public/*
-- [x] Block A #5 Server-Idempotency-Dedupe (Redis)
-- [x] Block A #6 WorkOS-Magic-Link-Auth (Backend + dual-mode Middleware)
+- **Block A (Härtung) — FERTIG**, siehe Log unten
+- [x] Block B #1 Ladle-Setup + Stories für alle vorhandenen Komponenten
+- [x] Block B #3a Radix Overlays (Modal/Drawer/Popover/Tooltip)
+- [x] Block B #3b ErrorBoundary + AvatarGroup + Combobox
+- [x] Block B #5 KeyboardShortcutHelp (`?`-Dialog)
+- [ ] Block B #2 Chromatic/Percy Visual-Regression (braucht Account)
+- [ ] Block B #3c DatePicker + TimePicker
+- [ ] Block B #3d DataTable
+- [ ] Block B #4 Salon-spezifische Komponenten (VIP-Ring, ServiceBadge, TreatmentTimer, BeforeAfterSlider, StaffScheduleGrid)
+- [ ] Block B #6 Micro-Interactions (Shake, Swipe-to-Delete, Sync-Banner, Confetti)
+- [ ] Block B #7 Empty-State-Illustrationen (SVG, monochrom)
 
 ## Block A — Fortschritts-Log
 
@@ -46,6 +47,22 @@
   appliziert Migrations auf Postgres-Service und verifiziert alle Interaktionen
 - ⚠️  Lokal nicht smoke-getestet (Sandbox ohne Docker-Daemon) — CI validiert
   den Gesamt-Pfad web→api end-to-end
+
+### 2026-04-21 — Block B #1+#3a+#3b+#5: Design-System-Härtung
+- ✅ Ladle@5 in `packages/ui`: `config.mjs` + Provider mit Theme-Toggle,
+  Viewport-Breiten, a11y-Addon; 17 Stories (Welcome + 16 Komponenten)
+- ✅ `ladle:build` grün, statisches Bundle 1.16 MiB
+- ✅ Neue Overlays (Radix-UI-basiert): Modal, Drawer (4 Seiten), Popover,
+  Tooltip — alle mit Focus-Trap, ESC, ARIA gratis
+- ✅ Neue Primitives: ErrorBoundary, AvatarGroup (mit Overflow +N),
+  Combobox (Keyboard-Navi + Filter-Callback)
+- ✅ KeyboardShortcutHelp-Dialog: `?`-Taste öffnet global, gruppierte
+  Shortcut-Liste, Controlled/Uncontrolled-Mode
+- ✅ Alle Komponenten re-exportiert aus `@salon-os/ui`
+- ⚠️ Chromatic/Percy brauchen Account (offene Entscheidung);
+  DatePicker/TimePicker + DataTable erfordern zusätzliche Libraries;
+  Salon-Specifics (TreatmentTimer etc.) + Empty-State-Illustrations
+  bleiben für eine Follow-up-Runde
 
 ### 2026-04-21 — Block A #6: WorkOS Magic-Link (Backend)
 - ✅ `@salon-os/auth` erweitert: `sendMagicLink()`, `authenticateWithMagicLink()`,

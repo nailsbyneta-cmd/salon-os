@@ -29,3 +29,24 @@ export {
   type CommandItem,
 } from './command-palette.js';
 export { salonPreset, default as theme } from './theme.js';
+export { Modal, type ModalProps } from './modal.js';
+export { Drawer, type DrawerProps, type DrawerSide } from './drawer.js';
+export { Popover, type PopoverProps } from './popover.js';
+export { Tooltip, TooltipProvider, type TooltipProps } from './tooltip.js';
+export { ErrorBoundary, type ErrorBoundaryProps } from './error-boundary.js';
+export {
+  AvatarGroup,
+  type AvatarGroupProps,
+  type AvatarGroupItem,
+} from './avatar-group.js';
+export {
+  Combobox,
+  type ComboboxProps,
+  type ComboboxOption,
+} from './combobox.js';
+export {
+  KeyboardShortcutHelp,
+  type KeyboardShortcutHelpProps,
+  type KeyboardShortcut,
+  type KeyboardShortcutGroup,
+} from './keyboard-shortcut-help.js';

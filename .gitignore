@@ -42,6 +42,9 @@ pact-logs/
 # Playwright browser cache (lokale Installation)
 .playwright-browsers/
 
+# Ladle-Build-Output
+packages/ui/build/
+
 # OS / editor
 .DS_Store
 .vscode/
