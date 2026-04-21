@@ -61,6 +61,21 @@ export async function deleteShift(staffId: string, shiftId: string): Promise<voi
   revalidatePath(`/staff/${staffId}/shifts`);
 }
 
+export async function saveWeeklySchedule(
+  staffId: string,
+  schedule: Record<string, Array<{ open: string; close: string }>>,
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/staff/${staffId}/weekly-schedule`, {
+    method: 'PATCH',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: schedule,
+  });
+  revalidatePath(`/staff/${staffId}/shifts`);
+}
+
 export async function generateShifts(
   staffId: string,
   days: number,

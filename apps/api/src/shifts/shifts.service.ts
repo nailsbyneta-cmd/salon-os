@@ -78,11 +78,13 @@ export class ShiftsService {
 
       const staff = await tx.staff.findFirst({
         where: { id: input.staffId, deletedAt: null },
-        select: { id: true },
+        select: { id: true, weeklySchedule: true },
       });
       if (!staff) throw new NotFoundException('Staff not found');
 
-      const hours = (location.openingHours ?? {}) as Record<
+      // Priorität: Staff-Vorlage → Location-Öffnungszeiten
+      const scheduleSource = staff.weeklySchedule ?? location.openingHours;
+      const hours = (scheduleSource ?? {}) as Record<
         string,
         | Array<{ open: string; close: string }>
         | { open?: string; close?: string; closed?: boolean }

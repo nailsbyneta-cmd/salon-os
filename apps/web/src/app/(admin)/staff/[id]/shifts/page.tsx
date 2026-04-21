@@ -3,13 +3,51 @@ import { notFound } from 'next/navigation';
 import { Avatar, Button, Card, CardBody, EmptyState, Input } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { WeeklyScheduleEditor } from '@/components/weekly-schedule-editor';
 import { createShift, deleteShift, generateShifts } from './actions';
+
+type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+type Interval = { open: string; close: string };
+type Schedule = Record<DayKey, Interval[]>;
+
+const EMPTY_SCHEDULE: Schedule = {
+  mon: [],
+  tue: [],
+  wed: [],
+  thu: [],
+  fri: [],
+  sat: [],
+  sun: [],
+};
+
+function normalizeSchedule(raw: unknown): Schedule | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const out: Schedule = { ...EMPTY_SCHEDULE };
+  let hasAny = false;
+  for (const key of Object.keys(EMPTY_SCHEDULE) as DayKey[]) {
+    const v = r[key];
+    if (Array.isArray(v)) {
+      const arr = v.filter(
+        (x): x is Interval =>
+          !!x &&
+          typeof x === 'object' &&
+          typeof (x as Interval).open === 'string' &&
+          typeof (x as Interval).close === 'string',
+      );
+      out[key] = arr;
+      if (arr.length > 0) hasAny = true;
+    }
+  }
+  return hasAny ? out : EMPTY_SCHEDULE;
+}
 
 interface StaffRow {
   id: string;
   firstName: string;
   lastName: string;
   color: string | null;
+  weeklySchedule: unknown;
 }
 
 interface Shift {
@@ -94,6 +132,11 @@ export default async function StaffShiftsPage({
           </h1>
         </div>
       </header>
+
+      <WeeklyScheduleEditor
+        staffId={id}
+        initial={normalizeSchedule(staff.weeklySchedule)}
+      />
 
       <Card className="mb-4 border-l-4 border-l-accent bg-accent/5">
         <CardBody className="space-y-3">

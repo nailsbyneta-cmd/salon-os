@@ -10,11 +10,26 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { z } from 'zod';
 import type { CreateStaffInput, UpdateStaffInput } from '@salon-os/types';
 import { createStaffSchema, updateStaffSchema, uuidSchema } from '@salon-os/types';
 import type { Staff } from '@salon-os/db';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
-import { StaffService } from './staff.service.js';
+import { StaffService, type WeeklySchedule } from './staff.service.js';
+
+const intervalSchema = z.object({
+  open: z.string().regex(/^\d{2}:\d{2}$/),
+  close: z.string().regex(/^\d{2}:\d{2}$/),
+});
+const weeklyScheduleSchema = z.object({
+  mon: z.array(intervalSchema).default([]),
+  tue: z.array(intervalSchema).default([]),
+  wed: z.array(intervalSchema).default([]),
+  thu: z.array(intervalSchema).default([]),
+  fri: z.array(intervalSchema).default([]),
+  sat: z.array(intervalSchema).default([]),
+  sun: z.array(intervalSchema).default([]),
+});
 
 @Controller('v1/staff')
 export class StaffController {
@@ -58,5 +73,14 @@ export class StaffController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<void> {
     await this.svc.softDelete(id);
+  }
+
+  @Patch(':id/weekly-schedule')
+  async setWeeklySchedule(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+    @Body(new ZodValidationPipe(weeklyScheduleSchema))
+    body: WeeklySchedule,
+  ): Promise<Staff> {
+    return this.svc.setWeeklySchedule(id, body);
   }
 }

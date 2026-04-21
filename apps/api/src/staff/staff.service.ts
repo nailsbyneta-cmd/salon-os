@@ -1,8 +1,14 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { PrismaClient, Staff } from '@salon-os/db';
+import { Prisma } from '@salon-os/db';
 import type { CreateStaffInput, UpdateStaffInput } from '@salon-os/types';
 import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
+
+export type WeeklySchedule = Record<
+  'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun',
+  Array<{ open: string; close: string }>
+>;
 
 type WithTenantFn = <T>(
   tenantId: string,
@@ -151,6 +157,23 @@ export class StaffService {
       await tx.staff.update({
         where: { id },
         data: { deletedAt: new Date(), active: false },
+      });
+    });
+  }
+
+  async setWeeklySchedule(
+    id: string,
+    schedule: WeeklySchedule,
+  ): Promise<Staff> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.staff.findFirst({
+        where: { id, deletedAt: null },
+      });
+      if (!existing) throw new NotFoundException(`Staff ${id} not found`);
+      return tx.staff.update({
+        where: { id },
+        data: { weeklySchedule: schedule as Prisma.InputJsonValue },
       });
     });
   }
