@@ -198,6 +198,52 @@ function openingHoursArray(
   }));
 }
 
+function buildTitle(name: string, city: string | null): string {
+  // Ziel 50-60 Zeichen
+  const base = `${name} — Online Termin buchen`;
+  if (city) {
+    const withCity = `${name} · Online Termin buchen in ${city}`;
+    return withCity.length <= 60 ? withCity : base;
+  }
+  return base;
+}
+
+function buildDescription(
+  name: string,
+  city: string | null,
+  tagline: string | null,
+  description: string | null,
+  topServices: string[],
+): string {
+  // Ziel 110-160 Zeichen
+  if (tagline && tagline.length >= 110 && tagline.length <= 160) return tagline;
+  if (description && description.length >= 110 && description.length <= 160)
+    return description;
+
+  const where = city ? ` in ${city}` : '';
+  const teaser = tagline ?? description ?? null;
+  const svcList =
+    topServices.length > 0 ? topServices.slice(0, 3).join(', ') : null;
+
+  const parts: string[] = [];
+  if (teaser) parts.push(teaser.replace(/\s+/g, ' ').trim());
+  if (svcList) {
+    parts.push(`Services: ${svcList}.`);
+  } else {
+    parts.push(`Termin bei ${name}${where} — jetzt online buchen.`);
+  }
+  parts.push('Bestätigung sofort per E-Mail.');
+
+  let out = parts.join(' ');
+  if (out.length > 160) out = out.slice(0, 157).trimEnd() + '…';
+  if (out.length < 110) {
+    // Auffüllen mit zweiter Fallback-Variante
+    out = `${out} Unkompliziert, ohne Anruf, jederzeit stornierbar.`;
+    if (out.length > 160) out = out.slice(0, 157).trimEnd() + '…';
+  }
+  return out;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -207,18 +253,21 @@ export async function generateMetadata({
   const data = await loadTenantData(slug);
   if (!data) {
     return {
-      title: 'Online buchen',
-      description: 'Termin online buchen.',
+      title: 'Online Termin buchen',
+      description:
+        'Termin online buchen — unkompliziert, ohne Anruf, Bestätigung sofort per E-Mail.',
     };
   }
-  const { tenant, locations } = data;
-  const title = `${tenant.name} — Online buchen`;
-  const description =
-    tenant.tagline ??
-    tenant.description ??
-    `Termin online buchen bei ${tenant.name}${
-      locations[0]?.city ? ` in ${locations[0].city}` : ''
-    }.`;
+  const { tenant, locations, services } = data;
+  const city = locations[0]?.city ?? null;
+  const title = buildTitle(tenant.name, city);
+  const description = buildDescription(
+    tenant.name,
+    city,
+    tenant.tagline,
+    tenant.description,
+    services.map((s) => s.name),
+  );
   const image = tenant.heroImageUrl ?? tenant.logoUrl ?? undefined;
   return {
     title,
@@ -228,6 +277,7 @@ export async function generateMetadata({
       description,
       type: 'website',
       locale: 'de_CH',
+      siteName: tenant.name,
       ...(image ? { images: [{ url: image, width: 1200, height: 630 }] } : {}),
     },
     twitter: {
