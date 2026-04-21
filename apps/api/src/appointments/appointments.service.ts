@@ -278,10 +278,30 @@ export class AppointmentsService {
       async (tx) => {
         const existing = await tx.appointment.findFirst({ where: { id } });
         if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
+
+        const targetStatus = input.noShow ? 'NO_SHOW' : 'CANCELLED';
+        // Idempotenz: gleicher Zielstatus → unveränderte Zeile zurückgeben.
+        if (existing.status === targetStatus) {
+          return tx.appointment.findFirstOrThrow({
+            where: { id },
+            include: { items: true },
+          });
+        }
+        // Keine Rückwärts-Transitions aus Endstatus.
+        if (
+          existing.status === 'COMPLETED' ||
+          (existing.status === 'CANCELLED' && input.noShow) ||
+          (existing.status === 'NO_SHOW' && !input.noShow)
+        ) {
+          throw new ConflictException(
+            `Terminstatus ${existing.status} kann nicht zu ${targetStatus} geändert werden.`,
+          );
+        }
+
         const updated = await tx.appointment.update({
           where: { id },
           data: {
-            status: input.noShow ? 'NO_SHOW' : 'CANCELLED',
+            status: targetStatus,
             cancelledAt: new Date(),
             cancelReason: input.reason ?? null,
             noShow: input.noShow,

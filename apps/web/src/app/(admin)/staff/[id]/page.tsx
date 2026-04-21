@@ -157,10 +157,11 @@ export default async function StaffDetailPage({
                 <Select name="role" defaultValue={s.role} required>
                   <option value="OWNER">Inhaberin</option>
                   <option value="MANAGER">Managerin</option>
+                  <option value="FRONT_DESK">Empfang</option>
                   <option value="STYLIST">Stylistin</option>
+                  <option value="BOOTH_RENTER">Mieterin</option>
                   <option value="ASSISTANT">Assistentin</option>
                   <option value="TRAINEE">Auszubildende</option>
-                  <option value="FRONT_DESK">Empfang</option>
                 </Select>
               </Field>
               <Field label="Anstellung" required>

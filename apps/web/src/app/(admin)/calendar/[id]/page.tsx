@@ -12,7 +12,7 @@ import {
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { ClientBrief } from '@/components/client-brief';
-import { transitionAppointment, cancelAppointment } from '../actions';
+import { transitionAppointment, cancelAppointment, markNoShow } from '../actions';
 import { updateAppointmentNotes } from './actions';
 
 interface Appt {
@@ -120,6 +120,7 @@ export default async function AppointmentDetailPage({
   });
   const transition = transitionAppointment.bind(null, a.id);
   const cancel = cancelAppointment.bind(null, a.id);
+  const noShow = markNoShow.bind(null, a.id);
   const saveNotes = updateAppointmentNotes.bind(null, a.id);
 
   return (
@@ -216,13 +217,13 @@ export default async function AppointmentDetailPage({
                       <>
                         <a
                           href={`tel:${a.client.phone}`}
-                          className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                          className="inline-flex h-11 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
                         >
                           📞 Anrufen
                         </a>
                         <a
                           href={`sms:${a.client.phone}`}
-                          className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                          className="inline-flex h-11 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
                         >
                           💬 SMS
                         </a>
@@ -230,7 +231,7 @@ export default async function AppointmentDetailPage({
                           href={`https://wa.me/${a.client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
                           target="_blank"
                           rel="noopener"
-                          className="inline-flex h-8 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-2.5 text-[11px] font-medium text-success transition-colors hover:bg-success/20"
+                          className="inline-flex h-11 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success transition-colors hover:bg-success/20"
                         >
                           WhatsApp
                         </a>
@@ -239,7 +240,7 @@ export default async function AppointmentDetailPage({
                     {a.client.email ? (
                       <a
                         href={`mailto:${a.client.email}`}
-                        className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                        className="inline-flex h-11 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
                       >
                         ✉ E-Mail
                       </a>
@@ -385,8 +386,17 @@ export default async function AppointmentDetailPage({
               </Button>
             </form>
           ) : null}
+          {(a.status === 'BOOKED' ||
+            a.status === 'CONFIRMED' ||
+            a.status === 'CHECKED_IN') ? (
+            <form action={noShow}>
+              <Button type="submit" variant="danger">
+                Nicht erschienen
+              </Button>
+            </form>
+          ) : null}
           <form action={cancel.bind(null, 'Auf Kundenwunsch')}>
-            <Button type="submit" variant="danger">
+            <Button type="submit" variant="ghost">
               Stornieren
             </Button>
           </form>

@@ -44,3 +44,23 @@ export async function cancelAppointment(
   revalidatePath('/');
   revalidatePath('/m');
 }
+
+export async function markNoShow(appointmentId: string): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/appointments/${appointmentId}/cancel`, {
+    method: 'POST',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: {
+      reason: 'Nicht erschienen',
+      noShow: true,
+      notifyClient: false,
+    },
+  });
+  revalidatePath('/calendar');
+  revalidatePath(`/calendar/${appointmentId}`);
+  revalidatePath('/clients');
+  revalidatePath('/');
+  revalidatePath('/m');
+}

@@ -195,6 +195,7 @@ export type RescheduleAppointmentInput = z.infer<typeof rescheduleAppointmentSch
 export const cancelAppointmentSchema = z.object({
   reason: z.string().max(500).optional(),
   noShow: z.boolean().default(false),
+  notifyClient: z.boolean().default(true),
 });
 export type CancelAppointmentInput = z.infer<typeof cancelAppointmentSchema>;
 
