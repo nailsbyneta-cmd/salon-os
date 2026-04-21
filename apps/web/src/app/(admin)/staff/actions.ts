@@ -87,15 +87,18 @@ export async function updateStaff(id: string, form: FormData): Promise<void> {
     active: form.get('active') === 'on',
     serviceIds,
   };
-  const opt = (k: string): void => {
-    const v = form.get(k)?.toString().trim();
-    if (v) body[k === 'displayName' ? 'displayName' : k] = v;
+  // Nullable Felder: leerer String = Feld leeren (null), nicht skippen.
+  const nullable = (k: string): void => {
+    const raw = form.get(k);
+    if (raw === null) return;
+    const v = raw.toString().trim();
+    body[k] = v === '' ? null : v;
   };
-  opt('displayName');
-  opt('phone');
-  opt('color');
-  opt('photoUrl');
-  opt('bio');
+  nullable('displayName');
+  nullable('phone');
+  nullable('color');
+  nullable('photoUrl');
+  nullable('bio');
 
   try {
     await apiFetch(`/v1/staff/${id}`, {

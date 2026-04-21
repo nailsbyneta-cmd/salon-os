@@ -159,7 +159,8 @@ export default async function StaffDetailPage({
                   <option value="MANAGER">Managerin</option>
                   <option value="STYLIST">Stylistin</option>
                   <option value="ASSISTANT">Assistentin</option>
-                  <option value="APPRENTICE">Auszubildende</option>
+                  <option value="TRAINEE">Auszubildende</option>
+                  <option value="FRONT_DESK">Empfang</option>
                 </Select>
               </Field>
               <Field label="Anstellung" required>

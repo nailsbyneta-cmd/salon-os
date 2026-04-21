@@ -15,10 +15,11 @@ async function postJson(
   body?: unknown,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
+    const hasBody = body !== undefined;
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers: hasBody ? { 'content-type': 'application/json' } : {},
+      body: hasBody ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
       const err = (await res.json().catch(() => ({}))) as {

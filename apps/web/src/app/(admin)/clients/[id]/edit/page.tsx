@@ -12,7 +12,7 @@ interface ClientDetail {
   email: string | null;
   phone: string | null;
   birthday: string | null;
-  notes: string | null;
+  notesInternal: string | null;
   tags: string[];
   emailOptIn: boolean;
   smsOptIn: boolean;
@@ -68,7 +68,7 @@ export default async function EditClientPage({
           email: client.email,
           phone: client.phone,
           birthday: client.birthday,
-          notes: client.notes,
+          notes: client.notesInternal,
           tags: client.tags,
           emailOptIn: client.emailOptIn,
           smsOptIn: client.smsOptIn,

@@ -7,24 +7,29 @@ import { getCurrentTenant } from '@/lib/tenant';
 interface ClientBody {
   firstName: string;
   lastName: string;
-  email?: string;
-  phone?: string;
-  birthday?: string;
-  notes?: string;
+  email?: string | null;
+  phone?: string | null;
+  birthday?: string | null;
+  notesInternal?: string | null;
   tags?: string[];
   emailOptIn: boolean;
   smsOptIn: boolean;
 }
 
-function parseForm(form: FormData): ClientBody {
+function parseForm(form: FormData, mode: 'create' | 'update'): ClientBody {
   const firstName = form.get('firstName')?.toString().trim();
   const lastName = form.get('lastName')?.toString().trim();
   if (!firstName || !lastName) throw new Error('Vorname + Nachname sind Pflicht.');
-  const email = form.get('email')?.toString().trim() || undefined;
-  const phone = form.get('phone')?.toString().trim() || undefined;
-  const birthdayRaw = form.get('birthday')?.toString().trim();
-  const birthday = birthdayRaw ? birthdayRaw : undefined;
-  const notes = form.get('notes')?.toString().trim() || undefined;
+
+  // Bei Update: leerer String = löschen (null). Bei Create: leerer String = weglassen.
+  const nullable = (k: string): string | null | undefined => {
+    const raw = form.get(k);
+    if (raw === null) return undefined;
+    const v = raw.toString().trim();
+    if (v === '') return mode === 'update' ? null : undefined;
+    return v;
+  };
+
   const tagsRaw = form.get('tags')?.toString().trim() ?? '';
   const tags = tagsRaw
     ? tagsRaw
@@ -32,14 +37,17 @@ function parseForm(form: FormData): ClientBody {
         .map((t) => t.trim())
         .filter(Boolean)
         .slice(0, 10)
-    : undefined;
+    : mode === 'update'
+      ? []
+      : undefined;
+
   return {
     firstName,
     lastName,
-    email,
-    phone,
-    birthday,
-    notes,
+    email: nullable('email'),
+    phone: nullable('phone'),
+    birthday: nullable('birthday'),
+    notesInternal: nullable('notes'),
     tags,
     emailOptIn: form.get('emailOptIn') === 'on',
     smsOptIn: form.get('smsOptIn') === 'on',
@@ -48,7 +56,7 @@ function parseForm(form: FormData): ClientBody {
 
 export async function createClient(form: FormData): Promise<void> {
   const ctx = getCurrentTenant();
-  const body = parseForm(form);
+  const body = parseForm(form, 'create');
   try {
     const created = await apiFetch<{ id: string }>('/v1/clients', {
       method: 'POST',
@@ -69,7 +77,7 @@ export async function createClient(form: FormData): Promise<void> {
 
 export async function updateClient(id: string, form: FormData): Promise<void> {
   const ctx = getCurrentTenant();
-  const body = parseForm(form);
+  const body = parseForm(form, 'update');
   try {
     await apiFetch(`/v1/clients/${id}`, {
       method: 'PATCH',

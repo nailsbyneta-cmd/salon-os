@@ -14,7 +14,7 @@ interface Client {
   phone: string | null;
   gender: string | null;
   birthday: string | null;
-  notes: string | null;
+  notesInternal: string | null;
   tags: string[];
   totalVisits: number;
   totalSpent: string;
@@ -334,14 +334,14 @@ export default async function ClientDetailPage({
         )}
       </section>
 
-      {client.notes ? (
+      {client.notesInternal ? (
         <Card className="mt-8 border-l-4 border-l-warning bg-warning/5">
           <CardBody>
             <p className="text-xs font-medium uppercase tracking-wider text-warning">
               Interne Notiz
             </p>
             <p className="mt-2 whitespace-pre-line text-sm text-text-primary">
-              {client.notes}
+              {client.notesInternal}
             </p>
           </CardBody>
         </Card>

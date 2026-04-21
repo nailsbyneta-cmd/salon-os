@@ -194,7 +194,7 @@ export default async function NewWaitlistPage(): Promise<React.JSX.Element> {
               <Textarea
                 name="notes"
                 rows={2}
-                placeholder="z.B. „wünscht Neta, eher nachmittags"
+                placeholder='z.B. „wünscht Neta, eher nachmittags"'
               />
             </Field>
 

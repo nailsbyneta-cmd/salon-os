@@ -66,10 +66,10 @@ export const clientAddressSchema = z
 export const createClientSchema = z.object({
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  birthday: z.string().date().optional(), // ISO 8601 YYYY-MM-DD
-  pronouns: z.string().max(50).optional(),
+  email: z.string().email().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  birthday: z.string().date().nullable().optional(), // ISO 8601 YYYY-MM-DD
+  pronouns: z.string().max(50).nullable().optional(),
   address: clientAddressSchema,
   language: z.string().max(10).optional(),
   marketingOptIn: z.boolean().default(false),
@@ -77,9 +77,9 @@ export const createClientSchema = z.object({
   emailOptIn: z.boolean().default(false),
   allergies: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),
-  preferredStaffId: uuidSchema.optional(),
-  source: z.string().max(50).optional(),
-  notesInternal: z.string().max(2000).optional(),
+  preferredStaffId: uuidSchema.nullable().optional(),
+  source: z.string().max(50).nullable().optional(),
+  notesInternal: z.string().max(2000).nullable().optional(),
 });
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 
@@ -278,21 +278,22 @@ export const createStaffSchema = z.object({
   userId: uuidSchema.optional(),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
-  displayName: z.string().max(100).optional(),
+  displayName: z.string().max(100).nullable().optional(),
   email: z.string().email(),
-  phone: z.string().max(30).optional(),
+  phone: z.string().max(30).nullable().optional(),
   role: staffRoleSchema,
   employmentType: employmentTypeSchema,
-  commissionRate: z.number().min(0).max(100).optional(),
-  boothRent: z.number().min(0).optional(),
-  hourlyRate: z.number().min(0).optional(),
+  commissionRate: z.number().min(0).max(100).nullable().optional(),
+  boothRent: z.number().min(0).nullable().optional(),
+  hourlyRate: z.number().min(0).nullable().optional(),
   color: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
+    .nullable()
     .optional(),
-  photoUrl: z.string().url().optional(),
-  bio: z.string().max(2000).optional(),
-  startsAt: z.string().datetime({ offset: true }).optional(),
+  photoUrl: z.string().url().nullable().optional(),
+  bio: z.string().max(2000).nullable().optional(),
+  startsAt: z.string().datetime({ offset: true }).nullable().optional(),
   locationIds: z.array(uuidSchema).min(1).max(50),
   serviceIds: z.array(uuidSchema).default([]),
 });
