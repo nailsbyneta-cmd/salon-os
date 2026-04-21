@@ -3,6 +3,8 @@
  * BullMQ worker bootstrap.
  * Startet alle registrierten Queues.
  */
+// OTel-Bootstrap MUSS vor allen instrumentierten Modulen geladen werden.
+import './otel.js';
 import { Queue, Worker, type Job } from 'bullmq';
 import { prisma } from '@salon-os/db';
 import {

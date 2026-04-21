@@ -1,3 +1,6 @@
+// OTel-Bootstrap MUSS vor allem anderen geladen werden, damit die
+// Auto-Instrumentierung fastify/pg/ioredis/bullmq patchen kann.
+import './otel.js';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';

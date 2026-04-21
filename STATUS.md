@@ -10,7 +10,7 @@
 - [x] Block A #1 Slice 1c — Pact Provider-Verify (api)
 - [ ] Block A #1 Slice 1d — Playwright E2E 5 Golden-Paths
 - [ ] Block A #1 Slice 1e — axe-core a11y-Gate
-- [ ] Block A #2 OpenTelemetry
+- [x] Block A #2 OpenTelemetry Traces (Metriken-Exporter folgen, Version-Konflikt)
 - [x] Block A #3 Outbox-Pattern (Infra + Poller; Producer-Migration inkrementell)
 - [x] Block A #4 Rate-Limiting auf /v1/public/*
 - [x] Block A #5 Server-Idempotency-Dedupe (Redis)
@@ -46,6 +46,17 @@
   appliziert Migrations auf Postgres-Service und verifiziert alle Interaktionen
 - ⚠️  Lokal nicht smoke-getestet (Sandbox ohne Docker-Daemon) — CI validiert
   den Gesamt-Pfad web→api end-to-end
+
+### 2026-04-21 — Block A #2: OpenTelemetry (Tracing)
+- ✅ `apps/api/src/otel.ts` + `apps/worker/src/otel.ts`: NodeSDK mit
+  `auto-instrumentations-node` (HTTP, fastify, pg, ioredis, bullmq)
+- ✅ OTLP-HTTP-Trace-Exporter; ohne `OTEL_EXPORTER_OTLP_ENDPOINT` läuft
+  das SDK im No-Op-Mode (lokale Dev unverändert)
+- ✅ Service-Name/-Version/-Environment als Resource-Attribute
+- ⚠️  Metriken-Exporter (`sdk-metrics@2` vs. `exporter-metrics-otlp-http@0.57`)
+  hat Paket-Versions-Konflikt, deshalb Tracing-only in dieser Runde —
+  Metriken folgen sobald kompatibles Duo raus ist
+- ✅ Filesystem-Instrumentierung deaktiviert (Span-Spam)
 
 ### 2026-04-21 — Block A #3: Outbox-Pattern (Infra)
 - ✅ Migration `0009_outbox` + Prisma-Model `OutboxEvent` mit Partial-Index
