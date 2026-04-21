@@ -34,6 +34,12 @@
 - ✅ **Mobile-Calendar-Tap** — MouseSensor + TouchSensor mit 250ms Long-Press-Drag, Tap = Link.
 - ✅ **Branding-Settings** unter `/settings` — Tagline, Logo/Hero-URL, Socials, FAQ, Reviews, Gallerie.
 - ✅ **Basic-Auth-Middleware** (env-gated) für Admin bis WorkOS.
+- ✅ **Staff-Detail-Page** `/staff/:id` — Profil-Edit (Bio, Foto-URL, Farbe, Aktiv).
+- ✅ **Location-Settings** auf `/settings` — Adresse/Tel/Mail editierbar, fließt in Public-Booking + Impressum.
+- ✅ **⌘K-Palette** findet jetzt auch Staff.
+- ✅ **Dashboard „Umsatz heute"** klickbar → `/reports?period=today`.
+- ✅ **Reports CSV-Export** — 14 Spalten, BOM für Excel.
+- ✅ **Calendar-Header Mobile** kompakter (size=sm, „Neu" statt „Neuer Termin").
 
 ## Fertig seit letztem Audit (2026-04-19 → 2026-04-20)
 - ✅ Block A Design-System-Grundlagen: Tokens, Dark-Mode, ⌘K, Hero-Screens
