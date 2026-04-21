@@ -495,9 +495,18 @@ function DraggableAppt({
     minute: '2-digit',
   });
 
+  const router = useRouter();
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <div className="group h-full [&>button]:h-full">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={() => {
+        if (!isDragging) router.push(`/calendar/${appt.id}`);
+      }}
+    >
+      <div className="h-full [&>button]:h-full">
         <AppointmentCard
           clientName={clientName}
           serviceLabel={services}
@@ -508,15 +517,6 @@ function DraggableAppt({
           compact={compact}
           className={`h-full ${isDragging ? 'shadow-lg ring-2 ring-accent' : ''}`}
         />
-        {!isDragging ? (
-          <Link
-            href={`/calendar/${appt.id}`}
-            className="absolute right-1 top-1 rounded-sm bg-surface/80 px-1.5 py-0.5 text-[9px] font-medium text-text-muted opacity-0 transition-opacity hover:text-text-primary group-hover:opacity-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            öffnen
-          </Link>
-        ) : null}
       </div>
     </div>
   );
