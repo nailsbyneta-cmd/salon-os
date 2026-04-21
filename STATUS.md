@@ -5,12 +5,35 @@
 **Fortschritt Phase 1:** ~35 % Baseline, ~20 % Differenzierung (siehe AUDIT.md)
 
 ## In Arbeit
-- [ ] Auf P0-04 warten
+- [ ] User testet aktuelle Runde, dann nächstes Feature
 
-## P0-Bugfix-Run (2026-04-20)
-- ✅ **P0-01 Business-Hours-Bug** — Booking-Seite zeigte alle Tage „geschlossen"; Slot-Generator ignorierte openingHours. Fix in `fix/p0-01-business-hours`, merged in main. Web-Parser handelt jetzt Array-of-Intervals-Shape, API availability() respektiert openingHours + TZ (DST-sicher via Intl.DateTimeFormat). Fallback „Öffnungszeiten auf Anfrage" wenn kein Datensatz. Follow-up-Hotfix: TS2538 weekday-index non-null.
-- ✅ **P0-02 Time-Slot-Kontrast** — Slot-Picker hatte harte `neutral-*`-Klassen, unlesbar im Dark Mode. Fix in `fix/p0-02-time-slot-contrast`, merged in main. Jetzt Design-Tokens durchgängig, hover-Translate+Accent, focus-visible-Ring, Empty-State als Card.
-- ✅ **P0-03 Confirm + Success Kontrast** — selbes Problem auf confirm + success. Fix in `fix/p0-03-confirm-success-contrast`, merged in main. Native Inputs → UI-Komponenten (Input/Textarea/Button), autocomplete-Attribute, Error-Banner auf confirm, success in Card mit success-Token-Icon.
+## P0-Bugfix-Run (2026-04-20/21)
+- ✅ **P0-01 Business-Hours-Bug** — Booking-Seite zeigte alle Tage „geschlossen"; Slot-Generator ignorierte openingHours. Web-Parser für Array-of-Intervals, API-Slot-Gen DST-safe via Intl.DateTimeFormat.
+- ✅ **P0-02 Time-Slot-Kontrast** — Slot-Picker Design-Tokens, hover/focus-Ring, Card-Empty-State.
+- ✅ **P0-03 Confirm + Success** — UI-Komponenten statt native, autocomplete, Error-Banner, success-Icon.
+
+## Session 2026-04-21 — Mobile-Polish + Quick-Actions + Reminder
+- ✅ **Confirm-Summary auf Booking** — Service+Preis+Staff prominent vor Formular.
+- ✅ **Impressum + Datenschutz** als Public-Routes aus /v1/public/:slug/info.
+- ✅ **SEO + OpenGraph** — Title 50-60ch, Description 110-160ch, heroImageUrl als OG-Image.
+- ✅ **Slot-Picker 7-Day-Quick-Pills** + „geschlossen"-Tage + „Nächster freier Tag"-Banner.
+- ✅ **Cookie-Consent-Banner** (DSG) auf `/book/[slug]`.
+- ✅ **CSV-Import-Endpoint** funktional (wird im Settings noch nicht genutzt).
+- ✅ **Waitlist-Admin-Create** — `/waitlist/new` mit Service/Staff/Zeit-Picker.
+- ✅ **Reports v2** — Period-Switcher, Trends vs. Vorperiode, Per-Staff-Breakdown, Top-Kundinnen.
+- ✅ **iOS-Zoom-Fix** — Inputs 16px auf Mobile.
+- ✅ **Tables responsive** (Clients/Services/Gift-Cards/Inventory), Sub-Infos inline auf Mobile.
+- ✅ **Admin-Shell Mobile-Burger** + klickbares Logo.
+- ✅ **Admin-H1 kleiner auf Mobile** (text-2xl md:text-3xl).
+- ✅ **Form-Grids mobile stacken** — alle grid-cols-2 → grid-cols-1 sm:grid-cols-2.
+- ✅ **Page-Padding** p-8 → p-4 md:p-8 überall.
+- ✅ **Schicht-Generator** + **wöchentliche Schicht-Vorlage** per Staff (Migration 0009, staff.weeklySchedule JSONB).
+- ✅ **Quick-Contact-Buttons** auf Client-Profil UND Termin-Detail — 📞 SMS WhatsApp ✉ (tel:/sms:/wa.me/mailto:).
+- ✅ **Termin-Reminder-Buttons** — vorgefertigte Nachricht SMS/WhatsApp/Email.
+- ✅ **Dashboard „Grade läuft"** — IN_SERVICE-Termine mit Live-Progress-Bar.
+- ✅ **Mobile-Calendar-Tap** — MouseSensor + TouchSensor mit 250ms Long-Press-Drag, Tap = Link.
+- ✅ **Branding-Settings** unter `/settings` — Tagline, Logo/Hero-URL, Socials, FAQ, Reviews, Gallerie.
+- ✅ **Basic-Auth-Middleware** (env-gated) für Admin bis WorkOS.
 
 ## Fertig seit letztem Audit (2026-04-19 → 2026-04-20)
 - ✅ Block A Design-System-Grundlagen: Tokens, Dark-Mode, ⌘K, Hero-Screens
