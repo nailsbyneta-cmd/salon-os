@@ -137,7 +137,7 @@ export default async function Home(): Promise<React.JSX.Element> {
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-8">
-      <header className="mb-8 flex items-end justify-between">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3 md:mb-8">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Dashboard
