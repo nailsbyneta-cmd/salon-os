@@ -35,7 +35,16 @@
   Pact-Mock-Server
 - ✅ `.gitignore`: `pacts/` + `pact-logs/` (Artefakte, keine Quellen)
 - ✅ CI-Job `contract-consumer` uploaded `pacts/` als Artifact für Provider-Verify
-- 🔜 Slice 1c wird Pacts aus Artifact ziehen und `apps/api` gegen sie verifizieren
+
+### 2026-04-21 — Slice 1c: Pact-Provider-Verify
+- ✅ `@pact-foundation/pact@15` in `apps/api` + `vitest.contract.config.ts`
+- ✅ `clients.provider.pact.test.ts` bootet NestJS-App auf ephemerem Port
+  gegen Testcontainer-DB, Provider-State `tenant has clients` wird im
+  stateHandler mit echten Prisma-Rows geseedet (TENANT_ID matcht Contract)
+- ✅ CI-Job `contract-provider` zieht `pacts`-Artifact vom Consumer-Run,
+  appliziert Migrations auf Postgres-Service und verifiziert alle Interaktionen
+- ⚠️  Lokal nicht smoke-getestet (Sandbox ohne Docker-Daemon) — CI validiert
+  den Gesamt-Pfad web→api end-to-end
 
 ## P0-Bugfix-Run (2026-04-20)
 - ✅ **P0-01 Business-Hours-Bug** — Booking-Seite zeigte alle Tage „geschlossen"; Slot-Generator ignorierte openingHours. Fix in `fix/p0-01-business-hours`, merged in main. Web-Parser handelt jetzt Array-of-Intervals-Shape, API availability() respektiert openingHours + TZ (DST-sicher via Intl.DateTimeFormat). Fallback „Öffnungszeiten auf Anfrage" wenn kein Datensatz. Follow-up-Hotfix: TS2538 weekday-index non-null.

@@ -173,6 +173,48 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # ─── Provider-Verify: api erfüllt die Consumer-Contracts ────
+  # Lädt das `pacts`-Artifact des Consumer-Jobs, bootet die NestJS-App
+  # gegen Postgres-Service und lässt den Pact-Verifier alle Interaktionen
+  # replayen. Jede State-Annahme („tenant has clients") wird vor der
+  # Interaktion vom Provider-Test via Prisma geseedet.
+  contract-provider:
+    name: Contract tests (provider verify)
+    runs-on: ubuntu-latest
+    needs: [setup, contract-consumer]
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: salon
+          POSTGRES_PASSWORD: salon
+          POSTGRES_DB: salon_os_pact
+        ports: ["5434:5432"]
+        options: >-
+          --health-cmd "pg_isready -U salon"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_DATABASE_URL: postgresql://salon:salon@localhost:5434/salon_os_pact?schema=public
+      DATABASE_URL: postgresql://salon:salon@localhost:5434/salon_os_pact?schema=public
+      DIRECT_URL: postgresql://salon:salon@localhost:5434/salon_os_pact?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.15.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --no-frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: pacts
+          path: pacts/
+      - run: pnpm --filter @salon-os/db run db:generate
+      - run: pnpm --filter @salon-os/db --filter @salon-os/types --filter @salon-os/utils --filter @salon-os/auth build
+      - run: pnpm --filter @salon-os/db run db:migrate:deploy
+      - run: pnpm --filter @salon-os/api run test:contract:provider
+
   # ─── Security-Scan (Trivy für Dependencies + Filesystem) ────
   security:
     name: Security scan
