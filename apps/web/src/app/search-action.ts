@@ -4,7 +4,7 @@ import { getCurrentTenant } from '@/lib/tenant';
 
 export interface SearchHit {
   id: string;
-  kind: 'client' | 'service';
+  kind: 'client' | 'service' | 'staff';
   label: string;
   hint?: string;
   href: string;
@@ -46,7 +46,24 @@ export async function searchCommand(query: string): Promise<SearchHit[]> {
     throw e;
   });
 
-  const [clientsRes, servicesRes] = await Promise.all([fetchClients, fetchServices]);
+  const fetchStaff = apiFetch<{
+    staff: Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      displayName: string | null;
+      email: string;
+    }>;
+  }>('/v1/staff', auth).catch((e) => {
+    if (e instanceof ApiError) return { staff: [] };
+    throw e;
+  });
+
+  const [clientsRes, servicesRes, staffRes] = await Promise.all([
+    fetchClients,
+    fetchServices,
+    fetchStaff,
+  ]);
 
   const clients: SearchHit[] = clientsRes.clients.map((c) => ({
     id: `client:${c.id}`,
@@ -68,5 +85,20 @@ export async function searchCommand(query: string): Promise<SearchHit[]> {
       href: `/services`,
     }));
 
-  return [...clients, ...services];
+  const staff: SearchHit[] = staffRes.staff
+    .filter((s) => {
+      const full = `${s.firstName} ${s.lastName} ${s.displayName ?? ''}`
+        .toLowerCase();
+      return full.includes(needle);
+    })
+    .slice(0, 5)
+    .map((s) => ({
+      id: `staff:${s.id}`,
+      kind: 'staff' as const,
+      label: s.displayName ?? `${s.firstName} ${s.lastName}`,
+      hint: s.email,
+      href: `/staff/${s.id}`,
+    }));
+
+  return [...clients, ...services, ...staff];
 }

@@ -177,6 +177,7 @@ export default async function Home(): Promise<React.JSX.Element> {
             minimumFractionDigits: 0,
           })}
           sub="CHF · exkl. storniert"
+          href="/reports?period=today"
         />
         <Stat label="Kundinnen" value={d.clientsCount} href="/clients" />
         <Stat label="Services" value={d.servicesCount} href="/services" />
