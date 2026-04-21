@@ -183,7 +183,7 @@ export default async function Home(): Promise<React.JSX.Element> {
       </section>
 
       <Card className="mb-4" elevation="flat">
-        <CardBody className="flex items-end justify-between gap-6">
+        <CardBody className="flex flex-wrap items-end justify-between gap-4 sm:gap-6">
           <div>
             <div className="text-xs font-medium uppercase tracking-wider text-text-muted">
               Umsatz · letzte 7 Tage

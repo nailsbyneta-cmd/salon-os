@@ -83,7 +83,7 @@ export function CalendarMonth({
               key={dayKey}
               href={`/calendar?view=day&date=${dayKey}`}
               className={cn(
-                'relative border-r border-border p-2 transition-colors last:border-r-0 min-h-[110px] hover:bg-surface-raised/60',
+                'relative border-r border-border p-1 transition-colors last:border-r-0 min-h-[90px] hover:bg-surface-raised/60 sm:p-2 sm:min-h-[110px]',
                 !isLastRow && 'border-b',
                 !inMonth && 'bg-background/40',
               )}
