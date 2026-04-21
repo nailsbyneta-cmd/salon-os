@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import { AppModule } from './app.module.js';
 
 /**
@@ -36,6 +37,27 @@ async function bootstrap(): Promise<void> {
   await app.register(cors, {
     origin: (process.env['ALLOWED_ORIGINS'] ?? 'http://localhost:3000').split(','),
     credentials: true,
+  });
+
+  // Rate-Limiting auf Public-Endpoints (Booking, Waitlist, Self-Service).
+  // 60 Requests / Minute / IP. Skippt Non-Public-Routen, sodass
+  // authenticated Admin-Pfade ihr eigenes Budget haben (→ kommt später).
+  // Rate-Limiting auf Public-Endpoints (Booking, Waitlist, Self-Service).
+  // 60 Requests / Minute / IP. `allowList` als Funktion liefert `true`
+  // für Pfade, die NICHT rate-limited werden sollen — Admin-Routen haben
+  // dadurch eigenes Budget (kommt später via scoped Plugin).
+  await app.register(rateLimit, {
+    max: Number(process.env['PUBLIC_RATE_LIMIT_MAX'] ?? 60),
+    timeWindow: '1 minute',
+    hook: 'preHandler',
+    allowList: (req) =>
+      !req.url.startsWith('/v1/public/') && !req.url.startsWith('/public/'),
+    errorResponseBuilder: (_req, ctx) => ({
+      type: 'https://salon-os.dev/errors/rate-limit',
+      title: 'Too Many Requests',
+      status: 429,
+      detail: `Rate limit exceeded. Try again in ${Math.ceil(ctx.ttl / 1000)}s.`,
+    }),
   });
 
   const port = Number(process.env['PORT'] ?? 4000);

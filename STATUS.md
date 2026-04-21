@@ -6,14 +6,15 @@
 
 ## In Arbeit
 - [x] Block A #1 Slice 1a — Testcontainers-Infra + erste RLS-Integration-Tests
-- [ ] Block A #1 Slice 1b — Pact Consumer-Driven-Contracts (web ↔ api)
-- [ ] Block A #1 Slice 1c — Vitest 80% Coverage, Playwright E2E 5 Golden-Paths
+- [x] Block A #1 Slice 1b — Pact Consumer-Contracts (web)
+- [x] Block A #1 Slice 1c — Pact Provider-Verify (api)
+- [ ] Block A #1 Slice 1d — Playwright E2E 5 Golden-Paths
+- [ ] Block A #1 Slice 1e — axe-core a11y-Gate
 - [ ] Block A #2 OpenTelemetry
 - [ ] Block A #3 Outbox-Pattern
-- [ ] Block A #4 Rate-Limiting auf /v1/public/*
+- [x] Block A #4 Rate-Limiting auf /v1/public/*
 - [ ] Block A #5 Server-Idempotency-Dedupe (Redis)
 - [ ] Block A #6 WorkOS-Magic-Link-Auth
-- [ ] Block A #7 a11y-Gate (axe-core in Playwright)
 
 ## Block A — Fortschritts-Log
 
@@ -45,6 +46,16 @@
   appliziert Migrations auf Postgres-Service und verifiziert alle Interaktionen
 - ⚠️  Lokal nicht smoke-getestet (Sandbox ohne Docker-Daemon) — CI validiert
   den Gesamt-Pfad web→api end-to-end
+
+### 2026-04-21 — Block A #4: Rate-Limiting
+- ✅ `@fastify/rate-limit@10` in `apps/api`, global via `app.register()` in
+  `main.ts` mit `allowList`-Funktion → limitiert nur `/v1/public/*` +
+  `/public/*`, Admin-Routen bleiben frei
+- ✅ 60 req/min/IP Default, via `PUBLIC_RATE_LIMIT_MAX` override-bar
+- ✅ 429-Response als RFC-7807 ProblemDetails
+  (`type/title/status/detail`)
+- ✅ 3 Unit-Tests (`rate-limit.test.ts`): limitiert public, lässt admin
+  durch, liefert Problem-Payload
 
 ## P0-Bugfix-Run (2026-04-20)
 - ✅ **P0-01 Business-Hours-Bug** — Booking-Seite zeigte alle Tage „geschlossen"; Slot-Generator ignorierte openingHours. Fix in `fix/p0-01-business-hours`, merged in main. Web-Parser handelt jetzt Array-of-Intervals-Shape, API availability() respektiert openingHours + TZ (DST-sicher via Intl.DateTimeFormat). Fallback „Öffnungszeiten auf Anfrage" wenn kein Datensatz. Follow-up-Hotfix: TS2538 weekday-index non-null.
