@@ -99,7 +99,7 @@ export default async function NewAppointmentPage({
       <Card>
         <CardBody>
           <form action={createAppointment} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Datum" required>
                 <Input type="date" name="date" defaultValue={day} required />
               </Field>

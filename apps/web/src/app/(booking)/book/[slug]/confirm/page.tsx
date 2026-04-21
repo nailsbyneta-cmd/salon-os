@@ -235,7 +235,7 @@ export default async function BookingConfirm({
       <Card>
         <CardBody>
           <form action={onSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Vorname" required>
                 <Input required name="firstName" autoComplete="given-name" />
               </Field>

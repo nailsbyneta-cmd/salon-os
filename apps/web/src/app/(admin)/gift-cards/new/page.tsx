@@ -27,7 +27,7 @@ export default function NewGiftCardPage(): React.JSX.Element {
       <Card>
         <CardBody>
           <form action={issueGiftCard} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Betrag (CHF)" required>
                 <Input
                   type="number"
@@ -47,7 +47,7 @@ export default function NewGiftCardPage(): React.JSX.Element {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Empfängerin (optional)">
                 <Input name="recipientName" placeholder="z. B. Sarah Müller" />
               </Field>

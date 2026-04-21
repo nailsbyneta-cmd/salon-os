@@ -27,7 +27,7 @@ export default function NewProductPage(): React.JSX.Element {
               <Input name="name" required placeholder="z. B. Wella Blondor 400 g" />
             </Field>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Marke">
                 <Input name="brand" placeholder="Wella" />
               </Field>
@@ -36,7 +36,7 @@ export default function NewProductPage(): React.JSX.Element {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Typ">
                 <Select name="type" defaultValue="RETAIL">
                   <option value="RETAIL">Retail (Verkauf)</option>
@@ -49,7 +49,7 @@ export default function NewProductPage(): React.JSX.Element {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Einkaufspreis (CHF)">
                 <Input type="number" name="costCHF" min={0} step="0.01" defaultValue={0} />
               </Field>
@@ -58,7 +58,7 @@ export default function NewProductPage(): React.JSX.Element {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Aktueller Bestand" required>
                 <Input type="number" name="stockLevel" min={0} step="1" defaultValue={1} required />
               </Field>

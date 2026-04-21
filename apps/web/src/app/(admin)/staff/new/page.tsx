@@ -23,7 +23,7 @@ export default function NewStaffPage(): React.JSX.Element {
       <Card>
         <CardBody>
           <form action={createStaff} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Vorname" required>
                 <Input name="firstName" required />
               </Field>
@@ -32,7 +32,7 @@ export default function NewStaffPage(): React.JSX.Element {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="E-Mail" required>
                 <Input type="email" name="email" required />
               </Field>
@@ -41,7 +41,7 @@ export default function NewStaffPage(): React.JSX.Element {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Rolle">
                 <Select name="role" defaultValue="STYLIST">
                   <option value="OWNER">Inhaberin</option>
