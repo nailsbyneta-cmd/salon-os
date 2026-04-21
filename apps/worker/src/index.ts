@@ -102,11 +102,13 @@ async function processReminder(job: Job<ReminderJob>): Promise<void> {
   const cancelToken = signSelfServiceToken({
     action: 'cancel',
     appointmentId: appt.id,
+    tenantId: appt.tenantId,
     expiresAt,
   });
   const rescheduleToken = signSelfServiceToken({
     action: 'reschedule',
     appointmentId: appt.id,
+    tenantId: appt.tenantId,
     expiresAt,
   });
   const cancelUrl = `${webBaseUrl}/appointment/${appt.id}?t=${cancelToken}`;

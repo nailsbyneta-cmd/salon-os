@@ -1,18 +1,34 @@
 /**
  * HMAC-signierte URL-Tokens für Self-Service (Cancel / Reschedule).
  * Format: base64url(payload).base64url(hmacSha256(payload))
- * Payload: `${action}:${appointmentId}:${expiresAtUnix}`
+ * Payload: `${action}:${appointmentId}:${tenantId}:${expiresAtUnix}`
  *
- * Secret kommt aus env SELF_SERVICE_SECRET. In Dev ohne Secret
- * fallback auf festen String (Warnung loggt wer auch immer den
- * Service initialisiert — NICHT in Prod einsetzen).
+ * Secret kommt aus env SELF_SERVICE_SECRET.
+ * - Prod ohne Secret → werfen (kein stiller Fallback).
+ * - Dev/Test → expliziter Fallback mit Warnung.
  */
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 type Action = 'cancel' | 'reschedule';
 
 function getSecret(): string {
-  return process.env['SELF_SERVICE_SECRET'] ?? 'dev-secret-do-not-use-in-prod';
+  const secret = process.env['SELF_SERVICE_SECRET'];
+  if (secret && secret.length >= 16) return secret;
+  const env = process.env['NODE_ENV'];
+  if (env === 'production') {
+    throw new Error(
+      'SELF_SERVICE_SECRET fehlt oder zu kurz (min. 16 Zeichen) — Pflicht in Produktion.',
+    );
+  }
+  // Dev/Test: einmalige Warnung, fester Fallback.
+  if (!process.env['__SSS_WARNED']) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[tokens] SELF_SERVICE_SECRET nicht gesetzt — dev-fallback aktiv. NICHT in Prod.',
+    );
+    process.env['__SSS_WARNED'] = '1';
+  }
+  return 'dev-secret-do-not-use-in-prod';
 }
 
 function b64url(s: string | Buffer): string {
@@ -27,9 +43,10 @@ function b64urlDecode(s: string): Buffer {
 export function signSelfServiceToken(args: {
   action: Action;
   appointmentId: string;
+  tenantId: string;
   expiresAt: Date;
 }): string {
-  const payload = `${args.action}:${args.appointmentId}:${Math.floor(args.expiresAt.getTime() / 1000)}`;
+  const payload = `${args.action}:${args.appointmentId}:${args.tenantId}:${Math.floor(args.expiresAt.getTime() / 1000)}`;
   const sig = createHmac('sha256', getSecret()).update(payload).digest();
   return `${b64url(payload)}.${b64url(sig)}`;
 }
@@ -37,6 +54,7 @@ export function signSelfServiceToken(args: {
 export function verifySelfServiceToken(token: string): {
   action: Action;
   appointmentId: string;
+  tenantId: string;
   expiresAt: Date;
 } | null {
   const parts = token.split('.');
@@ -62,13 +80,19 @@ export function verifySelfServiceToken(token: string): {
   if (!timingSafeEqual(provided, expected)) return null;
 
   const payloadParts = payload.split(':');
-  if (payloadParts.length !== 3) return null;
-  const [action, appointmentId, expiresAtStr] = payloadParts as [Action, string, string];
+  if (payloadParts.length !== 4) return null;
+  const [action, appointmentId, tenantId, expiresAtStr] = payloadParts as [
+    Action,
+    string,
+    string,
+    string,
+  ];
   if (action !== 'cancel' && action !== 'reschedule') return null;
+  if (!appointmentId || !tenantId) return null;
   const expiresAtSec = Number(expiresAtStr);
   if (!Number.isFinite(expiresAtSec)) return null;
   const expiresAt = new Date(expiresAtSec * 1000);
   if (expiresAt.getTime() < Date.now()) return null;
 
-  return { action, appointmentId, expiresAt };
+  return { action, appointmentId, tenantId, expiresAt };
 }

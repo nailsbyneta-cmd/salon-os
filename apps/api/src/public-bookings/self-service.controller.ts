@@ -34,7 +34,11 @@ export class SelfServiceController {
     private readonly reminders: RemindersService,
   ) {}
 
-  private resolveToken(token: string, expectedAction: 'cancel' | 'reschedule', appointmentId: string): void {
+  private resolveToken(
+    token: string,
+    expectedAction: 'cancel' | 'reschedule',
+    appointmentId: string,
+  ): { tenantId: string } {
     const payload = verifySelfServiceToken(token);
     if (!payload) throw new BadRequestException('Token ungültig oder abgelaufen.');
     if (payload.action !== expectedAction) {
@@ -43,6 +47,7 @@ export class SelfServiceController {
     if (payload.appointmentId !== appointmentId) {
       throw new BadRequestException('Token-Appointment passt nicht.');
     }
+    return { tenantId: payload.tenantId };
   }
 
   /** Kunde lädt ihre Termin-Daten (lesbar mit Token). */
@@ -57,7 +62,7 @@ export class SelfServiceController {
       throw new BadRequestException('Token ungültig oder abgelaufen.');
     }
     const appt = await this.prisma.appointment.findFirst({
-      where: { id },
+      where: { id, tenantId: payload.tenantId },
       include: {
         client: { select: { firstName: true, lastName: true } },
         staff: { select: { firstName: true, lastName: true } },
@@ -96,7 +101,7 @@ export class SelfServiceController {
       throw new BadRequestException('Token ungültig oder abgelaufen.');
     }
     const appt = await this.prisma.appointment.findFirst({
-      where: { id },
+      where: { id, tenantId: payload.tenantId },
       include: {
         items: { include: { service: { select: { name: true } } } },
         staff: { select: { firstName: true, lastName: true } },
@@ -134,8 +139,10 @@ export class SelfServiceController {
     @Query('t') token: string,
   ): Promise<{ ok: true }> {
     if (!token) throw new BadRequestException('Token fehlt.');
-    this.resolveToken(token, 'cancel', id);
-    const existing = await this.prisma.appointment.findFirst({ where: { id } });
+    const { tenantId } = this.resolveToken(token, 'cancel', id);
+    const existing = await this.prisma.appointment.findFirst({
+      where: { id, tenantId },
+    });
     if (!existing) throw new NotFoundException('Termin nicht gefunden.');
     if (existing.status === 'CANCELLED') return { ok: true };
     await this.prisma.appointment.update({
@@ -158,8 +165,10 @@ export class SelfServiceController {
     @Body(new ZodValidationPipe(rescheduleSchema)) body: z.infer<typeof rescheduleSchema>,
   ): Promise<{ ok: true; startAt: string; endAt: string }> {
     if (!token) throw new BadRequestException('Token fehlt.');
-    this.resolveToken(token, 'reschedule', id);
-    const existing = await this.prisma.appointment.findFirst({ where: { id } });
+    const { tenantId } = this.resolveToken(token, 'reschedule', id);
+    const existing = await this.prisma.appointment.findFirst({
+      where: { id, tenantId },
+    });
     if (!existing) throw new NotFoundException('Termin nicht gefunden.');
     const newStart = new Date(body.startAt);
     const durationMs = existing.endAt.getTime() - existing.startAt.getTime();
