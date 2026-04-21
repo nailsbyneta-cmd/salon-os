@@ -179,9 +179,63 @@ export default async function AppointmentDetailPage({
             {a.client ? (
               <>
                 <p className="mt-2 text-sm text-text-primary">
-                  {a.client.email ?? '—'}
+                  {a.client.email ? (
+                    <a
+                      href={`mailto:${a.client.email}`}
+                      className="hover:text-accent hover:underline"
+                    >
+                      {a.client.email}
+                    </a>
+                  ) : (
+                    '—'
+                  )}
                 </p>
-                <p className="text-sm text-text-muted">{a.client.phone ?? ''}</p>
+                {a.client.phone ? (
+                  <p className="text-sm text-text-muted">
+                    <a
+                      href={`tel:${a.client.phone}`}
+                      className="hover:text-accent hover:underline"
+                    >
+                      {a.client.phone}
+                    </a>
+                  </p>
+                ) : null}
+                {a.client.phone || a.client.email ? (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {a.client.phone ? (
+                      <>
+                        <a
+                          href={`tel:${a.client.phone}`}
+                          className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                        >
+                          📞 Anrufen
+                        </a>
+                        <a
+                          href={`sms:${a.client.phone}`}
+                          className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                        >
+                          💬 SMS
+                        </a>
+                        <a
+                          href={`https://wa.me/${a.client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
+                          target="_blank"
+                          rel="noopener"
+                          className="inline-flex h-8 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-2.5 text-[11px] font-medium text-success transition-colors hover:bg-success/20"
+                        >
+                          WhatsApp
+                        </a>
+                      </>
+                    ) : null}
+                    {a.client.email ? (
+                      <a
+                        href={`mailto:${a.client.email}`}
+                        className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                      >
+                        ✉ E-Mail
+                      </a>
+                    ) : null}
+                  </div>
+                ) : null}
               </>
             ) : (
               <p className="mt-2 text-sm text-text-muted">Keine Kundinnendaten.</p>
