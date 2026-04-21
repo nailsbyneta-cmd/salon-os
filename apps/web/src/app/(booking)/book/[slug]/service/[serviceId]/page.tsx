@@ -177,7 +177,7 @@ export default async function BookingSlots({
                   href={`/book/${slug}/service/${serviceId}?location=${location}&date=${d.iso}`}
                   aria-disabled={!open}
                   className={cn(
-                    'flex min-w-[68px] flex-col items-center rounded-md border px-3 py-2 text-center transition-colors',
+                    'flex min-w-[44px] flex-col items-center rounded-md border px-2 py-2 text-center transition-colors sm:min-w-[68px] sm:px-3',
                     active
                       ? 'border-accent bg-accent text-accent-foreground shadow-sm'
                       : open

@@ -32,10 +32,11 @@ const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
 export async function apiFetch<T>(path: string, opts: ApiOptions): Promise<T> {
   const method = opts.method ?? 'GET';
+  const hasBody = opts.body !== undefined;
   const headers: Record<string, string> = {
-    'content-type': 'application/json',
     'x-tenant-id': opts.tenantId,
   };
+  if (hasBody) headers['content-type'] = 'application/json';
   if (opts.userId) headers['x-user-id'] = opts.userId;
   if (opts.role) headers['x-role'] = opts.role;
 
@@ -47,7 +48,7 @@ export async function apiFetch<T>(path: string, opts: ApiOptions): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers,
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    body: hasBody ? JSON.stringify(opts.body) : undefined,
     cache: 'no-store',
   });
 
