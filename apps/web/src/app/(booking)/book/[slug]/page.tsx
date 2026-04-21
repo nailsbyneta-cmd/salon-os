@@ -621,7 +621,22 @@ export default async function BookingStart({
         </section>
       ) : null}
 
-      <footer className="pt-6 text-center text-[11px] tracking-wider text-text-muted">
+      <footer className="space-y-2 pt-6 text-center text-[11px] tracking-wider text-text-muted">
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link
+            href={`/book/${slug}/impressum`}
+            className="hover:text-text-primary"
+          >
+            Impressum
+          </Link>
+          <span>·</span>
+          <Link
+            href={`/book/${slug}/datenschutz`}
+            className="hover:text-text-primary"
+          >
+            Datenschutz
+          </Link>
+        </div>
         <div>
           Powered by <span className="font-semibold">SALON OS</span>
         </div>
