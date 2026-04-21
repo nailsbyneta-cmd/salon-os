@@ -170,7 +170,7 @@ export default async function AppointmentDetailPage({
         />
       ) : null}
 
-      <section className="mb-6 grid grid-cols-2 gap-4">
+      <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card>
           <CardBody>
             <p className="text-xs font-medium uppercase tracking-wider text-text-muted">

@@ -174,7 +174,7 @@ export default async function ClientDetailPage({
         </div>
       </header>
 
-      <section className="mb-8 grid grid-cols-3 gap-4">
+      <section className="mb-8 grid grid-cols-3 gap-3 md:gap-4">
         <Stat label="Besuche" value={client.totalVisits} />
         <Stat
           label="Umsatz total"
