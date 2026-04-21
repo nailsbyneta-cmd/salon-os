@@ -127,7 +127,7 @@ export default async function StaffShiftsPage({
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Arbeitszeiten
           </p>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             {staff.firstName} {staff.lastName}
           </h1>
         </div>
@@ -170,7 +170,7 @@ export default async function StaffShiftsPage({
             <p className="mb-4 text-sm font-medium text-text-primary">
               Einzelne Schicht hinzufügen
             </p>
-            <div className="grid grid-cols-[1.2fr_1fr_1fr_auto] items-end gap-3">
+            <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-[1.2fr_1fr_1fr_auto]">
               <label className="flex flex-col gap-1 text-xs">
                 <span className="font-medium text-text-secondary">Datum</span>
                 <Input

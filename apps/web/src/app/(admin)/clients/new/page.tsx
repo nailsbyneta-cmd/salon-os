@@ -15,7 +15,7 @@ export default function NewClientPage(): React.JSX.Element {
         <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
           CRM
         </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+        <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           Neue Kundin
         </h1>
       </header>

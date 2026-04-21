@@ -259,7 +259,7 @@ export default async function ReportsPage({
         <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
           Reports
         </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+        <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           {PERIODS[periodKey].label}
         </h1>
         <p className="mt-1 text-sm text-text-secondary">

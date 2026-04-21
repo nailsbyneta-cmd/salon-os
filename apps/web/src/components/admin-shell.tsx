@@ -124,9 +124,9 @@ export function AdminShell({
   return (
     <div className="grid min-h-screen grid-cols-1 bg-background text-text-primary md:grid-cols-[240px_1fr]">
       {/* Mobile Top-Bar */}
-      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/80 px-4 py-3 backdrop-blur-md md:hidden">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-accent to-brand text-brand-foreground text-sm font-bold">
+      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/80 px-4 py-2.5 backdrop-blur-md md:hidden">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-accent to-brand text-brand-foreground text-xs font-bold">
             S
           </div>
           <div>
@@ -135,7 +135,7 @@ export function AdminShell({
               Beautycenter
             </div>
           </div>
-        </div>
+        </Link>
         <button
           type="button"
           onClick={() => setNavOpen((v) => !v)}

@@ -15,7 +15,7 @@ export default function ClientsImportPage(): React.JSX.Element {
         <p className="mt-2 text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
           Migration
         </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+        <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           CSV importieren
         </h1>
         <p className="mt-1 text-sm text-text-secondary">

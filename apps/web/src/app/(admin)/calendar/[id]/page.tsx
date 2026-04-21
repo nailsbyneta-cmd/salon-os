@@ -136,7 +136,7 @@ export default async function AppointmentDetailPage({
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Termin
           </p>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             {a.client ? (
               <Link
                 href={`/clients/${a.client.id}`}
