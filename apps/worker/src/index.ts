@@ -379,8 +379,19 @@ setInterval(() => {
   console.log(`[worker] heartbeat ${new Date().toISOString()}`);
 }, 60_000);
 
+// Outbox-Poller: liest unpublished outbox_events und routet sie auf
+// die passenden BullMQ-Queues. Einzige Producer-Seite für Events, die
+// transaktions-sicher sein müssen (Block A #3).
+const { startOutboxPoller } = await import('./outbox-poller.js');
+const stopOutbox = startOutboxPoller({
+  reminders: remindersQueueProducer,
+  marketing: marketingQueue,
+});
+console.log('[worker][outbox] poller started');
+
 async function shutdown(): Promise<void> {
   console.log('[worker] shutting down…');
+  await stopOutbox();
   await Promise.all([
     worker.close(),
     marketingWorker.close(),

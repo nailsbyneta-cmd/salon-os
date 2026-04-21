@@ -11,7 +11,7 @@
 - [ ] Block A #1 Slice 1d — Playwright E2E 5 Golden-Paths
 - [ ] Block A #1 Slice 1e — axe-core a11y-Gate
 - [ ] Block A #2 OpenTelemetry
-- [ ] Block A #3 Outbox-Pattern
+- [x] Block A #3 Outbox-Pattern (Infra + Poller; Producer-Migration inkrementell)
 - [x] Block A #4 Rate-Limiting auf /v1/public/*
 - [x] Block A #5 Server-Idempotency-Dedupe (Redis)
 - [ ] Block A #6 WorkOS-Magic-Link-Auth
@@ -46,6 +46,18 @@
   appliziert Migrations auf Postgres-Service und verifiziert alle Interaktionen
 - ⚠️  Lokal nicht smoke-getestet (Sandbox ohne Docker-Daemon) — CI validiert
   den Gesamt-Pfad web→api end-to-end
+
+### 2026-04-21 — Block A #3: Outbox-Pattern (Infra)
+- ✅ Migration `0009_outbox` + Prisma-Model `OutboxEvent` mit Partial-Index
+  auf `WHERE publishedAt IS NULL` (O(log n) auch bei Millionen Rows)
+- ✅ `apps/api/src/outbox/OutboxService.emit()`: schreibt Event INNERHALB
+  der Caller-Transaktion → Atomarität zwischen Business-Change und Event
+- ✅ `apps/worker/src/outbox-poller.ts`: `FOR UPDATE SKIP LOCKED`-Polling
+  mit exponential backoff + attempts-Cap, routet `reminder.*` →
+  Reminders-Queue und `marketing.*` → Marketing-Queue
+- ✅ 6 Unit-Tests (3 Service, 3 Poller-Dispatch) grün
+- 🔜 Producer-Migration inkrementell: `RemindersService.sendConfirmationNow()`
+  und Marketing-Jobs ziehen im nächsten Slice auf Outbox um
 
 ### 2026-04-21 — Block A #5: Idempotency-Dedupe
 - ✅ `IdempotencyInterceptor` als globaler APP_INTERCEPTOR: Write-Requests

@@ -24,6 +24,7 @@ export type {
   Shift,
   TimeOff,
   AuditLog,
+  OutboxEvent,
   GiftCard,
   WaitlistEntry,
   Product,

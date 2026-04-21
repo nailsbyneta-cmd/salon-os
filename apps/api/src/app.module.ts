@@ -6,6 +6,7 @@ import { ClientsModule } from './clients/clients.module.js';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter.js';
 import { IdempotencyModule } from './common/idempotency/idempotency.module.js';
 import { DbModule } from './db/db.module.js';
+import { OutboxModule } from './outbox/outbox.module.js';
 import { HealthController } from './health/health.controller.js';
 import { GiftCardsModule } from './gift-cards/gift-cards.module.js';
 import { LocationsModule } from './locations/locations.module.js';
@@ -25,6 +26,7 @@ import { WaitlistModule } from './waitlist/waitlist.module.js';
   imports: [
     DbModule,
     IdempotencyModule,
+    OutboxModule,
     TenantModule,
     AuditModule,
     LocationsModule,
