@@ -103,6 +103,21 @@ export default async function ClientDetailPage({
   const past = appts.filter((a) => new Date(a.startAt) < new Date());
   const loyalty = computeLoyalty(Number(client.totalSpent));
 
+  // Top-3 Service-Präferenzen — nur aus COMPLETED-Terminen zählen, storniert
+  // + no-show ignorieren (sind kein ehrliches Signal für 'mag diesen Service').
+  // Alle Services des Termins zählen (multi-item Checkout).
+  const serviceCounts = new Map<string, number>();
+  for (const a of past) {
+    if (a.status !== 'COMPLETED') continue;
+    for (const item of a.items) {
+      const key = item.service.name;
+      serviceCounts.set(key, (serviceCounts.get(key) ?? 0) + 1);
+    }
+  }
+  const topServices = Array.from(serviceCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8">
       <Link
@@ -294,6 +309,29 @@ export default async function ClientDetailPage({
           </CardBody>
         )}
       </Card>
+
+      {topServices.length > 0 ? (
+        <Card className="mb-8">
+          <CardBody>
+            <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+              Am häufigsten gebucht
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {topServices.map(([name, count]) => (
+                <li
+                  key={name}
+                  className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm"
+                >
+                  <span className="font-medium text-text-primary">{name}</span>
+                  <span className="text-xs tabular-nums text-text-muted">
+                    {count}×
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
+      ) : null}
 
       {upcoming.length > 0 ? (
         <section className="mb-8">
