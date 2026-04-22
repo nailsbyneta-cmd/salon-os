@@ -13,6 +13,16 @@ interface BirthdayClient {
   birthday: string;
 }
 
+interface WinBackClient {
+  id: string;
+  firstName: string;
+  lastName: string;
+  lastVisitAt: string;
+  totalVisits: number;
+  lifetimeValue: number;
+  phoneE164: string | null;
+}
+
 interface Dashboard {
   servicesCount: number;
   staffCount: number;
@@ -22,6 +32,7 @@ interface Dashboard {
   waitlistCount: number;
   lowStockCount: number;
   birthdaysToday: BirthdayClient[];
+  winBack: WinBackClient[];
   zurichYear: string;
   todayAppts: Array<{
     id: string;
@@ -70,6 +81,11 @@ async function loadDashboard(): Promise<Dashboard> {
           firstName: string;
           lastName: string;
           birthday: string | null;
+          lastVisitAt: string | null;
+          totalVisits: number;
+          lifetimeValue: string | number;
+          phone: string | null;
+          phoneE164: string | null;
         }>;
       }>('/v1/clients?limit=1000', auth),
       { clients: [] },
@@ -122,6 +138,33 @@ async function loadDashboard(): Promise<Dashboard> {
   const zMonth = zurichParts.find((p) => p.type === 'month')?.value ?? '';
   const zDay = zurichParts.find((p) => p.type === 'day')?.value ?? '';
   const mmdd = `${zMonth}-${zDay}`;
+  // Win-Back-Liste: Stammkundinnen (>=5 Besuche, Lifetime >=300 CHF), die
+  // seit 90+ Tagen nicht mehr da waren. Max 12, sortiert nach Lifetime DESC.
+  // Neta ruft die persönlich durch — höheres Convert-Rate als Massen-Email.
+  const WIN_BACK_CUTOFF_MS = 90 * 24 * 60 * 60 * 1000;
+  const winBackNow = Date.now();
+  const winBack: WinBackClient[] = cli.clients
+    .filter((c) => {
+      if (!c.lastVisitAt) return false;
+      if (c.totalVisits < 5) return false;
+      const ltv = Number(c.lifetimeValue);
+      if (!Number.isFinite(ltv) || ltv < 300) return false;
+      const lastMs = new Date(c.lastVisitAt).getTime();
+      if (!Number.isFinite(lastMs)) return false;
+      return winBackNow - lastMs > WIN_BACK_CUTOFF_MS;
+    })
+    .map((c) => ({
+      id: c.id,
+      firstName: c.firstName,
+      lastName: c.lastName,
+      lastVisitAt: c.lastVisitAt as string,
+      totalVisits: c.totalVisits,
+      lifetimeValue: Number(c.lifetimeValue),
+      phoneE164: c.phoneE164,
+    }))
+    .sort((a, b) => b.lifetimeValue - a.lifetimeValue)
+    .slice(0, 12);
+
   const birthdaysToday: BirthdayClient[] = cli.clients
     .filter((c): c is { id: string; firstName: string; lastName: string; birthday: string } =>
       Boolean(c.birthday) &&
@@ -166,6 +209,7 @@ async function loadDashboard(): Promise<Dashboard> {
     lowStockCount: lowStock.products.length,
     todayAppts: appts.appointments,
     birthdaysToday,
+    winBack,
     zurichYear: zYear,
   };
 }
@@ -516,6 +560,73 @@ export default async function Home(): Promise<React.JSX.Element> {
             {riskToConfirm.length > 5 ? (
               <p className="mt-3 text-xs text-text-muted">
                 +{riskToConfirm.length - 5} weitere — im Kalender sichtbar.
+              </p>
+            ) : null}
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {d.winBack.length > 0 ? (
+        <Card className="mb-4" elevation="flat">
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
+            <h2 className="text-sm font-semibold">
+              Vermisste Stammkundinnen · {d.winBack.length}
+            </h2>
+            <span className="text-xs text-text-muted">
+              keine Besuche in 90+ Tagen
+            </span>
+          </div>
+          <CardBody className="p-0">
+            <ul className="divide-y divide-border">
+              {d.winBack.slice(0, 6).map((w) => {
+                const daysAway = Math.floor(
+                  (now.getTime() - new Date(w.lastVisitAt).getTime()) /
+                    86_400_000,
+                );
+                const waDigits = w.phoneE164
+                  ? w.phoneE164.replace(/^\+/, '')
+                  : null;
+                return (
+                  <li
+                    key={w.id}
+                    className="flex flex-wrap items-center gap-3 px-5 py-3"
+                  >
+                    <Link
+                      href={`/clients/${w.id}`}
+                      className="min-w-0 flex-1 hover:underline"
+                    >
+                      <div className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
+                        <span className="min-w-0 truncate">
+                          {w.firstName} {w.lastName}
+                        </span>
+                      </div>
+                      <div className="truncate text-xs text-text-muted">
+                        Letzter Besuch vor {daysAway} Tagen · {w.totalVisits}{' '}
+                        Besuche ·{' '}
+                        {w.lifetimeValue.toLocaleString('de-CH', {
+                          maximumFractionDigits: 0,
+                        })}{' '}
+                        CHF
+                      </div>
+                    </Link>
+                    {waDigits ? (
+                      <a
+                        href={`https://wa.me/${waDigits}`}
+                        target="_blank"
+                        rel="noopener"
+                        className="inline-flex h-10 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success hover:bg-success/20 md:h-9"
+                        aria-label={`${w.firstName} ${w.lastName} auf WhatsApp anschreiben`}
+                      >
+                        WA
+                      </a>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+            {d.winBack.length > 6 ? (
+              <p className="px-5 py-3 text-xs text-text-muted">
+                +{d.winBack.length - 6} weitere — in Kundinnen-Liste sichtbar.
               </p>
             ) : null}
           </CardBody>
