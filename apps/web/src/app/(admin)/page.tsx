@@ -22,6 +22,7 @@ interface Dashboard {
   waitlistCount: number;
   lowStockCount: number;
   birthdaysToday: BirthdayClient[];
+  zurichYear: string;
   todayAppts: Array<{
     id: string;
     startAt: string;
@@ -106,10 +107,21 @@ async function loadDashboard(): Promise<Dashboard> {
 
   // Heutige Geburtstage — clientseitig filtern, weil die API keinen MM-DD-
   // Filter anbietet. Neta's Salon hat <2000 Kundinnen, Payload <500 KB.
-  const today = new Date();
-  const mmdd = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(
-    today.getDate(),
-  ).padStart(2, '0')}`;
+  // WICHTIG: Datum in Europe/Zurich ermitteln — der API-Server läuft UTC,
+  // und 22:00-24:00 CH wäre sonst schon der Folgetag (Geburtstage falsch).
+  // Prisma-`@db.Date` serialisiert birthday als "YYYY-MM-DDT00:00:00.000Z";
+  // slice(5,10) extrahiert konsistent MM-DD aus dem UTC-ISO, was zum UTC-
+  // gespeicherten Date passt.
+  const zurichParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Zurich',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const zYear = zurichParts.find((p) => p.type === 'year')?.value ?? '';
+  const zMonth = zurichParts.find((p) => p.type === 'month')?.value ?? '';
+  const zDay = zurichParts.find((p) => p.type === 'day')?.value ?? '';
+  const mmdd = `${zMonth}-${zDay}`;
   const birthdaysToday: BirthdayClient[] = cli.clients
     .filter((c): c is { id: string; firstName: string; lastName: string; birthday: string } =>
       Boolean(c.birthday) &&
@@ -154,21 +166,19 @@ async function loadDashboard(): Promise<Dashboard> {
     lowStockCount: lowStock.products.length,
     todayAppts: appts.appointments,
     birthdaysToday,
+    zurichYear: zYear,
   };
 }
 
-function ageToday(birthday: string): number | null {
-  // birthday im Format "YYYY-MM-DD" oder ISO-Datetime.
+function ageToday(birthday: string, zurichYear: string): number | null {
+  // birthday im Format "YYYY-MM-DD" oder ISO-Datetime — MM-DD-Filter hat
+  // bereits heute=birthday erzwungen, also nur die Jahres-Differenz.
   const iso = birthday.slice(0, 10);
-  const [y, m, d] = iso.split('-').map(Number);
-  if (!y || !m || !d) return null;
-  const now = new Date();
-  let age = now.getFullYear() - y;
-  const curMMDD = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(
-    now.getDate(),
-  ).padStart(2, '0')}`;
-  const bdayMMDD = `${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-  if (bdayMMDD > curMMDD) age -= 1;
+  const [y] = iso.split('-').map(Number);
+  if (!y) return null;
+  const curYear = Number(zurichYear);
+  if (!Number.isFinite(curYear)) return null;
+  const age = curYear - y;
   return age >= 0 && age < 150 ? age : null;
 }
 
@@ -374,7 +384,7 @@ export default async function Home(): Promise<React.JSX.Element> {
             </div>
             <ul className="flex flex-wrap gap-2">
               {d.birthdaysToday.slice(0, 8).map((b) => {
-                const age = ageToday(b.birthday);
+                const age = ageToday(b.birthday, d.zurichYear);
                 return (
                   <li key={b.id}>
                     <Link
