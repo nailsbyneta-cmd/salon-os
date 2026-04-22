@@ -70,8 +70,10 @@ export class AppointmentsService {
           items: { include: { service: { select: { name: true } } } },
           client: {
             select: {
+              id: true,
               firstName: true,
               lastName: true,
+              phone: true,
               noShowRisk: true,
               lifetimeValue: true,
             },

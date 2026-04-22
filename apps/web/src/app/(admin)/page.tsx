@@ -17,7 +17,14 @@ interface Dashboard {
     startAt: string;
     endAt: string;
     status: string;
-    client: { firstName: string; lastName: string } | null;
+    client: {
+      id?: string;
+      firstName: string;
+      lastName: string;
+      phone?: string | null;
+      noShowRisk?: string | number | null;
+      lifetimeValue?: string | number | null;
+    } | null;
     staff: { firstName: string; lastName: string; color: string | null };
     items: Array<{ service: { name: string }; price: string }>;
   }>;
@@ -135,6 +142,15 @@ export default async function Home(): Promise<React.JSX.Element> {
   const upcoming = activeAppts
     .filter((a) => new Date(a.startAt) >= now && a.status !== 'IN_SERVICE')
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+
+  // „Heute zu bestätigen": bevorstehende Termine mit noShowRisk >= 25 die
+  // noch nicht bestätigt sind — Neta ruft sie morgen früh persönlich durch.
+  const riskToConfirm = upcoming.filter((a) => {
+    if (a.status !== 'BOOKED') return false;
+    const risk =
+      a.client?.noShowRisk != null ? Number(a.client.noShowRisk) : NaN;
+    return Number.isFinite(risk) && risk >= 25;
+  });
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-8">
@@ -287,6 +303,102 @@ export default async function Home(): Promise<React.JSX.Element> {
                 );
               })}
             </ul>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {riskToConfirm.length > 0 ? (
+        <Card className="mb-4 border-l-4 border-l-warning bg-warning/5" elevation="flat">
+          <CardBody>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-warning">
+                ⚠ Heute zu bestätigen · {riskToConfirm.length}{' '}
+                {riskToConfirm.length === 1 ? 'Termin' : 'Termine'}
+              </span>
+            </div>
+            <p className="mb-3 text-xs text-text-secondary">
+              Kundinnen mit erhöhtem No-Show-Risiko — kurz anrufen oder WhatsApp
+              schreiben, dann via „Bestätigen" markieren.
+            </p>
+            <ul className="space-y-2">
+              {riskToConfirm.slice(0, 5).map((a) => {
+                const client = a.client;
+                if (!client) return null;
+                const clientName = `${client.firstName} ${client.lastName}`;
+                const risk = Math.round(Number(client.noShowRisk));
+                const riskTone = risk >= 40 ? 'bg-danger' : 'bg-warning';
+                const phoneClean = client.phone
+                  ? client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
+                  : null;
+                return (
+                  <li key={a.id}>
+                    <div className="flex flex-wrap items-center gap-3 rounded-md bg-surface px-3 py-2.5">
+                      <span className="w-14 shrink-0 text-sm font-semibold tabular-nums text-text-primary">
+                        {new Date(a.startAt).toLocaleTimeString('de-CH', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                      <Link
+                        href={`/calendar/${a.id}`}
+                        className="min-w-0 flex-1 hover:underline"
+                      >
+                        <div className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
+                          <span
+                            className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold leading-none text-white ${riskTone}`}
+                            title={`No-Show-Risiko ${risk}%`}
+                            aria-hidden="true"
+                          >
+                            !
+                          </span>
+                          <span className="min-w-0 truncate">{clientName}</span>
+                          <span className="shrink-0 text-xs text-text-muted tabular-nums">
+                            {risk}%
+                          </span>
+                        </div>
+                        <div className="truncate text-xs text-text-muted">
+                          {a.items.map((i) => i.service.name).join(', ')} ·{' '}
+                          {a.staff.firstName}
+                        </div>
+                      </Link>
+                      <div className="flex shrink-0 gap-1.5">
+                        {client.phone ? (
+                          <>
+                            <a
+                              href={`tel:${client.phone}`}
+                              className="inline-flex h-9 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-xs font-medium text-text-secondary hover:bg-surface-raised hover:text-text-primary"
+                              aria-label={`${clientName} anrufen`}
+                            >
+                              📞
+                            </a>
+                            {phoneClean ? (
+                              <a
+                                href={`https://wa.me/${phoneClean}`}
+                                target="_blank"
+                                rel="noopener"
+                                className="inline-flex h-9 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-2.5 text-xs font-medium text-success hover:bg-success/20"
+                                aria-label={`${clientName} auf WhatsApp schreiben`}
+                              >
+                                WA
+                              </a>
+                            ) : null}
+                          </>
+                        ) : (
+                          <span className="text-[11px] text-text-muted">
+                            keine Nummer
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {riskToConfirm.length > 5 ? (
+              <p className="mt-3 text-xs text-text-muted">
+                +{riskToConfirm.length - 5} weitere — im Kalender sichtbar.
+              </p>
+            ) : null}
           </CardBody>
         </Card>
       ) : null}

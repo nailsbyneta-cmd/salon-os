@@ -28,8 +28,10 @@ export interface DndAppt {
   clientId: string | null;
   staffId: string;
   client: {
+    id?: string;
     firstName: string;
     lastName: string;
+    phone?: string | null;
     // Prisma-Decimal-Spalten kommen als string ('42.50') im JSON, Number()
     // toleriert beide Formate. UI nutzt lifetimeValue für VIP-Heuristik
     // (analog zu /clients?filter=vip: lifetimeValue >= 2000).
