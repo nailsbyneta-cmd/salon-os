@@ -15,6 +15,8 @@ interface Product {
   retailCents: number;
   stockLevel: number;
   reorderAt: number;
+  reorderQty?: number | null;
+  supplier?: string | null;
 }
 
 async function load(): Promise<Product[]> {
@@ -68,13 +70,45 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
             <p className="text-xs font-semibold uppercase tracking-wider text-warning">
               Low-Stock-Alert · {lowStock.length} Produkte nachbestellen
             </p>
-            <p className="mt-1 text-sm text-text-secondary">
-              {lowStock
-                .slice(0, 5)
-                .map((p) => p.name)
-                .join(', ')}
-              {lowStock.length > 5 ? ` … +${lowStock.length - 5} weitere` : ''}
-            </p>
+            <ul className="mt-2 divide-y divide-border" aria-label="Niedrige Bestände">
+              {lowStock.slice(0, 8).map((p) => {
+                const needQty =
+                  p.reorderQty != null && p.reorderQty > 0 ? p.reorderQty : null;
+                return (
+                  <li
+                    key={p.id}
+                    className="flex flex-wrap items-center gap-3 py-2 text-sm"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium text-text-primary">
+                        {p.name}
+                      </span>
+                      <span className="block truncate text-[11px] text-text-muted">
+                        {p.brand ? `${p.brand} · ` : ''}
+                        {p.supplier ? `Lieferant: ${p.supplier}` : 'Kein Lieferant hinterlegt'}
+                      </span>
+                    </span>
+                    <span className="shrink-0 tabular-nums text-xs text-text-secondary">
+                      Bestand: <span className="font-semibold text-warning">{p.stockLevel}</span>
+                      {needQty != null ? (
+                        <>
+                          {' · '}
+                          Nachbestellen:{' '}
+                          <span className="font-semibold text-text-primary">
+                            {needQty}
+                          </span>
+                        </>
+                      ) : null}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            {lowStock.length > 8 ? (
+              <p className="mt-2 text-[11px] text-text-muted">
+                +{lowStock.length - 8} weitere in der Liste unten
+              </p>
+            ) : null}
           </CardBody>
         </Card>
       ) : null}
