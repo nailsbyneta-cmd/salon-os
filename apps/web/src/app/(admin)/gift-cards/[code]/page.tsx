@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Badge, Button, Card, CardBody, PriceDisplay } from '@salon-os/ui';
+import { Badge, Card, CardBody } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 

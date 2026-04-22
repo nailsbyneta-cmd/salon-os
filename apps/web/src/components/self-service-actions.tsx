@@ -79,7 +79,9 @@ export function SelfServiceActions({
           variant="danger"
           size="lg"
           className="w-full"
-          onClick={doCancel}
+          onClick={() => {
+            void doCancel();
+          }}
           disabled={state === 'cancelling'}
           loading={state === 'cancelling'}
         >
@@ -105,7 +107,13 @@ export function SelfServiceActions({
           neu auf der Salon-Seite.
         </p>
         <div className="mt-4">
-          <Button variant="secondary" onClick={doCancel} disabled={state === 'cancelling'}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              void doCancel();
+            }}
+            disabled={state === 'cancelling'}
+          >
             Diesen Termin stornieren
           </Button>
         </div>

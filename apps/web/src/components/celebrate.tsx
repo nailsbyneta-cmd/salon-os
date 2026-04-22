@@ -57,11 +57,16 @@ export function Celebrate(): React.JSX.Element | null {
         origin: { y: 0.3 },
         colors: ['#D4A574', '#E91E63', '#9C27B0', '#16A34A', '#0F172A'],
       };
-      confetti({ ...defaults, particleCount: count, spread: 80, startVelocity: 45 });
+      void confetti({ ...defaults, particleCount: count, spread: 80, startVelocity: 45 });
       // 2. Welle für höhere Intensität
       if (spec.intensity >= 2) {
         setTimeout(() => {
-          confetti({ ...defaults, particleCount: count / 2, spread: 120, origin: { y: 0.5 } });
+          void confetti({
+            ...defaults,
+            particleCount: count / 2,
+            spread: 120,
+            origin: { y: 0.5 },
+          });
         }, 220);
       }
     }
@@ -76,7 +81,7 @@ export function Celebrate(): React.JSX.Element | null {
       typeof window !== 'undefined'
         ? window.location.pathname + (query ? `?${query}` : '')
         : '/';
-    router.replace(url as never, { scroll: false });
+    router.replace(url, { scroll: false });
   }, [params, router, toast]);
 
   return null;

@@ -2,36 +2,37 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { apiFetch, ApiError } from '@/lib/api';
+import { formString } from '@/lib/form';
 import { getCurrentTenant } from '@/lib/tenant';
 
 function toIso(date: string, time: string): string {
   const [y, m, d] = date.split('-').map(Number);
   const [hh, mm] = time.split(':').map(Number);
-  const local = new Date(y!, m! - 1, d!, hh!, mm!, 0, 0);
+  const local = new Date(y, m - 1, d, hh, mm, 0, 0);
   return local.toISOString();
 }
 
 export async function createWaitlistEntry(form: FormData): Promise<void> {
   const ctx = getCurrentTenant();
 
-  const serviceId = form.get('serviceId')?.toString();
-  const locationId = form.get('locationId')?.toString();
-  const preferredStaffId = form.get('preferredStaffId')?.toString() || undefined;
-  const earliestDate = form.get('earliestDate')?.toString();
-  const earliestTime = form.get('earliestTime')?.toString() || '09:00';
-  const latestDate = form.get('latestDate')?.toString();
-  const latestTime = form.get('latestTime')?.toString() || '18:00';
-  const notes = form.get('notes')?.toString().trim() || undefined;
+  const serviceId = formString(form, 'serviceId');
+  const locationId = formString(form, 'locationId');
+  const preferredStaffId = formString(form, 'preferredStaffId') || undefined;
+  const earliestDate = formString(form, 'earliestDate');
+  const earliestTime = formString(form, 'earliestTime') || '09:00';
+  const latestDate = formString(form, 'latestDate');
+  const latestTime = formString(form, 'latestTime') || '18:00';
+  const notes = formString(form, 'notes')?.trim() || undefined;
 
   if (!serviceId || !locationId || !earliestDate || !latestDate) {
     throw new Error('Service, Standort und beide Daten sind Pflicht.');
   }
 
-  const existingClientId = form.get('clientId')?.toString() || undefined;
-  const newFirstName = form.get('newFirstName')?.toString().trim();
-  const newLastName = form.get('newLastName')?.toString().trim();
-  const newEmail = form.get('newEmail')?.toString().trim() || undefined;
-  const newPhone = form.get('newPhone')?.toString().trim() || undefined;
+  const existingClientId = formString(form, 'clientId') || undefined;
+  const newFirstName = formString(form, 'newFirstName')?.trim();
+  const newLastName = formString(form, 'newLastName')?.trim();
+  const newEmail = formString(form, 'newEmail')?.trim() || undefined;
+  const newPhone = formString(form, 'newPhone')?.trim() || undefined;
 
   const body: Record<string, unknown> = {
     serviceId,

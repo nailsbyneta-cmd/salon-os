@@ -65,8 +65,7 @@ export function AdminShell({
         .then((res) => {
           if (!cancelled) setCounts(res);
         })
-        .catch((e) => {
-          // eslint-disable-next-line no-console
+        .catch((e: unknown) => {
           console.warn('[admin-shell] pending-counts fetch failed:', e);
         });
     };
@@ -105,7 +104,7 @@ export function AdminShell({
         hint: hit.hint,
         group: groupByKind[hit.kind],
         icon: iconByKind(hit.kind, hit.label),
-        action: () => router.push(hit.href as never),
+        action: () => router.push(hit.href),
       }));
     },
     [router],

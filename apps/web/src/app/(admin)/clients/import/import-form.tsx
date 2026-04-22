@@ -22,7 +22,8 @@ export function ImportForm(): React.JSX.Element {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      setCsv((reader.result ?? '').toString());
+      // reader.result ist bei readAsText immer string (nicht ArrayBuffer)
+      setCsv(typeof reader.result === 'string' ? reader.result : '');
       setResult(null);
     };
     reader.readAsText(file);

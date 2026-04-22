@@ -610,7 +610,6 @@ export default async function SettingsPage({
           <ul className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
             {gallery.map((g) => (
               <li key={g.id} className="group relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={g.imageUrl}
                   alt={g.caption ?? 'Gallerie'}

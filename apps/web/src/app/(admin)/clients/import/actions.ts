@@ -109,6 +109,9 @@ function parseBirthday(raw: string): string | undefined {
   return undefined;
 }
 
+// Server-Actions müssen async sein (Next.js-Requirement), auch wenn
+// die Arbeit rein sync ist. require-await gilt hier nicht.
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function parseCsvPreview(
   csv: string,
 ): Promise<{ rows: ParsedRow[]; headers: string[]; skipped: number }> {
@@ -203,6 +206,8 @@ export async function runImport(form: FormData): Promise<ImportResult> {
   }
 }
 
+// redirect() throws (typed never), daher kein await nötig.
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function redirectToClients(): Promise<void> {
   redirect('/clients');
 }

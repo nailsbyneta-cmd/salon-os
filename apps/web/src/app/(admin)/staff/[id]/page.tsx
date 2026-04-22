@@ -58,7 +58,7 @@ function mondayOfCurrentZurichWeek(): {
   // war der Offset hardcoded und kippte zwischen Oktober und März.
   const todayCh = todayInZone();
   const [y, m, d] = todayCh.split('-').map(Number);
-  const pivot = new Date(Date.UTC(y!, m! - 1, d!));
+  const pivot = new Date(Date.UTC(y, m - 1, d));
   const weekday = pivot.getUTCDay();
   const daysSinceMonday = weekday === 0 ? 6 : weekday - 1;
   const monday = new Date(pivot);

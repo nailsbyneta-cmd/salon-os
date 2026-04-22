@@ -104,7 +104,7 @@ export default async function BookingConfirm({
     redirect(`/book/${slug}`);
   }
 
-  const { service, staff } = await loadContext(slug, sp.serviceId!, sp.staffId!);
+  const { service, staff } = await loadContext(slug, sp.serviceId, sp.staffId);
 
   async function onSubmit(formData: FormData): Promise<void> {
     'use server';
@@ -139,7 +139,7 @@ export default async function BookingConfirm({
     }
   }
 
-  const start = new Date(sp.startAt!);
+  const start = new Date(sp.startAt);
   const staffName = staff
     ? staff.displayName ?? `${staff.firstName} ${staff.lastName}`
     : null;

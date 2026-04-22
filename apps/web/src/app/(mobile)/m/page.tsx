@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Avatar, Badge, PriceDisplay } from '@salon-os/ui';
+import { Avatar, Badge } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 

@@ -331,7 +331,6 @@ export default async function BookingStart({
         }
       >
         {tenant.logoUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={tenant.logoUrl}
             alt={tenant.name}
@@ -574,7 +573,6 @@ export default async function BookingStart({
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {gallery.map((g) => (
-              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 key={g.id}
                 src={g.imageUrl}

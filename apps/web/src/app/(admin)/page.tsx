@@ -310,7 +310,6 @@ async function loadDashboard(): Promise<Dashboard> {
       const raw = process.env['SALON_MONTHLY_GOAL_CHF'];
       const parsed = Number(raw ?? '15000');
       if (!Number.isFinite(parsed) || parsed <= 0) {
-        // eslint-disable-next-line no-console
         console.warn(
           `[dashboard] SALON_MONTHLY_GOAL_CHF="${raw}" ungültig — Fallback auf 15000.`,
         );

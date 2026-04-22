@@ -58,7 +58,7 @@ async function loadFormData(): Promise<{
 function inNDays(n: number): string {
   const today = todayInZone();
   const [y, m, d] = today.split('-').map(Number);
-  const dt = new Date(Date.UTC(y!, m! - 1, d!));
+  const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() + n);
   return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(
     dt.getUTCDate(),
