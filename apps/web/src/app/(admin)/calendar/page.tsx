@@ -5,6 +5,7 @@ import { CalendarDnd, type DndAppt, type DndStaff } from '@/components/calendar-
 import { CalendarDateJumper } from '@/components/calendar-date-jumper';
 import { CalendarWeek } from '@/components/calendar-week';
 import { CalendarMonth } from '@/components/calendar-month';
+import { JumpToNowButton } from '@/components/jump-to-now-button';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { transitionAppointment, cancelAppointment, markNoShow } from './actions';
@@ -197,6 +198,7 @@ export default async function CalendarPage({
                 →
               </Button>
             </Link>
+            <JumpToNowButton />
           </div>
           <div className="hidden sm:block">
             <CalendarDateJumper currentDate={day} view={view} />

@@ -626,6 +626,7 @@ function NowLine({ day, pxPerMin }: { day: string; pxPerMin: number }): React.JS
 
   return (
     <div
+      data-now-line
       className="pointer-events-none absolute left-0 right-0 z-10"
       style={{ top: minutes * pxPerMin }}
     >
