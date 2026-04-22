@@ -34,9 +34,15 @@ export function usePanScroll<T extends HTMLElement>(
 
     const shouldSkip = (target: EventTarget | null): boolean => {
       if (!(target instanceof Element)) return false;
+      // Explizite Opt-Outs
       if (target.closest('[data-no-pan]')) return true;
+      // Termin-Karten gehören dnd-kit
       if (target.closest('[data-dnd-drag]')) return true;
-      if (target.closest('a,button,input,select,textarea,label')) return true;
+      // Form-Inputs: User will editieren, nicht pannen
+      if (target.closest('input,select,textarea')) return true;
+      // Buttons (Slots!) + Links: arm-Phase blockt onClick nicht,
+      // erst nach 6px Bewegung wird's zum Pan — Click funktioniert
+      // weiterhin für Slots (Neuer Termin), Zoom-Buttons etc.
       return false;
     };
 
