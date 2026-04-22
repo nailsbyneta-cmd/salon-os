@@ -172,7 +172,7 @@ export default async function ClientDetailPage({
     `${n} ${n === 1 ? 'Woche' : 'Wochen'}`;
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] p-4 md:p-8">
+    <div className="mx-auto w-full max-w-[1400px] p-4 md:p-8">
       <Link
         href="/clients"
         className="text-xs text-text-muted transition-colors hover:text-text-primary"

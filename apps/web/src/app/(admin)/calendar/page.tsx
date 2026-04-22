@@ -171,7 +171,7 @@ export default async function CalendarPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] p-4 md:p-8">
+    <div className="w-full p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
