@@ -94,6 +94,7 @@ export function CalendarMonth({
                 'relative border-r border-border p-1 transition-colors last:border-r-0 hover:bg-surface-raised/60 sm:p-2',
                 !isLastRow && 'border-b',
                 !inMonth && 'bg-background/40',
+                isToday && 'bg-accent/5 ring-1 ring-inset ring-accent/20',
               )}
             >
               <div className="flex items-center justify-between">
