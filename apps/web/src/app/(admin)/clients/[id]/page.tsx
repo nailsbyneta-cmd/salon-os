@@ -125,6 +125,43 @@ export default async function ClientDetailPage({
     .sort((a, b) => b.count - a.count)
     .slice(0, 3);
 
+  // Visit-Cadence: durchschnittliches Intervall zwischen COMPLETED-Terminen
+  // und prediction des nächsten Besuchs. Mindestens 2 completed nötig, sonst
+  // nicht aussagekräftig. Zeigt Neta proaktiv welche Kundin fällig ist.
+  const completedPast = past
+    .filter((a) => a.status === 'COMPLETED')
+    .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+  let cadence: {
+    avgDays: number;
+    lastVisitMs: number;
+    predictedNextMs: number;
+    diffDays: number;
+    overdue: boolean;
+  } | null = null;
+  if (completedPast.length >= 2) {
+    const diffs: number[] = [];
+    for (let i = 1; i < completedPast.length; i++) {
+      const prev = new Date(completedPast[i - 1]!.startAt).getTime();
+      const curr = new Date(completedPast[i]!.startAt).getTime();
+      diffs.push(curr - prev);
+    }
+    const avgMs = diffs.reduce((s, d) => s + d, 0) / diffs.length;
+    const avgDays = Math.round(avgMs / 86_400_000);
+    const lastVisitMs = new Date(
+      completedPast[completedPast.length - 1]!.startAt,
+    ).getTime();
+    const predictedNextMs = lastVisitMs + avgMs;
+    const diffMs = predictedNextMs - Date.now();
+    const diffDays = Math.round(diffMs / 86_400_000);
+    cadence = {
+      avgDays,
+      lastVisitMs,
+      predictedNextMs,
+      diffDays,
+      overdue: diffDays < 0,
+    };
+  }
+
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8">
       <Link
@@ -316,6 +353,53 @@ export default async function ClientDetailPage({
           </CardBody>
         )}
       </Card>
+
+      {cadence ? (
+        <Card
+          className={
+            cadence.overdue && upcoming.length === 0
+              ? 'mb-4 border-l-4 border-l-warning bg-warning/5'
+              : 'mb-4'
+          }
+          elevation="flat"
+        >
+          <CardBody className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                Besuchs-Rhythmus
+              </p>
+              <p className="mt-1 text-sm text-text-primary">
+                Kommt ca. alle{' '}
+                <span className="font-semibold">
+                  {cadence.avgDays < 14
+                    ? `${cadence.avgDays} Tage`
+                    : `${Math.round(cadence.avgDays / 7)} Wochen`}
+                </span>
+              </p>
+            </div>
+            <div className="text-right">
+              {upcoming.length > 0 ? (
+                <span className="inline-flex items-center rounded-md border border-success/30 bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
+                  Nächster Termin gebucht
+                </span>
+              ) : cadence.overdue ? (
+                <span className="inline-flex items-center rounded-md border border-warning/40 bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">
+                  ⚠ Überfällig seit {Math.abs(cadence.diffDays)} Tagen
+                </span>
+              ) : cadence.diffDays <= 14 ? (
+                <span className="inline-flex items-center rounded-md border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
+                  Fällig in {cadence.diffDays} Tagen
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-text-secondary">
+                  Nächster Besuch ca. in{' '}
+                  {Math.round(cadence.diffDays / 7)} Wochen
+                </span>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
 
       {topServices.length > 0 ? (
         <Card className="mb-8">
