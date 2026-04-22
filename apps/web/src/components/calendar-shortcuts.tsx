@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { Kbd } from '@salon-os/ui';
 
 /**
  * Keyboard-Shortcuts für den Admin-Kalender:
@@ -32,10 +33,15 @@ export function CalendarShortcuts({
   todayDate,
 }: Props): React.JSX.Element | null {
   const router = useRouter();
+  const [helpOpen, setHelpOpen] = React.useState(false);
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      // Modifier → System-Shortcut, nicht abfangen
+      // Modifier → System-Shortcut, nicht abfangen (ausser ESC für Modal)
+      if (e.key === 'Escape' && helpOpen) {
+        setHelpOpen(false);
+        return;
+      }
       if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
       // User tippt in Formular → nicht abfangen
       const target = e.target;
@@ -44,6 +50,10 @@ export function CalendarShortcuts({
       }
 
       switch (e.key) {
+        case '?':
+          e.preventDefault();
+          setHelpOpen((v) => !v);
+          break;
         case 't':
         case 'T':
           e.preventDefault();
@@ -83,7 +93,53 @@ export function CalendarShortcuts({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [router, view, day, prevDate, nextDate, todayDate]);
+  }, [router, view, day, prevDate, nextDate, todayDate, helpOpen]);
 
-  return null;
+  if (!helpOpen) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Kalender-Tastatur-Shortcuts"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+    >
+      <button
+        type="button"
+        onClick={() => setHelpOpen(false)}
+        aria-label="Schliessen"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+      />
+      <div className="relative w-full max-w-sm rounded-lg border border-border bg-surface shadow-xl animate-fade-in">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="text-sm font-semibold">Kalender-Shortcuts</h2>
+          <button
+            type="button"
+            onClick={() => setHelpOpen(false)}
+            aria-label="Schliessen"
+            className="text-text-muted hover:text-text-primary"
+          >
+            ✕
+          </button>
+        </div>
+        <ul className="space-y-2 px-5 py-4 text-sm">
+          {[
+            ['T', 'Heute'],
+            ['←  →', 'Vor / Zurück'],
+            ['D', 'Tag-Ansicht'],
+            ['W', 'Woche-Ansicht'],
+            ['M', 'Monat-Ansicht'],
+            ['N', 'Neuer Termin'],
+            ['?', 'Diese Hilfe'],
+            ['Esc', 'Schliessen'],
+          ].map(([key, label]) => (
+            <li key={key} className="flex items-center justify-between gap-4">
+              <span className="text-text-secondary">{label}</span>
+              <Kbd>{key}</Kbd>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
 }
