@@ -37,6 +37,7 @@ interface Dashboard {
   birthdaysToday: BirthdayClient[];
   winBack: WinBackClient[];
   zurichYear: string;
+  tenantName: string;
   todayAppts: Array<{
     id: string;
     startAt: string;
@@ -74,7 +75,8 @@ async function loadDashboard(): Promise<Dashboard> {
       throw err;
     });
 
-  const [svc, stf, cli, appts, weekAppts, gc, wl, lowStock] = await Promise.all([
+  const [svc, stf, cli, appts, weekAppts, gc, wl, lowStock, tenantInfo] =
+    await Promise.all([
     safe(apiFetch<{ services: unknown[] }>('/v1/services', auth), { services: [] }),
     safe(apiFetch<{ staff: unknown[] }>('/v1/staff', auth), { staff: [] }),
     safe(
@@ -123,7 +125,12 @@ async function loadDashboard(): Promise<Dashboard> {
       apiFetch<{ products: unknown[] }>('/v1/products?lowStock=true', auth),
       { products: [] },
     ),
+    safe(
+      apiFetch<{ name: string }>('/v1/settings/tenant', auth),
+      { name: '' },
+    ),
   ]);
+  const tenantName = tenantInfo.name || 'unserem Salon';
 
   // Heutige Geburtstage — clientseitig filtern, weil die API keinen MM-DD-
   // Filter anbietet. Neta's Salon hat <2000 Kundinnen, Payload <500 KB.
@@ -187,10 +194,10 @@ async function loadDashboard(): Promise<Dashboard> {
       } =>
         Boolean(c.birthday) &&
         typeof c.birthday === 'string' &&
-        c.birthday.slice(5, 10) === mmdd,
+        c.birthday.slice(5, 10) === mmdd &&
+        // Gesperrte Kundinnen nie gratulieren.
+        c.blocked !== true,
     )
-    // Gesperrte Kundinnen nie gratulieren.
-    .filter((c) => !c.blocked)
     .map((c) => ({
       id: c.id,
       firstName: c.firstName,
@@ -233,6 +240,7 @@ async function loadDashboard(): Promise<Dashboard> {
     birthdaysToday,
     winBack,
     zurichYear: zYear,
+    tenantName,
   };
 }
 
@@ -495,7 +503,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                     ? b.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
                     : null;
                 const waUsable = waDigits != null && waDigits.length >= 7;
-                const waMsg = `Hallo ${b.firstName}, alles Gute zum Geburtstag von uns im Beautycenter! 🎂 Als kleines Geschenk: 10% Rabatt auf deinen nächsten Termin mit dem Code BDAY. Liebe Grüsse ✨`;
+                const waMsg = `Hallo ${b.firstName}, alles Gute zum Geburtstag von uns im ${d.tenantName}! 🎂 Als kleines Geschenk gibt's 10% auf deinen nächsten Termin — sag uns einfach Bescheid bei der Buchung. Liebe Grüsse ✨`;
                 const waHref = waUsable
                   ? `https://wa.me/${waDigits}?text=${encodeURIComponent(waMsg)}`
                   : null;
