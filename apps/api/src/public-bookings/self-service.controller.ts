@@ -66,14 +66,13 @@ export class SelfServiceController {
     expectedAction: 'cancel' | 'reschedule',
     appointmentId: string,
   ): { tenantId: string } {
+    // Einheitliche Fehlermeldung für alle Mismatches — verhindert
+    // Field-Flip-Probing. Detaillierter Log nur serverseitig.
+    const FAIL = 'Token ungültig oder abgelaufen.';
     const payload = verifySelfServiceToken(token);
-    if (!payload) throw new BadRequestException('Token ungültig oder abgelaufen.');
-    if (payload.action !== expectedAction) {
-      throw new BadRequestException('Token-Action passt nicht.');
-    }
-    if (payload.appointmentId !== appointmentId) {
-      throw new BadRequestException('Token-Appointment passt nicht.');
-    }
+    if (!payload) throw new BadRequestException(FAIL);
+    if (payload.action !== expectedAction) throw new BadRequestException(FAIL);
+    if (payload.appointmentId !== appointmentId) throw new BadRequestException(FAIL);
     return { tenantId: payload.tenantId };
   }
 

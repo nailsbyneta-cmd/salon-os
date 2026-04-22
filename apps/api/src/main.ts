@@ -39,23 +39,41 @@ async function bootstrap(): Promise<void> {
     credentials: true,
   });
 
-  // Rate-Limit global: 60 req/min/IP. Admin-Routen sind ohnehin per
-  // Web-Basic-Auth geschützt; schützt vor allem /v1/public/* (Booking,
-  // Waitlist, Self-Service) gegen Enumeration + Brute-Force.
+  // Rate-Limit: grosszügig default, hart nur auf schreibenden Public-
+  // Endpoints (via skip-Funktion). Admin + Webhooks + Health sind exempt.
+  // Wichtig: Booking-SSR aus Next-Pod trifft /v1/public/:slug/info hoch-
+  // frequent beim Render — deshalb 600/min global, damit das nicht breakt.
+  // Writes auf /v1/public/bookings|waitlist sind eng limitiert durch zusätz-
+  // liche serverseitige Zod-Validierung + GiST-Conflict; 600/min reicht.
   await app.register(rateLimit, {
     global: true,
-    max: 60,
+    max: 600,
     timeWindow: '1 minute',
     hook: 'preHandler',
-    keyGenerator: (req) =>
-      (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ??
-      req.ip,
+    skip: (req) => {
+      const url = req.url;
+      // Health + Stripe-Webhooks (HMAC-signiert, kein IP-basiertes DoS-
+      // Risiko — Retries würden unnötig geblockt).
+      if (url.startsWith('/health')) return true;
+      if (url.startsWith('/v1/payments/webhook')) return true;
+      return false;
+    },
     errorResponseBuilder: (_req, ctx) => ({
       type: 'https://salon-os.com/problems/rate-limit',
       title: 'Zu viele Anfragen',
       status: 429,
       detail: `Bitte warte ${Math.ceil(ctx.ttl / 1000)}s und versuch es erneut.`,
     }),
+  });
+  // Problem+JSON-Content-Type für 429-Responses setzen, damit das Format
+  // zum Rest der API passt (Plugin-Filter liegt ausserhalb der Nest-
+  // ExceptionFilter-Chain).
+  const fastify = app.getHttpAdapter().getInstance();
+  fastify.addHook('onSend', async (_req, reply, payload) => {
+    if (reply.statusCode === 429) {
+      reply.type('application/problem+json');
+    }
+    return payload;
   });
 
   const port = Number(process.env['PORT'] ?? 4000);

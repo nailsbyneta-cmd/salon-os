@@ -183,15 +183,32 @@ export class StaffService {
         'phone',
         'role',
         'employmentType',
+        'commissionRate',
+        'boothRent',
+        'hourlyRate',
         'color',
         'photoUrl',
         'bio',
+        'startsAt',
         'active',
       ];
       for (const k of trackedKeys) {
-        if (existing[k] !== updated[k]) {
-          diff[k as string] = { from: existing[k], to: updated[k] };
+        const a = existing[k];
+        const b = updated[k];
+        if (a instanceof Date || b instanceof Date) {
+          const at = (a as Date | null)?.getTime?.() ?? null;
+          const bt = (b as Date | null)?.getTime?.() ?? null;
+          if (at !== bt) diff[k as string] = { from: a, to: b };
+          continue;
         }
+        // Prisma-Decimal-Vergleich via .toString() (Decimal-Objekt vs. null).
+        if (a !== null && typeof a === 'object' && 'toString' in a) {
+          if ((a as { toString(): string }).toString() !== (b as { toString(): string } | null)?.toString()) {
+            diff[k as string] = { from: a, to: b };
+          }
+          continue;
+        }
+        if (a !== b) diff[k as string] = { from: a, to: b };
       }
       if (input.locationIds) diff['locationIds'] = { from: null, to: input.locationIds };
       if (input.serviceIds) diff['serviceIds'] = { from: null, to: input.serviceIds };

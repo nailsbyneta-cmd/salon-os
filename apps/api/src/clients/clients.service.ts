@@ -145,29 +145,42 @@ export class ClientsService {
         'email',
         'phone',
         'birthday',
+        'pronouns',
+        'address',
+        'language',
         'marketingOptIn',
         'smsOptIn',
         'emailOptIn',
-        'notesInternal',
+        'allergies',
         'tags',
         'preferredStaffId',
+        'source',
+        'notesInternal',
       ];
       for (const k of trackedKeys) {
         const a = existing[k];
         const b = updated[k];
-        // Arrays (tags, allergies) tief vergleichen.
-        if (Array.isArray(a) && Array.isArray(b)) {
-          if (JSON.stringify(a) !== JSON.stringify(b))
-            diff[k as string] = { from: a, to: b };
-        } else if (a !== b) {
-          if (a instanceof Date || b instanceof Date) {
-            if ((a as Date | null)?.getTime?.() !== (b as Date | null)?.getTime?.()) {
-              diff[k as string] = { from: a, to: b };
-            }
-          } else {
+        if (Array.isArray(a) || Array.isArray(b)) {
+          // Arrays tief via JSON vergleichen (tags, allergies).
+          if (JSON.stringify(a ?? []) !== JSON.stringify(b ?? [])) {
             diff[k as string] = { from: a, to: b };
           }
+          continue;
         }
+        if (a instanceof Date || b instanceof Date) {
+          const at = (a as Date | null)?.getTime?.() ?? null;
+          const bt = (b as Date | null)?.getTime?.() ?? null;
+          if (at !== bt) diff[k as string] = { from: a, to: b };
+          continue;
+        }
+        if (a !== null && typeof a === 'object') {
+          // JSON-Feld (address) tief vergleichen.
+          if (JSON.stringify(a) !== JSON.stringify(b)) {
+            diff[k as string] = { from: a, to: b };
+          }
+          continue;
+        }
+        if (a !== b) diff[k as string] = { from: a, to: b };
       }
       if (Object.keys(diff).length > 0) {
         await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
