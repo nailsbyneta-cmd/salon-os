@@ -314,30 +314,73 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
       a.status === 'CONFIRMED' ||
       a.status === 'CHECKED_IN');
 
+  // Risiko-Stufen analog ClientBrief: mittel 25-39 (amber), hoch >=40 (rot).
+  // Terminale Status (CANCELLED, NO_SHOW, COMPLETED) zeigen kein Badge.
+  const riskRaw =
+    a.client?.noShowRisk != null ? Number(a.client.noShowRisk) : null;
+  const isTerminal =
+    a.status === 'CANCELLED' ||
+    a.status === 'NO_SHOW' ||
+    a.status === 'COMPLETED';
+  const riskTier: 'hoch' | 'mittel' | null =
+    isTerminal || riskRaw == null || !Number.isFinite(riskRaw)
+      ? null
+      : riskRaw >= 40
+        ? 'hoch'
+        : riskRaw >= 25
+          ? 'mittel'
+          : null;
+  const vip =
+    a.client?.lifetimeValue != null && Number(a.client.lifetimeValue) >= 2000;
+
   return (
     <li className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
       <span className="w-16 tabular-nums font-semibold text-text-primary">
         {start}
       </span>
-      <div className="flex-1 min-w-[200px]">
-        <Link href={`/calendar/${a.id}`} className="block hover:underline">
-          <div className="flex items-center gap-1.5 font-medium text-text-primary">
-            {a.client?.noShowRisk != null && Number(a.client.noShowRisk) >= 40 ? (
+      <div className="min-w-0 flex-1">
+        <Link
+          href={`/calendar/${a.id}`}
+          className="block hover:underline"
+          aria-label={[
+            clientName,
+            riskTier === 'hoch' ? 'hohes No-Show-Risiko' : null,
+            riskTier === 'mittel' ? 'mittleres No-Show-Risiko' : null,
+            vip ? 'VIP-Kundin' : null,
+          ]
+            .filter(Boolean)
+            .join(' — ')}
+        >
+          <div className="flex min-w-0 items-center gap-1.5 font-medium text-text-primary">
+            {riskTier === 'hoch' ? (
               <span
                 className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger text-[10px] font-bold leading-none text-white"
-                title={`No-Show-Risiko ${Math.round(Number(a.client.noShowRisk))}%`}
+                title={`No-Show-Risiko ${Math.round(Number(a.client?.noShowRisk))}%`}
+                aria-hidden="true"
+              >
+                !
+              </span>
+            ) : riskTier === 'mittel' ? (
+              <span
+                className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-warning text-[10px] font-bold leading-none text-white"
+                title={`No-Show-Risiko ${Math.round(Number(a.client?.noShowRisk))}%`}
+                aria-hidden="true"
               >
                 !
               </span>
             ) : null}
-            {(a.client?.tags ?? []).some((t) => /^vip$/i.test(t)) ? (
-              <span className="text-xs leading-none text-accent" title="VIP">
+            {vip ? (
+              <span
+                className="shrink-0 text-xs leading-none text-accent"
+                title="VIP (Lifetime &gt;= 2000 CHF)"
+                aria-hidden="true"
+              >
                 ★
               </span>
             ) : null}
-            <span className="truncate">{clientName}</span>
+            <span className="min-w-0 truncate">{clientName}</span>
           </div>
-          <div className="text-xs text-text-muted">
+          <div className="truncate text-xs text-text-muted">
             {services} · {a.staff.firstName} {a.staff.lastName[0]}.
           </div>
         </Link>

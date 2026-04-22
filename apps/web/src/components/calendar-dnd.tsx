@@ -30,10 +30,11 @@ export interface DndAppt {
   client: {
     firstName: string;
     lastName: string;
-    // noShowRisk kommt aus der Prisma-Decimal-Spalte — serialisiert als
-    // string ('42.50') oder number, je nach Prisma-Driver. UI toleriert beide.
+    // Prisma-Decimal-Spalten kommen als string ('42.50') im JSON, Number()
+    // toleriert beide Formate. UI nutzt lifetimeValue für VIP-Heuristik
+    // (analog zu /clients?filter=vip: lifetimeValue >= 2000).
     noShowRisk?: string | number | null;
-    tags?: string[];
+    lifetimeValue?: string | number | null;
   } | null;
   staff: { firstName: string; lastName: string; color: string | null };
   items: Array<{ service: { name: string } }>;
@@ -545,7 +546,10 @@ function DraggableAppt({
           noShowRisk={
             appt.client?.noShowRisk != null ? Number(appt.client.noShowRisk) : null
           }
-          vip={(appt.client?.tags ?? []).some((t) => /^vip$/i.test(t))}
+          vip={
+            appt.client?.lifetimeValue != null &&
+            Number(appt.client.lifetimeValue) >= 2000
+          }
           className={`h-full ${isDragging ? 'shadow-lg ring-2 ring-accent' : ''}`}
         />
         {!isDragging ? (

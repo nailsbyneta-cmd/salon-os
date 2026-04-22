@@ -73,7 +73,7 @@ export class AppointmentsService {
               firstName: true,
               lastName: true,
               noShowRisk: true,
-              tags: true,
+              lifetimeValue: true,
             },
           },
           staff: { select: { firstName: true, lastName: true, color: true } },

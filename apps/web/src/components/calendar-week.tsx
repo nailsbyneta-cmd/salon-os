@@ -653,7 +653,10 @@ function WeekDraggableAppt({
           noShowRisk={
             appt.client?.noShowRisk != null ? Number(appt.client.noShowRisk) : null
           }
-          vip={(appt.client?.tags ?? []).some((t) => /^vip$/i.test(t))}
+          vip={
+            appt.client?.lifetimeValue != null &&
+            Number(appt.client.lifetimeValue) >= 2000
+          }
           className={cn(
             'h-full',
             isDragging && 'shadow-lg ring-2 ring-accent',
