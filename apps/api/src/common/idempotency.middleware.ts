@@ -2,6 +2,13 @@ import { Injectable, Logger, type NestMiddleware } from '@nestjs/common';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { createHash } from 'node:crypto';
 
+// ioredis ist optional (Redis-only feature); Typings minimal genug
+// definieren damit es ohne installiertes Package kompiliert.
+interface RedisLike {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, mode: string, seconds: number): Promise<unknown>;
+}
+
 /**
  * Idempotency-Middleware für schreibende Public-Endpoints.
  * Schützt gegen Doppel-Buchungen durch Netzwerk-Retries.
@@ -15,12 +22,17 @@ import { createHash } from 'node:crypto';
 @Injectable()
 export class IdempotencyMiddleware implements NestMiddleware {
   private readonly logger = new Logger(IdempotencyMiddleware.name);
-  private redis: import('ioredis').Redis | null = null;
+  private redis: RedisLike | null = null;
 
   constructor() {
     const redisUrl = process.env['REDIS_URL'];
     if (!redisUrl) return;
-    import('ioredis')
+    // Dynamic import damit ioredis kein Hard-Dep ist — wenn Redis fehlt,
+    // läuft api ohne Idempotenz (fail-open).
+    // ioredis wird nur installiert wenn NODE_OPTIONS oder ENV das möchte —
+    // im Salon-os-Standard-Stack haben wir direct-imports ausgeschaltet.
+    // @ts-expect-error optional peer dep, Modul-Name zur Laufzeit aufgelöst
+    (import('ioredis') as Promise<{ default: new (url: string, opts?: unknown) => RedisLike }>)
       .then(({ default: Redis }) => {
         this.redis = new Redis(redisUrl, { lazyConnect: true, enableReadyCheck: false });
       })

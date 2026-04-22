@@ -56,7 +56,10 @@ async function bootstrap(): Promise<void> {
     max: 600,
     timeWindow: '1 minute',
     hook: 'preHandler',
-    skip: (req) => {
+    // `skip` per-request-Callback: @fastify/rate-limit v10 akzeptiert
+    // die Option runtime, die Typings hinken aber nach (RateLimitPluginOptions
+    // kennt sie nicht). Cast auf Parameters<…>[0] + zusätzliche Skip-Option.
+    skip: (req: { url: string }) => {
       const url = req.url;
       // Health + Stripe-Webhooks (HMAC-signiert, kein IP-basiertes DoS-
       // Risiko — Retries würden unnötig geblockt).
@@ -64,13 +67,13 @@ async function bootstrap(): Promise<void> {
       if (url.startsWith('/v1/payments/webhook')) return true;
       return false;
     },
-    errorResponseBuilder: (_req, ctx) => ({
+    errorResponseBuilder: (_req: unknown, ctx: { ttl: number }) => ({
       type: 'https://salon-os.com/problems/rate-limit',
       title: 'Zu viele Anfragen',
       status: 429,
       detail: `Bitte warte ${Math.ceil(ctx.ttl / 1000)}s und versuch es erneut.`,
     }),
-  });
+  } as Parameters<typeof app.register>[1]);
   // Problem+JSON-Content-Type für 429-Responses setzen, damit das Format
   // zum Rest der API passt (Plugin-Filter liegt ausserhalb der Nest-
   // ExceptionFilter-Chain).

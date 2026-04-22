@@ -40,7 +40,10 @@ export class OutboxService {
       data: {
         tenantId: payload.tenantId,
         type,
-        payload: payload as Record<string, unknown>,
+        // Prisma InputJsonValue akzeptiert jedes JSON-serialisierbare Objekt,
+        // aber die Types sind enger als unser OutboxPayload-Union. Double
+        // cast via unknown ist der dokumentierte Escape für komplexe Unions.
+        payload: payload as unknown as object,
       },
     });
   }
