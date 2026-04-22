@@ -53,8 +53,33 @@ async function loadFormData(): Promise<{
   }
 }
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+function zurichNowParts(): { date: string; hour: number; minute: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Zurich',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const pick = (type: string): string =>
+    parts.find((p) => p.type === type)?.value ?? '';
+  return {
+    date: `${pick('year')}-${pick('month')}-${pick('day')}`,
+    hour: Number(pick('hour')),
+    minute: Number(pick('minute')),
+  };
+}
+
+function nextQuarterHour(h: number, m: number): string {
+  // Rundet auf nächsten 15-Min-Slot auf. 10:03 → 10:15, 10:14 → 10:15,
+  // 10:15 → 10:30 (nicht zurück auf 10:15, sonst kein Vorlauf).
+  const minutesTotal = h * 60 + m + 1; // +1 damit :15 nicht auf :15 rundet
+  const rounded = Math.ceil(minutesTotal / 15) * 15;
+  const hh = Math.floor(rounded / 60) % 24;
+  const mm = rounded % 60;
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
 export default async function NewAppointmentPage({
@@ -66,6 +91,7 @@ export default async function NewAppointmentPage({
     staffId?: string;
     clientId?: string;
     serviceId?: string;
+    walkin?: string;
   }>;
 }): Promise<React.JSX.Element> {
   const {
@@ -74,10 +100,15 @@ export default async function NewAppointmentPage({
     staffId: preselectedStaff,
     clientId: preselectedClient,
     serviceId: preselectedService,
+    walkin,
   } = await searchParams;
   const { services, staff, clients } = await loadFormData();
-  const day = date ?? todayIso();
-  const defaultTime = time ?? '10:00';
+  const isWalkin = walkin === '1' || walkin === 'true';
+  const zurich = zurichNowParts();
+  const day = date ?? zurich.date;
+  // Walk-in: nächster Viertelstunden-Slot in Zurich-Zeit. Sonst (wenn kein
+  // ?time=) derselbe Default — war bisher hardcoded '10:00'.
+  const defaultTime = time ?? nextQuarterHour(zurich.hour, zurich.minute);
 
   return (
     <div className="mx-auto max-w-2xl p-4 md:p-8">
@@ -92,8 +123,14 @@ export default async function NewAppointmentPage({
           Kalender
         </p>
         <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
-          Neuer Termin
+          {isWalkin ? 'Walk-in' : 'Neuer Termin'}
         </h1>
+        {isWalkin ? (
+          <p className="mt-1 text-sm text-text-secondary">
+            Startzeit auf {defaultTime} vorbelegt (nächste Viertelstunde).
+            Service + Kundin wählen, fertig.
+          </p>
+        ) : null}
       </header>
 
       <Card>

@@ -315,11 +315,18 @@ export default async function Home(): Promise<React.JSX.Element> {
             {completed} von {activeAppts.length} Terminen abgeschlossen
           </p>
         </div>
-        <Link href="/calendar/new">
-          <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
-            Neuer Termin
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/calendar/new?walkin=1">
+            <Button variant="secondary">
+              Walk-in
+            </Button>
+          </Link>
+          <Link href="/calendar/new">
+            <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
+              Neuer Termin
+            </Button>
+          </Link>
+        </div>
       </header>
 
       <section className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-4">
