@@ -46,7 +46,7 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
   const staff = await loadStaff();
 
   return (
-    <div className="mx-auto max-w-6xl p-4 md:p-8">
+    <div className="w-full p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
