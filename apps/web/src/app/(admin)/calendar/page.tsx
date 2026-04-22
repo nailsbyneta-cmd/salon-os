@@ -5,6 +5,7 @@ import { CalendarDnd, type DndAppt, type DndStaff } from '@/components/calendar-
 import { CalendarDateJumper } from '@/components/calendar-date-jumper';
 import { CalendarWeek } from '@/components/calendar-week';
 import { CalendarMonth } from '@/components/calendar-month';
+import { CalendarShortcuts } from '@/components/calendar-shortcuts';
 import { JumpToNowButton } from '@/components/jump-to-now-button';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
@@ -211,6 +212,14 @@ export default async function CalendarPage({
           </Link>
         </div>
       </header>
+
+      <CalendarShortcuts
+        view={view}
+        day={day}
+        prevDate={prevDate}
+        nextDate={nextDate}
+        todayDate={todayInZone()}
+      />
 
       {view === 'month' && monthAnchor ? (
         <CalendarMonth appts={appts} anchor={monthAnchor} />
