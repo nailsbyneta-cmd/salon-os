@@ -74,6 +74,10 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
               {lowStock.slice(0, 8).map((p) => {
                 const needQty =
                   p.reorderQty != null && p.reorderQty > 0 ? p.reorderQty : null;
+                const estCostChf =
+                  needQty != null && p.costCents > 0
+                    ? (needQty * p.costCents) / 100
+                    : null;
                 return (
                   <li
                     key={p.id}
@@ -88,7 +92,7 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                         {p.supplier ? `Lieferant: ${p.supplier}` : 'Kein Lieferant hinterlegt'}
                       </span>
                     </span>
-                    <span className="shrink-0 tabular-nums text-xs text-text-secondary">
+                    <span className="ml-auto shrink-0 tabular-nums text-xs text-text-secondary">
                       Bestand: <span className="font-semibold text-warning">{p.stockLevel}</span>
                       {needQty != null ? (
                         <>
@@ -99,6 +103,14 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                           </span>
                         </>
                       ) : null}
+                      {estCostChf != null ? (
+                        <>
+                          {' · '}
+                          <span className="text-text-muted">
+                            ~ {estCostChf.toFixed(0)} CHF
+                          </span>
+                        </>
+                      ) : null}
                     </span>
                   </li>
                 );
@@ -106,7 +118,7 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
             </ul>
             {lowStock.length > 8 ? (
               <p className="mt-2 text-[11px] text-text-muted">
-                +{lowStock.length - 8} weitere in der Liste unten
+                +{lowStock.length - 8} weitere Produkte mit niedrigem Bestand
               </p>
             ) : null}
           </CardBody>
