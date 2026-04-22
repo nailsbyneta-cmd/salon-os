@@ -11,7 +11,13 @@ interface Entry {
   notes: string | null;
   status: string;
   createdAt: string;
-  client: { firstName: string; lastName: string; email: string | null; phone: string | null };
+  client: {
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    phone: string | null;
+    phoneE164?: string | null;
+  };
   service: { name: string };
   staff: { firstName: string; lastName: string } | null;
 }
@@ -86,10 +92,18 @@ export default async function WaitlistPage(): Promise<React.JSX.Element> {
                 const name = `${e.client.firstName} ${e.client.lastName}`;
                 const fulfill = fulfillWaitlist.bind(null, e.id);
                 const cancel = cancelWaitlist.bind(null, e.id);
+                const telHref = e.client.phoneE164 ?? e.client.phone ?? null;
+                const waDigits = e.client.phoneE164
+                  ? e.client.phoneE164.replace(/^\+/, '')
+                  : e.client.phone
+                    ? e.client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
+                    : null;
+                const hasPhone =
+                  telHref != null && waDigits != null && waDigits.length >= 7;
                 return (
                   <li key={e.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
                     <Avatar name={name} size="md" color="hsl(var(--brand-accent))" />
-                    <div className="flex-1 min-w-[220px]">
+                    <div className="min-w-[220px] flex-1">
                       <div className="font-medium text-text-primary">{name}</div>
                       <div className="text-xs text-text-muted">
                         {e.client.email ?? '—'}
@@ -114,7 +128,27 @@ export default async function WaitlistPage(): Promise<React.JSX.Element> {
                         </div>
                       ) : null}
                     </div>
-                    <div className="flex gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
+                      {hasPhone ? (
+                        <>
+                          <a
+                            href={`tel:${telHref}`}
+                            className="inline-flex h-10 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary hover:bg-surface-raised hover:text-text-primary md:h-9"
+                            aria-label={`${name} anrufen`}
+                          >
+                            📞
+                          </a>
+                          <a
+                            href={`https://wa.me/${waDigits}`}
+                            target="_blank"
+                            rel="noopener"
+                            className="inline-flex h-10 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success hover:bg-success/20 md:h-9"
+                            aria-label={`${name} auf WhatsApp anschreiben (öffnet WhatsApp)`}
+                          >
+                            WA
+                          </a>
+                        </>
+                      ) : null}
                       <form action={fulfill}>
                         <Button type="submit" variant="accent" size="sm">
                           Termin gefunden

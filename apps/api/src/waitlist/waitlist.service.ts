@@ -106,7 +106,15 @@ export class WaitlistService {
         where: { status: 'ACTIVE' },
         orderBy: { earliestAt: 'asc' },
         include: {
-          client: { select: { firstName: true, lastName: true, email: true, phone: true } },
+          client: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              phoneE164: true,
+            },
+          },
           service: { select: { name: true } },
           staff: { select: { firstName: true, lastName: true } },
         },
