@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Badge, Button, Card, CardBody, EmptyState, cn } from '@salon-os/ui';
+import { todayInZone } from '@salon-os/utils';
 import { CalendarDnd, type DndAppt, type DndStaff } from '@/components/calendar-dnd';
 import { CalendarDateJumper } from '@/components/calendar-date-jumper';
 import { CalendarWeek } from '@/components/calendar-week';
@@ -82,10 +83,6 @@ async function loadStaff(): Promise<DndStaff[]> {
   }
 }
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function addDays(iso: string, days: number): string {
   const d = new Date(iso);
   d.setDate(d.getDate() + days);
@@ -109,7 +106,7 @@ export default async function CalendarPage({
   const { date, view: viewParam } = await searchParams;
   const view: View =
     viewParam === 'week' ? 'week' : viewParam === 'month' ? 'month' : 'day';
-  const day = date ?? todayIso();
+  const day = date ?? todayInZone();
 
   let from: Date;
   let to: Date;
@@ -196,7 +193,7 @@ export default async function CalendarPage({
                 ←
               </Button>
             </Link>
-            <Link href={`/calendar?view=${view}&date=${todayIso()}`}>
+            <Link href={`/calendar?view=${view}&date=${todayInZone()}`}>
               <Button variant="secondary" size="sm">
                 Heute
               </Button>

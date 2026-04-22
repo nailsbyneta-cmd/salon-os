@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Button, Card, CardBody, Field, Input, Select, Textarea } from '@salon-os/ui';
+import { todayInZone } from '@salon-os/utils';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { createWaitlistEntry } from '../actions';
@@ -54,13 +55,14 @@ async function loadFormData(): Promise<{
   }
 }
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 function inNDays(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  const today = todayInZone();
+  const [y, m, d] = today.split('-').map(Number);
+  const dt = new Date(Date.UTC(y!, m! - 1, d!));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(
+    dt.getUTCDate(),
+  ).padStart(2, '0')}`;
 }
 
 export default async function NewWaitlistPage(): Promise<React.JSX.Element> {
@@ -136,7 +138,7 @@ export default async function NewWaitlistPage(): Promise<React.JSX.Element> {
                   <Input
                     type="date"
                     name="earliestDate"
-                    defaultValue={todayIso()}
+                    defaultValue={todayInZone()}
                     required
                   />
                 </Field>

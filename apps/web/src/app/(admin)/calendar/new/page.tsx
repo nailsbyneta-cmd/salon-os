@@ -72,14 +72,31 @@ function zurichNowParts(): { date: string; hour: number; minute: number } {
   };
 }
 
-function nextQuarterHour(h: number, m: number): string {
+function nextQuarterHour(h: number, m: number): { time: string; dayOffset: number } {
   // Rundet auf nächsten 15-Min-Slot auf. 10:03 → 10:15, 10:14 → 10:15,
   // 10:15 → 10:30 (nicht zurück auf 10:15, sonst kein Vorlauf).
-  const minutesTotal = h * 60 + m + 1; // +1 damit :15 nicht auf :15 rundet
+  // 23:46-23:59 → 00:00/nächster Tag, dayOffset=1 damit das Datum mitwandert
+  // und die Buchung nicht in der Vergangenheit landet.
+  const minutesTotal = h * 60 + m + 1;
   const rounded = Math.ceil(minutesTotal / 15) * 15;
+  const dayOffset = Math.floor(rounded / (24 * 60));
   const hh = Math.floor(rounded / 60) % 24;
   const mm = rounded % 60;
-  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  return {
+    time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
+    dayOffset,
+  };
+}
+
+function addDays(isoDate: string, days: number): string {
+  if (days === 0) return isoDate;
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return isoDate;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(
+    dt.getUTCDate(),
+  ).padStart(2, '0')}`;
 }
 
 export default async function NewAppointmentPage({
@@ -105,10 +122,11 @@ export default async function NewAppointmentPage({
   const { services, staff, clients } = await loadFormData();
   const isWalkin = walkin === '1' || walkin === 'true';
   const zurich = zurichNowParts();
-  const day = date ?? zurich.date;
   // Walk-in: nächster Viertelstunden-Slot in Zurich-Zeit. Sonst (wenn kein
   // ?time=) derselbe Default — war bisher hardcoded '10:00'.
-  const defaultTime = time ?? nextQuarterHour(zurich.hour, zurich.minute);
+  const nextSlot = nextQuarterHour(zurich.hour, zurich.minute);
+  const day = date ?? addDays(zurich.date, nextSlot.dayOffset);
+  const defaultTime = time ?? nextSlot.time;
 
   return (
     <div className="mx-auto max-w-2xl p-4 md:p-8">

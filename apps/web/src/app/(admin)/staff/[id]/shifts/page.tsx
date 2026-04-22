@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Avatar, Button, Card, CardBody, EmptyState, Input } from '@salon-os/ui';
+import { todayInZone } from '@salon-os/utils';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { WeeklyScheduleEditor } from '@/components/weekly-schedule-editor';
@@ -81,10 +82,6 @@ async function load(staffId: string): Promise<{
     if (err instanceof ApiError) return { staff: null, shifts: [] };
     throw err;
   }
-}
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 export default async function StaffShiftsPage({
@@ -176,7 +173,7 @@ export default async function StaffShiftsPage({
                 <Input
                   type="date"
                   name="date"
-                  defaultValue={todayIso()}
+                  defaultValue={todayInZone()}
                   required
                 />
               </label>

@@ -40,3 +40,17 @@ export function toLocalIso(
   const offset = zoneOffsetAt(pivot, timeZone);
   return `${date}T${time}:00${offset}`;
 }
+
+/**
+ * Liefert das heutige Datum in der angegebenen Zone als `YYYY-MM-DD`.
+ * Ersetzt das fragile `new Date().toISOString().slice(0,10)`-Muster,
+ * das nach ~22 Uhr CH den UTC-Folgetag zurückgibt.
+ */
+export function todayInZone(timeZone = 'Europe/Zurich'): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
