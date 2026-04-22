@@ -408,6 +408,41 @@ export default async function Home(): Promise<React.JSX.Element> {
     return new Date(a.startAt).getTime() < missedCutoffMs;
   });
 
+  // „Heute pro Stylistin" — Aggregation aus activeAppts (storniert/no-show
+  // bereits raus). Gruppiert per firstName+lastName, weil todayAppts-Typ
+  // keinen staffId offenlegt. Dauer aus endAt - startAt statt items[].duration
+  // damit Blockzeiten + manuelle Längen stimmen.
+  interface StaffLoad {
+    name: string;
+    color: string | null;
+    count: number;
+    minutes: number;
+  }
+  const perStaffMap = new Map<string, StaffLoad>();
+  for (const a of activeAppts) {
+    const key = `${a.staff.firstName} ${a.staff.lastName}`.trim();
+    const dur = Math.max(
+      0,
+      (new Date(a.endAt).getTime() - new Date(a.startAt).getTime()) / 60_000,
+    );
+    const prev = perStaffMap.get(key) ?? {
+      name: key,
+      color: a.staff.color,
+      count: 0,
+      minutes: 0,
+    };
+    prev.count += 1;
+    prev.minutes += dur;
+    perStaffMap.set(key, prev);
+  }
+  const staffLoad = [...perStaffMap.values()].sort(
+    (x, y) => y.minutes - x.minutes,
+  );
+  const maxStaffMinutes = staffLoad.reduce(
+    (m, s) => (s.minutes > m ? s.minutes : m),
+    1,
+  );
+
   return (
     <div className="w-full p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3 md:mb-8">
@@ -465,6 +500,61 @@ export default async function Home(): Promise<React.JSX.Element> {
         <Stat label="Kundinnen" value={d.clientsCount} href="/clients" />
         <Stat label="Services" value={d.servicesCount} href="/services" />
       </section>
+
+      {staffLoad.length > 0 ? (
+        <Card className="mb-4" elevation="flat">
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
+            <h2 className="text-sm font-semibold">Heute pro Stylistin</h2>
+            <span className="text-xs text-text-muted">
+              {staffLoad.length}{' '}
+              {staffLoad.length === 1 ? 'Stylistin' : 'Stylistinnen'} aktiv
+            </span>
+          </div>
+          <CardBody className="p-0">
+            <ul className="divide-y divide-border">
+              {staffLoad.map((s) => {
+                const hours = Math.floor(s.minutes / 60);
+                const mins = Math.round(s.minutes % 60);
+                const timeLabel =
+                  hours > 0 ? `${hours}h ${mins > 0 ? `${mins}min` : ''}`.trim() : `${mins}min`;
+                const pct = Math.round((s.minutes / maxStaffMinutes) * 100);
+                const dot = s.color ?? 'hsl(var(--brand-accent))';
+                return (
+                  <li
+                    key={s.name}
+                    className="flex items-center gap-3 px-5 py-3"
+                  >
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: dot }}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                      {s.name}
+                    </span>
+                    <span className="shrink-0 text-xs tabular-nums text-text-muted">
+                      {s.count} · {timeLabel}
+                    </span>
+                    <div
+                      className="hidden h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-surface-raised sm:block"
+                      role="progressbar"
+                      aria-valuenow={pct}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${s.name} Auslastung heute`}
+                    >
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${pct}%`, backgroundColor: dot }}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardBody>
+        </Card>
+      ) : null}
 
       {d.monthGoalCents > 0
         ? (() => {
