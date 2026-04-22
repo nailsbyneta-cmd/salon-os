@@ -31,6 +31,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@salon-os/config": "workspace:*",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.10.2",
