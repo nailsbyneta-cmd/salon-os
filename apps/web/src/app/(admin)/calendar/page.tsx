@@ -178,24 +178,28 @@ export default async function CalendarPage({
             {title}
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
-            {appts.length} Termine · Studio 1{view === 'day' ? ' · Ziehen zum Umbuchen' : ''}
+            {appts.length} Termine · Studio 1{view === 'day' ? ' · Ziehen zum Umbuchen' : ''}{' '}
+            <span className="hidden text-text-muted md:inline">· Tastenkürzel: ?</span>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <ViewToggle current={view} day={day} />
           <div className="flex items-center gap-1">
-            <Link href={`/calendar?view=${view}&date=${prevDate}`}>
-              <Button variant="secondary" size="sm" aria-label="Vorherige">
+            <Link
+              href={`/calendar?view=${view}&date=${prevDate}`}
+              title="Vorherige (←)"
+            >
+              <Button variant="secondary" size="sm" aria-label="Vorherige (←)">
                 ←
               </Button>
             </Link>
-            <Link href={`/calendar?view=${view}&date=${todayInZone()}`}>
+            <Link href={`/calendar?view=${view}&date=${todayInZone()}`} title="Heute (T)">
               <Button variant="secondary" size="sm">
                 Heute
               </Button>
             </Link>
-            <Link href={`/calendar?view=${view}&date=${nextDate}`}>
-              <Button variant="secondary" size="sm" aria-label="Nächste">
+            <Link href={`/calendar?view=${view}&date=${nextDate}`} title="Nächste (→)">
+              <Button variant="secondary" size="sm" aria-label="Nächste (→)">
                 →
               </Button>
             </Link>
@@ -204,7 +208,7 @@ export default async function CalendarPage({
           <div className="hidden sm:block">
             <CalendarDateJumper currentDate={day} view={view} />
           </div>
-          <Link href={`/calendar/new?date=${day}`}>
+          <Link href={`/calendar/new?date=${day}`} title="Neuer Termin (N)">
             <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
               <span className="hidden sm:inline">Neuer Termin</span>
               <span className="sm:hidden">Neu</span>
@@ -264,10 +268,10 @@ export default async function CalendarPage({
 }
 
 function ViewToggle({ current, day }: { current: View; day: string }): React.JSX.Element {
-  const opts: Array<{ id: View; label: string }> = [
-    { id: 'day', label: 'Tag' },
-    { id: 'week', label: 'Woche' },
-    { id: 'month', label: 'Monat' },
+  const opts: Array<{ id: View; label: string; key: string }> = [
+    { id: 'day', label: 'Tag', key: 'D' },
+    { id: 'week', label: 'Woche', key: 'W' },
+    { id: 'month', label: 'Monat', key: 'M' },
   ];
   return (
     <div className="inline-flex items-center rounded-md border border-border bg-surface p-1">
@@ -275,6 +279,7 @@ function ViewToggle({ current, day }: { current: View; day: string }): React.JSX
         <Link
           key={o.id}
           href={`/calendar?view=${o.id}&date=${day}`}
+          title={`${o.label} (${o.key})`}
           className={cn(
             'inline-flex min-h-[40px] items-center rounded-sm px-3 text-xs font-medium transition-colors',
             current === o.id
