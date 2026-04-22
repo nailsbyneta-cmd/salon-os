@@ -64,7 +64,7 @@ export function CommandPalette({
   const [query, setQuery] = React.useState('');
   const [active, setActive] = React.useState(0);
   const [asyncResults, setAsyncResults] = React.useState<CommandItem[]>([]);
-  const [loading, setLoading] = React.useState(false);
+  const [, setLoading] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listRef = React.useRef<HTMLUListElement>(null);
   const asyncSeq = React.useRef(0);

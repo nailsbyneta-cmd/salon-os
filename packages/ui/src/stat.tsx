@@ -60,7 +60,6 @@ export function Stat({
     </div>
   );
   if (href) {
-    // eslint-disable-next-line @next/next/no-html-link-for-pages
     return (
       <a href={href} className="block">
         {body}
