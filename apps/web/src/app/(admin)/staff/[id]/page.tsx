@@ -12,7 +12,7 @@ import {
   Textarea,
 } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
-import { todayInZone } from '@salon-os/utils';
+import { todayInZone, toLocalIso } from '@salon-os/utils';
 import { getCurrentTenant } from '@/lib/tenant';
 import { updateStaff } from '../actions';
 
@@ -47,13 +47,19 @@ interface WeekStats {
   daysCovered: number; // Arbeitstage dieser Woche mit ≥1 Termin
 }
 
-function mondayOfCurrentZurichWeek(): { fromIso: string; toIso: string } {
-  // Parse heutiges CH-Datum, rechne zurück auf Montag, und beide als
-  // lokale 00:00/23:59 CH-Zeit interpretieren (via toLocalIso).
+function mondayOfCurrentZurichWeek(): {
+  fromIso: string;
+  toIso: string;
+  mondayIso: string;
+  sundayIso: string;
+} {
+  // Parse heutiges CH-Datum, rechne zurück auf Montag. toLocalIso() gibt den
+  // echten DST-aware Offset zurück (+01:00 Winter / +02:00 Sommer) — vorher
+  // war der Offset hardcoded und kippte zwischen Oktober und März.
   const todayCh = todayInZone();
   const [y, m, d] = todayCh.split('-').map(Number);
   const pivot = new Date(Date.UTC(y!, m! - 1, d!));
-  const weekday = pivot.getUTCDay(); // 0 = Sun, 1 = Mon, ...
+  const weekday = pivot.getUTCDay();
   const daysSinceMonday = weekday === 0 ? 6 : weekday - 1;
   const monday = new Date(pivot);
   monday.setUTCDate(pivot.getUTCDate() - daysSinceMonday);
@@ -61,20 +67,34 @@ function mondayOfCurrentZurichWeek(): { fromIso: string; toIso: string } {
   sunday.setUTCDate(monday.getUTCDate() + 6);
   const mondayIso = `${monday.getUTCFullYear()}-${String(monday.getUTCMonth() + 1).padStart(2, '0')}-${String(monday.getUTCDate()).padStart(2, '0')}`;
   const sundayIso = `${sunday.getUTCFullYear()}-${String(sunday.getUTCMonth() + 1).padStart(2, '0')}-${String(sunday.getUTCDate()).padStart(2, '0')}`;
-  // Als CH-lokale Timestamps: Montag 00:00 → Sonntag 23:59:59.999.
-  // Wir approximieren 23:59:59.999 als ende des Sonntags; zoneOffset ändert
-  // sich über DST, aber für Wochen-Stats ist eine Minute Drift egal.
   return {
-    fromIso: `${mondayIso}T00:00:00+02:00`,
-    toIso: `${sundayIso}T23:59:59+02:00`,
+    fromIso: toLocalIso(mondayIso, '00:00', 'Europe/Zurich'),
+    // toLocalIso liefert HH:MM:00 — für die Upper-Bound akzeptieren wir
+    // die Minute, ein Termin mit exakt 23:59:00 CH Start ist erlaubt.
+    toIso: toLocalIso(sundayIso, '23:59', 'Europe/Zurich'),
+    mondayIso,
+    sundayIso,
   };
 }
+
+function zurichDayKey(iso: string): string {
+  // YYYY-MM-DD in Europe/Zurich (damit Montag 00:30 CH als Montag zählt,
+  // nicht als Sonntag wie beim naiven slice(0,10) auf UTC-ISO).
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Zurich',
+  }).format(new Date(iso));
+}
+
+// Whitelist statt Blacklist — defensiv gegen zukünftige Status-Werte
+// (WAITLIST/DRAFT/REQUESTED etc.). Nur diese 4 zählen als 'gebuchter Slot'.
+const BOOKED_STATUSES = new Set(['BOOKED', 'CONFIRMED', 'CHECKED_IN', 'IN_SERVICE', 'COMPLETED']);
 
 async function loadWeekStats(
   staffId: string,
 ): Promise<WeekStats> {
   const ctx = getCurrentTenant();
   const { fromIso, toIso } = mondayOfCurrentZurichWeek();
+  const qs = new URLSearchParams({ staffId, from: fromIso, to: toIso });
   try {
     const res = await apiFetch<{
       appointments: Array<{
@@ -83,23 +103,25 @@ async function loadWeekStats(
         status: string;
         items: Array<{ duration: number; price: string }>;
       }>;
-    }>(
-      `/v1/appointments?staffId=${staffId}&from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`,
-      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
-    );
+    }>(`/v1/appointments?${qs.toString()}`, {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+    });
     let bookedMinutes = 0;
     let completedMinutes = 0;
     let apptCount = 0;
     let revenueChf = 0;
     const activeDays = new Set<string>();
     for (const a of res.appointments) {
-      // No-Show + CANCELLED raus — gelten nicht als 'gebucht'.
-      if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') continue;
+      if (!BOOKED_STATUSES.has(a.status)) continue;
       const min = a.items.reduce((s, i) => s + (i.duration ?? 0), 0);
       const ch = a.items.reduce((s, i) => s + Number(i.price), 0);
       bookedMinutes += min;
       apptCount += 1;
-      activeDays.add(a.startAt.slice(0, 10));
+      // Zurich-Day-Key statt UTC-slice, sonst kippen Randzeiten
+      // (Mo 00:30 CH = So 23:30 UTC) in den falschen Tag.
+      activeDays.add(zurichDayKey(a.startAt));
       if (a.status === 'COMPLETED') {
         completedMinutes += min;
         revenueChf += ch;
@@ -113,7 +135,10 @@ async function loadWeekStats(
       daysCovered: activeDays.size,
     };
   } catch (err) {
+    // Auth-Fehler (401/403) sollten den Admin auf Login leiten, nicht als
+    // 'Null-Daten' maskiert werden.
     if (err instanceof ApiError) {
+      if (err.status === 401 || err.status === 403) throw err;
       return {
         bookedMinutes: 0,
         completedMinutes: 0,
@@ -124,6 +149,23 @@ async function loadWeekStats(
     }
     throw err;
   }
+}
+
+function fmtDateRange(mondayIso: string, sundayIso: string): string {
+  const mon = new Date(`${mondayIso}T12:00:00Z`);
+  const sun = new Date(`${sundayIso}T12:00:00Z`);
+  const sameMonth = mondayIso.slice(0, 7) === sundayIso.slice(0, 7);
+  const monFmt = mon.toLocaleDateString('de-CH', {
+    day: '2-digit',
+    month: sameMonth ? undefined : 'short',
+    timeZone: 'Europe/Zurich',
+  });
+  const sunFmt = sun.toLocaleDateString('de-CH', {
+    day: '2-digit',
+    month: 'short',
+    timeZone: 'Europe/Zurich',
+  });
+  return `${monFmt} – ${sunFmt}`;
 }
 
 function fmtHoursMin(mins: number): string {
@@ -202,65 +244,80 @@ export default async function StaffDetailPage({
         </Link>
       </header>
 
-      {weekStats.apptCount > 0 ? (
-        <Card className="mb-6" elevation="flat">
-          <CardBody>
-            <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-              Diese Woche
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-text-muted">
-                  Termine
-                </div>
-                <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
-                  {weekStats.apptCount}
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-text-muted">
-                  Gebucht
-                </div>
-                <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
-                  {fmtHoursMin(weekStats.bookedMinutes)}
-                </div>
-                {weekStats.daysCovered > 0 ? (
-                  <div className="mt-0.5 text-[10px] text-text-muted">
-                    Ø{' '}
-                    {fmtHoursMin(
-                      Math.round(
-                        weekStats.bookedMinutes / weekStats.daysCovered,
-                      ),
-                    )}
-                    /Tag
+      {weekStats.apptCount > 0
+        ? (() => {
+            const { mondayIso, sundayIso } = mondayOfCurrentZurichWeek();
+            const dateRange = fmtDateRange(mondayIso, sundayIso);
+            const n = Math.max(weekStats.daysCovered, 1);
+            const avgBookedMin = Math.round(weekStats.bookedMinutes / n);
+            const avgCompletedMin = Math.round(weekStats.completedMinutes / n);
+            const avgRevenue = Math.round(weekStats.revenueChf / n);
+            return (
+              <Card className="mb-6" elevation="flat">
+                <CardBody>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                    Diese Woche{' '}
+                    <span className="text-[11px] font-normal normal-case text-text-muted">
+                      · {dateRange}
+                    </span>
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                        Termine
+                      </div>
+                      <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
+                        {weekStats.apptCount}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                        Gebucht
+                      </div>
+                      <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
+                        {fmtHoursMin(weekStats.bookedMinutes)}
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-text-muted">
+                        Ø {fmtHoursMin(avgBookedMin)}/Tag
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                        Abgeschlossen
+                      </div>
+                      <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
+                        {fmtHoursMin(weekStats.completedMinutes)}
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-text-muted">
+                        Ø {fmtHoursMin(avgCompletedMin)}/Tag
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                        Umsatz
+                      </div>
+                      <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
+                        {weekStats.revenueChf.toLocaleString('de-CH', {
+                          maximumFractionDigits: 0,
+                        })}
+                        <span className="ml-1 text-sm font-normal text-text-muted">
+                          CHF
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-text-muted">
+                        erledigt · Ø{' '}
+                        {avgRevenue.toLocaleString('de-CH', {
+                          maximumFractionDigits: 0,
+                        })}{' '}
+                        CHF/Tag
+                      </div>
+                    </div>
                   </div>
-                ) : null}
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-text-muted">
-                  Abgeschlossen
-                </div>
-                <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
-                  {fmtHoursMin(weekStats.completedMinutes)}
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-text-muted">
-                  Umsatz (completed)
-                </div>
-                <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
-                  {weekStats.revenueChf.toLocaleString('de-CH', {
-                    maximumFractionDigits: 0,
-                  })}
-                  <span className="ml-1 text-sm font-normal text-text-muted">
-                    CHF
-                  </span>
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      ) : null}
+                </CardBody>
+              </Card>
+            );
+          })()
+        : null}
 
       <Card>
         <CardBody>
