@@ -3,6 +3,7 @@ import { Badge, Button, Card, CardBody, PriceDisplay, Stat } from '@salon-os/ui'
 import { Sparkline } from '@/components/sparkline';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { transitionAppointment } from './calendar/actions';
 
 interface Dashboard {
   servicesCount: number;
@@ -395,6 +396,17 @@ export default async function Home(): Promise<React.JSX.Element> {
                             keine Nummer
                           </span>
                         )}
+                        <form
+                          action={transitionAppointment.bind(null, a.id, 'confirm')}
+                        >
+                          <button
+                            type="submit"
+                            className="inline-flex h-10 items-center gap-1 rounded-md border border-success bg-success px-3 text-xs font-semibold text-white hover:bg-success/90 md:h-9"
+                            aria-label={`Termin von ${clientName} bestätigen`}
+                          >
+                            ✓ Bestätigt
+                          </button>
+                        </form>
                       </div>
                     </div>
                   </li>
