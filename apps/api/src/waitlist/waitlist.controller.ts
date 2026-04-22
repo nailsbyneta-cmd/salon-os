@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { z } from 'zod';
 import type { WaitlistEntry } from '@salon-os/db';
@@ -55,6 +56,23 @@ export class WaitlistController {
   @Get()
   async list(): Promise<{ entries: WaitlistEntry[] }> {
     return { entries: await this.svc.listActive() };
+  }
+
+  @Get('matches')
+  async matches(
+    @Query('serviceId', new ZodValidationPipe(uuidSchema)) serviceId: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Query('preferredStaffId') preferredStaffId?: string,
+  ): Promise<{ entries: WaitlistEntry[] }> {
+    if (!from || !to) return { entries: [] };
+    const entries = await this.svc.findMatches({
+      serviceId,
+      fromIso: from,
+      toIso: to,
+      preferredStaffId: preferredStaffId?.trim() || undefined,
+    });
+    return { entries };
   }
 
   @Post()

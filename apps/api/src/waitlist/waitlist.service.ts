@@ -126,6 +126,58 @@ export class WaitlistService {
     });
   }
 
+  /**
+   * Findet ACTIVE Warteliste-Einträge die einen gegebenen Slot abdecken
+   * könnten: gleicher Service + (earliestAt ≤ slotEnd AND latestAt ≥ slotStart).
+   * Optional gefiltert auf preferredStaffId — wenn angegeben, matchen nur
+   * Einträge ohne Preference oder mit genau dieser Preference.
+   */
+  async findMatches(opts: {
+    serviceId: string;
+    fromIso: string;
+    toIso: string;
+    preferredStaffId?: string;
+  }): Promise<WaitlistEntry[]> {
+    const ctx = requireTenantContext();
+    const from = new Date(opts.fromIso);
+    const to = new Date(opts.toIso);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return [];
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      return tx.waitlistEntry.findMany({
+        where: {
+          status: 'ACTIVE',
+          serviceId: opts.serviceId,
+          // Overlap: earliestAt ≤ slotEnd AND latestAt ≥ slotStart.
+          earliestAt: { lte: to },
+          latestAt: { gte: from },
+          ...(opts.preferredStaffId
+            ? {
+                OR: [
+                  { preferredStaffId: null },
+                  { preferredStaffId: opts.preferredStaffId },
+                ],
+              }
+            : {}),
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 10,
+        include: {
+          client: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              phoneE164: true,
+            },
+          },
+          service: { select: { name: true } },
+          staff: { select: { firstName: true, lastName: true } },
+        },
+      });
+    });
+  }
+
   async publicAdd(slug: string, input: PublicWaitlistInput): Promise<WaitlistEntry> {
     const tenant = await this.prismaPublic.tenant.findUnique({
       where: { slug },

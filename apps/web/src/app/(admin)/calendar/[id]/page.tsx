@@ -60,8 +60,43 @@ interface Appt {
     id: string;
     price: string;
     duration: number;
+    serviceId: string;
     service: { name: string };
   }>;
+}
+
+interface WaitlistMatch {
+  id: string;
+  earliestAt: string;
+  latestAt: string;
+  notes: string | null;
+  client: {
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    phoneE164: string | null;
+  };
+  service: { name: string };
+  staff: { firstName: string; lastName: string } | null;
+}
+
+async function loadWaitlistMatches(
+  serviceId: string,
+  startAt: string,
+  endAt: string,
+): Promise<WaitlistMatch[]> {
+  const ctx = getCurrentTenant();
+  const qs = new URLSearchParams({ serviceId, from: startAt, to: endAt });
+  try {
+    const res = await apiFetch<{ entries: WaitlistMatch[] }>(
+      `/v1/waitlist/matches?${qs.toString()}`,
+      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
+    );
+    return res.entries;
+  } catch (err) {
+    if (err instanceof ApiError) return [];
+    throw err;
+  }
 }
 
 async function loadAppointment(id: string): Promise<Appt | null> {
@@ -118,6 +153,16 @@ export default async function AppointmentDetailPage({
   const { id } = await params;
   const a = await loadAppointment(id);
   if (!a) notFound();
+
+  // Wenn der Termin gecancelled oder No-Show ist: suche matchende Waitlist-
+  // Einträge damit der Slot nicht leer bleibt. Nur wenn primärer Service
+  // bekannt ist (multi-item: nimm den ersten).
+  const isFreed = a.status === 'CANCELLED' || a.status === 'NO_SHOW';
+  const primaryServiceId = a.items[0]?.serviceId;
+  const waitlistMatches =
+    isFreed && primaryServiceId
+      ? await loadWaitlistMatches(primaryServiceId, a.startAt, a.endAt)
+      : [];
 
   const day = a.startAt.slice(0, 10);
   const total = a.items.reduce((sum, i) => sum + Number(i.price), 0);
@@ -412,6 +457,96 @@ export default async function AppointmentDetailPage({
             </Button>
           </form>
         </section>
+      ) : null}
+
+      {isFreed && waitlistMatches.length > 0 ? (
+        <Card className="mb-6 border-l-4 border-l-accent bg-accent/5" elevation="flat">
+          <CardBody>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                Passende Warteliste · {waitlistMatches.length}{' '}
+                {waitlistMatches.length === 1 ? 'Kundin' : 'Kundinnen'}
+              </span>
+            </div>
+            <p className="mb-3 text-xs text-text-secondary">
+              Slot frei geworden — diese Kundinnen haben sich für diesen
+              Service + Zeitraum vorgemerkt. Ein WhatsApp-Tipp reicht.
+            </p>
+            <ul className="space-y-2">
+              {waitlistMatches.slice(0, 5).map((m) => {
+                const name = `${m.client.firstName} ${m.client.lastName}`;
+                const waDigits = m.client.phoneE164
+                  ? m.client.phoneE164.replace(/^\+/, '')
+                  : m.client.phone
+                    ? m.client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
+                    : null;
+                const waUsable = waDigits != null && waDigits.length >= 7;
+                const telHref = m.client.phoneE164 ?? m.client.phone ?? null;
+                const when = new Date(a.startAt).toLocaleString('de-CH', {
+                  weekday: 'short',
+                  day: '2-digit',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  timeZone: 'Europe/Zurich',
+                });
+                const waMsg = `Hallo ${m.client.firstName}, es wurde gerade ein Slot frei: ${when} für ${m.service.name}. Hättest du Zeit? Liebe Grüsse ✨`;
+                return (
+                  <li
+                    key={m.id}
+                    className="flex flex-wrap items-center gap-3 rounded-md bg-surface px-3 py-2.5"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-text-primary truncate">
+                        {name}
+                      </div>
+                      <div className="text-xs text-text-muted truncate">
+                        {m.service.name}
+                        {m.staff
+                          ? ` · bei ${m.staff.firstName} ${m.staff.lastName[0]}.`
+                          : ''}
+                        {m.notes ? ` · „${m.notes}"` : ''}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-1.5">
+                      {telHref ? (
+                        <a
+                          href={`tel:${telHref}`}
+                          className="inline-flex h-10 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary hover:bg-surface-raised hover:text-text-primary md:h-9"
+                          aria-label={`${name} anrufen`}
+                        >
+                          📞
+                        </a>
+                      ) : null}
+                      {waUsable ? (
+                        <a
+                          href={`https://wa.me/${waDigits}?text=${encodeURIComponent(waMsg)}`}
+                          target="_blank"
+                          rel="noopener"
+                          className="inline-flex h-10 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success hover:bg-success/20 md:h-9"
+                          aria-label={`${name} auf WhatsApp anschreiben (öffnet WhatsApp)`}
+                        >
+                          WA Slot anbieten
+                        </a>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {waitlistMatches.length > 5 ? (
+              <p className="mt-2 text-xs text-text-muted">
+                +{waitlistMatches.length - 5} weitere auf der{' '}
+                <Link
+                  href="/waitlist"
+                  className="underline hover:text-text-primary"
+                >
+                  Warteliste
+                </Link>
+              </p>
+            ) : null}
+          </CardBody>
+        </Card>
       ) : null}
 
       {a.status === 'COMPLETED' && a.client
