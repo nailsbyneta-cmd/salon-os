@@ -392,8 +392,14 @@ async function shutdown(): Promise<void> {
   await prisma.$disconnect();
   process.exit(0);
 }
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+// void-wrap: process.on erwartet sync-Handler, shutdown ist async —
+// no-misused-promises triggert sonst.
+process.on('SIGTERM', () => {
+  void shutdown();
+});
+process.on('SIGINT', () => {
+  void shutdown();
+});
 
 // ─── Outbox Poller ───────────────────────────────────────────────────────
 
