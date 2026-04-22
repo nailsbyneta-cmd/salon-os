@@ -13,7 +13,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { AppointmentCard, type AppointmentStatus, Avatar, Button } from '@salon-os/ui';
-import { toLocalIso } from '@salon-os/utils';
+import { toLocalIso } from '@salon-os/utils/timezone';
 import { rescheduleAppointment } from '@/app/(admin)/calendar/reschedule-action';
 import { CalendarZoomControls } from './calendar-zoom-controls';
 import { useCalendarZoom } from './use-calendar-zoom';

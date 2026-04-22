@@ -240,33 +240,20 @@ async function loadDashboard(): Promise<Dashboard> {
     .sort((a, b) => b.lifetimeValue - a.lifetimeValue)
     .slice(0, 12);
 
-  const birthdaysToday: BirthdayClient[] = cli.clients
-    .filter(
-      (
-        c,
-      ): c is {
-        id: string;
-        firstName: string;
-        lastName: string;
-        birthday: string;
-        phone: string | null;
-        phoneE164: string | null;
-        blocked: boolean;
-      } =>
-        Boolean(c.birthday) &&
-        typeof c.birthday === 'string' &&
-        c.birthday.slice(5, 10) === mmdd &&
-        // Gesperrte Kundinnen nie gratulieren.
-        c.blocked !== true,
-    )
-    .map((c) => ({
+  const birthdaysToday: BirthdayClient[] = cli.clients.flatMap((c) => {
+    if (!c.birthday || typeof c.birthday !== 'string') return [];
+    if (c.birthday.slice(5, 10) !== mmdd) return [];
+    // Gesperrte Kundinnen nie gratulieren.
+    if (c.blocked === true) return [];
+    return [{
       id: c.id,
       firstName: c.firstName,
       lastName: c.lastName,
       birthday: c.birthday,
       phone: c.phone,
       phoneE164: c.phoneE164,
-    }));
+    }];
+  });
 
   const revenueByDay = new Map<string, number>();
   for (let i = 0; i < 7; i++) {
