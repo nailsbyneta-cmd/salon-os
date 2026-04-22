@@ -15,6 +15,16 @@ import { ClientBrief } from '@/components/client-brief';
 import { transitionAppointment, cancelAppointment, markNoShow } from '../actions';
 import { updateAppointmentNotes } from './actions';
 
+function addDaysIso(isoDate: string, days: number): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return isoDate;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(
+    dt.getUTCDate(),
+  ).padStart(2, '0')}`;
+}
+
 interface Appt {
   id: string;
   startAt: string;
@@ -402,6 +412,47 @@ export default async function AppointmentDetailPage({
             </Button>
           </form>
         </section>
+      ) : null}
+
+      {a.status === 'COMPLETED' && a.client ? (
+        <Card className="mb-6 border-l-4 border-l-accent bg-accent/5" elevation="flat">
+          <CardBody>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                Folgetermin vormerken
+              </span>
+            </div>
+            <p className="mb-3 text-xs text-text-secondary">
+              Ein Tap und {a.client.firstName} kriegt einen vorausgefüllten
+              Termin in der Zukunft — Zeit + Service noch editierbar.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[4, 6, 8].map((weeks) => {
+                const date = addDaysIso(day, weeks * 7);
+                const qs = new URLSearchParams({
+                  clientId: a.client!.id,
+                  staffId: a.staffId,
+                  date,
+                });
+                return (
+                  <Link
+                    key={weeks}
+                    href={`/calendar/new?${qs.toString()}`}
+                    className="inline-flex h-10 items-center gap-1 rounded-md border border-border bg-surface px-4 text-xs font-medium text-text-secondary hover:border-accent hover:bg-accent/5 hover:text-text-primary md:h-9"
+                  >
+                    +{weeks} Wochen
+                    <span className="ml-1 text-[10px] text-text-muted tabular-nums">
+                      {new Date(date).toLocaleDateString('de-CH', {
+                        day: '2-digit',
+                        month: 'short',
+                      })}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </CardBody>
+        </Card>
       ) : null}
 
       <Card>
