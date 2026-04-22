@@ -1,12 +1,12 @@
 import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { Queue } from 'bullmq';
+import type { PrismaClient } from '@salon-os/db';
 import { QUEUE_REMINDERS, type ReminderJob } from '@salon-os/utils';
 
 /**
- * Producer-Seite. Legt Erinnerungs-Jobs mit `delay` in die Queue.
- * Redis-URL kommt aus REDIS_URL. Ohne Redis im Env bleibt die Queue
- * unverbunden und enqueue() wird zum No-Op — gut für lokale Tests
- * und als Safety-Net gegen Ausfälle.
+ * Producer-Seite. Zwei Modi:
+ * - Outbox (bevorzugt): enqueueXxxViaOutbox() schreibt atomisch in DB-TX.
+ * - Legacy direct: sendConfirmationNow() / scheduleEmailReminder() als Fallback.
  */
 @Injectable()
 export class RemindersService implements OnModuleDestroy {
@@ -24,6 +24,41 @@ export class RemindersService implements OnModuleDestroy {
       connection: parseRedisUrl(redisUrl),
     });
   }
+
+  // ─── Outbox-based (preferred, atomic with DB transaction) ────────────────
+
+  async enqueueConfirmationViaOutbox(
+    tx: PrismaClient,
+    args: { appointmentId: string; tenantId: string },
+  ): Promise<void> {
+    await tx.outboxEvent.create({
+      data: { tenantId: args.tenantId, type: 'reminder.confirmation', payload: args as never },
+    });
+  }
+
+  async enqueueReminderViaOutbox(
+    tx: PrismaClient,
+    args: { appointmentId: string; tenantId: string; startAt: Date; leadTimeMs?: number },
+  ): Promise<void> {
+    await tx.outboxEvent.create({
+      data: {
+        tenantId: args.tenantId,
+        type: 'reminder.24h',
+        payload: { ...args, startAt: args.startAt.toISOString() } as never,
+      },
+    });
+  }
+
+  async enqueueCancelViaOutbox(
+    tx: PrismaClient,
+    args: { appointmentId: string; tenantId: string },
+  ): Promise<void> {
+    await tx.outboxEvent.create({
+      data: { tenantId: args.tenantId, type: 'reminder.cancel', payload: args as never },
+    });
+  }
+
+  // ─── Legacy direct-enqueue (fire-and-forget fallback) ────────────────────
 
   async sendConfirmationNow(args: {
     appointmentId: string;

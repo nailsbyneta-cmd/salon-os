@@ -394,3 +394,78 @@ async function shutdown(): Promise<void> {
 }
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
+
+// ─── Outbox Poller ───────────────────────────────────────────────────────
+
+async function pollOutbox(): Promise<void> {
+  const BATCH = 50;
+  const MAX_ATTEMPTS = 5;
+
+  const events = await prisma.outboxEvent.findMany({
+    where: { status: 'PENDING', attempts: { lt: MAX_ATTEMPTS } },
+    orderBy: { createdAt: 'asc' },
+    take: BATCH,
+  });
+
+  for (const event of events) {
+    await prisma.outboxEvent.update({
+      where: { id: event.id },
+      data: { status: 'PROCESSING', attempts: { increment: 1 } },
+    });
+
+    try {
+      const payload = event.payload as Record<string, unknown>;
+
+      if (event.type === 'reminder.confirmation' || event.type === 'reminder.24h') {
+        const appointmentId = payload['appointmentId'] as string;
+        const tenantId = payload['tenantId'] as string;
+
+        if (event.type === 'reminder.24h') {
+          const startAt = new Date(payload['startAt'] as string);
+          const leadTimeMs = (payload['leadTimeMs'] as number | undefined) ?? 24 * 60 * 60 * 1000;
+          const delay = startAt.getTime() - Date.now() - leadTimeMs;
+          if (delay > 0) {
+            await remindersQueueProducer.add(
+              `reminder-${appointmentId}`,
+              { appointmentId, tenantId, channel: 'email', kind: 'reminder-24h' },
+              { delay, jobId: `reminder-email-${appointmentId}`, removeOnComplete: true, attempts: 3 },
+            );
+          }
+        } else {
+          await remindersQueueProducer.add(
+            `confirmation-${appointmentId}`,
+            { appointmentId, tenantId, channel: 'email', kind: 'confirmation' },
+            { jobId: `confirmation-${appointmentId}`, removeOnComplete: true, attempts: 5 },
+          );
+        }
+      } else if (event.type === 'reminder.cancel') {
+        const appointmentId = payload['appointmentId'] as string;
+        for (const jobId of [`reminder-email-${appointmentId}`, `confirmation-${appointmentId}`]) {
+          const job = await remindersQueueProducer.getJob(jobId);
+          if (job) await job.remove();
+        }
+      }
+
+      await prisma.outboxEvent.update({
+        where: { id: event.id },
+        data: { status: 'DONE', processedAt: new Date() },
+      });
+    } catch (err) {
+      const msg = (err as Error).message;
+      console.error(`[outbox] failed event=${event.id} type=${event.type}: ${msg}`);
+      await prisma.outboxEvent.update({
+        where: { id: event.id },
+        data: {
+          status: event.attempts + 1 >= MAX_ATTEMPTS ? 'FAILED' : 'PENDING',
+          lastError: msg.slice(0, 500),
+        },
+      });
+    }
+  }
+}
+
+setInterval(() => {
+  pollOutbox().catch((err) => console.error('[outbox] poll error:', err));
+}, 5_000);
+
+console.log('[outbox] poller started — polling every 5s');

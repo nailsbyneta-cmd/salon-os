@@ -12,7 +12,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
@@ -21,8 +23,9 @@
   },
   "dependencies": {
     "@salon-os/types": "workspace:*",
-    "@workos-inc/node": "^7.43.0",
-    "zod": "^3.24.1"
+    "@workos-inc/node": "^7.82.0",
+    "iron-session": "^8.0.4",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

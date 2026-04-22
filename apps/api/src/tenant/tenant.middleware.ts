@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
+import { unsealSession, COOKIE_NAME } from '@salon-os/auth';
 import { runWithTenant } from './tenant.context.js';
 
 const UUID_REGEX =
@@ -20,28 +21,25 @@ const ALLOWED_ROLES = new Set([
   'ASSISTANT',
 ]);
 
+const IS_PRODUCTION = process.env['NODE_ENV'] === 'production';
+
 /**
- * Löst Session aus dem Request (Cookie oder Bearer-Token) auf und legt den
- * Tenant-Context in AsyncLocalStorage — alle nachgelagerten DB-Calls
- * sehen ihn via `getTenantContext()`.
+ * Löst Session aus dem Request auf und legt den Tenant-Context in
+ * AsyncLocalStorage.
  *
- * PHASE-0-WARNUNG: Diese Middleware liest `x-tenant-id`/`x-user-id`/`x-role`
- * direkt aus dem Request-Header. Das ist NUR für lokale Entwicklung sicher.
- * In Production MUSS WorkOS-Session-Verifikation aktiv sein (assertProductionSafety()
- * in main.ts verhindert sonst den Start). Headers werden nach WorkOS-Integration
- * durch Cookie-Reads ersetzt.
+ * - Production: liest `salon_session` Cookie (iron-session sealed).
+ *   Schlägt fehl wenn WORKOS_COOKIE_PASSWORD nicht gesetzt ist.
+ * - Dev/Test: liest x-tenant-id / x-user-id / x-role Header.
+ *   Wird in Production durch assertProductionSafety() in main.ts geblockt.
  */
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
   private readonly logger = new Logger(TenantMiddleware.name);
 
-  use(req: FastifyRequest['raw'], _res: unknown, next: (err?: unknown) => void): void {
-    const headers = req.headers;
-
-    // Health/Ready- und Public-Endpoints dürfen ohne Tenant passieren.
-    // Public-Bookings lösen Tenant selbst über den URL-Slug auf.
+  async use(req: FastifyRequest['raw'], _res: unknown, next: (err?: unknown) => void): Promise<void> {
     const originalUrl = (req as unknown as { originalUrl?: string }).originalUrl ?? '';
     const path = originalUrl || req.url || '';
+
     if (
       path.startsWith('/health') ||
       path.startsWith('/v1/public/') ||
@@ -51,6 +49,46 @@ export class TenantMiddleware implements NestMiddleware {
       return;
     }
 
+    try {
+      if (IS_PRODUCTION) {
+        await this.handleProductionAuth(req, next);
+      } else {
+        this.handleDevAuth(req, next);
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  private async handleProductionAuth(
+    req: FastifyRequest['raw'],
+    next: (err?: unknown) => void,
+  ): Promise<void> {
+    const cookieHeader = req.headers['cookie'] ?? '';
+    const sealedCookie = parseCookie(cookieHeader, COOKIE_NAME);
+
+    if (!sealedCookie) {
+      next(new UnauthorizedException('Not authenticated'));
+      return;
+    }
+
+    const session = await unsealSession(sealedCookie);
+    if (!session) {
+      next(new UnauthorizedException('Invalid or expired session'));
+      return;
+    }
+
+    runWithTenant(
+      { tenantId: session.tenantId, userId: session.userId, role: session.role },
+      () => next(),
+    );
+  }
+
+  private handleDevAuth(
+    req: FastifyRequest['raw'],
+    next: (err?: unknown) => void,
+  ): void {
+    const headers = req.headers;
     const tenantId = readHeader(headers, 'x-tenant-id');
     const userId = readHeader(headers, 'x-user-id');
     const role = readHeader(headers, 'x-role');
@@ -59,10 +97,6 @@ export class TenantMiddleware implements NestMiddleware {
       next(new UnauthorizedException('Missing tenant context'));
       return;
     }
-
-    // Striktes Format — schützt nachgelagerten withTenant()-Call gegen
-    // SQL-Injection via Postgres-SET-LOCAL-Interpolation (Defense in Depth;
-    // withTenant() validiert nochmal).
     if (!UUID_REGEX.test(tenantId)) {
       this.logger.warn(`Rejected malformed x-tenant-id: ${tenantId.slice(0, 40)}`);
       next(new UnauthorizedException('Invalid tenant id format'));
@@ -77,9 +111,7 @@ export class TenantMiddleware implements NestMiddleware {
       return;
     }
 
-    runWithTenant({ tenantId, userId: userId ?? null, role: role ?? null }, () => {
-      next();
-    });
+    runWithTenant({ tenantId, userId: userId ?? null, role: role ?? null }, () => next());
   }
 }
 
@@ -90,4 +122,12 @@ function readHeader(
   const v = headers[name];
   if (Array.isArray(v)) return v[0];
   return v;
+}
+
+function parseCookie(cookieHeader: string, name: string): string | undefined {
+  for (const part of cookieHeader.split(';')) {
+    const [k, ...rest] = part.trim().split('=');
+    if (k?.trim() === name) return rest.join('=').trim();
+  }
+  return undefined;
 }
