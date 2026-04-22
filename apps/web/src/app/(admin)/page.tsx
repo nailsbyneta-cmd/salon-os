@@ -36,6 +36,7 @@ interface Dashboard {
   lowStockCount: number;
   birthdaysToday: BirthdayClient[];
   winBack: WinBackClient[];
+  topServicesWeek: Array<{ serviceId: string; name: string; count: number }>;
   zurichYear: string;
   tenantName: string;
   todayAppts: Array<{
@@ -108,7 +109,7 @@ async function loadDashboard(): Promise<Dashboard> {
         appointments: Array<{
           startAt: string;
           status: string;
-          items: Array<{ price: string }>;
+          items: Array<{ price: string; serviceId: string; service: { name: string } }>;
         }>;
       }>(
         `/v1/appointments?from=${weekStart.toISOString()}&to=${end.toISOString()}`,
@@ -213,6 +214,8 @@ async function loadDashboard(): Promise<Dashboard> {
     d.setDate(weekStart.getDate() + i);
     revenueByDay.set(d.toISOString().slice(0, 10), 0);
   }
+  // Top 3 Services der Woche — nur COMPLETED zählen für echtes Signal.
+  const weekServiceCounts = new Map<string, { name: string; count: number }>();
   for (const a of weekAppts.appointments) {
     if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') continue;
     const key = a.startAt.slice(0, 10);
@@ -222,8 +225,21 @@ async function loadDashboard(): Promise<Dashboard> {
       0,
     );
     revenueByDay.set(key, (revenueByDay.get(key) ?? 0) + cents);
+    if (a.status === 'COMPLETED') {
+      for (const item of a.items) {
+        const prev = weekServiceCounts.get(item.serviceId);
+        weekServiceCounts.set(item.serviceId, {
+          name: item.service.name,
+          count: (prev?.count ?? 0) + 1,
+        });
+      }
+    }
   }
   const revenueLast7DaysCents = Array.from(revenueByDay.values());
+  const topServicesWeek = Array.from(weekServiceCounts.entries())
+    .map(([serviceId, v]) => ({ serviceId, ...v }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
 
   return {
     servicesCount: svc.services.length,
@@ -239,6 +255,7 @@ async function loadDashboard(): Promise<Dashboard> {
     todayAppts: appts.appointments,
     birthdaysToday,
     winBack,
+    topServicesWeek,
     zurichYear: zYear,
     tenantName,
   };
@@ -401,6 +418,37 @@ export default async function Home(): Promise<React.JSX.Element> {
           <Sparkline data={d.revenueLast7DaysCents} width={240} height={56} />
         </CardBody>
       </Card>
+
+      {d.topServicesWeek.length > 0 ? (
+        <Card className="mb-4" elevation="flat">
+          <CardBody>
+            <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+              Top Services · letzte 7 Tage
+            </p>
+            <ul
+              className="mt-3 flex flex-wrap gap-2"
+              aria-label="Top Services der letzten 7 Tage"
+            >
+              {d.topServicesWeek.map((svc, idx) => (
+                <li
+                  key={svc.serviceId}
+                  className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm"
+                >
+                  <span className="text-[10px] font-semibold tabular-nums text-text-muted">
+                    #{idx + 1}
+                  </span>
+                  <span className="font-medium text-text-primary">
+                    {svc.name}
+                  </span>
+                  <span className="text-xs tabular-nums text-text-muted">
+                    {svc.count}×
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
+      ) : null}
 
       <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
         <Stat
