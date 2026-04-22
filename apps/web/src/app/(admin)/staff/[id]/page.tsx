@@ -12,6 +12,7 @@ import {
   Textarea,
 } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
+import { todayInZone } from '@salon-os/utils';
 import { getCurrentTenant } from '@/lib/tenant';
 import { updateStaff } from '../actions';
 
@@ -36,6 +37,101 @@ interface ServiceRow {
   name: string;
   durationMinutes: number;
   basePrice: string;
+}
+
+interface WeekStats {
+  bookedMinutes: number;
+  completedMinutes: number;
+  apptCount: number;
+  revenueChf: number;
+  daysCovered: number; // Arbeitstage dieser Woche mit ≥1 Termin
+}
+
+function mondayOfCurrentZurichWeek(): { fromIso: string; toIso: string } {
+  // Parse heutiges CH-Datum, rechne zurück auf Montag, und beide als
+  // lokale 00:00/23:59 CH-Zeit interpretieren (via toLocalIso).
+  const todayCh = todayInZone();
+  const [y, m, d] = todayCh.split('-').map(Number);
+  const pivot = new Date(Date.UTC(y!, m! - 1, d!));
+  const weekday = pivot.getUTCDay(); // 0 = Sun, 1 = Mon, ...
+  const daysSinceMonday = weekday === 0 ? 6 : weekday - 1;
+  const monday = new Date(pivot);
+  monday.setUTCDate(pivot.getUTCDate() - daysSinceMonday);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  const mondayIso = `${monday.getUTCFullYear()}-${String(monday.getUTCMonth() + 1).padStart(2, '0')}-${String(monday.getUTCDate()).padStart(2, '0')}`;
+  const sundayIso = `${sunday.getUTCFullYear()}-${String(sunday.getUTCMonth() + 1).padStart(2, '0')}-${String(sunday.getUTCDate()).padStart(2, '0')}`;
+  // Als CH-lokale Timestamps: Montag 00:00 → Sonntag 23:59:59.999.
+  // Wir approximieren 23:59:59.999 als ende des Sonntags; zoneOffset ändert
+  // sich über DST, aber für Wochen-Stats ist eine Minute Drift egal.
+  return {
+    fromIso: `${mondayIso}T00:00:00+02:00`,
+    toIso: `${sundayIso}T23:59:59+02:00`,
+  };
+}
+
+async function loadWeekStats(
+  staffId: string,
+): Promise<WeekStats> {
+  const ctx = getCurrentTenant();
+  const { fromIso, toIso } = mondayOfCurrentZurichWeek();
+  try {
+    const res = await apiFetch<{
+      appointments: Array<{
+        id: string;
+        startAt: string;
+        status: string;
+        items: Array<{ duration: number; price: string }>;
+      }>;
+    }>(
+      `/v1/appointments?staffId=${staffId}&from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`,
+      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
+    );
+    let bookedMinutes = 0;
+    let completedMinutes = 0;
+    let apptCount = 0;
+    let revenueChf = 0;
+    const activeDays = new Set<string>();
+    for (const a of res.appointments) {
+      // No-Show + CANCELLED raus — gelten nicht als 'gebucht'.
+      if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') continue;
+      const min = a.items.reduce((s, i) => s + (i.duration ?? 0), 0);
+      const ch = a.items.reduce((s, i) => s + Number(i.price), 0);
+      bookedMinutes += min;
+      apptCount += 1;
+      activeDays.add(a.startAt.slice(0, 10));
+      if (a.status === 'COMPLETED') {
+        completedMinutes += min;
+        revenueChf += ch;
+      }
+    }
+    return {
+      bookedMinutes,
+      completedMinutes,
+      apptCount,
+      revenueChf,
+      daysCovered: activeDays.size,
+    };
+  } catch (err) {
+    if (err instanceof ApiError) {
+      return {
+        bookedMinutes: 0,
+        completedMinutes: 0,
+        apptCount: 0,
+        revenueChf: 0,
+        daysCovered: 0,
+      };
+    }
+    throw err;
+  }
+}
+
+function fmtHoursMin(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m} Min`;
+  if (m === 0) return `${h} Std`;
+  return `${h} Std ${m} Min`;
 }
 
 async function load(id: string): Promise<{
@@ -64,7 +160,10 @@ export default async function StaffDetailPage({
   params: Promise<{ id: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
-  const { staff: s, allServices } = await load(id);
+  const [{ staff: s, allServices }, weekStats] = await Promise.all([
+    load(id),
+    loadWeekStats(id),
+  ]);
   if (!s) notFound();
 
   const save = updateStaff.bind(null, id);
@@ -102,6 +201,66 @@ export default async function StaffDetailPage({
           </Button>
         </Link>
       </header>
+
+      {weekStats.apptCount > 0 ? (
+        <Card className="mb-6" elevation="flat">
+          <CardBody>
+            <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+              Diese Woche
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                  Termine
+                </div>
+                <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
+                  {weekStats.apptCount}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                  Gebucht
+                </div>
+                <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
+                  {fmtHoursMin(weekStats.bookedMinutes)}
+                </div>
+                {weekStats.daysCovered > 0 ? (
+                  <div className="mt-0.5 text-[10px] text-text-muted">
+                    Ø{' '}
+                    {fmtHoursMin(
+                      Math.round(
+                        weekStats.bookedMinutes / weekStats.daysCovered,
+                      ),
+                    )}
+                    /Tag
+                  </div>
+                ) : null}
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                  Abgeschlossen
+                </div>
+                <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
+                  {fmtHoursMin(weekStats.completedMinutes)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                  Umsatz (completed)
+                </div>
+                <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
+                  {weekStats.revenueChf.toLocaleString('de-CH', {
+                    maximumFractionDigits: 0,
+                  })}
+                  <span className="ml-1 text-sm font-normal text-text-muted">
+                    CHF
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
 
       <Card>
         <CardBody>
