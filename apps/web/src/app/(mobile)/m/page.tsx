@@ -8,7 +8,12 @@ interface Appt {
   startAt: string;
   endAt: string;
   status: string;
-  client: { firstName: string; lastName: string } | null;
+  client: {
+    firstName: string;
+    lastName: string;
+    noShowRisk?: string | number | null;
+    lifetimeValue?: string | number | null;
+  } | null;
   staff: { firstName: string; lastName: string; color: string | null };
   items: Array<{ service: { name: string }; price: string }>;
 }
@@ -64,6 +69,12 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
   );
   const upcoming = active.filter((a) => new Date(a.startAt) >= now);
   const done = active.filter((a) => a.status === 'COMPLETED');
+  const riskToConfirm = upcoming.filter((a) => {
+    if (a.status !== 'BOOKED') return false;
+    const risk =
+      a.client?.noShowRisk != null ? Number(a.client.noShowRisk) : NaN;
+    return Number.isFinite(risk) && risk >= 25;
+  });
   const revenueCents = active.reduce(
     (s, a) => s + a.items.reduce((x, i) => x + Math.round(Number(i.price) * 100), 0),
     0,
@@ -90,6 +101,18 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
         <Stat label="Umsatz" value={`${Math.round(revenueCents / 100)}`} unit="CHF" />
       </section>
 
+      {riskToConfirm.length > 0 ? (
+        <div className="mx-5 mb-4 rounded-lg border-l-4 border-l-warning bg-warning/5 px-4 py-3">
+          <p className="text-xs font-semibold text-warning">
+            ⚠ {riskToConfirm.length}{' '}
+            {riskToConfirm.length === 1 ? 'Termin' : 'Termine'} zu bestätigen
+          </p>
+          <p className="mt-0.5 text-[11px] text-text-secondary">
+            Kurz anrufen — No-Show-Risiko &ge; 25%.
+          </p>
+        </div>
+      ) : null}
+
       {upcoming.length === 0 ? (
         <div className="mx-5 mt-6 rounded-lg border border-border bg-surface p-6 text-center">
           <div className="text-4xl">☕</div>
@@ -109,11 +132,39 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
                 ? `${a.client.firstName} ${a.client.lastName}`
                 : 'Blockzeit';
               const service = a.items.map((i) => i.service.name).join(', ') || '—';
+              const isTerminal =
+                a.status === 'CANCELLED' ||
+                a.status === 'NO_SHOW' ||
+                a.status === 'COMPLETED';
+              const riskRaw =
+                a.client?.noShowRisk != null
+                  ? Number(a.client.noShowRisk)
+                  : null;
+              const riskTier: 'hoch' | 'mittel' | null =
+                isTerminal || riskRaw == null || !Number.isFinite(riskRaw)
+                  ? null
+                  : riskRaw >= 40
+                    ? 'hoch'
+                    : riskRaw >= 25
+                      ? 'mittel'
+                      : null;
+              const vip =
+                !isTerminal &&
+                a.client?.lifetimeValue != null &&
+                Number(a.client.lifetimeValue) >= 2000;
+              const a11y = [
+                riskTier === 'hoch' ? 'hohes No-Show-Risiko' : null,
+                riskTier === 'mittel' ? 'mittleres No-Show-Risiko' : null,
+                vip ? 'VIP-Kundin' : null,
+              ]
+                .filter(Boolean)
+                .join(', ');
               return (
                 <li key={a.id}>
                   <Link
                     href={`/calendar/${a.id}`}
                     className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 active:scale-[0.99] transition-transform"
+                    aria-label={a11y ? `${name} — ${a11y}` : undefined}
                   >
                     <div
                       className="h-12 w-1 rounded-full shrink-0"
@@ -124,7 +175,37 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
                     <Avatar name={name} size="md" color="hsl(var(--brand-accent))" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="font-medium truncate">{name}</span>
+                        <span className="flex min-w-0 items-center gap-1">
+                          {riskTier === 'hoch' ? (
+                            <span
+                              className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger text-[10px] font-bold leading-none text-white"
+                              aria-hidden="true"
+                              title={`No-Show-Risiko ${Math.round(riskRaw!)}%`}
+                            >
+                              !
+                            </span>
+                          ) : riskTier === 'mittel' ? (
+                            <span
+                              className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-warning text-[10px] font-bold leading-none text-white"
+                              aria-hidden="true"
+                              title={`No-Show-Risiko ${Math.round(riskRaw!)}%`}
+                            >
+                              !
+                            </span>
+                          ) : null}
+                          {vip ? (
+                            <span
+                              className="shrink-0 text-sm leading-none text-accent"
+                              aria-hidden="true"
+                              title="VIP (Lifetime >= 2000 CHF)"
+                            >
+                              ★
+                            </span>
+                          ) : null}
+                          <span className="min-w-0 truncate font-medium">
+                            {name}
+                          </span>
+                        </span>
                         <span className="text-xs tabular-nums text-text-muted shrink-0">
                           {new Date(a.startAt).toLocaleTimeString('de-CH', {
                             hour: '2-digit',
