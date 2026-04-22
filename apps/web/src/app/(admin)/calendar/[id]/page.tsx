@@ -112,10 +112,13 @@ const channelLabel: Record<string, string> = {
 
 export default async function AppointmentDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ celebrate?: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
+  const { celebrate } = await searchParams;
   const a = await loadAppointment(id);
   if (!a) notFound();
 
@@ -134,8 +137,33 @@ export default async function AppointmentDetailPage({
   const noShow = markNoShow.bind(null, a.id);
   const saveNotes = updateAppointmentNotes.bind(null, a.id);
 
+  const celebrateBanner =
+    celebrate === 'big-tip'
+      ? {
+          tone: 'accent' as const,
+          text: '🎉 Grosses Trinkgeld — super Kundin!',
+        }
+      : celebrate === 'complete'
+        ? {
+            tone: 'success' as const,
+            text: '✓ Kassiert. Danke & tschüss!',
+          }
+        : null;
+
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8">
+      {celebrateBanner ? (
+        <div
+          className={
+            celebrateBanner.tone === 'accent'
+              ? 'mb-4 rounded-md border-l-4 border-l-accent bg-accent/10 px-4 py-2.5 text-sm font-medium text-accent'
+              : 'mb-4 rounded-md border-l-4 border-l-success bg-success/10 px-4 py-2.5 text-sm font-medium text-success'
+          }
+          role="status"
+        >
+          {celebrateBanner.text}
+        </div>
+      ) : null}
       <Link
         href={`/calendar?date=${day}`}
         className="text-xs text-text-muted transition-colors hover:text-text-primary"

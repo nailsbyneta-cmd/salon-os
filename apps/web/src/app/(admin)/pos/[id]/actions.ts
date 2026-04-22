@@ -41,6 +41,11 @@ export async function checkoutAppointment(
 
   revalidatePath('/calendar');
   revalidatePath(`/calendar/${appointmentId}`);
+  revalidatePath('/');
+  revalidatePath('/m');
   const celebrate = tipAmount >= 20 ? 'big-tip' : 'complete';
-  redirect(`/calendar?celebrate=${celebrate}`);
+  // Zurück aufs Termin-Detail — dort ist der Folgetermin-Card sichtbar,
+  // weil Status=COMPLETED nach checkout. Vorher gingen wir auf /calendar
+  // (Tagesplan), was die „Folgetermin vormerken"-Chips versteckt hat.
+  redirect(`/calendar/${appointmentId}?celebrate=${celebrate}`);
 }
