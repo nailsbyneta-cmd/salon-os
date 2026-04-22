@@ -36,6 +36,51 @@ async function loadToday(): Promise<Appt[]> {
   }
 }
 
+interface Birthday {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+async function loadBirthdays(): Promise<Birthday[]> {
+  const ctx = getCurrentTenant();
+  // MM-DD in Europe/Zurich — analog Admin-Dashboard-Heuristik.
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Zurich',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const mm = parts.find((p) => p.type === 'month')?.value ?? '';
+  const dd = parts.find((p) => p.type === 'day')?.value ?? '';
+  const mmdd = `${mm}-${dd}`;
+  try {
+    const res = await apiFetch<{
+      clients: Array<{
+        id: string;
+        firstName: string;
+        lastName: string;
+        birthday: string | null;
+        blocked: boolean;
+      }>;
+    }>('/v1/clients?limit=5000', {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+    });
+    return res.clients
+      .filter(
+        (c) =>
+          !c.blocked &&
+          typeof c.birthday === 'string' &&
+          c.birthday.slice(5, 10) === mmdd,
+      )
+      .map((c) => ({ id: c.id, firstName: c.firstName, lastName: c.lastName }));
+  } catch (err) {
+    if (err instanceof ApiError) return [];
+    throw err;
+  }
+}
+
 const statusTone: Record<
   string,
   'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'
@@ -62,7 +107,7 @@ const statusShort: Record<string, string> = {
 };
 
 export default async function MobileToday(): Promise<React.JSX.Element> {
-  const appts = await loadToday();
+  const [appts, birthdays] = await Promise.all([loadToday(), loadBirthdays()]);
   const now = new Date();
   const active = appts.filter(
     (a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW',
@@ -100,6 +145,32 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
         <Stat label="Fertig" value={done.length} />
         <Stat label="Umsatz" value={`${Math.round(revenueCents / 100)}`} unit="CHF" />
       </section>
+
+      {birthdays.length > 0 ? (
+        <div className="mx-5 mb-4 rounded-lg border-l-4 border-l-accent bg-accent/5 px-4 py-3">
+          <p className="text-xs font-semibold text-accent">
+            🎂 Heute Geburtstag · {birthdays.length}{' '}
+            {birthdays.length === 1 ? 'Kundin' : 'Kundinnen'}
+          </p>
+          <ul className="mt-1.5 flex flex-wrap gap-1.5">
+            {birthdays.slice(0, 6).map((b) => (
+              <li key={b.id}>
+                <Link
+                  href={`/clients/${b.id}`}
+                  className="inline-flex items-center rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-text-primary active:scale-[0.98] transition-transform"
+                >
+                  {b.firstName} {b.lastName}
+                </Link>
+              </li>
+            ))}
+            {birthdays.length > 6 ? (
+              <li className="self-center text-[11px] text-text-muted">
+                +{birthdays.length - 6}
+              </li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
 
       {riskToConfirm.length > 0 ? (
         <a
