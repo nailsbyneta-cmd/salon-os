@@ -102,15 +102,18 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
       </section>
 
       {riskToConfirm.length > 0 ? (
-        <div className="mx-5 mb-4 rounded-lg border-l-4 border-l-warning bg-warning/5 px-4 py-3">
+        <a
+          href="#upcoming"
+          className="mx-5 mb-4 block rounded-lg border-l-4 border-l-warning bg-warning/5 px-4 py-3 active:scale-[0.99] transition-transform"
+        >
           <p className="text-xs font-semibold text-warning">
             ⚠ {riskToConfirm.length}{' '}
             {riskToConfirm.length === 1 ? 'Termin' : 'Termine'} zu bestätigen
           </p>
           <p className="mt-0.5 text-[11px] text-text-secondary">
-            Kurz anrufen — No-Show-Risiko &ge; 25%.
+            Kurz anrufen — No-Show-Risiko &ge; 25%. Zur Liste ↓
           </p>
-        </div>
+        </a>
       ) : null}
 
       {upcoming.length === 0 ? (
@@ -122,7 +125,7 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
           </p>
         </div>
       ) : (
-        <section className="px-5">
+        <section id="upcoming" className="scroll-mt-4 px-5">
           <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
             Nächste {upcoming.length}
           </h2>
@@ -195,7 +198,7 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
                           ) : null}
                           {vip ? (
                             <span
-                              className="shrink-0 text-sm leading-none text-accent"
+                              className="shrink-0 text-xs leading-none text-accent"
                               aria-hidden="true"
                               title="VIP (Lifetime >= 2000 CHF)"
                             >
