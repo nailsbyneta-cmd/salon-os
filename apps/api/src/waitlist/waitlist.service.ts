@@ -154,6 +154,8 @@ export class WaitlistService {
         // Overlap: earliestAt ≤ slotEnd AND latestAt ≥ slotStart.
         earliestAt: { lte: to },
         latestAt: { gte: from },
+        // Nur aktive, nicht-gesperrte Kundinnen anbieten.
+        client: { is: { blocked: false, deletedAt: null } },
         ...(opts.preferredStaffId
           ? {
               OR: [

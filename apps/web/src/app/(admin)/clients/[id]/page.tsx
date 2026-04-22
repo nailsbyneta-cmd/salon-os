@@ -4,7 +4,7 @@ import { Avatar, Badge, Button, Card, CardBody, PriceDisplay, Stat } from '@salo
 import { computeLoyalty } from '@salon-os/utils';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
-import { toggleClientBlocked } from '../actions';
+import { BlockToggleButton } from '@/components/block-toggle-button';
 import { forgetClient } from './actions';
 
 interface Client {
@@ -172,7 +172,7 @@ export default async function ClientDetailPage({
     `${n} ${n === 1 ? 'Woche' : 'Wochen'}`;
 
   return (
-    <div className="mx-auto max-w-4xl p-4 md:p-8">
+    <div className="mx-auto max-w-4xl xl:max-w-5xl 2xl:max-w-6xl p-4 md:p-8">
       <Link
         href="/clients"
         className="text-xs text-text-muted transition-colors hover:text-text-primary"
@@ -197,7 +197,7 @@ export default async function ClientDetailPage({
                 {client.firstName} {client.lastName}
               </h1>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/calendar/new?clientId=${client.id}`}
                 className="inline-flex h-9 items-center rounded-md bg-brand px-3 text-xs font-medium text-brand-foreground transition-colors hover:bg-brand/90"
@@ -210,25 +210,11 @@ export default async function ClientDetailPage({
               >
                 Bearbeiten
               </Link>
-              <form
-                action={toggleClientBlocked.bind(null, client.id, !client.blocked)}
-              >
-                <button
-                  type="submit"
-                  className={
-                    client.blocked
-                      ? 'inline-flex h-9 items-center rounded-md border border-warning/30 bg-warning/10 px-3 text-xs font-medium text-warning hover:bg-warning/20'
-                      : 'inline-flex h-9 items-center rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary hover:bg-surface-raised hover:text-danger hover:border-danger/30'
-                  }
-                  aria-label={
-                    client.blocked
-                      ? 'Sperre aufheben'
-                      : 'Kundin sperren (keine Gratulationen, Win-Back, Waitlist-Match)'
-                  }
-                >
-                  {client.blocked ? '🔒 Entsperren' : '🔒 Sperren'}
-                </button>
-              </form>
+              <BlockToggleButton
+                clientId={client.id}
+                currentBlocked={client.blocked}
+                clientName={`${client.firstName} ${client.lastName}`}
+              />
             </div>
           </div>
           {client.blocked ? (

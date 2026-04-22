@@ -78,7 +78,7 @@ export default async function AuditPage({
   ];
 
   return (
-    <div className="mx-auto max-w-5xl p-4 md:p-8">
+    <div className="mx-auto max-w-5xl xl:max-w-6xl 2xl:max-w-[1400px] p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
