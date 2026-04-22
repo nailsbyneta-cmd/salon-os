@@ -4,7 +4,11 @@ import { NextResponse } from 'next/server';
 /**
  * Minimal-Schutz für die Admin-Oberfläche bis WorkOS-Auth steht.
  * HTTP Basic-Auth via ADMIN_USERNAME + ADMIN_PASSWORD env-vars.
- * Wenn Vars leer sind → Auth deaktiviert (Dev-Fallback).
+ *
+ * Aktuell deaktiviert (2026-04-22, User-Entscheidung): bis WorkOS in
+ * Production scharf ist, kein Basic-Auth-Gate — Lorenc braucht Zugriff
+ * für Build + Testing. Staging-API hat bereits eigene Bedenken
+ * (siehe memory: salon-os staging exposure).
  *
  * Public-Booking, Mobile-App-Shell unter /m, API-Health bleiben offen.
  */
@@ -18,11 +22,10 @@ function unauthorized(): NextResponse {
 export function middleware(req: NextRequest): NextResponse {
   const user = process.env['ADMIN_USERNAME'];
   const pass = process.env['ADMIN_PASSWORD'];
-  const isProd = process.env['NODE_ENV'] === 'production';
 
-  // In Prod: ohne Auth-Credentials → fail-closed. Lieber 503 als offenes Admin.
+  // Ohne konfigurierte Credentials → Gate deaktiviert. Auch in Prod,
+  // bis WorkOS scharf ist. Mit Credentials → normales Basic-Auth.
   if (!user || !pass) {
-    if (isProd) return unauthorized();
     return NextResponse.next();
   }
 
