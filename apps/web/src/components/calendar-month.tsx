@@ -58,7 +58,10 @@ export function CalendarMonth({
   const weekdayLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface">
+    <div
+      className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface"
+      style={{ minHeight: 'calc(100dvh - 220px)' }}
+    >
       <div className="grid grid-cols-7 border-b border-border">
         {weekdayLabels.map((w) => (
           <div
@@ -69,7 +72,10 @@ export function CalendarMonth({
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7">
+      <div
+        className="grid flex-1 grid-cols-7"
+        style={{ gridTemplateRows: `repeat(${weeks}, minmax(110px, 1fr))` }}
+      >
         {cells.map((d, idx) => {
           const inMonth = d.getMonth() === anchor.getMonth();
           const dayKey = isoDay(d);
@@ -83,7 +89,7 @@ export function CalendarMonth({
               key={dayKey}
               href={`/calendar?view=day&date=${dayKey}`}
               className={cn(
-                'relative border-r border-border p-1 transition-colors last:border-r-0 min-h-[90px] hover:bg-surface-raised/60 sm:p-2 sm:min-h-[110px]',
+                'relative border-r border-border p-1 transition-colors last:border-r-0 hover:bg-surface-raised/60 sm:p-2',
                 !isLastRow && 'border-b',
                 !inMonth && 'bg-background/40',
               )}

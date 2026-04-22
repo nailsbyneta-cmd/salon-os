@@ -19,6 +19,7 @@ import { CalendarZoomControls } from './calendar-zoom-controls';
 import { useCalendarZoom } from './use-calendar-zoom';
 import { useIsMobile } from './use-is-mobile';
 import { useOnlyActiveStaff } from './use-only-active-staff';
+import { useViewportSize } from './use-viewport-size';
 
 export interface DndAppt {
   id: string;
@@ -57,9 +58,17 @@ const SLOT_MINUTES = 15;
 const SLOTS_PER_HOUR = 60 / SLOT_MINUTES;
 const CAL_START_MIN = 8 * 60;
 const CAL_END_MIN = (8 + HOURS.length) * 60;
-// Responsive values; actual numbers picked at render time via useIsMobile.
-const DESKTOP = { pxPerMin: 72 / 60, colMinWidth: 180, timeColWidth: 72 };
-const MOBILE = { pxPerMin: 96 / 60, colMinWidth: 110, timeColWidth: 48 };
+// Responsive base. colMinWidth: untere Grenze in minmax() — verhindert
+// unleserlich schmale Spalten und erlaubt Stretching via 1fr. Bei 5+
+// Staff auf Laptop (1024×) würde 180 horizontalen Scroll auslösen, 110
+// passt. pxPerMin wird zusätzlich dynamisch hochskaliert (s.u.), damit
+// 11h auf tall screens vertikal füllen.
+const DESKTOP = { pxPerMin: 72 / 60, colMinWidth: 110, timeColWidth: 72 };
+const MOBILE = { pxPerMin: 96 / 60, colMinWidth: 96, timeColWidth: 48 };
+
+// Header/Padding-Abzug für die calc(100vh - X)-Logik. Wenn Admin-Shell
+// die Top-Bar/Page-Header ändert, hier nachziehen.
+const CAL_VERTICAL_OFFSET = 220;
 
 function minutesFromStart(iso: string): number {
   const d = new Date(iso);
@@ -102,11 +111,18 @@ export function CalendarDnd({
 }): React.JSX.Element {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const viewport = useViewportSize();
   const [zoom, , zoomControls] = useCalendarZoom();
   const [onlyActive, setOnlyActive] = useOnlyActiveStaff();
   const base = isMobile ? MOBILE : DESKTOP;
+  // pxPerMin skaliert mit Viewport-Höhe — 11h sollen den sichtbaren
+  // Bereich füllen. Mindestens base.pxPerMin, damit Termine nie kleiner
+  // als Default werden.
+  const availableHeight = Math.max(400, viewport.h - CAL_VERTICAL_OFFSET);
+  const fitPxPerMin = availableHeight / (HOURS.length * 60);
+  const pxPerMin = Math.max(base.pxPerMin, fitPxPerMin) * zoom;
   const cfg = {
-    pxPerMin: base.pxPerMin,
+    pxPerMin,
     colWidth: Math.max(50, Math.round(base.colMinWidth * zoom)),
     timeColWidth: base.timeColWidth,
   };

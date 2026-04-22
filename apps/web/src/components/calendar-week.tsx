@@ -24,6 +24,7 @@ import { CalendarZoomControls } from './calendar-zoom-controls';
 import { useCalendarZoom } from './use-calendar-zoom';
 import { useIsMobile } from './use-is-mobile';
 import { useOnlyActiveStaff } from './use-only-active-staff';
+import { useViewportSize } from './use-viewport-size';
 
 interface WeekAppt {
   id: string;
@@ -53,8 +54,9 @@ const SLOT_MINUTES = 15;
 const SLOTS_PER_HOUR = 60 / SLOT_MINUTES;
 const CAL_START_MIN = 8 * 60;
 const CAL_END_MIN = (8 + HOURS.length) * 60;
-const DESKTOP = { pxPerMin: 48 / 60, colMinWidth: 96, timeColWidth: 64 };
-const MOBILE = { pxPerMin: 72 / 60, colMinWidth: 68, timeColWidth: 40 };
+const DESKTOP = { pxPerMin: 48 / 60, colMinWidth: 70, timeColWidth: 64 };
+const MOBILE = { pxPerMin: 72 / 60, colMinWidth: 60, timeColWidth: 40 };
+const CAL_VERTICAL_OFFSET = 220;
 
 function minutesFromStart(iso: string): number {
   const d = new Date(iso);
@@ -108,11 +110,15 @@ export function CalendarWeek({
 }): React.JSX.Element {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const viewport = useViewportSize();
   const [zoom, , zoomControls] = useCalendarZoom();
   const [onlyActive, setOnlyActive] = useOnlyActiveStaff();
   const base = isMobile ? MOBILE : DESKTOP;
+  const availableHeight = Math.max(400, viewport.h - CAL_VERTICAL_OFFSET);
+  const fitPxPerMin = availableHeight / (HOURS.length * 60);
+  const pxPerMin = Math.max(base.pxPerMin, fitPxPerMin) * zoom;
   const cfg = {
-    pxPerMin: base.pxPerMin,
+    pxPerMin,
     colWidth: Math.max(40, Math.round(base.colMinWidth * zoom)),
     timeColWidth: base.timeColWidth,
   };
