@@ -20,6 +20,7 @@ interface WinBackClient {
   lastVisitAt: string;
   totalVisits: number;
   lifetimeValue: number;
+  phone: string | null;
   phoneE164: string | null;
 }
 
@@ -86,8 +87,9 @@ async function loadDashboard(): Promise<Dashboard> {
           lifetimeValue: string | number;
           phone: string | null;
           phoneE164: string | null;
+          blocked: boolean;
         }>;
-      }>('/v1/clients?limit=1000', auth),
+      }>('/v1/clients?limit=5000', auth),
       { clients: [] },
     ),
     safe(
@@ -145,6 +147,8 @@ async function loadDashboard(): Promise<Dashboard> {
   const winBackNow = Date.now();
   const winBack: WinBackClient[] = cli.clients
     .filter((c) => {
+      // Gesperrte Kundinnen nie als Win-Back-Ziel anschreiben.
+      if (c.blocked) return false;
       if (!c.lastVisitAt) return false;
       if (c.totalVisits < 5) return false;
       const ltv = Number(c.lifetimeValue);
@@ -160,6 +164,7 @@ async function loadDashboard(): Promise<Dashboard> {
       lastVisitAt: c.lastVisitAt as string,
       totalVisits: c.totalVisits,
       lifetimeValue: Number(c.lifetimeValue),
+      phone: c.phone,
       phoneE164: c.phoneE164,
     }))
     .sort((a, b) => b.lifetimeValue - a.lifetimeValue)
@@ -583,9 +588,15 @@ export default async function Home(): Promise<React.JSX.Element> {
                   (now.getTime() - new Date(w.lastVisitAt).getTime()) /
                     86_400_000,
                 );
+                // Mirror der Heute-zu-bestätigen-Fallback-Logik: phoneE164
+                // bevorzugt, raw phone normalisieren als Backup (Legacy-Daten
+                // ohne phoneE164). Mindestens 7 Ziffern für gültige wa.me-URL.
                 const waDigits = w.phoneE164
                   ? w.phoneE164.replace(/^\+/, '')
-                  : null;
+                  : w.phone
+                    ? w.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
+                    : null;
+                const waUsable = waDigits != null && waDigits.length >= 7;
                 return (
                   <li
                     key={w.id}
@@ -609,13 +620,13 @@ export default async function Home(): Promise<React.JSX.Element> {
                         CHF
                       </div>
                     </Link>
-                    {waDigits ? (
+                    {waUsable ? (
                       <a
                         href={`https://wa.me/${waDigits}`}
                         target="_blank"
                         rel="noopener"
                         className="inline-flex h-10 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success hover:bg-success/20 md:h-9"
-                        aria-label={`${w.firstName} ${w.lastName} auf WhatsApp anschreiben`}
+                        aria-label={`${w.firstName} ${w.lastName} auf WhatsApp anschreiben (öffnet WhatsApp)`}
                       >
                         WA
                       </a>
