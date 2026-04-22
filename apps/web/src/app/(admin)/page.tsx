@@ -11,6 +11,8 @@ interface BirthdayClient {
   firstName: string;
   lastName: string;
   birthday: string;
+  phone: string | null;
+  phoneE164: string | null;
 }
 
 interface WinBackClient {
@@ -171,16 +173,31 @@ async function loadDashboard(): Promise<Dashboard> {
     .slice(0, 12);
 
   const birthdaysToday: BirthdayClient[] = cli.clients
-    .filter((c): c is { id: string; firstName: string; lastName: string; birthday: string } =>
-      Boolean(c.birthday) &&
-      typeof c.birthday === 'string' &&
-      c.birthday.slice(5, 10) === mmdd,
+    .filter(
+      (
+        c,
+      ): c is {
+        id: string;
+        firstName: string;
+        lastName: string;
+        birthday: string;
+        phone: string | null;
+        phoneE164: string | null;
+        blocked: boolean;
+      } =>
+        Boolean(c.birthday) &&
+        typeof c.birthday === 'string' &&
+        c.birthday.slice(5, 10) === mmdd,
     )
+    // Gesperrte Kundinnen nie gratulieren.
+    .filter((c) => !c.blocked)
     .map((c) => ({
       id: c.id,
       firstName: c.firstName,
       lastName: c.lastName,
       birthday: c.birthday,
+      phone: c.phone,
+      phoneE164: c.phoneE164,
     }));
 
   const revenueByDay = new Map<string, number>();
@@ -469,24 +486,48 @@ export default async function Home(): Promise<React.JSX.Element> {
                 {d.birthdaysToday.length === 1 ? 'Kundin' : 'Kundinnen'}
               </span>
             </div>
-            <ul className="flex flex-wrap gap-2">
+            <ul className="flex flex-col gap-2">
               {d.birthdaysToday.slice(0, 8).map((b) => {
                 const age = ageToday(b.birthday, d.zurichYear);
+                const waDigits = b.phoneE164
+                  ? b.phoneE164.replace(/^\+/, '')
+                  : b.phone
+                    ? b.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
+                    : null;
+                const waUsable = waDigits != null && waDigits.length >= 7;
+                const waMsg = `Hallo ${b.firstName}, alles Gute zum Geburtstag von uns im Beautycenter! 🎂 Als kleines Geschenk: 10% Rabatt auf deinen nächsten Termin mit dem Code BDAY. Liebe Grüsse ✨`;
+                const waHref = waUsable
+                  ? `https://wa.me/${waDigits}?text=${encodeURIComponent(waMsg)}`
+                  : null;
                 return (
-                  <li key={b.id}>
+                  <li
+                    key={b.id}
+                    className="flex flex-wrap items-center gap-2"
+                  >
                     <Link
                       href={`/clients/${b.id}`}
-                      className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-raised"
+                      className="inline-flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-raised"
                     >
-                      <span className="font-medium text-text-primary">
+                      <span className="min-w-0 truncate font-medium text-text-primary">
                         {b.firstName} {b.lastName}
                       </span>
                       {age != null ? (
-                        <span className="text-xs tabular-nums text-text-muted">
+                        <span className="shrink-0 text-xs tabular-nums text-text-muted">
                           {age}
                         </span>
                       ) : null}
                     </Link>
+                    {waHref ? (
+                      <a
+                        href={waHref}
+                        target="_blank"
+                        rel="noopener"
+                        className="inline-flex h-10 shrink-0 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success hover:bg-success/20 md:h-9"
+                        aria-label={`${b.firstName} ${b.lastName} Geburtstags-Gruss auf WhatsApp senden`}
+                      >
+                        🎁 Gratulieren
+                      </a>
+                    ) : null}
                   </li>
                 );
               })}
