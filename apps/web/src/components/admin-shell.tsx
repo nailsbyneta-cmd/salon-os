@@ -48,24 +48,36 @@ export function AdminShell({
   const [paletteOpen, setPaletteOpen] = React.useState(false);
   const [navOpen, setNavOpen] = React.useState(false);
   const [counts, setCounts] = React.useState<PendingCounts | null>(null);
+  const lastFetchRef = React.useRef<number>(0);
 
   React.useEffect(() => {
     setNavOpen(false);
   }, [pathname]);
 
-  // Pending-Counts bei Mount + Route-Change fetchen. Nicht öfter als alle
-  // 60 Sek aktualisieren (Kosten: je 3 API-Calls).
+  // Pending-Counts fetchen mit 60s-Throttle + Refetch bei Tab-Rückkehr.
+  // Vorher: jede Route-Change triggerte 3 API-Calls — jetzt max 1x/min.
   React.useEffect(() => {
     let cancelled = false;
-    getPendingCounts()
-      .then((res) => {
-        if (!cancelled) setCounts(res);
-      })
-      .catch(() => {
-        // Bei Fehler Badge versteckt lassen.
-      });
+    const fetchCounts = (): void => {
+      if (Date.now() - lastFetchRef.current < 60_000) return;
+      lastFetchRef.current = Date.now();
+      getPendingCounts()
+        .then((res) => {
+          if (!cancelled) setCounts(res);
+        })
+        .catch((e) => {
+          // eslint-disable-next-line no-console
+          console.warn('[admin-shell] pending-counts fetch failed:', e);
+        });
+    };
+    fetchCounts();
+    const onVisible = (): void => {
+      if (document.visibilityState === 'visible') fetchCounts();
+    };
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
       cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, [pathname]);
 
@@ -254,34 +266,47 @@ export function AdminShell({
               item.href === '/'
                 ? pathname === '/'
                 : pathname?.startsWith(item.href);
-            // Badge-Count pro Nav-Item bestimmen.
-            const badgeCount =
+            // Badge-Count + kontextueller Label pro Nav-Item.
+            const badgeMeta: {
+              count: number;
+              tone: 'warning' | 'neutral';
+              context: string;
+            } =
               item.href === '/'
-                ? counts?.toConfirmToday ?? 0
-                : item.href === '/waitlist'
-                  ? counts?.waitlist ?? 0
-                  : item.href === '/inventory'
-                    ? counts?.lowStock ?? 0
-                    : 0;
-            const badgeTone =
-              item.href === '/'
-                ? 'warning'
+                ? {
+                    count: counts?.toConfirmToday ?? 0,
+                    tone: 'warning',
+                    context: 'zu bestätigen',
+                  }
                 : item.href === '/inventory'
-                  ? 'warning'
-                  : 'neutral';
+                  ? {
+                      count: counts?.lowStock ?? 0,
+                      tone: 'warning',
+                      context: 'Produkte mit niedrigem Bestand',
+                    }
+                  : item.href === '/waitlist'
+                    ? {
+                        count: counts?.waitlist ?? 0,
+                        tone: 'neutral',
+                        context: 'wartend',
+                      }
+                    : { count: 0, tone: 'neutral', context: '' };
+            const badgeCount = badgeMeta.count;
+            const badgeLabel =
+              badgeCount > 99 ? '99+' : String(badgeCount);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                  'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors',
                   active
                     ? 'bg-surface-raised text-text-primary font-medium'
                     : 'text-text-secondary hover:bg-surface-raised hover:text-text-primary',
                 )}
                 aria-label={
                   badgeCount > 0
-                    ? `${item.label}, ${badgeCount} ${badgeCount === 1 ? 'Eintrag' : 'Einträge'} pendent`
+                    ? `${item.label} — ${badgeCount} ${badgeMeta.context}`
                     : undefined
                 }
               >
@@ -294,19 +319,21 @@ export function AdminShell({
                   {item.icon}
                 </span>
                 <span className="flex-1">{item.label}</span>
-                {badgeCount > 0 ? (
-                  <span
-                    className={cn(
-                      'inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums',
-                      badgeTone === 'warning'
-                        ? 'bg-warning/15 text-warning'
-                        : 'bg-surface-raised text-text-secondary',
-                    )}
-                    aria-hidden="true"
-                  >
-                    {badgeCount}
-                  </span>
-                ) : null}
+                {/* Reserved-space placeholder verhindert CLS wenn counts
+                    asynchron reinkommen. */}
+                <span
+                  className={cn(
+                    'inline-flex h-5 min-w-[22px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums transition-opacity',
+                    badgeCount > 0
+                      ? badgeMeta.tone === 'warning'
+                        ? 'bg-warning/20 text-warning opacity-100'
+                        : 'bg-surface-raised text-text-secondary opacity-100'
+                      : 'opacity-0',
+                  )}
+                  aria-hidden="true"
+                >
+                  {badgeLabel}
+                </span>
               </Link>
             );
           })}

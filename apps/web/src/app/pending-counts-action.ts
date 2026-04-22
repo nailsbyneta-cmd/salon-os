@@ -1,4 +1,5 @@
 'use server';
+import { toLocalIso } from '@salon-os/utils';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
@@ -18,10 +19,13 @@ export interface PendingCounts {
 export async function getPendingCounts(): Promise<PendingCounts> {
   const ctx = getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
+  // Europe/Zurich Tagesgrenzen statt UTC — sonst zeigt Badge zwischen
+  // 22:00-24:00 CH bereits Folgetags-Counts (UTC ist schon neuer Tag).
+  const zurichToday = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Zurich',
+  }).format(new Date());
+  const fromIso = toLocalIso(zurichToday, '00:00', 'Europe/Zurich');
+  const toIso = toLocalIso(zurichToday, '23:59', 'Europe/Zurich');
 
   const safe = async <T>(p: Promise<T>, fallback: T): Promise<T> => {
     try {
@@ -40,7 +44,7 @@ export async function getPendingCounts(): Promise<PendingCounts> {
           client: { noShowRisk?: string | number | null } | null;
         }>;
       }>(
-        `/v1/appointments?from=${start.toISOString()}&to=${end.toISOString()}`,
+        `/v1/appointments?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`,
         auth,
       ),
       { appointments: [] },
