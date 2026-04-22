@@ -650,6 +650,10 @@ function WeekDraggableAppt({
           status={appt.status}
           staffColor={appt.staff.color}
           compact={compact}
+          noShowRisk={
+            appt.client?.noShowRisk != null ? Number(appt.client.noShowRisk) : null
+          }
+          vip={(appt.client?.tags ?? []).some((t) => /^vip$/i.test(t))}
           className={cn(
             'h-full',
             isDragging && 'shadow-lg ring-2 ring-accent',

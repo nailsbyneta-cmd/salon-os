@@ -68,7 +68,14 @@ export class AppointmentsService {
         },
         include: {
           items: { include: { service: { select: { name: true } } } },
-          client: { select: { firstName: true, lastName: true } },
+          client: {
+            select: {
+              firstName: true,
+              lastName: true,
+              noShowRisk: true,
+              tags: true,
+            },
+          },
           staff: { select: { firstName: true, lastName: true, color: true } },
         },
         orderBy: { startAt: 'asc' },

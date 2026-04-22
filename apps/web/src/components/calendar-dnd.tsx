@@ -27,7 +27,14 @@ export interface DndAppt {
   status: AppointmentStatus;
   clientId: string | null;
   staffId: string;
-  client: { firstName: string; lastName: string } | null;
+  client: {
+    firstName: string;
+    lastName: string;
+    // noShowRisk kommt aus der Prisma-Decimal-Spalte — serialisiert als
+    // string ('42.50') oder number, je nach Prisma-Driver. UI toleriert beide.
+    noShowRisk?: string | number | null;
+    tags?: string[];
+  } | null;
   staff: { firstName: string; lastName: string; color: string | null };
   items: Array<{ service: { name: string } }>;
 }
@@ -535,6 +542,10 @@ function DraggableAppt({
           status={appt.status}
           staffColor={appt.staff.color}
           compact={compact}
+          noShowRisk={
+            appt.client?.noShowRisk != null ? Number(appt.client.noShowRisk) : null
+          }
+          vip={(appt.client?.tags ?? []).some((t) => /^vip$/i.test(t))}
           className={`h-full ${isDragging ? 'shadow-lg ring-2 ring-accent' : ''}`}
         />
         {!isDragging ? (

@@ -321,7 +321,22 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
       </span>
       <div className="flex-1 min-w-[200px]">
         <Link href={`/calendar/${a.id}`} className="block hover:underline">
-          <div className="font-medium text-text-primary">{clientName}</div>
+          <div className="flex items-center gap-1.5 font-medium text-text-primary">
+            {a.client?.noShowRisk != null && Number(a.client.noShowRisk) >= 40 ? (
+              <span
+                className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger text-[10px] font-bold leading-none text-white"
+                title={`No-Show-Risiko ${Math.round(Number(a.client.noShowRisk))}%`}
+              >
+                !
+              </span>
+            ) : null}
+            {(a.client?.tags ?? []).some((t) => /^vip$/i.test(t)) ? (
+              <span className="text-xs leading-none text-accent" title="VIP">
+                ★
+              </span>
+            ) : null}
+            <span className="truncate">{clientName}</span>
+          </div>
           <div className="text-xs text-text-muted">
             {services} · {a.staff.firstName} {a.staff.lastName[0]}.
           </div>
