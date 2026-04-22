@@ -128,53 +128,67 @@ export class WaitlistService {
 
   /**
    * Findet ACTIVE Warteliste-Einträge die einen gegebenen Slot abdecken
-   * könnten: gleicher Service + (earliestAt ≤ slotEnd AND latestAt ≥ slotStart).
-   * Optional gefiltert auf preferredStaffId — wenn angegeben, matchen nur
-   * Einträge ohne Preference oder mit genau dieser Preference.
+   * könnten: serviceId in [...] + (earliestAt ≤ slotEnd AND latestAt ≥ slotStart).
+   * Multi-Item-Termine matchen auf alle ihre Services.
+   * Secondary-Sort: Einträge deren preferredStaffId == cancelledStaffId zuerst
+   * (bessere Match-Qualität), dann FIFO (createdAt ASC).
+   * Returnt { entries, total } damit die UI den echten "+N weitere"-Count
+   * kennt.
    */
   async findMatches(opts: {
-    serviceId: string;
+    serviceIds: string[];
     fromIso: string;
     toIso: string;
     preferredStaffId?: string;
-  }): Promise<WaitlistEntry[]> {
+  }): Promise<{ entries: WaitlistEntry[]; total: number }> {
     const ctx = requireTenantContext();
     const from = new Date(opts.fromIso);
     const to = new Date(opts.toIso);
-    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return [];
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+      return { entries: [], total: 0 };
+    }
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
-      return tx.waitlistEntry.findMany({
-        where: {
-          status: 'ACTIVE',
-          serviceId: opts.serviceId,
-          // Overlap: earliestAt ≤ slotEnd AND latestAt ≥ slotStart.
-          earliestAt: { lte: to },
-          latestAt: { gte: from },
-          ...(opts.preferredStaffId
-            ? {
-                OR: [
-                  { preferredStaffId: null },
-                  { preferredStaffId: opts.preferredStaffId },
-                ],
-              }
-            : {}),
-        },
-        orderBy: { createdAt: 'asc' },
-        take: 10,
-        include: {
-          client: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
-              phoneE164: true,
+      const where = {
+        status: 'ACTIVE',
+        serviceId: { in: opts.serviceIds },
+        // Overlap: earliestAt ≤ slotEnd AND latestAt ≥ slotStart.
+        earliestAt: { lte: to },
+        latestAt: { gte: from },
+        ...(opts.preferredStaffId
+          ? {
+              OR: [
+                { preferredStaffId: null },
+                { preferredStaffId: opts.preferredStaffId },
+              ],
+            }
+          : {}),
+      };
+      const [entries, total] = await Promise.all([
+        tx.waitlistEntry.findMany({
+          where,
+          // Staff-Match-Quality first (preferred === cancelled wins),
+          // dann FIFO nach Erstell-Datum.
+          orderBy: opts.preferredStaffId
+            ? [{ preferredStaffId: 'asc' }, { createdAt: 'asc' }]
+            : { createdAt: 'asc' },
+          take: 10,
+          include: {
+            client: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+                phoneE164: true,
+              },
             },
+            service: { select: { name: true } },
+            staff: { select: { firstName: true, lastName: true } },
           },
-          service: { select: { name: true } },
-          staff: { select: { firstName: true, lastName: true } },
-        },
-      });
+        }),
+        tx.waitlistEntry.count({ where }),
+      ]);
+      return { entries, total };
     });
   }
 

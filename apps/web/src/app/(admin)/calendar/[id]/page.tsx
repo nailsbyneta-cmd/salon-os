@@ -81,20 +81,41 @@ interface WaitlistMatch {
 }
 
 async function loadWaitlistMatches(
-  serviceId: string,
+  serviceIds: string[],
   startAt: string,
   endAt: string,
-): Promise<WaitlistMatch[]> {
+  preferredStaffId: string,
+): Promise<{ entries: WaitlistMatch[]; total: number }> {
   const ctx = getCurrentTenant();
-  const qs = new URLSearchParams({ serviceId, from: startAt, to: endAt });
+  const qs = new URLSearchParams({
+    serviceIds: serviceIds.join(','),
+    from: startAt,
+    to: endAt,
+    preferredStaffId,
+  });
   try {
-    const res = await apiFetch<{ entries: WaitlistMatch[] }>(
+    const res = await apiFetch<{ entries: WaitlistMatch[]; total: number }>(
       `/v1/waitlist/matches?${qs.toString()}`,
       { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
     );
-    return res.entries;
+    return res;
   } catch (err) {
-    if (err instanceof ApiError) return [];
+    if (err instanceof ApiError) return { entries: [], total: 0 };
+    throw err;
+  }
+}
+
+async function loadTenantName(): Promise<string> {
+  const ctx = getCurrentTenant();
+  try {
+    const res = await apiFetch<{ name: string }>('/v1/settings/tenant', {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+    });
+    return res.name || '';
+  } catch (err) {
+    if (err instanceof ApiError) return '';
     throw err;
   }
 }
@@ -155,24 +176,30 @@ export default async function AppointmentDetailPage({
   if (!a) notFound();
 
   // Wenn der Termin gecancelled oder No-Show ist: suche matchende Waitlist-
-  // Einträge damit der Slot nicht leer bleibt. Nur wenn primärer Service
-  // bekannt ist (multi-item: nimm den ersten).
+  // Einträge damit der Slot nicht leer bleibt. Multi-Item-Termine matchen
+  // auf alle Services. Parallel: Tenant-Name für pre-filled WA-Message.
   const isFreed = a.status === 'CANCELLED' || a.status === 'NO_SHOW';
-  const primaryServiceId = a.items[0]?.serviceId;
-  const waitlistMatches =
-    isFreed && primaryServiceId
-      ? await loadWaitlistMatches(primaryServiceId, a.startAt, a.endAt)
-      : [];
+  const allServiceIds = a.items.map((i) => i.serviceId).filter(Boolean);
+  const [matchesRes, tenantName] = isFreed && allServiceIds.length > 0
+    ? await Promise.all([
+        loadWaitlistMatches(allServiceIds, a.startAt, a.endAt, a.staffId),
+        loadTenantName(),
+      ])
+    : [{ entries: [] as WaitlistMatch[], total: 0 }, ''];
+  const waitlistMatches = matchesRes.entries;
+  const waitlistTotal = matchesRes.total;
 
   const day = a.startAt.slice(0, 10);
   const total = a.items.reduce((sum, i) => sum + Number(i.price), 0);
   const start = new Date(a.startAt).toLocaleTimeString('de-CH', {
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'Europe/Zurich',
   });
   const end = new Date(a.endAt).toLocaleTimeString('de-CH', {
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'Europe/Zurich',
   });
   const transition = transitionAppointment.bind(null, a.id);
   const cancel = cancelAppointment.bind(null, a.id);
@@ -490,7 +517,9 @@ export default async function AppointmentDetailPage({
                   minute: '2-digit',
                   timeZone: 'Europe/Zurich',
                 });
-                const waMsg = `Hallo ${m.client.firstName}, es wurde gerade ein Slot frei: ${when} für ${m.service.name}. Hättest du Zeit? Liebe Grüsse ✨`;
+                const waMsg = tenantName
+                  ? `Hallo ${m.client.firstName}, hier ist das Team vom ${tenantName} — es wurde gerade ein Slot frei: ${when} für ${m.service.name}. Hättest du Zeit? Liebe Grüsse ✨`
+                  : `Hallo ${m.client.firstName}, es wurde gerade ein Slot frei: ${when} für ${m.service.name}. Hättest du Zeit? Liebe Grüsse ✨`;
                 return (
                   <li
                     key={m.id}
@@ -534,9 +563,9 @@ export default async function AppointmentDetailPage({
                 );
               })}
             </ul>
-            {waitlistMatches.length > 5 ? (
+            {waitlistTotal > 5 ? (
               <p className="mt-2 text-xs text-text-muted">
-                +{waitlistMatches.length - 5} weitere auf der{' '}
+                +{waitlistTotal - 5} weitere auf der{' '}
                 <Link
                   href="/waitlist"
                   className="underline hover:text-text-primary"

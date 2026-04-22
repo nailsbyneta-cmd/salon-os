@@ -60,19 +60,41 @@ export class WaitlistController {
 
   @Get('matches')
   async matches(
-    @Query('serviceId', new ZodValidationPipe(uuidSchema)) serviceId: string,
+    @Query('serviceIds') serviceIdsRaw: string,
     @Query('from') from: string,
     @Query('to') to: string,
-    @Query('preferredStaffId') preferredStaffId?: string,
-  ): Promise<{ entries: WaitlistEntry[] }> {
-    if (!from || !to) return { entries: [] };
-    const entries = await this.svc.findMatches({
-      serviceId,
-      fromIso: from,
-      toIso: to,
-      preferredStaffId: preferredStaffId?.trim() || undefined,
+    @Query('preferredStaffId') preferredStaffIdRaw?: string,
+  ): Promise<{ entries: WaitlistEntry[]; total: number }> {
+    if (!from || !to || !serviceIdsRaw) return { entries: [], total: 0 };
+    // from/to: ISO-Datetime (Zod validation). Verletzt sonst CLAUDE.md-Regel
+    // 'Zod für alle externen Eingaben'.
+    const dateSchema = z.string().datetime({ offset: true });
+    const fromParsed = dateSchema.safeParse(from);
+    const toParsed = dateSchema.safeParse(to);
+    if (!fromParsed.success || !toParsed.success) {
+      return { entries: [], total: 0 };
+    }
+    // serviceIds: Komma-getrennte UUIDs. Multi-Item-Termine matchen dann
+    // auf alle Services des gecancelten Slots.
+    const serviceIds = serviceIdsRaw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const sidSchema = z.array(uuidSchema).min(1).max(20);
+    const sidParsed = sidSchema.safeParse(serviceIds);
+    if (!sidParsed.success) return { entries: [], total: 0 };
+    // preferredStaffId als optionale UUID.
+    const staffSchema = uuidSchema.optional();
+    const staffParsed = staffSchema.safeParse(
+      preferredStaffIdRaw?.trim() || undefined,
+    );
+    if (!staffParsed.success) return { entries: [], total: 0 };
+    return this.svc.findMatches({
+      serviceIds: sidParsed.data,
+      fromIso: fromParsed.data,
+      toIso: toParsed.data,
+      preferredStaffId: staffParsed.data,
     });
-    return { entries };
   }
 
   @Post()
