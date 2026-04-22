@@ -4,6 +4,7 @@ import type {
   CreateClientInput,
   UpdateClientInput,
 } from '@salon-os/types';
+import { normalizePhone } from '@salon-os/utils';
 import { AuditService } from '../audit/audit.service.js';
 import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
@@ -354,14 +355,3 @@ export class ClientsService {
   }
 }
 
-/**
- * Minimaler Phone-Normalisierer für Phase 1.
- * Wird in Phase 2 durch `libphonenumber-js` in @salon-os/utils ersetzt.
- * Regel: alles ausser `+` und Ziffern entfernen.
- */
-function normalizePhone(input: string): string {
-  const cleaned = input.replace(/[^\d+]/g, '');
-  // Für CH: führende 0 durch +41 ersetzen
-  if (cleaned.startsWith('0')) return '+41' + cleaned.slice(1);
-  return cleaned;
-}

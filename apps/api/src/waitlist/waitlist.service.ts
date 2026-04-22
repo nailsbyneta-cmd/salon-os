@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { PrismaClient, WaitlistEntry } from '@salon-os/db';
+import { normalizePhone } from '@salon-os/utils';
 import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 
@@ -79,6 +80,9 @@ export class WaitlistService {
             lastName: input.newClient.lastName,
             email: input.newClient.email ?? null,
             phone: input.newClient.phone ?? null,
+            phoneE164: input.newClient.phone
+              ? normalizePhone(input.newClient.phone)
+              : null,
             source: 'waitlist-admin',
           },
         });
@@ -154,6 +158,9 @@ export class WaitlistService {
             lastName: input.client.lastName,
             email: input.client.email,
             phone: input.client.phone ?? null,
+            phoneE164: input.client.phone
+              ? normalizePhone(input.client.phone)
+              : null,
             source: 'waitlist',
           },
         }));

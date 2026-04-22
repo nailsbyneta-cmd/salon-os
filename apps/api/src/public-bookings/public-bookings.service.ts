@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Appointment, Location, PrismaClient, Service } from '@salon-os/db';
+import { normalizePhone } from '@salon-os/utils';
 import { WITH_TENANT } from '../db/db.module.js';
 import { RemindersService } from '../reminders/reminders.service.js';
 
@@ -407,6 +408,9 @@ export class PublicBookingsService {
               lastName: input.client.lastName,
               email: input.client.email,
               phone: input.client.phone ?? null,
+              phoneE164: input.client.phone
+                ? normalizePhone(input.client.phone)
+                : null,
               language: input.language ?? 'de-CH',
               source: 'public_booking',
             },

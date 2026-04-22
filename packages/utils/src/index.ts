@@ -5,3 +5,4 @@ export * from './queue-names.js';
 export * from './tokens.js';
 export * from './ical.js';
 export * from './loyalty.js';
+export * from './phone.js';
