@@ -49,15 +49,11 @@ export interface LoyaltyStatus {
 }
 
 export function computeLoyalty(totalSpentCHF: number): LoyaltyStatus {
-  const tier = [...TIERS]
-    .reverse()
-    .find((t) => totalSpentCHF >= t.minSpent) ?? TIERS[0]!;
+  const tier = [...TIERS].reverse().find((t) => totalSpentCHF >= t.minSpent) ?? TIERS[0]!;
   const nextTier = TIERS.find((t) => t.minSpent > tier.minSpent) ?? null;
   const toNextCHF = nextTier ? Math.max(0, nextTier.minSpent - totalSpentCHF) : null;
   const tierRange = nextTier ? nextTier.minSpent - tier.minSpent : 1;
-  const progressInTier = nextTier
-    ? Math.min(1, (totalSpentCHF - tier.minSpent) / tierRange)
-    : 1;
+  const progressInTier = nextTier ? Math.min(1, (totalSpentCHF - tier.minSpent) / tierRange) : 1;
   return {
     tier,
     nextTier,

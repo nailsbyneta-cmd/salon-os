@@ -12,11 +12,7 @@ const CONSENT_VERSION = '1';
  * informiert darüber und speichert die Bestätigung. Ablehnen tut
  * nichts (weil wir nichts Trackbares haben).
  */
-export function CookieConsent({
-  privacyHref,
-}: {
-  privacyHref: string;
-}): React.JSX.Element | null {
+export function CookieConsent({ privacyHref }: { privacyHref: string }): React.JSX.Element | null {
   const [visible, setVisible] = React.useState(false);
 
   React.useEffect(() => {
@@ -45,9 +41,8 @@ export function CookieConsent({
         <div className="text-xs text-text-secondary sm:text-sm">
           <p className="font-medium text-text-primary">Cookies? Nur die nötigen.</p>
           <p className="mt-1">
-            Wir nutzen ausschliesslich technisch notwendige Cookies (Session,
-            dein Theme-Präferenz). Kein Tracking, kein Analytics, kein
-            Marketing.{' '}
+            Wir nutzen ausschliesslich technisch notwendige Cookies (Session, dein Theme-Präferenz).
+            Kein Tracking, kein Analytics, kein Marketing.{' '}
             <Link href={privacyHref} className="text-accent hover:underline">
               Details
             </Link>

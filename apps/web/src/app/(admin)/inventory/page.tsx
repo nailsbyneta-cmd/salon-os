@@ -37,24 +37,19 @@ async function load(): Promise<Product[]> {
 export default async function InventoryPage(): Promise<React.JSX.Element> {
   const products = await load();
   const lowStock = products.filter((p) => p.stockLevel <= p.reorderAt);
-  const stockValue = products.reduce(
-    (s, p) => s + (p.costCents / 100) * p.stockLevel,
-    0,
-  );
+  const stockValue = products.reduce((s, p) => s + (p.costCents / 100) * p.stockLevel, 0);
 
   return (
     <div className="w-full p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-            Inventar
-          </p>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Inventar</p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             Produkte
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
-            {products.length} aktiv · {lowStock.length} niedriger Bestand ·
-            Lagerwert {stockValue.toFixed(2)} CHF
+            {products.length} aktiv · {lowStock.length} niedriger Bestand · Lagerwert{' '}
+            {stockValue.toFixed(2)} CHF
           </p>
         </div>
         <Link href="/inventory/new">
@@ -72,21 +67,13 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
             </p>
             <ul className="mt-2 divide-y divide-border" aria-label="Niedrige Bestände">
               {lowStock.slice(0, 8).map((p) => {
-                const needQty =
-                  p.reorderQty != null && p.reorderQty > 0 ? p.reorderQty : null;
+                const needQty = p.reorderQty != null && p.reorderQty > 0 ? p.reorderQty : null;
                 const estCostChf =
-                  needQty != null && p.costCents > 0
-                    ? (needQty * p.costCents) / 100
-                    : null;
+                  needQty != null && p.costCents > 0 ? (needQty * p.costCents) / 100 : null;
                 return (
-                  <li
-                    key={p.id}
-                    className="flex flex-wrap items-center gap-3 py-2 text-sm"
-                  >
+                  <li key={p.id} className="flex flex-wrap items-center gap-3 py-2 text-sm">
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium text-text-primary">
-                        {p.name}
-                      </span>
+                      <span className="block truncate font-medium text-text-primary">{p.name}</span>
                       <span className="block truncate text-[11px] text-text-muted">
                         {p.brand ? `${p.brand} · ` : ''}
                         {p.supplier ? `Lieferant: ${p.supplier}` : 'Kein Lieferant hinterlegt'}
@@ -98,17 +85,13 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                         <>
                           {' · '}
                           Nachbestellen:{' '}
-                          <span className="font-semibold text-text-primary">
-                            {needQty}
-                          </span>
+                          <span className="font-semibold text-text-primary">{needQty}</span>
                         </>
                       ) : null}
                       {estCostChf != null ? (
                         <>
                           {' · '}
-                          <span className="text-text-muted">
-                            ~ {estCostChf.toFixed(0)} CHF
-                          </span>
+                          <span className="text-text-muted">~ {estCostChf.toFixed(0)} CHF</span>
                         </>
                       ) : null}
                     </span>
@@ -144,18 +127,14 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
               <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
                 <tr>
                   <th className="px-4 py-3 sm:px-5">Produkt</th>
-                  <th className="hidden px-4 py-3 md:table-cell md:w-24 md:px-5">
-                    Typ
-                  </th>
+                  <th className="hidden px-4 py-3 md:table-cell md:w-24 md:px-5">Typ</th>
                   <th className="hidden px-4 py-3 text-right lg:table-cell lg:w-24 lg:px-5">
                     Kosten
                   </th>
                   <th className="hidden px-4 py-3 text-right sm:table-cell sm:w-24 sm:px-5">
                     Verkauf
                   </th>
-                  <th className="px-4 py-3 text-center sm:w-32 sm:px-5">
-                    Bestand
-                  </th>
+                  <th className="px-4 py-3 text-center sm:w-32 sm:px-5">Bestand</th>
                   <th className="hidden px-4 py-3 md:table-cell md:w-24 md:px-5"></th>
                 </tr>
               </thead>
@@ -171,9 +150,7 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                       className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
                     >
                       <td className="px-4 py-3 sm:px-5">
-                        <div className="font-medium text-text-primary">
-                          {p.name}
-                        </div>
+                        <div className="font-medium text-text-primary">{p.name}</div>
                         <div className="text-xs text-text-muted">
                           {[p.brand, p.sku, p.unit].filter(Boolean).join(' · ') || '—'}
                         </div>
@@ -228,10 +205,7 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                       </td>
                       <td className="hidden px-4 py-3 text-right md:table-cell md:px-5">
                         <form action={rm}>
-                          <button
-                            type="submit"
-                            className="text-xs text-danger hover:underline"
-                          >
+                          <button type="submit" className="text-xs text-danger hover:underline">
                             Löschen
                           </button>
                         </form>

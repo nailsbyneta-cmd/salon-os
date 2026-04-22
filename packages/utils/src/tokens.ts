@@ -22,9 +22,7 @@ function getSecret(): string {
   }
   // Dev/Test: einmalige Warnung, fester Fallback.
   if (!process.env['__SSS_WARNED']) {
-    console.warn(
-      '[tokens] SELF_SERVICE_SECRET nicht gesetzt — dev-fallback aktiv. NICHT in Prod.',
-    );
+    console.warn('[tokens] SELF_SERVICE_SECRET nicht gesetzt — dev-fallback aktiv. NICHT in Prod.');
     process.env['__SSS_WARNED'] = '1';
   }
   return 'dev-secret-do-not-use-in-prod';

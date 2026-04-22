@@ -15,11 +15,7 @@ type WithTenantFn = <T>(
 export class ShiftsService {
   constructor(@Inject(WITH_TENANT) private readonly withTenant: WithTenantFn) {}
 
-  async list(opts: {
-    staffId?: string;
-    from: Date;
-    to: Date;
-  }): Promise<Shift[]> {
+  async list(opts: { staffId?: string; from: Date; to: Date }): Promise<Shift[]> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
       return tx.shift.findMany({
@@ -86,18 +82,9 @@ export class ShiftsService {
       const scheduleSource = staff.weeklySchedule ?? location.openingHours;
       const hours = (scheduleSource ?? {}) as Record<
         string,
-        | Array<{ open: string; close: string }>
-        | { open?: string; close?: string; closed?: boolean }
+        Array<{ open: string; close: string }> | { open?: string; close?: string; closed?: boolean }
       >;
-      const WEEKDAY = [
-        'sun',
-        'mon',
-        'tue',
-        'wed',
-        'thu',
-        'fri',
-        'sat',
-      ] as const;
+      const WEEKDAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -109,9 +96,7 @@ export class ShiftsService {
         day.setDate(today.getDate() + i);
         const key = WEEKDAY[day.getDay() % 7]!;
         const entry = hours[key];
-        const intervals: Array<{ open: string; close: string }> = Array.isArray(
-          entry,
-        )
+        const intervals: Array<{ open: string; close: string }> = Array.isArray(entry)
           ? entry.filter((iv) => iv.open && iv.close)
           : entry && !entry.closed && entry.open && entry.close
             ? [{ open: entry.open, close: entry.close }]

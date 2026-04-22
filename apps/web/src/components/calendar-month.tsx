@@ -108,9 +108,7 @@ export function CalendarMonth({
                   {d.getDate()}
                 </span>
                 {dayAppts.length > 0 ? (
-                  <span className="text-[10px] font-medium text-text-muted">
-                    {dayAppts.length}
-                  </span>
+                  <span className="text-[10px] font-medium text-text-muted">{dayAppts.length}</span>
                 ) : null}
               </div>
               <div className="mt-2 space-y-1">
@@ -122,8 +120,7 @@ export function CalendarMonth({
                     <span
                       className="h-1.5 w-1.5 rounded-full shrink-0"
                       style={{
-                        backgroundColor:
-                          a.staff.color ?? 'hsl(var(--border-strong))',
+                        backgroundColor: a.staff.color ?? 'hsl(var(--border-strong))',
                       }}
                     />
                     <span className="tabular-nums">
@@ -135,9 +132,7 @@ export function CalendarMonth({
                   </div>
                 ))}
                 {dayAppts.length > 3 ? (
-                  <div className="text-[10px] text-text-muted">
-                    + {dayAppts.length - 3} mehr
-                  </div>
+                  <div className="text-[10px] text-text-muted">+ {dayAppts.length - 3} mehr</div>
                 ) : null}
               </div>
             </Link>

@@ -15,7 +15,15 @@ import { z } from 'zod';
 export const sessionSchema = z.object({
   userId: z.string().uuid(),
   tenantId: z.string().uuid(),
-  role: z.enum(['OWNER', 'MANAGER', 'FRONT_DESK', 'STYLIST', 'BOOTH_RENTER', 'TRAINEE', 'ASSISTANT']),
+  role: z.enum([
+    'OWNER',
+    'MANAGER',
+    'FRONT_DESK',
+    'STYLIST',
+    'BOOTH_RENTER',
+    'TRAINEE',
+    'ASSISTANT',
+  ]),
   email: z.string().email(),
   issuedAt: z.number().int(),
   expiresAt: z.number().int(),

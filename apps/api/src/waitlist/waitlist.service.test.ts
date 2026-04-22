@@ -30,8 +30,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 
@@ -63,7 +68,11 @@ describe('WaitlistService', () => {
   describe('adminAdd()', () => {
     it('throws BadRequestException when latestAt <= earliestAt', async () => {
       await expect(
-        service.adminAdd({ ...BASE_ADMIN_INPUT, earliestAt: FUTURE_LATEST, latestAt: FUTURE_EARLIEST }),
+        service.adminAdd({
+          ...BASE_ADMIN_INPUT,
+          earliestAt: FUTURE_LATEST,
+          latestAt: FUTURE_EARLIEST,
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -116,17 +125,25 @@ describe('WaitlistService', () => {
 
     it('throws NotFoundException for unknown tenant', async () => {
       prismaPublic.tenant.findUnique.mockResolvedValue(null);
-      await expect(service.publicAdd('unknown', BASE_PUBLIC_INPUT)).rejects.toThrow(NotFoundException);
+      await expect(service.publicAdd('unknown', BASE_PUBLIC_INPUT)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws NotFoundException for SUSPENDED tenant', async () => {
       prismaPublic.tenant.findUnique.mockResolvedValue({ id: 'tenant1', status: 'SUSPENDED' });
-      await expect(service.publicAdd('demo-salon', BASE_PUBLIC_INPUT)).rejects.toThrow(NotFoundException);
+      await expect(service.publicAdd('demo-salon', BASE_PUBLIC_INPUT)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws BadRequestException when latestAt <= earliestAt', async () => {
       await expect(
-        service.publicAdd('demo-salon', { ...BASE_PUBLIC_INPUT, earliestAt: FUTURE_LATEST, latestAt: FUTURE_EARLIEST }),
+        service.publicAdd('demo-salon', {
+          ...BASE_PUBLIC_INPUT,
+          earliestAt: FUTURE_LATEST,
+          latestAt: FUTURE_EARLIEST,
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -140,7 +157,9 @@ describe('WaitlistService', () => {
       prisma.client.findFirst.mockResolvedValue(null);
       await service.publicAdd('demo-salon', BASE_PUBLIC_INPUT);
       expect(prisma.client.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ source: 'waitlist', email: 'anna@test.ch' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ source: 'waitlist', email: 'anna@test.ch' }),
+        }),
       );
     });
   });

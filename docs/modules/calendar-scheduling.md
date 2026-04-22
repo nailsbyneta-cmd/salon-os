@@ -10,6 +10,7 @@ Drag & Drop, Blockzeiten, Buffer-Zeiten, Raum-Zuweisung, Konflikt-Prävention.
 ## Datenmodell (Phase 1 Start)
 
 Alle in `packages/db/prisma/schema.prisma` (Stand: Migration 0002):
+
 - `Staff` + `StaffLocation` + `StaffService`
 - `Room`
 - `ServiceCategory` + `Service` + `ServiceVariant`
@@ -29,18 +30,18 @@ Siehe [specs/api.md §Appointments](../../specs/api.md).
 
 **Phase 1 MVP (Woche 4–6):**
 
-| Method | Path                                        | Zweck                     |
-|--------|---------------------------------------------|---------------------------|
-| GET    | `/v1/appointments?from=&to=&locationId=&staffId=` | Kalender-Feed     |
-| POST   | `/v1/appointments`                          | Neu (intern)              |
-| GET    | `/v1/appointments/:id`                      | Detail                    |
-| PATCH  | `/v1/appointments/:id`                      | Partial update            |
-| POST   | `/v1/appointments/:id/reschedule`           | Drag&Drop / resize        |
-| POST   | `/v1/appointments/:id/check-in`             | Kunde eingetroffen        |
-| POST   | `/v1/appointments/:id/start`                | Behandlung begonnen       |
-| POST   | `/v1/appointments/:id/complete`             | Abgeschlossen → POS-Flow  |
-| POST   | `/v1/appointments/:id/cancel`               | Storno (mit Reason)       |
-| POST   | `/v1/appointments/:id/no-show`              | No-Show                   |
+| Method | Path                                              | Zweck                    |
+| ------ | ------------------------------------------------- | ------------------------ |
+| GET    | `/v1/appointments?from=&to=&locationId=&staffId=` | Kalender-Feed            |
+| POST   | `/v1/appointments`                                | Neu (intern)             |
+| GET    | `/v1/appointments/:id`                            | Detail                   |
+| PATCH  | `/v1/appointments/:id`                            | Partial update           |
+| POST   | `/v1/appointments/:id/reschedule`                 | Drag&Drop / resize       |
+| POST   | `/v1/appointments/:id/check-in`                   | Kunde eingetroffen       |
+| POST   | `/v1/appointments/:id/start`                      | Behandlung begonnen      |
+| POST   | `/v1/appointments/:id/complete`                   | Abgeschlossen → POS-Flow |
+| POST   | `/v1/appointments/:id/cancel`                     | Storno (mit Reason)      |
+| POST   | `/v1/appointments/:id/no-show`                    | No-Show                  |
 
 Alle Writes: `Idempotency-Key` empfohlen.
 

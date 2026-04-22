@@ -63,8 +63,7 @@ function zurichNowParts(): { date: string; hour: number; minute: number } {
     minute: '2-digit',
     hour12: false,
   }).formatToParts(new Date());
-  const pick = (type: string): string =>
-    parts.find((p) => p.type === type)?.value ?? '';
+  const pick = (type: string): string => parts.find((p) => p.type === type)?.value ?? '';
   return {
     date: `${pick('year')}-${pick('month')}-${pick('day')}`,
     hour: Number(pick('hour')),
@@ -137,16 +136,14 @@ export default async function NewAppointmentPage({
         ← Zum Tagesplan
       </Link>
       <header className="mb-6 mt-4">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Kalender
-        </p>
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Kalender</p>
         <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           {isWalkin ? 'Walk-in' : 'Neuer Termin'}
         </h1>
         {isWalkin ? (
           <p className="mt-1 text-sm text-text-secondary">
-            Startzeit auf {defaultTime} vorbelegt (nächste Viertelstunde).
-            Service + Kundin wählen, fertig.
+            Startzeit auf {defaultTime} vorbelegt (nächste Viertelstunde). Service + Kundin wählen,
+            fertig.
           </p>
         ) : null}
       </header>
@@ -159,22 +156,12 @@ export default async function NewAppointmentPage({
                 <Input type="date" name="date" defaultValue={day} required />
               </Field>
               <Field label="Uhrzeit" required>
-                <Input
-                  type="time"
-                  name="time"
-                  defaultValue={defaultTime}
-                  step="900"
-                  required
-                />
+                <Input type="time" name="time" defaultValue={defaultTime} step="900" required />
               </Field>
             </div>
 
             <Field label="Service" required>
-              <Select
-                name="serviceId"
-                required
-                defaultValue={preselectedService ?? ''}
-              >
+              <Select name="serviceId" required defaultValue={preselectedService ?? ''}>
                 <option value="">— wählen —</option>
                 {services.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -185,11 +172,7 @@ export default async function NewAppointmentPage({
             </Field>
 
             <Field label="Mitarbeiterin" required>
-              <Select
-                name="staffId"
-                required
-                defaultValue={preselectedStaff ?? ''}
-              >
+              <Select name="staffId" required defaultValue={preselectedStaff ?? ''}>
                 <option value="">— wählen —</option>
                 {staff.map((s) => (
                   <option key={s.id} value={s.id}>

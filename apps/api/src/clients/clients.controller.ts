@@ -43,7 +43,8 @@ export class ClientsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(
-    @Body(new ZodValidationPipe(createClientSchema)) input: import('@salon-os/types').CreateClientInput,
+    @Body(new ZodValidationPipe(createClientSchema))
+    input: import('@salon-os/types').CreateClientInput,
   ): Promise<Client> {
     return this.svc.create(input);
   }
@@ -75,18 +76,14 @@ export class ClientsController {
 
   /** 1-Klick-DSGVO-Export: JSON mit allen Daten einer Kundin. */
   @Get(':id/export')
-  async exportData(
-    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
-  ): Promise<unknown> {
+  async exportData(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<unknown> {
     return this.svc.exportPersonalData(id);
   }
 
   /** DSGVO „Recht auf Vergessenwerden" — markiert Löschung. */
   @Post(':id/forget')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async forget(
-    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
-  ): Promise<void> {
+  async forget(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<void> {
     await this.svc.requestDeletion(id);
   }
 }

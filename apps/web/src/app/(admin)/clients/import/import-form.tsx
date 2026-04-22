@@ -36,9 +36,7 @@ export function ImportForm(): React.JSX.Element {
     });
   }
 
-  const lineCount = csv
-    ? csv.split(/\r?\n/).filter((l) => l.trim()).length - 1
-    : 0;
+  const lineCount = csv ? csv.split(/\r?\n/).filter((l) => l.trim()).length - 1 : 0;
 
   return (
     <div className="space-y-4">
@@ -81,11 +79,7 @@ export function ImportForm(): React.JSX.Element {
                   ? `${lineCount} Zeile${lineCount === 1 ? '' : 'n'} (inkl. ungültige)`
                   : 'Erste Zeile = Header, Pflichtfelder: firstName + lastName'}
               </p>
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={!csv.trim() || isPending}
-              >
+              <Button type="submit" variant="primary" disabled={!csv.trim() || isPending}>
                 {isPending ? 'Importiere …' : 'Importieren'}
               </Button>
             </div>
@@ -95,11 +89,7 @@ export function ImportForm(): React.JSX.Element {
 
       {result ? (
         <Card
-          className={
-            result.ok
-              ? 'border-success/40 bg-success/5'
-              : 'border-danger/40 bg-danger/5'
-          }
+          className={result.ok ? 'border-success/40 bg-success/5' : 'border-danger/40 bg-danger/5'}
         >
           <CardBody className="space-y-2">
             {result.ok ? (
@@ -111,8 +101,8 @@ export function ImportForm(): React.JSX.Element {
                   <strong>{result.created}</strong> neue Kundinnen angelegt
                   {result.skipped ? (
                     <>
-                      , <strong>{result.skipped}</strong> übersprungen (Email
-                      bereits vorhanden oder Daten unvollständig)
+                      , <strong>{result.skipped}</strong> übersprungen (Email bereits vorhanden oder
+                      Daten unvollständig)
                     </>
                   ) : null}
                   .
@@ -140,12 +130,8 @@ export function ImportForm(): React.JSX.Element {
               </>
             ) : (
               <>
-                <div className="text-sm font-semibold text-danger">
-                  ✗ Import fehlgeschlagen
-                </div>
-                <div className="text-sm text-text-secondary">
-                  {result.message}
-                </div>
+                <div className="text-sm font-semibold text-danger">✗ Import fehlgeschlagen</div>
+                <div className="text-sm text-text-secondary">{result.message}</div>
               </>
             )}
           </CardBody>

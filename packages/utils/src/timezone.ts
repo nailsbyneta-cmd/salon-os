@@ -28,11 +28,7 @@ export function zoneOffsetAt(date: Date, timeZone = 'Europe/Zurich'): string {
  * Beispiel: `toLocalIso('2026-04-20', '10:00', 'Europe/Zurich')` →
  * `'2026-04-20T10:00:00+02:00'` im Sommer, `'+01:00'` im Winter.
  */
-export function toLocalIso(
-  date: string,
-  time: string,
-  timeZone = 'Europe/Zurich',
-): string {
+export function toLocalIso(date: string, time: string, timeZone = 'Europe/Zurich'): string {
   // Pivot-Datum bauen, um den Offset für diesen Tag zu kennen.
   // Der Offset kann exakt am DST-Tag wechseln, aber für Salon-Öffnungszeiten
   // (tagsüber) ist das Datum selbst zuverlässig.

@@ -36,6 +36,7 @@ Cursor-basiert: `?after=cursor&limit=50`. Antwort hat `{ data:[…], pageInfo:{ 
 ## Filter / Sort
 
 Standardisiert:
+
 - Filter: `?filter[status]=confirmed&filter[startAt][gte]=2026-04-19`
 - Sort: `?sort=-startAt` (Minus = desc)
 - Sparse-Fields: `?fields=id,startAt,status`
@@ -49,15 +50,14 @@ Standardisiert:
   "status": 409,
   "detail": "Staff is unavailable at the requested time.",
   "instance": "/v1/appointments",
-  "errors": [
-    { "path": "startAt", "code": "staff_unavailable" }
-  ]
+  "errors": [{ "path": "startAt", "code": "staff_unavailable" }]
 }
 ```
 
 ## REST-Endpunkte (Auszug)
 
 ### Auth & Tenants
+
 ```
 POST   /v1/auth/login
 POST   /v1/auth/passkey/register
@@ -68,6 +68,7 @@ PATCH  /v1/tenants/:tenantId
 ```
 
 ### Locations
+
 ```
 GET    /v1/locations
 POST   /v1/locations
@@ -79,6 +80,7 @@ PUT    /v1/locations/:id/opening-hours
 ```
 
 ### Services
+
 ```
 GET    /v1/services
 POST   /v1/services
@@ -89,6 +91,7 @@ GET    /v1/services/:id/availability?date=2026-04-20&locationId=…
 ```
 
 ### Staff
+
 ```
 GET    /v1/staff
 POST   /v1/staff
@@ -104,6 +107,7 @@ POST   /v1/staff/:id/clock-out
 ```
 
 ### Clients
+
 ```
 GET    /v1/clients?search=…
 POST   /v1/clients
@@ -122,6 +126,7 @@ POST   /v1/clients/merge
 ```
 
 ### Appointments
+
 ```
 GET    /v1/appointments?from=…&to=…&locationId=…&staffId=…
 POST   /v1/appointments
@@ -139,6 +144,7 @@ POST   /v1/appointments/availability    # komplexe Verfügbarkeits-Suche
 ```
 
 ### Bookings (Public/Guest)
+
 ```
 GET    /v1/public/:tenantSlug/locations
 GET    /v1/public/:tenantSlug/services
@@ -150,6 +156,7 @@ POST   /v1/public/bookings/:reference/cancel
 ```
 
 ### Payments
+
 ```
 POST   /v1/payments/quote                 # Berechnet Summen/Steuer
 POST   /v1/payments                       # neue Zahlung (auch Cash)
@@ -164,6 +171,7 @@ GET    /v1/payments/tse-export?from=…&to=…  # DSFinV-K
 ```
 
 ### Products & Inventory
+
 ```
 GET    /v1/products
 POST   /v1/products
@@ -177,6 +185,7 @@ GET    /v1/inventory/low-stock
 ```
 
 ### Marketing
+
 ```
 GET    /v1/campaigns
 POST   /v1/campaigns
@@ -194,6 +203,7 @@ POST   /v1/flows/:id/activate
 ```
 
 ### Loyalty / Memberships / Gift Cards
+
 ```
 GET    /v1/loyalty/program
 PUT    /v1/loyalty/program
@@ -211,6 +221,7 @@ GET    /v1/gift-cards/:code
 ```
 
 ### Reviews & Reputation
+
 ```
 GET    /v1/reviews
 POST   /v1/reviews/respond
@@ -220,6 +231,7 @@ GET    /v1/reputation/sources  # Google/Facebook Status
 ```
 
 ### Reports
+
 ```
 GET    /v1/reports/revenue?from=&to=&groupBy=day
 GET    /v1/reports/occupancy
@@ -231,6 +243,7 @@ POST   /v1/reports/ai-query   # Natural-Language AI Analyst
 ```
 
 ### Admin / Webhooks / API-Keys
+
 ```
 GET    /v1/api-keys
 POST   /v1/api-keys
@@ -242,6 +255,7 @@ POST   /v1/webhooks/:id/test
 ```
 
 ### AI
+
 ```
 POST   /v1/ai/chat               # chat with AI Analyst
 POST   /v1/ai/recommend-slots
@@ -310,6 +324,7 @@ campaign.finished
 ```
 
 **Delivery:**
+
 - HTTPS, POST, JSON.
 - Header `X-SalonOS-Event`, `X-SalonOS-Signature` (HMAC-SHA256), `X-SalonOS-Delivery` (UUID).
 - Retries: 0s, 30s, 2m, 10m, 1h, 6h, 24h (max 7 Versuche).

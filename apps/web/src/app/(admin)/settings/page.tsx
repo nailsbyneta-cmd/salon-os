@@ -1,12 +1,4 @@
-import {
-  Badge,
-  Button,
-  Card,
-  CardBody,
-  Field,
-  Input,
-  Textarea,
-} from '@salon-os/ui';
+import { Badge, Button, Card, CardBody, Field, Input, Textarea } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { LocationHoursEditor } from '@/components/location-hours-editor';
@@ -163,8 +155,8 @@ export default async function SettingsPage({
           Öffentliches Profil
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Alles was Kundinnen auf deiner Buchungs-Seite sehen: Branding, Team,
-          FAQ, Bewertungen, Gallerie. Änderungen sind sofort live.
+          Alles was Kundinnen auf deiner Buchungs-Seite sehen: Branding, Team, FAQ, Bewertungen,
+          Gallerie. Änderungen sind sofort live.
         </p>
         {saved ? (
           <div className="mt-3 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-xs text-success">
@@ -199,16 +191,9 @@ export default async function SettingsPage({
           </h2>
           <Card>
             <CardBody>
-              <form
-                action={updateLocation.bind(null, primaryLocation.id)}
-                className="space-y-4"
-              >
+              <form action={updateLocation.bind(null, primaryLocation.id)} className="space-y-4">
                 <Field label="Salon-Name" required>
-                  <Input
-                    name="name"
-                    defaultValue={primaryLocation.name}
-                    required
-                  />
+                  <Input name="name" defaultValue={primaryLocation.name} required />
                 </Field>
                 <Field label="Adresse Zeile 1">
                   <Input
@@ -264,8 +249,7 @@ export default async function SettingsPage({
                   </Button>
                 </div>
                 <p className="text-xs text-text-muted">
-                  Wird auf Public-Buchungsseite (/book/…) und in Impressum/
-                  Datenschutz angezeigt.
+                  Wird auf Public-Buchungsseite (/book/…) und in Impressum/ Datenschutz angezeigt.
                 </p>
               </form>
             </CardBody>
@@ -397,11 +381,7 @@ export default async function SettingsPage({
           <CardBody>
             <form action={createFaq} className="space-y-3">
               <Field label="Frage" required>
-                <Input
-                  name="question"
-                  placeholder="Muss ich eine Anzahlung leisten?"
-                  required
-                />
+                <Input name="question" placeholder="Muss ich eine Anzahlung leisten?" required />
               </Field>
               <Field label="Antwort" required>
                 <Textarea
@@ -425,8 +405,7 @@ export default async function SettingsPage({
 
         {faqs.length === 0 ? (
           <p className="text-xs text-text-muted">
-            Keine FAQ angelegt. Antworte auf die 3–5 Fragen, die dir am
-            häufigsten gestellt werden.
+            Keine FAQ angelegt. Antworte auf die 3–5 Fragen, die dir am häufigsten gestellt werden.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -441,9 +420,7 @@ export default async function SettingsPage({
                       <div className="mt-1 text-sm text-text-secondary whitespace-pre-line">
                         {f.answer}
                       </div>
-                      {!f.active ? (
-                        <Badge tone="warning">Inaktiv</Badge>
-                      ) : null}
+                      {!f.active ? <Badge tone="warning">Inaktiv</Badge> : null}
                     </div>
                     <form action={deleteFaq.bind(null, f.id)}>
                       <Button type="submit" variant="ghost" size="sm">
@@ -471,14 +448,7 @@ export default async function SettingsPage({
                   <Input name="authorName" placeholder="Anna M." required />
                 </Field>
                 <Field label="Sterne (1–5)" required>
-                  <Input
-                    name="rating"
-                    type="number"
-                    min={1}
-                    max={5}
-                    defaultValue={5}
-                    required
-                  />
+                  <Input name="rating" type="number" min={1} max={5} defaultValue={5} required />
                 </Field>
               </div>
               <Field label="Text" required>
@@ -493,11 +463,7 @@ export default async function SettingsPage({
                 <Input name="sourceUrl" placeholder="https://g.page/…/review/…" />
               </Field>
               <label className="flex items-center gap-2 text-xs text-text-secondary">
-                <input
-                  type="checkbox"
-                  name="featured"
-                  className="h-3.5 w-3.5 accent-accent"
-                />
+                <input type="checkbox" name="featured" className="h-3.5 w-3.5 accent-accent" />
                 Auf Booking-Seite prominent zeigen
               </label>
               <div className="flex justify-end">
@@ -511,8 +477,7 @@ export default async function SettingsPage({
 
         {reviews.length === 0 ? (
           <p className="text-xs text-text-muted">
-            Noch keine Bewertungen übertragen. Kopiere sie aus Google oder tippe
-            sie ab.
+            Noch keine Bewertungen übertragen. Kopiere sie aus Google oder tippe sie ab.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -529,9 +494,7 @@ export default async function SettingsPage({
                           {'★'.repeat(r.rating)}
                           {'☆'.repeat(5 - r.rating)}
                         </span>
-                        {r.featured ? (
-                          <Badge tone="accent">Featured</Badge>
-                        ) : null}
+                        {r.featured ? <Badge tone="accent">Featured</Badge> : null}
                       </div>
                       <p className="mt-1 text-sm text-text-secondary whitespace-pre-line">
                         {r.text}
@@ -548,9 +511,7 @@ export default async function SettingsPage({
                       ) : null}
                     </div>
                     <div className="flex flex-col gap-1">
-                      <form
-                        action={toggleReviewFeatured.bind(null, r.id, !r.featured)}
-                      >
+                      <form action={toggleReviewFeatured.bind(null, r.id, !r.featured)}>
                         <Button type="submit" variant="ghost" size="sm">
                           {r.featured ? 'Unfeature' : 'Feature'}
                         </Button>
@@ -575,19 +536,14 @@ export default async function SettingsPage({
           Gallerie
         </h2>
         <p className="mb-3 text-xs text-text-muted">
-          Füge Bilder per URL hinzu — z.B. Links aus Instagram-CDN, Imgur,
-          Cloudinary. Direkter Upload kommt später.
+          Füge Bilder per URL hinzu — z.B. Links aus Instagram-CDN, Imgur, Cloudinary. Direkter
+          Upload kommt später.
         </p>
         <Card className="mb-4">
           <CardBody>
             <form action={createGalleryImage} className="space-y-3">
               <Field label="Bild-URL" required>
-                <Input
-                  name="imageUrl"
-                  type="url"
-                  placeholder="https://…/bild.jpg"
-                  required
-                />
+                <Input name="imageUrl" type="url" placeholder="https://…/bild.jpg" required />
               </Field>
               <Field label="Bildunterschrift (optional)">
                 <Input name="caption" placeholder="Braunlaminierung auf Anna" />
@@ -616,9 +572,7 @@ export default async function SettingsPage({
                   className="aspect-square w-full rounded-md border border-border object-cover"
                 />
                 {g.caption ? (
-                  <div className="mt-1 text-xs text-text-muted truncate">
-                    {g.caption}
-                  </div>
+                  <div className="mt-1 text-xs text-text-muted truncate">{g.caption}</div>
                 ) : null}
                 <form
                   action={deleteGalleryImage.bind(null, g.id)}

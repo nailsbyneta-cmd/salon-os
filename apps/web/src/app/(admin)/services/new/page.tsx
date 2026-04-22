@@ -12,10 +12,11 @@ interface CategoryRow {
 async function loadCategories(): Promise<CategoryRow[]> {
   const ctx = getCurrentTenant();
   try {
-    const res = await apiFetch<{ categories: CategoryRow[] }>(
-      '/v1/service-categories',
-      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
-    );
+    const res = await apiFetch<{ categories: CategoryRow[] }>('/v1/service-categories', {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+    });
     return res.categories;
   } catch (err) {
     if (err instanceof ApiError) return [];
@@ -35,9 +36,7 @@ export default async function NewServicePage(): Promise<React.JSX.Element> {
         ← Services
       </Link>
       <header className="mb-6 mt-4">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Katalog
-        </p>
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Katalog</p>
         <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           Neuer Service
         </h1>
@@ -51,7 +50,12 @@ export default async function NewServicePage(): Promise<React.JSX.Element> {
                 Noch keine Kategorie — leg erst eine an.
               </p>
               <div className="flex gap-2">
-                <Input name="name" required placeholder="z. B. Nägel, Wimpern, Brauen" className="flex-1" />
+                <Input
+                  name="name"
+                  required
+                  placeholder="z. B. Nägel, Wimpern, Brauen"
+                  className="flex-1"
+                />
                 <Button type="submit" variant="accent">
                   Kategorie anlegen
                 </Button>

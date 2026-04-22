@@ -5,6 +5,7 @@
 ## 1. DSGVO / GDPR (EU + UK)
 
 ### Pflicht-Features
+
 - **Verarbeitungsverzeichnis** (Art. 30) — automatisch geführt, Admin-Download als PDF
 - **DPA / AVV** mit allen Tenants automatisch (beim Onboarding elektronisch unterzeichnet)
 - **Sub-Prozessor-Liste** transparent auf Trust-Center, Änderungen per E-Mail 30 Tage vorher
@@ -20,6 +21,7 @@
 - **Data Retention Policies:** pro Entität konfigurierbar, automatische Löschung nach Frist
 
 ### Technische Maßnahmen
+
 - Encryption-at-Rest (AES-256, AWS KMS)
 - Encryption-in-Transit (TLS 1.3)
 - Field-Level-Encryption für besonders sensible Felder (Allergien, Patch-Test, Medspa-Notes)
@@ -27,6 +29,7 @@
 - Daten-Residency: EU-Daten bleiben in EU-Region (AWS eu-central-1 / eu-west-1)
 
 ### Data-Protection-Officer
+
 - Interner DSB ab Mitarbeiter 20
 - Externe DSB-Kanzlei zuvor (z. B. activeMind, intersoft consulting)
 
@@ -47,19 +50,19 @@
 
 ## 4. Weitere EU-Fiskal-Anforderungen
 
-| Land | System                     | Provider-Beispiel              |
-| ---- | -------------------------- | ------------------------------ |
-| IT   | Memoranda elettronici, FE  | InfoCert, Amazon Business      |
-| ES   | TicketBAI (Baskenland)     | LROC                           |
-| PT   | SAFT-PT + Faturação certificada | PrimaveraBSS, SAGE PT       |
-| HU   | NAV Online Invoice         | NAV direct                     |
-| FR   | POS-Zertifikat Art. 88     | NF525 zertifizierte Kassen     |
-| PL   | JPK_FA + Kasse fiskalna online | Elzab, Posnet              |
-| DK   | SAF-T                      | FIK                            |
-| NO   | Bokføringsloven            | Infrasec, Kassagroup           |
-| SE   | Kassaregisterlagen         | Kassagruppen, SRF              |
-| GR   | myDATA                     | MyData direct                  |
-| RO   | e-Factura (RO)             | SmartBill                      |
+| Land | System                          | Provider-Beispiel          |
+| ---- | ------------------------------- | -------------------------- |
+| IT   | Memoranda elettronici, FE       | InfoCert, Amazon Business  |
+| ES   | TicketBAI (Baskenland)          | LROC                       |
+| PT   | SAFT-PT + Faturação certificada | PrimaveraBSS, SAGE PT      |
+| HU   | NAV Online Invoice              | NAV direct                 |
+| FR   | POS-Zertifikat Art. 88          | NF525 zertifizierte Kassen |
+| PL   | JPK_FA + Kasse fiskalna online  | Elzab, Posnet              |
+| DK   | SAF-T                           | FIK                        |
+| NO   | Bokføringsloven                 | Infrasec, Kassagroup       |
+| SE   | Kassaregisterlagen              | Kassagruppen, SRF          |
+| GR   | myDATA                          | MyData direct              |
+| RO   | e-Factura (RO)                  | SmartBill                  |
 
 ## 5. PSD2 / Strong Customer Authentication
 
@@ -157,12 +160,12 @@
 
 ## 18. Datenstandort
 
-| Region       | Primär-DB-Standort   | Backup                       |
-| ------------ | -------------------- | ---------------------------- |
-| EU (Default) | AWS eu-central-1 (FRA) | eu-west-1 (Dublin)         |
-| UK           | AWS eu-west-2 (LON)  | eu-west-1                    |
-| US           | AWS us-east-1 (N.VA) | us-west-2                    |
-| AP           | AWS ap-southeast-1 (SG) | ap-southeast-2 (SYD)      |
+| Region       | Primär-DB-Standort      | Backup               |
+| ------------ | ----------------------- | -------------------- |
+| EU (Default) | AWS eu-central-1 (FRA)  | eu-west-1 (Dublin)   |
+| UK           | AWS eu-west-2 (LON)     | eu-west-1            |
+| US           | AWS us-east-1 (N.VA)    | us-west-2            |
+| AP           | AWS ap-southeast-1 (SG) | ap-southeast-2 (SYD) |
 
 - Kunden wählen Region beim Onboarding oder durch lokale Subdomain.
 - Kein Daten-Transfer über Regionen ohne ausdrückliches Consent.

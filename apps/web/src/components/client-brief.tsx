@@ -74,8 +74,7 @@ export async function ClientBrief({
   const risk = client.noShowRisk;
   const riskInfo = typeof risk === 'number' ? noShowTone(risk) : null;
 
-  const isStammstilistin =
-    appointmentStaffId && client.preferredStaffId === appointmentStaffId;
+  const isStammstilistin = appointmentStaffId && client.preferredStaffId === appointmentStaffId;
 
   return (
     <Card elevation="flat" className="mb-6 bg-accent/5">
@@ -97,9 +96,7 @@ export async function ClientBrief({
               No-Show {risk}% · {riskInfo.label}
             </Badge>
           ) : null}
-          {isStammstilistin ? (
-            <Badge tone="success">Stammstilistin</Badge>
-          ) : null}
+          {isStammstilistin ? <Badge tone="success">Stammstilistin</Badge> : null}
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
@@ -118,9 +115,7 @@ export async function ClientBrief({
             </div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-text-muted">
-              Lifetime
-            </div>
+            <div className="text-[10px] uppercase tracking-wider text-text-muted">Lifetime</div>
             <div className="mt-0.5 font-medium tabular-nums text-text-primary">
               {lifetime.toLocaleString('de-CH', {
                 maximumFractionDigits: 0,
@@ -141,21 +136,15 @@ export async function ClientBrief({
             </div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-text-muted">
-              Benefit
-            </div>
-            <div className="mt-0.5 font-medium text-text-primary">
-              {loyalty.tier.benefitHint}
-            </div>
+            <div className="text-[10px] uppercase tracking-wider text-text-muted">Benefit</div>
+            <div className="mt-0.5 font-medium text-text-primary">{loyalty.tier.benefitHint}</div>
           </div>
         </div>
 
         {client.allergies.length > 0 ? (
           <div className="flex items-center gap-2 rounded-md border border-warning/40 bg-warning/5 px-3 py-2 text-xs">
             <span className="font-semibold text-warning">⚠ Allergien:</span>
-            <span className="text-text-primary">
-              {client.allergies.join(', ')}
-            </span>
+            <span className="text-text-primary">{client.allergies.join(', ')}</span>
           </div>
         ) : null}
 

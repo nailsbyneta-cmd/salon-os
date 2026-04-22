@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { z } from 'zod';
 import type { WaitlistEntry } from '@salon-os/db';
 import { uuidSchema } from '@salon-os/types';
@@ -47,7 +38,11 @@ const adminAddSchema = z.object({
     .optional(),
 });
 
-const slugSchema = z.string().min(1).max(120).regex(/^[a-z0-9-]+$/);
+const slugSchema = z
+  .string()
+  .min(1)
+  .max(120)
+  .regex(/^[a-z0-9-]+$/);
 
 @Controller('v1/waitlist')
 export class WaitlistController {
@@ -85,9 +80,7 @@ export class WaitlistController {
     if (!sidParsed.success) return { entries: [], total: 0 };
     // preferredStaffId als optionale UUID.
     const staffSchema = uuidSchema.optional();
-    const staffParsed = staffSchema.safeParse(
-      preferredStaffIdRaw?.trim() || undefined,
-    );
+    const staffParsed = staffSchema.safeParse(preferredStaffIdRaw?.trim() || undefined);
     if (!staffParsed.success) return { entries: [], total: 0 };
     return this.svc.findMatches({
       serviceIds: sidParsed.data,
@@ -116,7 +109,9 @@ export class WaitlistController {
 
   @Post(':id/fulfill')
   @HttpCode(HttpStatus.OK)
-  async fulfill(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<WaitlistEntry> {
+  async fulfill(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+  ): Promise<WaitlistEntry> {
     return this.svc.setStatus(id, 'FULFILLED');
   }
 

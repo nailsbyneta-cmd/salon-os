@@ -1,11 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type {
-  PrismaClient,
-  SalonFAQ,
-  SalonGalleryImage,
-  SalonReview,
-  Tenant,
-} from '@salon-os/db';
+import type { PrismaClient, SalonFAQ, SalonGalleryImage, SalonReview, Tenant } from '@salon-os/db';
 import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 
@@ -49,28 +43,14 @@ export class SalonSettingsService {
         where: { id: ctx.tenantId },
         data: {
           ...(input.tagline !== undefined ? { tagline: input.tagline || null } : {}),
-          ...(input.description !== undefined
-            ? { description: input.description || null }
-            : {}),
+          ...(input.description !== undefined ? { description: input.description || null } : {}),
           ...(input.logoUrl !== undefined ? { logoUrl: input.logoUrl || null } : {}),
-          ...(input.heroImageUrl !== undefined
-            ? { heroImageUrl: input.heroImageUrl || null }
-            : {}),
-          ...(input.brandColor !== undefined
-            ? { brandColor: input.brandColor || null }
-            : {}),
-          ...(input.instagramUrl !== undefined
-            ? { instagramUrl: input.instagramUrl || null }
-            : {}),
-          ...(input.facebookUrl !== undefined
-            ? { facebookUrl: input.facebookUrl || null }
-            : {}),
-          ...(input.tiktokUrl !== undefined
-            ? { tiktokUrl: input.tiktokUrl || null }
-            : {}),
-          ...(input.whatsappE164 !== undefined
-            ? { whatsappE164: input.whatsappE164 || null }
-            : {}),
+          ...(input.heroImageUrl !== undefined ? { heroImageUrl: input.heroImageUrl || null } : {}),
+          ...(input.brandColor !== undefined ? { brandColor: input.brandColor || null } : {}),
+          ...(input.instagramUrl !== undefined ? { instagramUrl: input.instagramUrl || null } : {}),
+          ...(input.facebookUrl !== undefined ? { facebookUrl: input.facebookUrl || null } : {}),
+          ...(input.tiktokUrl !== undefined ? { tiktokUrl: input.tiktokUrl || null } : {}),
+          ...(input.whatsappE164 !== undefined ? { whatsappE164: input.whatsappE164 || null } : {}),
           ...(input.googleBusinessUrl !== undefined
             ? { googleBusinessUrl: input.googleBusinessUrl || null }
             : {}),
@@ -88,11 +68,7 @@ export class SalonSettingsService {
     );
   }
 
-  async createFaq(input: {
-    question: string;
-    answer: string;
-    order?: number;
-  }): Promise<SalonFAQ> {
+  async createFaq(input: { question: string; answer: string; order?: number }): Promise<SalonFAQ> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, (tx) =>
       tx.salonFAQ.create({

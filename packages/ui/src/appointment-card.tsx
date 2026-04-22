@@ -59,11 +59,9 @@ export function AppointmentCard({
   vip,
 }: AppointmentCardProps): React.JSX.Element {
   const tone = statusTone[status];
-  const isTerminal =
-    status === 'CANCELLED' || status === 'NO_SHOW' || status === 'COMPLETED';
+  const isTerminal = status === 'CANCELLED' || status === 'NO_SHOW' || status === 'COMPLETED';
   // Tier-Stufen analog ClientBrief: mittel 25-39 (amber), hoch >=40 (rot).
-  const riskNum =
-    typeof noShowRisk === 'number' && Number.isFinite(noShowRisk) ? noShowRisk : null;
+  const riskNum = typeof noShowRisk === 'number' && Number.isFinite(noShowRisk) ? noShowRisk : null;
   const riskTier: 'hoch' | 'mittel' | null =
     isTerminal || riskNum === null
       ? null
@@ -97,9 +95,7 @@ export function AppointmentCard({
         riskTier === 'mittel' ? 'ring-1 ring-warning/40' : null,
         className,
       )}
-      aria-label={
-        a11yNote.length > 0 ? `${clientName} — ${a11yNote.join(', ')}` : undefined
-      }
+      aria-label={a11yNote.length > 0 ? `${clientName} — ${a11yNote.join(', ')}` : undefined}
     >
       <div className="flex items-baseline justify-between gap-2 text-xs font-medium">
         <span className="flex min-w-0 items-center gap-1">
@@ -139,9 +135,7 @@ export function AppointmentCard({
       </div>
       {!compact ? (
         <>
-          <div className="mt-0.5 text-[11px] truncate opacity-80">
-            {serviceLabel}
-          </div>
+          <div className="mt-0.5 text-[11px] truncate opacity-80">{serviceLabel}</div>
           <div className="text-[10px] opacity-60 truncate">{timeLabel}</div>
         </>
       ) : null}

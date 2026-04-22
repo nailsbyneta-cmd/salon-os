@@ -23,9 +23,5 @@ export {
 export { Stat, type StatProps } from './stat.js';
 export { ThemeProvider, ThemeScript, useTheme } from './theme-provider.js';
 export { ToastProvider, useToast, type ToastItem } from './toast.js';
-export {
-  CommandPalette,
-  type CommandPaletteProps,
-  type CommandItem,
-} from './command-palette.js';
+export { CommandPalette, type CommandPaletteProps, type CommandItem } from './command-palette.js';
 export { salonPreset, default as theme } from './theme.js';

@@ -32,15 +32,16 @@ async function load(days: number): Promise<Appt[]> {
   }
 }
 
-const statusTone: Record<string, 'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'> = {
-  BOOKED: 'info',
-  CONFIRMED: 'success',
-  CHECKED_IN: 'warning',
-  IN_SERVICE: 'accent',
-  COMPLETED: 'neutral',
-  CANCELLED: 'danger',
-  NO_SHOW: 'danger',
-};
+const statusTone: Record<string, 'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'> =
+  {
+    BOOKED: 'info',
+    CONFIRMED: 'success',
+    CHECKED_IN: 'warning',
+    IN_SERVICE: 'accent',
+    COMPLETED: 'neutral',
+    CANCELLED: 'danger',
+    NO_SHOW: 'danger',
+  };
 
 export default async function MobileCalendar(): Promise<React.JSX.Element> {
   const appts = await load(14);
@@ -52,9 +53,7 @@ export default async function MobileCalendar(): Promise<React.JSX.Element> {
     bucket.push(a);
     byDate.set(key, bucket);
   }
-  const days = Array.from(byDate.entries()).sort(([a], [b]) =>
-    a.localeCompare(b),
-  );
+  const days = Array.from(byDate.entries()).sort(([a], [b]) => a.localeCompare(b));
 
   return (
     <div>
@@ -62,9 +61,7 @@ export default async function MobileCalendar(): Promise<React.JSX.Element> {
         <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-text-muted">
           Kalender
         </p>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight">
-          Nächste 14 Tage
-        </h1>
+        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight">Nächste 14 Tage</h1>
       </header>
 
       <div className="space-y-5 px-5 pb-5">
@@ -75,8 +72,7 @@ export default async function MobileCalendar(): Promise<React.JSX.Element> {
         ) : (
           days.map(([dateKey, list]) => {
             const d = new Date(dateKey);
-            const isToday =
-              new Date().toDateString() === d.toDateString();
+            const isToday = new Date().toDateString() === d.toDateString();
             return (
               <section key={dateKey}>
                 <div className="sticky top-0 z-10 -mx-5 mb-2 border-b border-border bg-background/80 px-5 py-2 backdrop-blur">
@@ -123,15 +119,12 @@ export default async function MobileCalendar(): Promise<React.JSX.Element> {
                           <div
                             className="h-10 w-1 rounded-full shrink-0"
                             style={{
-                              backgroundColor:
-                                a.staff.color ?? 'hsl(var(--border-strong))',
+                              backgroundColor: a.staff.color ?? 'hsl(var(--border-strong))',
                             }}
                           />
                           <div className="flex-1 min-w-0">
                             <div className="truncate font-medium">{name}</div>
-                            <div className="truncate text-xs text-text-muted">
-                              {service}
-                            </div>
+                            <div className="truncate text-xs text-text-muted">{service}</div>
                           </div>
                           <Badge tone={statusTone[a.status] ?? 'neutral'} />
                         </Link>

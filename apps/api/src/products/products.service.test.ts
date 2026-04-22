@@ -18,8 +18,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 
@@ -69,9 +74,9 @@ describe('ProductsService', () => {
 
     it('filters low-stock products when lowStockOnly is true', async () => {
       const products = [
-        { ...BASE_PRODUCT, stockLevel: 10, reorderAt: 3 },  // ok
-        { ...BASE_PRODUCT, id: 'prod2', stockLevel: 2, reorderAt: 3 },  // low
-        { ...BASE_PRODUCT, id: 'prod3', stockLevel: 3, reorderAt: 3 },  // exactly at threshold → low
+        { ...BASE_PRODUCT, stockLevel: 10, reorderAt: 3 }, // ok
+        { ...BASE_PRODUCT, id: 'prod2', stockLevel: 2, reorderAt: 3 }, // low
+        { ...BASE_PRODUCT, id: 'prod3', stockLevel: 3, reorderAt: 3 }, // exactly at threshold → low
       ];
       prisma.product.findMany.mockResolvedValue(products);
       const result = await service.list({ lowStockOnly: true });
@@ -101,7 +106,13 @@ describe('ProductsService', () => {
       prisma.product.create.mockResolvedValue(BASE_PRODUCT);
       await service.create({ name: 'Test' });
       const call = prisma.product.create.mock.calls[0]![0] as {
-        data: { costCents: number; retailCents: number; stockLevel: number; reorderAt: number; reorderQty: number };
+        data: {
+          costCents: number;
+          retailCents: number;
+          stockLevel: number;
+          reorderAt: number;
+          reorderQty: number;
+        };
       };
       expect(call.data.costCents).toBe(0);
       expect(call.data.retailCents).toBe(0);
@@ -113,7 +124,9 @@ describe('ProductsService', () => {
     it('uses provided sku and brand', async () => {
       prisma.product.create.mockResolvedValue(BASE_PRODUCT);
       await service.create({ name: 'Test', sku: 'SKU-999', brand: 'CND' });
-      const call = prisma.product.create.mock.calls[0]![0] as { data: { sku: string; brand: string } };
+      const call = prisma.product.create.mock.calls[0]![0] as {
+        data: { sku: string; brand: string };
+      };
       expect(call.data.sku).toBe('SKU-999');
       expect(call.data.brand).toBe('CND');
     });

@@ -115,11 +115,7 @@ export default async function StaffShiftsPage({
       </Link>
 
       <header className="mb-8 mt-4 flex items-center gap-4">
-        <Avatar
-          name={`${staff.firstName} ${staff.lastName}`}
-          color={staff.color}
-          size="lg"
-        />
+        <Avatar name={`${staff.firstName} ${staff.lastName}`} color={staff.color} size="lg" />
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
             Arbeitszeiten
@@ -130,20 +126,15 @@ export default async function StaffShiftsPage({
         </div>
       </header>
 
-      <WeeklyScheduleEditor
-        staffId={id}
-        initial={normalizeSchedule(staff.weeklySchedule)}
-      />
+      <WeeklyScheduleEditor staffId={id} initial={normalizeSchedule(staff.weeklySchedule)} />
 
       <Card className="mb-4 border-l-4 border-l-accent bg-accent/5">
         <CardBody className="space-y-3">
           <div>
-            <p className="text-sm font-medium text-text-primary">
-              Schichten auto-generieren
-            </p>
+            <p className="text-sm font-medium text-text-primary">Schichten auto-generieren</p>
             <p className="mt-0.5 text-xs text-text-secondary">
-              Erstellt Schichten basierend auf den Öffnungszeiten der Location.
-              Überspringt Tage mit bereits bestehenden Schichten.
+              Erstellt Schichten basierend auf den Öffnungszeiten der Location. Überspringt Tage mit
+              bereits bestehenden Schichten.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -170,32 +161,15 @@ export default async function StaffShiftsPage({
             <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-[1.2fr_1fr_1fr_auto]">
               <label className="flex flex-col gap-1 text-xs">
                 <span className="font-medium text-text-secondary">Datum</span>
-                <Input
-                  type="date"
-                  name="date"
-                  defaultValue={todayInZone()}
-                  required
-                />
+                <Input type="date" name="date" defaultValue={todayInZone()} required />
               </label>
               <label className="flex flex-col gap-1 text-xs">
                 <span className="font-medium text-text-secondary">Von</span>
-                <Input
-                  type="time"
-                  name="startTime"
-                  defaultValue="09:00"
-                  step="1800"
-                  required
-                />
+                <Input type="time" name="startTime" defaultValue="09:00" step="1800" required />
               </label>
               <label className="flex flex-col gap-1 text-xs">
                 <span className="font-medium text-text-secondary">Bis</span>
-                <Input
-                  type="time"
-                  name="endTime"
-                  defaultValue="18:00"
-                  step="1800"
-                  required
-                />
+                <Input type="time" name="endTime" defaultValue="18:00" step="1800" required />
               </label>
               <Button type="submit" variant="primary">
                 Hinzufügen

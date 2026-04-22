@@ -122,9 +122,7 @@ export async function parseCsvPreview(
   if (lines.length < 2) return { rows: [], headers: [], skipped: 0 };
 
   const rawHeaders = parseCsvLine(lines[0]!);
-  const headerKeys = rawHeaders.map(
-    (h) => HEADER_MAP[normalizeHeader(h)] ?? null,
-  );
+  const headerKeys = rawHeaders.map((h) => HEADER_MAP[normalizeHeader(h)] ?? null);
 
   const rows: ParsedRow[] = [];
   let skipped = 0;

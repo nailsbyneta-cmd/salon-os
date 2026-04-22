@@ -26,6 +26,7 @@ Der Markt für Salon-Software ist riesig (> 1,5 Mio. Salons allein in Europa + U
 **Produktvision:** „Ein Tool, das sich wie 100 Tools anfühlt — und das zweitbeste Problem, das Salonbetreiber haben, ist, dass sie keine zusätzlichen Tools mehr brauchen."
 
 **North-Star-Metrik:** **Completed Appointments per Salon per Week.** Alles, was diese Zahl hebt, hat Priorität:
+
 - Schnellere Buchung (Conversion > 75 % auf Mobile)
 - Weniger No-Shows (< 3 %)
 - Mehr Rebooking (> 65 % der Kunden rebookt)
@@ -50,30 +51,31 @@ Der Markt für Salon-Software ist riesig (> 1,5 Mio. Salons allein in Europa + U
 
 SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unter `specs/features.md` und eine API-Sektion in `specs/api.md`.
 
-| #  | Modul                    | Ersetzt                                                   |
-| -- | ------------------------ | --------------------------------------------------------- |
-| 1  | Calendar & Scheduling    | Google Calendar, Phorest-Diary, Acuity                    |
-| 2  | Online Booking           | Booksy, Fresha, Treatwell (Widget)                        |
-| 3  | Client CRM & Notes       | Salesforce für Salons, HubSpot-lite                       |
-| 4  | Forms & Consultations    | Typeform, JotForm, Zentake                                |
-| 5  | POS & Payments           | Square, SumUp, Stripe Terminal                            |
-| 6  | Inventory & Retail       | Lightspeed Retail, Stocky                                 |
-| 7  | Staff & Rostering        | Homebase, Deputy, When I Work                             |
-| 8  | Payroll & Commissions    | Gusto, DATEV Lohn, Sage Payroll                           |
-| 9  | Marketing & Campaigns    | Mailchimp, Klaviyo, SimpleTexting                         |
-| 10 | Loyalty & Memberships    | Stamp Me, Smile.io, Kangaroo                              |
-| 11 | Gift Cards & Vouchers    | GivX, Square Gift Cards                                   |
-| 12 | Reviews & Reputation     | Birdeye, Podium, Trustpilot-lite                          |
-| 13 | Reports & Analytics      | Looker-lite, Tableau-lite                                 |
-| 14 | AI Receptionist & Flows  | Agentz, AIRA, Goodcall                                    |
-| 15 | Online Store (Retail)    | Shopify-lite                                              |
-| 16 | Branded Client App       | Mindbody Branded App, Phorest Salon Branded App           |
-| 17 | Consumer Marketplace     | Fresha Marketplace, Booksy, Treatwell                     |
-| 18 | Multi-Location & Franchise | Zenoti Enterprise, Mindbody Business                    |
+| #   | Modul                      | Ersetzt                                         |
+| --- | -------------------------- | ----------------------------------------------- |
+| 1   | Calendar & Scheduling      | Google Calendar, Phorest-Diary, Acuity          |
+| 2   | Online Booking             | Booksy, Fresha, Treatwell (Widget)              |
+| 3   | Client CRM & Notes         | Salesforce für Salons, HubSpot-lite             |
+| 4   | Forms & Consultations      | Typeform, JotForm, Zentake                      |
+| 5   | POS & Payments             | Square, SumUp, Stripe Terminal                  |
+| 6   | Inventory & Retail         | Lightspeed Retail, Stocky                       |
+| 7   | Staff & Rostering          | Homebase, Deputy, When I Work                   |
+| 8   | Payroll & Commissions      | Gusto, DATEV Lohn, Sage Payroll                 |
+| 9   | Marketing & Campaigns      | Mailchimp, Klaviyo, SimpleTexting               |
+| 10  | Loyalty & Memberships      | Stamp Me, Smile.io, Kangaroo                    |
+| 11  | Gift Cards & Vouchers      | GivX, Square Gift Cards                         |
+| 12  | Reviews & Reputation       | Birdeye, Podium, Trustpilot-lite                |
+| 13  | Reports & Analytics        | Looker-lite, Tableau-lite                       |
+| 14  | AI Receptionist & Flows    | Agentz, AIRA, Goodcall                          |
+| 15  | Online Store (Retail)      | Shopify-lite                                    |
+| 16  | Branded Client App         | Mindbody Branded App, Phorest Salon Branded App |
+| 17  | Consumer Marketplace       | Fresha Marketplace, Booksy, Treatwell           |
+| 18  | Multi-Location & Franchise | Zenoti Enterprise, Mindbody Business            |
 
 ## 5. Feature-Kernliste (verdichtet — vollständig in `specs/features.md`)
 
 ### 5.1 Calendar & Scheduling
+
 - Tages-, Wochen-, Monatsansicht; Staff-Spalten, Raum-Spalten, Ressourcen (Stühle, Waschbecken, Behandlungsräume)
 - Farbcodierung nach Service, Stylist oder Status
 - Drag&Drop, Resize, Gruppentermine, Serientermine, Blockzeiten
@@ -86,6 +88,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - Wiederholungstermine & Paketplanung
 
 ### 5.2 Online Booking
+
 - Branded Booking-Seite: `book.salon-os.com/{slug}` + einbettbares Widget + Instagram/Facebook/Google Reserve mit Google/TikTok Book-Now
 - Echtzeit-Verfügbarkeit, < 2 s Ladezeit
 - Multi-Service-Buchung im gleichen Flow
@@ -99,6 +102,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - Reschedule-Link in Confirmation
 
 ### 5.3 Client CRM
+
 - Unified Client Profile: Stammdaten, Geburtstag, Pronomen, Allergien, Haar-/Hautformel, Patch-Test-Status, Lebensmittelallergien, Mobilität
 - Komplette Historie: Termine, Zahlungen, Produkte, Notizen, Formulare, Fotos
 - Smart Tags: „Raucher-Stuhl-Präferenz", „Nur Stylist X", „bevorzugt nachmittags"
@@ -109,6 +113,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - Familien-Konten (Kind/Eltern, gemeinsam abgerechnet)
 
 ### 5.4 Forms & Consultations
+
 - Formular-Builder (Drag&Drop, Logik, Signatur-Feld, Foto-Upload)
 - Pro Service triggerbar (z. B. Consent bei Bleichen)
 - Vor-Termin-Link per E-Mail/SMS („Bitte Formular ausfüllen")
@@ -117,6 +122,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - **Medspa-Spezial:** HIPAA-konform, SOAP-Notes, Vorher-Nachher-Fotos mit Consent, Treatment-Charting-Körper-Diagramm
 
 ### 5.5 POS & Payments
+
 - Karten-Terminal (Stripe Terminal, Adyen Tap-to-Pay, SumUp, Zettle, Clover)
 - Apple/Google Pay, Kontaktlos, NFC, QR-Code, SEPA, iDEAL, Klarna, AfterPay, Cash
 - Split-Payments, Split-Tickets (Kundin + Freundin zahlen anteilig)
@@ -130,6 +136,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - Rückgaben, Gutschriften, Teilrückzahlungen, Chargeback-Workflow
 
 ### 5.6 Inventory & Retail
+
 - **Retail + Professional** getrennt (Backbar-Tracking bei z. B. Farbgebrauch, auch wenn nicht verkauft)
 - Barcode-Scanning (Kamera + USB-Scanner), Lot-/Chargen-Tracking, MHD
 - Echtzeit-Stock, Mindestbestand, Auto-Reorder mit Lieferanten-Anbindung (EDI/E-Mail)
@@ -140,6 +147,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - Integrierter Online-Store (Shopify-lite) mit Inventory-Sync
 
 ### 5.7 Staff & Rostering
+
 - Rollen: Owner, Manager, Front Desk, Stylist, Booth-Renter, Trainee, Apprentice
 - Arbeitszeitmodelle: Angestellt, Booth-Renter (Raummiete), Commission, Mix
 - Schichten, Offene Schichten, Tauschen, Urlaubsanträge mit Approval
@@ -150,6 +158,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - Trainings- & Onboarding-Modul (Check-Listen, Videos, Quiz)
 
 ### 5.8 Payroll & Commissions
+
 - Lohnabrechnung mit korrekter Commission-Logik, Trinkgeldverteilung, Cash vs. Card-Steuer
 - Direct Deposit (US), SEPA (EU), BACS (UK), ACH, PIX (BR)
 - Exports: DATEV (DE), Lohnsteuer-Meldung (AT), Real Time Information RTI (UK), Form 941 (US)
@@ -157,6 +166,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - 1099-Contractor-Management
 
 ### 5.9 Marketing & Campaigns
+
 - Kanäle: E-Mail (Postmark/Resend), SMS (Twilio/Vonage/MessageBird), Push (OneSignal/eigene), WhatsApp Business (Meta-API), iMessage Business (US)
 - Drag&Drop-Editor (MJML), Template-Bibliothek
 - **Automated Flows:**
@@ -173,6 +183,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - SEO-Mikroseiten für jede Location
 
 ### 5.10 Loyalty & Memberships
+
 - **Points-basiert:** Pro Euro/Dollar X Punkte, Einlösung bei Y Punkten
 - **Punch Card:** 10 × Termin → 1 gratis
 - **Tiered (Bronze/Silver/Gold):** Rabatte, Early Access, exklusive Services
@@ -182,6 +193,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - Automatische Lifecycle-Kommunikation (Tier-Upgrade, Expiring Points, Subscription Pause)
 
 ### 5.11 Gift Cards & Vouchers
+
 - Physische + digitale Gift Cards
 - Nicht-verkauft-abgelaufen-Logik (länderspezifisch, z. B. DE 3 Jahre)
 - Teilweise einlösbar, übertragbar, per QR-Code am Terminal
@@ -190,6 +202,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - Buchhaltungsrückstellung automatisch (deferred revenue)
 
 ### 5.12 Reviews & Reputation
+
 - Automatische Review-Request nach Termin (SMS + E-Mail)
 - **Smart-Routing:** 4–5 Sterne → Google/Facebook/Yelp/TripAdvisor; 1–3 Sterne → intern an Owner
 - KI-generierte Antwortvorschläge (tonalität anpassbar)
@@ -198,6 +211,7 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - Negative-Review-Recovery-Workflow (Owner → Offer → Response-Template)
 
 ### 5.13 Reports & Analytics
+
 - Dashboards: Umsatz, Auslastung, Rebook-Rate, CLV, Produkt-Umsatz, Staff-KPIs, Marketing-ROI
 - Vergleich: heute vs. gestern/letzte Woche/Monat/Jahr
 - Filter nach Location, Stylist, Service, Produkt, Kunden-Segment
@@ -207,7 +221,9 @@ SALON OS besteht aus **18 Modulen**. Jedes Modul hat eine eigene Spec-Datei unte
 - Anomalie-Alerts („Umsatz 30 % unter Erwartung — mögliche Ursachen …")
 
 ### 5.14 AI Receptionist & Automation Flows
+
 Eigene Spec: `specs/ai-layer.md`.
+
 - **Voice AI Receptionist:** beantwortet Anrufe 24/7, bucht, reschedult, beantwortet FAQs (Preise, Öffnung, Parken), nimmt Anliegen auf; Übergabe an Mensch nahtlos
 - **SMS AI:** Two-way-SMS mit Booking, Confirmations, FAQs
 - **Chat AI:** Web-Chat-Widget, Instagram-/Facebook-DM-Reply
@@ -216,6 +232,7 @@ Eigene Spec: `specs/ai-layer.md`.
 - **Automated Flows Builder:** Zapier-ähnlich, für Salon-Events (wenn Trigger X → tu Y)
 
 ### 5.15 Online Store & Retail
+
 - eCom-Storefront am Brand (Shopify-lite)
 - Inventory-Sync mit POS
 - Click&Collect, Versand (Shippo/Sendcloud-Integration)
@@ -224,12 +241,14 @@ Eigene Spec: `specs/ai-layer.md`.
 - Produkt-Empfehlungen bei Buchungsbestätigung
 
 ### 5.16 Branded Client App
+
 - Native iOS + Android (React Native + Expo) unter der Marke des Salons (White-Label)
 - Logo, Farben, Splash, Icons, Push-Sound — alles konfigurierbar
 - Features: Buchen, Rebuchen, Historie, Loyalty-Punkte, Gift-Card-Kauf, Push-Reminder, Store
 - Automatische App-Store-Veröffentlichung per Fastlane (wir verwalten Zertifikate als Kette)
 
 ### 5.17 Consumer Marketplace
+
 - Eigener Consumer-Marktplatz (mobile + web): `salon-os.com` oder `beauty.salon-os.com`
 - Suche nach Location, Service, Preis, Bewertung, Stylist
 - Buchung ohne Konto (Magic-Link), Multi-Buchung
@@ -239,6 +258,7 @@ Eigene Spec: `specs/ai-layer.md`.
 - Vermarktungs-Boost-Produkt (ähnlich Booksy Boost)
 
 ### 5.18 Multi-Location & Franchise
+
 - Konzern-Dashboard (KPIs über alle Locations)
 - Zentrale Service-Kataloge (mit lokaler Override-Option)
 - Zentrale Preislisten mit lokalen Varianten
@@ -279,13 +299,13 @@ Eigene Spec: `specs/ai-layer.md`.
 
 ## 8. Pricing-Modell (Kurzfassung — Details in `specs/go-to-market.md`)
 
-| Plan        | Zielgruppe           | Preis (EUR/Monat) | Payment-Fee         |
-| ----------- | -------------------- | ----------------- | ------------------- |
-| **Starter** | 1 Person, max. 2 Staff-Logins | 0 (Free-Tier) oder 9 € | 2,6 % + 0,15 € |
-| **Pro**     | Small Salon (bis 5)   | 39 €              | 2,4 % + 0,15 €      |
-| **Business**| Mid Salon (bis 15)    | 99 €              | 2,2 % + 0,10 €      |
-| **Enterprise** | Chain/Franchise    | ab 299 € / Location | verhandelbar       |
-| **Medspa**  | HIPAA/medizinisch     | 149 €             | 2,4 %               |
+| Plan           | Zielgruppe                    | Preis (EUR/Monat)      | Payment-Fee    |
+| -------------- | ----------------------------- | ---------------------- | -------------- |
+| **Starter**    | 1 Person, max. 2 Staff-Logins | 0 (Free-Tier) oder 9 € | 2,6 % + 0,15 € |
+| **Pro**        | Small Salon (bis 5)           | 39 €                   | 2,4 % + 0,15 € |
+| **Business**   | Mid Salon (bis 15)            | 99 €                   | 2,2 % + 0,10 € |
+| **Enterprise** | Chain/Franchise               | ab 299 € / Location    | verhandelbar   |
+| **Medspa**     | HIPAA/medizinisch             | 149 €                  | 2,4 %          |
 
 Add-ons: Branded App (29 €/Monat), AI Receptionist (49 €/Monat), Marketplace-Boost (Performance-basiert).
 

@@ -174,10 +174,12 @@ function formatHoursForDay(entry: OpeningHoursEntry | undefined): string {
   if (!entry) return 'geschlossen';
   if (Array.isArray(entry)) {
     if (entry.length === 0) return 'geschlossen';
-    return entry
-      .filter((i) => i.open && i.close)
-      .map((i) => `${i.open}–${i.close}`)
-      .join(' & ') || 'geschlossen';
+    return (
+      entry
+        .filter((i) => i.open && i.close)
+        .map((i) => `${i.open}–${i.close}`)
+        .join(' & ') || 'geschlossen'
+    );
   }
   if (entry.closed || !entry.open || !entry.close) return 'geschlossen';
   return `${entry.open}–${entry.close}`;
@@ -218,13 +220,11 @@ function buildDescription(
 ): string {
   // Ziel 110-160 Zeichen
   if (tagline && tagline.length >= 110 && tagline.length <= 160) return tagline;
-  if (description && description.length >= 110 && description.length <= 160)
-    return description;
+  if (description && description.length >= 110 && description.length <= 160) return description;
 
   const where = city ? ` in ${city}` : '';
   const teaser = tagline ?? description ?? null;
-  const svcList =
-    topServices.length > 0 ? topServices.slice(0, 3).join(', ') : null;
+  const svcList = topServices.length > 0 ? topServices.slice(0, 3).join(', ') : null;
 
   const parts: string[] = [];
   if (teaser) parts.push(teaser.replace(/\s+/g, ' ').trim());
@@ -310,9 +310,7 @@ export default async function BookingStart({
   }
 
   const primaryLocation = locations[0] ?? null;
-  const hours = primaryLocation
-    ? openingHoursArray(primaryLocation.openingHours)
-    : null;
+  const hours = primaryLocation ? openingHoursArray(primaryLocation.openingHours) : null;
 
   return (
     <main className="space-y-10">
@@ -343,9 +341,7 @@ export default async function BookingStart({
         <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight md:text-5xl">
           {tenant.name}
         </h1>
-        {tenant.tagline ? (
-          <p className="mt-3 text-base font-medium">{tenant.tagline}</p>
-        ) : null}
+        {tenant.tagline ? <p className="mt-3 text-base font-medium">{tenant.tagline}</p> : null}
         {primaryLocation ? (
           <p className="mt-2 text-sm opacity-80">
             {primaryLocation.name}
@@ -382,13 +378,9 @@ export default async function BookingStart({
               <Link key={loc.id} href={`/book/${slug}/${loc.id}`}>
                 <Card elevation="hoverable">
                   <CardBody>
-                    <div className="font-medium text-text-primary">
-                      {loc.name}
-                    </div>
+                    <div className="font-medium text-text-primary">{loc.name}</div>
                     {loc.city ? (
-                      <div className="mt-0.5 text-sm text-text-muted">
-                        {loc.city}
-                      </div>
+                      <div className="mt-0.5 text-sm text-text-muted">{loc.city}</div>
                     ) : null}
                   </CardBody>
                 </Card>
@@ -414,17 +406,11 @@ export default async function BookingStart({
                 <Card elevation="hoverable">
                   <CardBody className="flex items-center justify-between gap-4 py-4">
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium text-text-primary">
-                        {s.name}
-                      </div>
+                      <div className="font-medium text-text-primary">{s.name}</div>
                       {s.description ? (
-                        <div className="mt-0.5 text-sm text-text-secondary">
-                          {s.description}
-                        </div>
+                        <div className="mt-0.5 text-sm text-text-secondary">{s.description}</div>
                       ) : null}
-                      <div className="mt-1.5 text-xs text-text-muted">
-                        {s.durationMinutes} Min
-                      </div>
+                      <div className="mt-1.5 text-xs text-text-muted">{s.durationMinutes} Min</div>
                     </div>
                     <PriceDisplay amount={s.basePrice} size="lg" />
                   </CardBody>
@@ -455,13 +441,9 @@ export default async function BookingStart({
                       {s.displayName ?? `${s.firstName} ${s.lastName}`}
                     </div>
                     {s.bio ? (
-                      <p className="mt-1 text-xs text-text-secondary line-clamp-3">
-                        {s.bio}
-                      </p>
+                      <p className="mt-1 text-xs text-text-secondary line-clamp-3">{s.bio}</p>
                     ) : (
-                      <p className="mt-1 text-xs text-text-muted italic">
-                        Freut sich auf dich.
-                      </p>
+                      <p className="mt-1 text-xs text-text-muted italic">Freut sich auf dich.</p>
                     )}
                   </div>
                 </CardBody>
@@ -480,9 +462,7 @@ export default async function BookingStart({
           <Card>
             <CardBody className="space-y-5">
               <div>
-                <div className="text-sm font-medium text-text-primary">
-                  {primaryLocation.name}
-                </div>
+                <div className="text-sm font-medium text-text-primary">{primaryLocation.name}</div>
                 {formatAddress(primaryLocation) ? (
                   <div className="mt-0.5 text-sm text-text-secondary">
                     {formatAddress(primaryLocation)}
@@ -539,25 +519,19 @@ export default async function BookingStart({
                       <li
                         key={h.key}
                         className={`flex justify-between tabular-nums ${
-                          h.isToday
-                            ? 'font-semibold text-text-primary'
-                            : 'text-text-secondary'
+                          h.isToday ? 'font-semibold text-text-primary' : 'text-text-secondary'
                         }`}
                       >
                         <span className="flex items-center gap-2">
                           {h.label}
-                          {h.isToday ? (
-                            <Badge tone="accent">Heute</Badge>
-                          ) : null}
+                          {h.isToday ? <Badge tone="accent">Heute</Badge> : null}
                         </span>
                         <span>{h.text}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-text-muted">
-                    Öffnungszeiten auf Anfrage.
-                  </p>
+                  <p className="text-sm text-text-muted">Öffnungszeiten auf Anfrage.</p>
                 )}
               </div>
             </CardBody>
@@ -595,19 +569,13 @@ export default async function BookingStart({
               <Card key={r.id}>
                 <CardBody>
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-sm font-medium text-text-primary">
-                      {r.authorName}
-                    </span>
+                    <span className="text-sm font-medium text-text-primary">{r.authorName}</span>
                     <span className="text-xs tabular-nums text-accent">
                       {'★'.repeat(r.rating)}
-                      <span className="text-text-muted">
-                        {'☆'.repeat(5 - r.rating)}
-                      </span>
+                      <span className="text-text-muted">{'☆'.repeat(5 - r.rating)}</span>
                     </span>
                   </div>
-                  <p className="text-sm text-text-secondary whitespace-pre-line">
-                    {r.text}
-                  </p>
+                  <p className="text-sm text-text-secondary whitespace-pre-line">{r.text}</p>
                   {r.sourceUrl ? (
                     <a
                       href={r.sourceUrl}
@@ -714,17 +682,11 @@ export default async function BookingStart({
 
       <footer className="space-y-2 pt-6 text-center text-[11px] tracking-wider text-text-muted">
         <div className="flex flex-wrap justify-center gap-3">
-          <Link
-            href={`/book/${slug}/impressum`}
-            className="hover:text-text-primary"
-          >
+          <Link href={`/book/${slug}/impressum`} className="hover:text-text-primary">
             Impressum
           </Link>
           <span>·</span>
-          <Link
-            href={`/book/${slug}/datenschutz`}
-            className="hover:text-text-primary"
-          >
+          <Link href={`/book/${slug}/datenschutz`} className="hover:text-text-primary">
             Datenschutz
           </Link>
         </div>

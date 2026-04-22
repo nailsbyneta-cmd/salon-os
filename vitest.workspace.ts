@@ -3,7 +3,4 @@
  * Diese Workspace-Datei ist für `vitest` im Root-Modus (z. B. IDE-Runner), damit
  * alle Configs automatisch erkannt werden.
  */
-export default [
-  'packages/*/vitest.config.ts',
-  'apps/api/vitest.config.ts',
-];
+export default ['packages/*/vitest.config.ts', 'apps/api/vitest.config.ts'];

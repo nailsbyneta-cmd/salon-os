@@ -10,10 +10,7 @@ interface Props {
   action: 'cancel' | 'reschedule';
 }
 
-async function postJson(
-  url: string,
-  body?: unknown,
-): Promise<{ ok: boolean; error?: string }> {
+async function postJson(url: string, body?: unknown): Promise<{ ok: boolean; error?: string }> {
   try {
     const hasBody = body !== undefined;
     const res = await fetch(url, {
@@ -34,14 +31,8 @@ async function postJson(
   }
 }
 
-export function SelfServiceActions({
-  appointmentId,
-  token,
-  action,
-}: Props): React.JSX.Element {
-  const [state, setState] = React.useState<'idle' | 'cancelling' | 'done' | 'error'>(
-    'idle',
-  );
+export function SelfServiceActions({ appointmentId, token, action }: Props): React.JSX.Element {
+  const [state, setState] = React.useState<'idle' | 'cancelling' | 'done' | 'error'>('idle');
   const [error, setError] = React.useState<string | null>(null);
 
   const doCancel = async (): Promise<void> => {
@@ -61,9 +52,7 @@ export function SelfServiceActions({
     return (
       <Card className="border-l-4 border-l-success bg-success/5">
         <CardBody className="text-center">
-          <h3 className="text-lg font-semibold text-text-primary">
-            Termin storniert
-          </h3>
+          <h3 className="text-lg font-semibold text-text-primary">Termin storniert</h3>
           <p className="mt-2 text-sm text-text-secondary">
             Schade, dass du nicht kommen kannst. Wir freuen uns aufs nächste Mal!
           </p>
@@ -103,8 +92,8 @@ export function SelfServiceActions({
       <CardBody className="text-center">
         <h3 className="text-lg font-semibold text-text-primary">Termin umbuchen</h3>
         <p className="mt-2 text-sm text-text-secondary">
-          Um einen neuen Slot zu wählen, storniere bitte diesen Termin und buche
-          neu auf der Salon-Seite.
+          Um einen neuen Slot zu wählen, storniere bitte diesen Termin und buche neu auf der
+          Salon-Seite.
         </p>
         <div className="mt-4">
           <Button
@@ -117,9 +106,7 @@ export function SelfServiceActions({
             Diesen Termin stornieren
           </Button>
         </div>
-        {state === 'error' && error ? (
-          <p className="mt-2 text-sm text-danger">{error}</p>
-        ) : null}
+        {state === 'error' && error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
       </CardBody>
     </Card>
   );

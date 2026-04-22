@@ -67,9 +67,7 @@ export function ScheduleEditor({
   ): void => {
     setSchedule((s) => ({
       ...s,
-      [day]: s[day].map((iv, i) =>
-        i === index ? { ...iv, [field]: value } : iv,
-      ),
+      [day]: s[day].map((iv, i) => (i === index ? { ...iv, [field]: value } : iv)),
     }));
     setSaved(false);
   };
@@ -103,9 +101,7 @@ export function ScheduleEditor({
             <p className="text-sm font-semibold text-text-primary">{title}</p>
             <p className="mt-0.5 text-xs text-text-secondary">{subtitle}</p>
           </div>
-          {saved ? (
-            <span className="text-xs font-medium text-success">✓ Gespeichert</span>
-          ) : null}
+          {saved ? <span className="text-xs font-medium text-success">✓ Gespeichert</span> : null}
         </div>
 
         <div className="space-y-2">
@@ -126,9 +122,7 @@ export function ScheduleEditor({
                       <Input
                         type="time"
                         value={iv.open}
-                        onChange={(e) =>
-                          updateInterval(key, i, 'open', e.target.value)
-                        }
+                        onChange={(e) => updateInterval(key, i, 'open', e.target.value)}
                         className="w-[7rem]"
                         aria-label={`${label} Intervall ${i + 1} Start`}
                       />
@@ -136,9 +130,7 @@ export function ScheduleEditor({
                       <Input
                         type="time"
                         value={iv.close}
-                        onChange={(e) =>
-                          updateInterval(key, i, 'close', e.target.value)
-                        }
+                        onChange={(e) => updateInterval(key, i, 'close', e.target.value)}
                         className="w-[7rem]"
                         aria-label={`${label} Intervall ${i + 1} Ende`}
                       />
@@ -169,12 +161,7 @@ export function ScheduleEditor({
           <p className="text-xs text-text-muted">
             {isEmpty ? emptyHint : 'Änderungen werden sofort live wirksam.'}
           </p>
-          <Button
-            onClick={handleSave}
-            variant="primary"
-            size="sm"
-            disabled={isPending}
-          >
+          <Button onClick={handleSave} variant="primary" size="sm" disabled={isPending}>
             {isPending ? 'Speichere…' : 'Speichern'}
           </Button>
         </div>

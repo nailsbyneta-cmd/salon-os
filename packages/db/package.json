@@ -12,7 +12,10 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "prisma"],
+  "files": [
+    "dist",
+    "prisma"
+  ],
   "scripts": {
     "postinstall": "node -e \"try{require('fs').accessSync('prisma/schema.prisma')}catch(e){process.exit(1)}\" && prisma generate || true",
     "build": "tsc",

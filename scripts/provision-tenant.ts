@@ -121,7 +121,9 @@ async function main() {
   if (args.dryRun) {
     console.log('[DRY-RUN] Würde Tenant + User + Membership erstellen.');
     if (args.withDefaults) {
-      console.log('[DRY-RUN] Würde Default-Location + 5 Default-Services + Default-Templates seeden.');
+      console.log(
+        '[DRY-RUN] Würde Default-Location + 5 Default-Services + Default-Templates seeden.',
+      );
     }
     console.log('\n→ ohne --dry-run nochmal laufen lassen.');
     await prisma.$disconnect();

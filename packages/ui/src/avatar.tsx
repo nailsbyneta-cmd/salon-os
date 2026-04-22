@@ -22,7 +22,7 @@ const sizeClass: Record<Size, string> = {
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
   const first = parts[0]?.[0] ?? '';
-  const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? '' : '';
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
   return (first + last).toUpperCase();
 }
 
@@ -50,11 +50,7 @@ export function Avatar({
       style={src ? undefined : { backgroundColor: bg }}
       aria-label={name}
     >
-      {src ? (
-        <img src={src} alt={name} className="h-full w-full object-cover" />
-      ) : (
-        initials(name)
-      )}
+      {src ? <img src={src} alt={name} className="h-full w-full object-cover" /> : initials(name)}
     </div>
   );
 }

@@ -24,11 +24,7 @@ export default async function BookingSuccess({
               className="h-7 w-7"
               aria-hidden
             >
-              <path
-                d="M5 13l4 4L19 7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <div>

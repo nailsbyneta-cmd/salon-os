@@ -10,24 +10,24 @@ Ziel: **Nr. 1 weltweit** für Nägel, Haar, Kosmetik, Spa, Barber, Medspa, Tatto
 
 ## Was ist in diesem Paket enthalten?
 
-| Datei                         | Zweck                                                                    |
-| ----------------------------- | ------------------------------------------------------------------------ |
-| `README.md`                   | Dieses Dokument — schnelle Übersicht                                     |
-| `CLAUDE.md`                   | Einstiegspunkt für Claude Code (Arbeitsanweisungen, Reihenfolge)         |
-| `SPEC.md`                     | **Master-Spezifikation** (Features, Module, UX-Prinzipien, Vision, GTM)  |
-| `specs/competitive-analysis.md` | Feature-Matrix aller Wettbewerber + Lücken, die SALON OS schließt      |
-| `specs/features.md`           | Exhaustive Liste aller Features gruppiert nach Modul                     |
-| `specs/data-model.md`         | Datenbank-Schema (Postgres) mit allen Entitäten und Relationen           |
-| `specs/api.md`                | Öffentliche + interne APIs (REST + GraphQL + Webhooks)                   |
-| `specs/tech-stack.md`         | Architektur, Stack, Skalierung, Infrastruktur                            |
-| `specs/ai-layer.md`           | KI-Features: Receptionist, Precision Scheduling, Dynamic Pricing, AR     |
-| `specs/compliance.md`         | DSGVO, TSE, DSFinV-K, DATEV, PSD2, HIPAA, PCI-DSS, SOC2, 2FA             |
-| `specs/integrations.md`       | Zahlungen, Buchhaltung, Social, Kalender, E-Mail, Telefonie, Zapier      |
-| `specs/mobile-apps.md`        | iOS + Android Native + Branded Client Apps + Staff App                   |
-| `specs/marketplace.md`        | Consumer-Marktplatz (wie Fresha/Treatwell/Booksy)                        |
-| `specs/roadmap.md`            | Phasen, MVP (12 Wochen), V1 (6 Monate), V2 (12 Monate)                   |
-| `specs/go-to-market.md`       | Pricing, Positionierung, Vertrieb, Content, Partnerprogramm              |
-| `specs/glossary.md`           | Fachbegriffe Beauty-Industrie (backbar, booth rental, formula, etc.)     |
+| Datei                           | Zweck                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `README.md`                     | Dieses Dokument — schnelle Übersicht                                    |
+| `CLAUDE.md`                     | Einstiegspunkt für Claude Code (Arbeitsanweisungen, Reihenfolge)        |
+| `SPEC.md`                       | **Master-Spezifikation** (Features, Module, UX-Prinzipien, Vision, GTM) |
+| `specs/competitive-analysis.md` | Feature-Matrix aller Wettbewerber + Lücken, die SALON OS schließt       |
+| `specs/features.md`             | Exhaustive Liste aller Features gruppiert nach Modul                    |
+| `specs/data-model.md`           | Datenbank-Schema (Postgres) mit allen Entitäten und Relationen          |
+| `specs/api.md`                  | Öffentliche + interne APIs (REST + GraphQL + Webhooks)                  |
+| `specs/tech-stack.md`           | Architektur, Stack, Skalierung, Infrastruktur                           |
+| `specs/ai-layer.md`             | KI-Features: Receptionist, Precision Scheduling, Dynamic Pricing, AR    |
+| `specs/compliance.md`           | DSGVO, TSE, DSFinV-K, DATEV, PSD2, HIPAA, PCI-DSS, SOC2, 2FA            |
+| `specs/integrations.md`         | Zahlungen, Buchhaltung, Social, Kalender, E-Mail, Telefonie, Zapier     |
+| `specs/mobile-apps.md`          | iOS + Android Native + Branded Client Apps + Staff App                  |
+| `specs/marketplace.md`          | Consumer-Marktplatz (wie Fresha/Treatwell/Booksy)                       |
+| `specs/roadmap.md`              | Phasen, MVP (12 Wochen), V1 (6 Monate), V2 (12 Monate)                  |
+| `specs/go-to-market.md`         | Pricing, Positionierung, Vertrieb, Content, Partnerprogramm             |
+| `specs/glossary.md`             | Fachbegriffe Beauty-Industrie (backbar, booth rental, formula, etc.)    |
 
 ## Live gehen — Deploy
 

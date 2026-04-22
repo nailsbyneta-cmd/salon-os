@@ -49,10 +49,7 @@ export async function getPendingCounts(): Promise<PendingCounts> {
       ),
       { appointments: [] },
     ),
-    safe(
-      apiFetch<{ products: unknown[] }>('/v1/products?lowStock=true', auth),
-      { products: [] },
-    ),
+    safe(apiFetch<{ products: unknown[] }>('/v1/products?lowStock=true', auth), { products: [] }),
     safe(apiFetch<{ entries: unknown[] }>('/v1/waitlist', auth), {
       entries: [],
     }),

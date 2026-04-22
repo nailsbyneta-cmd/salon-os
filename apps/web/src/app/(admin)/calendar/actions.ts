@@ -6,10 +6,7 @@ import { getCurrentTenant } from '@/lib/tenant';
 
 type Transition = 'confirm' | 'check-in' | 'start' | 'complete';
 
-export async function transitionAppointment(
-  appointmentId: string,
-  to: Transition,
-): Promise<void> {
+export async function transitionAppointment(appointmentId: string, to: Transition): Promise<void> {
   const ctx = getCurrentTenant();
   await apiFetch(`/v1/appointments/${appointmentId}/${to}`, {
     method: 'POST',
@@ -27,10 +24,7 @@ export async function transitionAppointment(
   }
 }
 
-export async function cancelAppointment(
-  appointmentId: string,
-  reason: string,
-): Promise<void> {
+export async function cancelAppointment(appointmentId: string, reason: string): Promise<void> {
   const ctx = getCurrentTenant();
   await apiFetch(`/v1/appointments/${appointmentId}/cancel`, {
     method: 'POST',

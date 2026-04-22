@@ -17,13 +17,13 @@ Allergien, Familien-Verknüpfung, DSGVO-Exports (Phase 2).
 Alle unter `/v1/clients`, JSON, Bearer-Auth, Tenant-skoped.
 Siehe [specs/api.md §Clients](../../specs/api.md) für das volle Set.
 
-| Method | Path             | Request                                | Response          |
-|--------|------------------|----------------------------------------|-------------------|
-| GET    | `/v1/clients`    | `?q=<search>&limit=<n>`                | `{ clients: Client[] }` |
-| GET    | `/v1/clients/:id`| —                                       | `Client`          |
-| POST   | `/v1/clients`    | `createClientSchema`                    | `Client` (201)    |
-| PATCH  | `/v1/clients/:id`| `updateClientSchema`                    | `Client`          |
-| DELETE | `/v1/clients/:id`| —                                       | 204 (soft-delete) |
+| Method | Path              | Request                 | Response                |
+| ------ | ----------------- | ----------------------- | ----------------------- |
+| GET    | `/v1/clients`     | `?q=<search>&limit=<n>` | `{ clients: Client[] }` |
+| GET    | `/v1/clients/:id` | —                       | `Client`                |
+| POST   | `/v1/clients`     | `createClientSchema`    | `Client` (201)          |
+| PATCH  | `/v1/clients/:id` | `updateClientSchema`    | `Client`                |
+| DELETE | `/v1/clients/:id` | —                       | 204 (soft-delete)       |
 
 Alle Writes akzeptieren `Idempotency-Key`-Header (Phase 2: tatsächliche Deduplication
 über Redis-Cache mit 24h-TTL).
@@ -31,6 +31,7 @@ Alle Writes akzeptieren `Idempotency-Key`-Header (Phase 2: tatsächliche Dedupli
 ## UI-Seiten
 
 Phase 1 Woche 10 — admin-side. Routes:
+
 - `/clients` — Liste + Suche
 - `/clients/:id` — Detail-Drawer
 

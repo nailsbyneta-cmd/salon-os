@@ -78,9 +78,7 @@ export function Celebrate(): React.JSX.Element | null {
     sp.delete('celebrate');
     const query = sp.toString();
     const url =
-      typeof window !== 'undefined'
-        ? window.location.pathname + (query ? `?${query}` : '')
-        : '/';
+      typeof window !== 'undefined' ? window.location.pathname + (query ? `?${query}` : '') : '/';
     router.replace(url, { scroll: false });
   }, [params, router, toast]);
 

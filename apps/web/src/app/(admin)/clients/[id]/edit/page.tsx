@@ -51,9 +51,7 @@ export default async function EditClientPage({
         ← {client.firstName} {client.lastName}
       </Link>
       <header className="mb-6 mt-4">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          CRM
-        </p>
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">CRM</p>
         <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           Kundin bearbeiten
         </h1>

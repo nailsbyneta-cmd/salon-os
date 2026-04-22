@@ -38,15 +38,14 @@ export default async function MobileClients({
   return (
     <div>
       <header className="px-5 pt-8 pb-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-text-muted">
-          CRM
-        </p>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight">
-          Kundinnen
-        </h1>
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-text-muted">CRM</p>
+        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight">Kundinnen</h1>
       </header>
 
-      <form method="get" className="sticky top-0 z-10 -mx-0 border-b border-border bg-background/80 px-5 py-3 backdrop-blur">
+      <form
+        method="get"
+        className="sticky top-0 z-10 -mx-0 border-b border-border bg-background/80 px-5 py-3 backdrop-blur"
+      >
         <input
           name="q"
           defaultValue={q ?? ''}
@@ -77,14 +76,10 @@ export default async function MobileClients({
                 <div className="font-medium truncate">
                   {c.firstName} {c.lastName}
                 </div>
-                <div className="text-xs text-text-muted truncate">
-                  {c.phone ?? c.email ?? '—'}
-                </div>
+                <div className="text-xs text-text-muted truncate">{c.phone ?? c.email ?? '—'}</div>
               </div>
               <div className="text-right text-[10px] text-text-muted">
-                <div className="font-semibold tabular-nums text-text-primary">
-                  {c.totalVisits}×
-                </div>
+                <div className="font-semibold tabular-nums text-text-primary">{c.totalVisits}×</div>
                 {c.lastVisitAt ? (
                   <div>
                     {new Date(c.lastVisitAt).toLocaleDateString('de-CH', {

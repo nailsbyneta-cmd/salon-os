@@ -8,51 +8,51 @@
 
 ## Behalten (keine Änderungen)
 
-| Stück | Warum |
-|-------|-------|
-| Turborepo + pnpm Monorepo | Struktur passt |
-| Prisma Schema (8 Migrations) + RLS + GiST-Exclusion | Datenmodell ist solide, RLS sauber |
-| `withTenant()` + UUID- + Role-Whitelist | Defense-in-Depth korrekt |
-| Railway-Deploy (Postgres, Redis, api, worker, web) | Funktioniert |
-| Env-driven Dry-Run (Stripe + Postmark) | Elegant, bleibt |
-| NestJS 11 + Fastify 5 + RFC 7807 Filter + Zod-Pipe | Bleibt |
-| Tenant-Context via AsyncLocalStorage | Bleibt |
-| BullMQ-Reminders-Architektur + Marketing-Automation-Job | Bleibt, Outbox davor |
-| Stripe-Payments-Adapter-Shape | Bleibt |
-| `packages/ui/tokens.css` + `theme-provider` + Dark-Mode-Basis | Bleibt, wird erweitert |
-| Multi-Staff-Kalender-View (Tag/Woche/Monat) + Drag-to-Reschedule | Bleibt, wird poliert |
-| Public-Salon-Homepage (Branding, FAQ, Reviews, Gallery) | Bleibt |
-| Audit-Log + DSGVO-Export | Bleibt |
-| Gift-Cards + Waitlist + Inventar-Light + Marketing-Automation | Bleibt |
-| Predictive-No-Show-Scoring | Bleibt, Auto-Deposit-Trigger anbauen |
-| Mobile-PWA unter `/m/*` | Bleibt, wird vorerst weiter ausgebaut, parallel Expo planen |
+| Stück                                                            | Warum                                                       |
+| ---------------------------------------------------------------- | ----------------------------------------------------------- |
+| Turborepo + pnpm Monorepo                                        | Struktur passt                                              |
+| Prisma Schema (8 Migrations) + RLS + GiST-Exclusion              | Datenmodell ist solide, RLS sauber                          |
+| `withTenant()` + UUID- + Role-Whitelist                          | Defense-in-Depth korrekt                                    |
+| Railway-Deploy (Postgres, Redis, api, worker, web)               | Funktioniert                                                |
+| Env-driven Dry-Run (Stripe + Postmark)                           | Elegant, bleibt                                             |
+| NestJS 11 + Fastify 5 + RFC 7807 Filter + Zod-Pipe               | Bleibt                                                      |
+| Tenant-Context via AsyncLocalStorage                             | Bleibt                                                      |
+| BullMQ-Reminders-Architektur + Marketing-Automation-Job          | Bleibt, Outbox davor                                        |
+| Stripe-Payments-Adapter-Shape                                    | Bleibt                                                      |
+| `packages/ui/tokens.css` + `theme-provider` + Dark-Mode-Basis    | Bleibt, wird erweitert                                      |
+| Multi-Staff-Kalender-View (Tag/Woche/Monat) + Drag-to-Reschedule | Bleibt, wird poliert                                        |
+| Public-Salon-Homepage (Branding, FAQ, Reviews, Gallery)          | Bleibt                                                      |
+| Audit-Log + DSGVO-Export                                         | Bleibt                                                      |
+| Gift-Cards + Waitlist + Inventar-Light + Marketing-Automation    | Bleibt                                                      |
+| Predictive-No-Show-Scoring                                       | Bleibt, Auto-Deposit-Trigger anbauen                        |
+| Mobile-PWA unter `/m/*`                                          | Bleibt, wird vorerst weiter ausgebaut, parallel Expo planen |
 
 ## Anpassen (Code bleibt, wird verbessert)
 
-| Stück | Was ändern | Warum |
-|-------|------------|-------|
-| Tenant-Middleware | WorkOS-Session-Cookie statt HTTP-Header | Phase-0-Shortcut ist bekanntes Tech-Debt |
-| `toLocalIso()` | Per-Location-Timezone statt hardcoded `Europe/Zurich` | Multi-Location |
-| Reminders-Service + Marketing-Jobs | Outbox-Pattern: DB-Event → Outbox-Worker poolt | `CLAUDE.md` fordert Outbox |
-| API global | OpenTelemetry-Traces/Metrics/Logs | `CLAUDE.md` fordert OTel |
-| `apiFetch()` | Server-seitige Idempotency-Deduplizierung + Rate-Limits | Missing-Control |
-| Public-Booking-Flow | Multi-Service + Magic-Link-Login + Voucher/Coupon + Formular-Step | Baseline 2.3/2.11/2.12/2.13/2.14 |
-| Kalender | Recurring-Group, Multi-Service-Group, Buffer-UI, Break-Blocking | Baseline 1.7/1.8/1.11/1.12 |
-| Empty-States (alle Seiten) | Text → Illustration + Next-Action-CTA | `design-system.md` §Empty-State |
-| Error-UX | Strings → structured mit Copy-ID + Retry | `design-system.md` §Error-Screen |
-| Toast-Komponente | Swipe-to-Dismiss + Variants (success/error/info) | `design-system.md` §Components |
-| Staff-PWA (`/m/*`) | Bottom-Tab-Nav + Floating-Action-Button + Haptic-Vibration-API | `design-system.md` §Staff-Mobile |
-| Tip-Picker im POS | Auto-Split nach konfigurierten Rollen (Stylist/Assistent/Shampoo) | Diff #28 vollenden |
-| Predictive-No-Show | Threshold-Actions: >60 Deposit-Request, >80 Waitlist-Parallel | Diff #1 komplett |
+| Stück                              | Was ändern                                                        | Warum                                    |
+| ---------------------------------- | ----------------------------------------------------------------- | ---------------------------------------- |
+| Tenant-Middleware                  | WorkOS-Session-Cookie statt HTTP-Header                           | Phase-0-Shortcut ist bekanntes Tech-Debt |
+| `toLocalIso()`                     | Per-Location-Timezone statt hardcoded `Europe/Zurich`             | Multi-Location                           |
+| Reminders-Service + Marketing-Jobs | Outbox-Pattern: DB-Event → Outbox-Worker poolt                    | `CLAUDE.md` fordert Outbox               |
+| API global                         | OpenTelemetry-Traces/Metrics/Logs                                 | `CLAUDE.md` fordert OTel                 |
+| `apiFetch()`                       | Server-seitige Idempotency-Deduplizierung + Rate-Limits           | Missing-Control                          |
+| Public-Booking-Flow                | Multi-Service + Magic-Link-Login + Voucher/Coupon + Formular-Step | Baseline 2.3/2.11/2.12/2.13/2.14         |
+| Kalender                           | Recurring-Group, Multi-Service-Group, Buffer-UI, Break-Blocking   | Baseline 1.7/1.8/1.11/1.12               |
+| Empty-States (alle Seiten)         | Text → Illustration + Next-Action-CTA                             | `design-system.md` §Empty-State          |
+| Error-UX                           | Strings → structured mit Copy-ID + Retry                          | `design-system.md` §Error-Screen         |
+| Toast-Komponente                   | Swipe-to-Dismiss + Variants (success/error/info)                  | `design-system.md` §Components           |
+| Staff-PWA (`/m/*`)                 | Bottom-Tab-Nav + Floating-Action-Button + Haptic-Vibration-API    | `design-system.md` §Staff-Mobile         |
+| Tip-Picker im POS                  | Auto-Split nach konfigurierten Rollen (Stylist/Assistent/Shampoo) | Diff #28 vollenden                       |
+| Predictive-No-Show                 | Threshold-Actions: >60 Deposit-Request, >80 Waitlist-Parallel     | Diff #1 komplett                         |
 
 ## Rewriten (wegwerfen, neu)
 
-| Stück | Warum |
-|-------|-------|
-| **Modal/Drawer/Popover** ad-hoc im Page-File | → dedizierte `packages/ui/`-Komponenten mit Radix-UI-Primitives |
-| **Kunden-Liste (aktuelle Table)** | → `DataTable`-Komponente mit Sort/Filter/Search/Bulk |
-| **Empty-States** | Aktuell „Noch keine X" → Illustration + CTA, einheitlich über `<EmptyState>` |
-| **Reports** (aktuelle Sparkline) | → Tremor/Recharts-basierte Dashboard-Tiles (Stripe-Dashboard-Dichte) |
+| Stück                                        | Warum                                                                        |
+| -------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Modal/Drawer/Popover** ad-hoc im Page-File | → dedizierte `packages/ui/`-Komponenten mit Radix-UI-Primitives              |
+| **Kunden-Liste (aktuelle Table)**            | → `DataTable`-Komponente mit Sort/Filter/Search/Bulk                         |
+| **Empty-States**                             | Aktuell „Noch keine X" → Illustration + CTA, einheitlich über `<EmptyState>` |
+| **Reports** (aktuelle Sparkline)             | → Tremor/Recharts-basierte Dashboard-Tiles (Stripe-Dashboard-Dichte)         |
 
 ## Neu bauen
 
@@ -196,6 +196,6 @@ Multi-Location-Franchise-Dashboards, Consumer-App, Sustainability-Tracker.
 - ❌ Eigene SMS/Email → Twilio/Postmark (✓ Postmark stub)
 - ❌ Eigenes Auth → WorkOS (offen, in Block A)
 - ❌ Eigene Fiskal-Logik → fiskaly (offen, in Block E / #32)
-- ❌ Code aus beautyneta-* kopieren (✓ nicht gemacht)
+- ❌ Code aus beautyneta-\* kopieren (✓ nicht gemacht)
 
 ## Warte auf „Go-Upgrade"

@@ -1,15 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import {
-  Avatar,
-  Button,
-  Card,
-  CardBody,
-  Field,
-  Input,
-  PriceDisplay,
-  Textarea,
-} from '@salon-os/ui';
+import { Avatar, Button, Card, CardBody, Field, Input, PriceDisplay, Textarea } from '@salon-os/ui';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -44,9 +35,7 @@ async function loadContext(
     const services: Service[] = svcRes.ok
       ? ((await svcRes.json()) as { services: Service[] }).services
       : [];
-    const info = infoRes.ok
-      ? ((await infoRes.json()) as { staff: StaffPublic[] })
-      : { staff: [] };
+    const info = infoRes.ok ? ((await infoRes.json()) as { staff: StaffPublic[] }) : { staff: [] };
     return {
       service: services.find((s) => s.id === serviceId) ?? null,
       staff: info.staff.find((s) => s.id === staffId) ?? null,
@@ -140,9 +129,7 @@ export default async function BookingConfirm({
   }
 
   const start = new Date(sp.startAt);
-  const staffName = staff
-    ? staff.displayName ?? `${staff.firstName} ${staff.lastName}`
-    : null;
+  const staffName = staff ? (staff.displayName ?? `${staff.firstName} ${staff.lastName}`) : null;
 
   return (
     <main className="space-y-6">
@@ -154,9 +141,7 @@ export default async function BookingConfirm({
       </Link>
 
       <header>
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Bestätigen
-        </p>
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Bestätigen</p>
         <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-text-primary">
           Fast geschafft
         </h1>
@@ -192,12 +177,8 @@ export default async function BookingConfirm({
                 <div className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
                   Leistung
                 </div>
-                <div className="mt-0.5 font-medium text-text-primary">
-                  {service.name}
-                </div>
-                <div className="mt-0.5 text-xs text-text-muted">
-                  {service.durationMinutes} Min
-                </div>
+                <div className="mt-0.5 font-medium text-text-primary">{service.name}</div>
+                <div className="mt-0.5 text-xs text-text-muted">{service.durationMinutes} Min</div>
               </div>
               <PriceDisplay amount={service.basePrice} size="lg" />
             </div>
@@ -214,9 +195,7 @@ export default async function BookingConfirm({
                 <div className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
                   Bei
                 </div>
-                <div className="mt-0.5 font-medium text-text-primary">
-                  {staffName}
-                </div>
+                <div className="mt-0.5 font-medium text-text-primary">{staffName}</div>
               </div>
             </div>
           ) : null}
@@ -244,21 +223,10 @@ export default async function BookingConfirm({
               </Field>
             </div>
             <Field label="E-Mail" required>
-              <Input
-                required
-                type="email"
-                name="email"
-                autoComplete="email"
-                inputMode="email"
-              />
+              <Input required type="email" name="email" autoComplete="email" inputMode="email" />
             </Field>
             <Field label="Telefon (optional)">
-              <Input
-                type="tel"
-                name="phone"
-                autoComplete="tel"
-                inputMode="tel"
-              />
+              <Input type="tel" name="phone" autoComplete="tel" inputMode="tel" />
             </Field>
             <Field label="Bemerkung (optional)">
               <Textarea name="notes" rows={3} />

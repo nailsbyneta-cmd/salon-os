@@ -51,9 +51,7 @@ export default async function PosPage({
   if (!a) notFound();
 
   const subtotal = a.items.reduce((s, i) => s + Number(i.price), 0);
-  const name = a.client
-    ? `${a.client.firstName} ${a.client.lastName}`
-    : 'Blockzeit';
+  const name = a.client ? `${a.client.firstName} ${a.client.lastName}` : 'Blockzeit';
   const already = a.paidAt !== null;
 
   return (
@@ -65,9 +63,7 @@ export default async function PosPage({
         ← Zum Termin
       </Link>
       <header className="mb-6 mt-4">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Kassieren
-        </p>
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Kassieren</p>
         <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           {name}
         </h1>
@@ -124,9 +120,7 @@ export default async function PosPage({
               <div className="text-sm font-medium text-text-primary">
                 Kassiert wird bei {a.staff.firstName}
               </div>
-              <div className="text-xs text-text-muted">
-                Trinkgeld geht direkt an sie.
-              </div>
+              <div className="text-xs text-text-muted">Trinkgeld geht direkt an sie.</div>
             </div>
           </div>
 

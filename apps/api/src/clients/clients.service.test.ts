@@ -18,8 +18,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 
@@ -98,7 +103,12 @@ describe('ClientsService', () => {
     });
 
     it('writes audit log on create', async () => {
-      prisma.client.create.mockResolvedValue({ id: 'c1', firstName: 'Anna', lastName: 'Muster', source: null });
+      prisma.client.create.mockResolvedValue({
+        id: 'c1',
+        firstName: 'Anna',
+        lastName: 'Muster',
+        source: null,
+      });
       await service.create({ ...BASE_INPUT });
       expect(audit.withinTx).toHaveBeenCalledOnce();
     });
@@ -148,9 +158,7 @@ describe('ClientsService', () => {
 
     it('collects errors per row without aborting the rest', async () => {
       prisma.client.findMany.mockResolvedValue([]);
-      prisma.client.create
-        .mockRejectedValueOnce(new Error('DB error'))
-        .mockResolvedValue({});
+      prisma.client.create.mockRejectedValueOnce(new Error('DB error')).mockResolvedValue({});
       const result = await service.importBulk([
         { ...BASE_INPUT, firstName: 'Bad' },
         { ...BASE_INPUT, firstName: 'Good' },

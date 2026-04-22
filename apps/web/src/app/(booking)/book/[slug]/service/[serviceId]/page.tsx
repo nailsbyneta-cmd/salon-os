@@ -92,10 +92,7 @@ function isDayOpen(openingHours: unknown, weekdayKey: string): boolean {
 }
 
 /** Nächster offener Tag in den nächsten 14 Tagen. ISO-String oder null. */
-function findNextOpenDay(
-  openingHours: unknown,
-  fromIso: string,
-): string | null {
+function findNextOpenDay(openingHours: unknown, fromIso: string): string | null {
   if (!openingHours || typeof openingHours !== 'object') return null;
   const start = new Date(`${fromIso}T00:00:00Z`);
   for (let i = 1; i <= 14; i++) {
@@ -125,14 +122,12 @@ export default async function BookingSlots({
   ]);
   if (slots === null) notFound();
 
-  const openingHours =
-    info?.locations.find((l) => l.id === location)?.openingHours ?? null;
+  const openingHours = info?.locations.find((l) => l.id === location)?.openingHours ?? null;
 
   const selectedWeekdayKey = WEEKDAY_KEY[new Date(selectedDate).getDay()]!;
   const selectedDayOpen = isDayOpen(openingHours, selectedWeekdayKey);
-  const nextOpen = !selectedDayOpen || slots.length === 0
-    ? findNextOpenDay(openingHours, selectedDate)
-    : null;
+  const nextOpen =
+    !selectedDayOpen || slots.length === 0 ? findNextOpenDay(openingHours, selectedDate) : null;
 
   const grouped = new Map<string, Slot[]>();
   for (const s of slots) {
@@ -188,9 +183,7 @@ export default async function BookingSlots({
                   <span className="text-[10px] font-medium uppercase tracking-wider">
                     {d.weekday}
                   </span>
-                  <span className="mt-0.5 text-sm font-semibold tabular-nums">
-                    {d.day}
-                  </span>
+                  <span className="mt-0.5 text-sm font-semibold tabular-nums">{d.day}</span>
                   <span className="text-[9px] font-medium uppercase tracking-wider opacity-75">
                     {open ? '' : 'Zu'}
                   </span>

@@ -11,12 +11,12 @@ pnpm db:reset  # ⚠️ wipe volumes
 
 ## Deploy-Targets
 
-| Service              | Host      | Config                          |
-|----------------------|-----------|---------------------------------|
-| `apps/web`           | Vercel    | `apps/web/vercel.json`          |
-| `apps/api`           | Fly.io    | `apps/api/fly.toml` + Dockerfile |
-| `apps/worker`        | Fly.io    | `apps/worker/fly.toml` + Dockerfile |
-| `apps/mobile-*`      | Expo EAS  | (nach Phase 1)                  |
+| Service         | Host     | Config                              |
+| --------------- | -------- | ----------------------------------- |
+| `apps/web`      | Vercel   | `apps/web/vercel.json`              |
+| `apps/api`      | Fly.io   | `apps/api/fly.toml` + Dockerfile    |
+| `apps/worker`   | Fly.io   | `apps/worker/fly.toml` + Dockerfile |
+| `apps/mobile-*` | Expo EAS | (nach Phase 1)                      |
 
 Alle in **Zürich (zrh)** als Primärregion für Swiss FADP + DSGVO-Konformität.
 

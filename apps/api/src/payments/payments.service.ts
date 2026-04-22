@@ -21,9 +21,7 @@ export class PaymentsService {
     const key = process.env['STRIPE_SECRET_KEY'];
     this.webhookSecret = process.env['STRIPE_WEBHOOK_SECRET'];
     if (!key) {
-      this.logger.warn(
-        'STRIPE_SECRET_KEY nicht gesetzt — Payments laufen im Dry-Run.',
-      );
+      this.logger.warn('STRIPE_SECRET_KEY nicht gesetzt — Payments laufen im Dry-Run.');
       this.stripe = null;
     } else {
       this.stripe = new Stripe(key, { apiVersion: '2025-02-24.acacia' as Stripe.LatestApiVersion });

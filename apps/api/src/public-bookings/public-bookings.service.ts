@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Appointment, Location, PrismaClient, Service } from '@salon-os/db';
 import { normalizePhone } from '@salon-os/utils';
 import { WITH_TENANT } from '../db/db.module.js';
@@ -63,7 +58,9 @@ export class PublicBookingsService {
   ) {}
 
   /** Löst den Tenant aus dem URL-Slug auf (BYPASS-RLS via Admin-Connection). */
-  private async resolveTenant(slug: string): Promise<{ id: string; timezone: string; currency: string }> {
+  private async resolveTenant(
+    slug: string,
+  ): Promise<{ id: string; timezone: string; currency: string }> {
     const tenant = await this.prismaPublic.tenant.findUnique({
       where: { slug },
       select: { id: true, timezone: true, currency: true, status: true },
@@ -175,11 +172,7 @@ export class PublicBookingsService {
         googleBusinessUrl: true,
       },
     });
-    if (
-      !tenantFull ||
-      tenantFull.status === 'SUSPENDED' ||
-      tenantFull.status === 'CANCELLED'
-    ) {
+    if (!tenantFull || tenantFull.status === 'SUSPENDED' || tenantFull.status === 'CANCELLED') {
       throw new NotFoundException(`Unknown or inactive tenant: ${slug}`);
     }
     return this.withTenant(tenantFull.id, null, null, async (tx) => {
@@ -315,29 +308,19 @@ export class PublicBookingsService {
         select: { staffId: true, startAt: true, endAt: true },
       });
 
-      const duration =
-        service.durationMinutes +
-        service.bufferAfterMin +
-        service.bufferBeforeMin;
+      const duration = service.durationMinutes + service.bufferAfterMin + service.bufferBeforeMin;
       const slotMinutes = 30;
 
       // Echte Öffnungszeiten aus location.openingHours nutzen.
       // Format: { mon: [{open:"09:00",close:"19:00"}], ... }
       // Fallback: 09:00–18:00 wenn Tag leer/fehlt.
-      const intervals = resolveOpeningIntervals(
-        location.openingHours,
-        opts.date,
-      );
+      const intervals = resolveOpeningIntervals(location.openingHours, opts.date);
       if (intervals.length === 0) return [];
 
       const slots: AvailabilitySlot[] = [];
       for (const staff of eligibleStaff) {
         for (const iv of intervals) {
-          for (
-            let t = iv.startMin;
-            t + duration <= iv.endMin;
-            t += slotMinutes
-          ) {
+          for (let t = iv.startMin; t + duration <= iv.endMin; t += slotMinutes) {
             const start = localTimeToUtc(opts.date, t, location.timezone);
             const end = new Date(start.getTime() + duration * 60_000);
             const overlaps = existing.some(
@@ -350,8 +333,7 @@ export class PublicBookingsService {
               startAt: start.toISOString(),
               endAt: end.toISOString(),
               staffId: staff.id,
-              staffDisplayName:
-                staff.displayName ?? `${staff.firstName} ${staff.lastName}`,
+              staffDisplayName: staff.displayName ?? `${staff.firstName} ${staff.lastName}`,
               priceMinor: Math.round(Number(service.basePrice) * 100),
               currency: location.currency,
             });
@@ -408,9 +390,7 @@ export class PublicBookingsService {
               lastName: input.client.lastName,
               email: input.client.email,
               phone: input.client.phone ?? null,
-              phoneE164: input.client.phone
-                ? normalizePhone(input.client.phone)
-                : null,
+              phoneE164: input.client.phone ? normalizePhone(input.client.phone) : null,
               language: input.language ?? 'de-CH',
               source: 'public_booking',
             },
@@ -419,8 +399,7 @@ export class PublicBookingsService {
         const startAt = new Date(input.startAt);
         const endAt = new Date(
           startAt.getTime() +
-            (service.durationMinutes + service.bufferBeforeMin + service.bufferAfterMin) *
-              60_000,
+            (service.durationMinutes + service.bufferBeforeMin + service.bufferAfterMin) * 60_000,
         );
 
         return tx.appointment.create({
@@ -482,15 +461,7 @@ export class PublicBookingsService {
 
 // ─── Helpers für Öffnungszeiten + Timezone ────────────────────
 
-const WEEKDAY_KEYS = [
-  'sun',
-  'mon',
-  'tue',
-  'wed',
-  'thu',
-  'fri',
-  'sat',
-] as const;
+const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 type OpeningDay =
   | { open?: string; close?: string; closed?: boolean }
@@ -536,11 +507,7 @@ function resolveOpeningIntervals(
  * in UTC-Date um. Nutzt Intl.DateTimeFormat um den TZ-Offset für den
  * konkreten Tag zu bestimmen (DST-sicher).
  */
-function localTimeToUtc(
-  dateIso: string,
-  minutesFromMidnight: number,
-  timezone: string,
-): Date {
+function localTimeToUtc(dateIso: string, minutesFromMidnight: number, timezone: string): Date {
   const hh = Math.floor(minutesFromMidnight / 60);
   const mm = minutesFromMidnight % 60;
   // Start: naive UTC
@@ -560,8 +527,7 @@ function localTimeToUtc(
     hour12: false,
   });
   const parts = fmt.formatToParts(naive);
-  const pick = (t: string): number =>
-    Number(parts.find((p) => p.type === t)?.value ?? '0');
+  const pick = (t: string): number => Number(parts.find((p) => p.type === t)?.value ?? '0');
   const asUtcFromZoned = Date.UTC(
     pick('year'),
     pick('month') - 1,

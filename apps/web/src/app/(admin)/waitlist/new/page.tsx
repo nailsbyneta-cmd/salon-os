@@ -58,7 +58,7 @@ async function loadFormData(): Promise<{
 function inNDays(n: number): string {
   const today = todayInZone();
   const [y, m, d] = today.split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
+  const dt = new Date(Date.UTC(y ?? 0, (m ?? 1) - 1, d ?? 1));
   dt.setUTCDate(dt.getUTCDate() + n);
   return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(
     dt.getUTCDate(),
@@ -77,15 +77,12 @@ export default async function NewWaitlistPage(): Promise<React.JSX.Element> {
         ← Warteliste
       </Link>
       <header className="mb-6 mt-4">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Warteliste
-        </p>
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Warteliste</p>
         <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           Neuer Eintrag
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Kundin hat angerufen und möchte benachrichtigt werden, sobald ein
-          Slot frei wird.
+          Kundin hat angerufen und möchte benachrichtigt werden, sobald ein Slot frei wird.
         </p>
       </header>
 
@@ -104,11 +101,7 @@ export default async function NewWaitlistPage(): Promise<React.JSX.Element> {
             </Field>
 
             <Field label="Standort" required>
-              <Select
-                name="locationId"
-                required
-                defaultValue={locations[0]?.id ?? ''}
-              >
+              <Select name="locationId" required defaultValue={locations[0]?.id ?? ''}>
                 <option value="">— wählen —</option>
                 {locations.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -135,34 +128,16 @@ export default async function NewWaitlistPage(): Promise<React.JSX.Element> {
               </legend>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Frühestens — Datum" required>
-                  <Input
-                    type="date"
-                    name="earliestDate"
-                    defaultValue={todayInZone()}
-                    required
-                  />
+                  <Input type="date" name="earliestDate" defaultValue={todayInZone()} required />
                 </Field>
                 <Field label="Uhrzeit">
-                  <Input
-                    type="time"
-                    name="earliestTime"
-                    defaultValue="09:00"
-                  />
+                  <Input type="time" name="earliestTime" defaultValue="09:00" />
                 </Field>
                 <Field label="Spätestens — Datum" required>
-                  <Input
-                    type="date"
-                    name="latestDate"
-                    defaultValue={inNDays(14)}
-                    required
-                  />
+                  <Input type="date" name="latestDate" defaultValue={inNDays(14)} required />
                 </Field>
                 <Field label="Uhrzeit">
-                  <Input
-                    type="time"
-                    name="latestTime"
-                    defaultValue="18:00"
-                  />
+                  <Input type="time" name="latestTime" defaultValue="18:00" />
                 </Field>
               </div>
             </fieldset>
@@ -193,11 +168,7 @@ export default async function NewWaitlistPage(): Promise<React.JSX.Element> {
             </fieldset>
 
             <Field label="Notiz (optional)">
-              <Textarea
-                name="notes"
-                rows={2}
-                placeholder='z.B. „wünscht Neta, eher nachmittags"'
-              />
+              <Textarea name="notes" rows={2} placeholder='z.B. „wünscht Neta, eher nachmittags"' />
             </Field>
 
             <div className="flex items-center justify-end gap-2 pt-2">

@@ -4,10 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
-export async function checkoutAppointment(
-  appointmentId: string,
-  form: FormData,
-): Promise<void> {
+export async function checkoutAppointment(appointmentId: string, form: FormData): Promise<void> {
   const ctx = getCurrentTenant();
   const tipAmount = Number(form.get('tipAmount') ?? 0);
   const paymentMethod = form.get('paymentMethod')?.toString();

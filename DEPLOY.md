@@ -33,6 +33,7 @@ git push -u origin main
 In Railway UI pro Service setzen:
 
 **`api`:**
+
 ```
 NODE_ENV=production
 PORT=4000
@@ -46,6 +47,7 @@ WORKOS_COOKIE_PASSWORD=LEER_FÜR_DEV
 > Für Demo-Zwecke setze vorübergehend `NODE_ENV=staging` statt `production`.
 
 **`web`:**
+
 ```
 NODE_ENV=production
 PUBLIC_API_URL=https://<api-service>.railway.app

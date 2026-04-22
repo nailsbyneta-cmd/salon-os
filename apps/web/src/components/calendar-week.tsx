@@ -12,12 +12,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import {
-  AppointmentCard,
-  type AppointmentStatus,
-  Button,
-  cn,
-} from '@salon-os/ui';
+import { AppointmentCard, type AppointmentStatus, Button, cn } from '@salon-os/ui';
 import { toLocalIso } from '@salon-os/utils/timezone';
 import { rescheduleAppointment } from '@/app/(admin)/calendar/reschedule-action';
 import { CalendarZoomControls } from './calendar-zoom-controls';
@@ -72,9 +67,7 @@ function isoDay(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-function parseDropId(
-  raw: string,
-): { day: string; staffId: string; minute: number } | null {
+function parseDropId(raw: string): { day: string; staffId: string; minute: number } | null {
   if (!raw.startsWith('wslot:')) return null;
   const parts = raw.slice('wslot:'.length).split('|');
   if (parts.length !== 3) return null;
@@ -128,9 +121,7 @@ export function CalendarWeek({
   // SSR-safe: pre-mount nur base × zoom, post-mount fit-floor dazu.
   const availableHeight = Math.max(400, viewport.h - CAL_VERTICAL_OFFSET);
   const fitPxPerMin = availableHeight / (HOURS.length * 60);
-  const pxPerMin = mounted
-    ? Math.max(base.pxPerMin * zoom, fitPxPerMin)
-    : base.pxPerMin * zoom;
+  const pxPerMin = mounted ? Math.max(base.pxPerMin * zoom, fitPxPerMin) : base.pxPerMin * zoom;
   const cfg = {
     pxPerMin,
     colWidth: Math.max(40, Math.round(base.colMinWidth * zoom)),
@@ -179,8 +170,7 @@ export function CalendarWeek({
     const el = scrollRef.current;
     if (!el) return;
     const containerTopInPage = el.getBoundingClientRect().top + window.scrollY;
-    const targetY =
-      containerTopInPage + minutesFromCalStart * pxPerMin - window.innerHeight / 3;
+    const targetY = containerTopInPage + minutesFromCalStart * pxPerMin - window.innerHeight / 3;
     window.scrollTo({ top: Math.max(0, targetY), behavior: 'instant' as ScrollBehavior });
     scrolledToNowRef.current = true;
   }, [mounted, pxPerMin, weekStart]);
@@ -197,9 +187,7 @@ export function CalendarWeek({
   const todayStr = new Date().toDateString();
 
   const activeStaffIds = new Set(initialAppts.map((a) => a.staffId));
-  const visibleStaff = onlyActive
-    ? staff.filter((s) => activeStaffIds.has(s.id))
-    : staff;
+  const visibleStaff = onlyActive ? staff.filter((s) => activeStaffIds.has(s.id)) : staff;
   const shownStaff = visibleStaff.length === 0 ? staff : visibleStaff;
   const hiddenCount = staff.length - shownStaff.length;
 
@@ -229,9 +217,7 @@ export function CalendarWeek({
 
   const handleSlotClick = (day: string, staffId: string, minute: number): void => {
     const timeStr = timeLabelFromMinute(minute);
-    const staffQuery = hasStaffColumns
-      ? `&staffId=${encodeURIComponent(staffId)}`
-      : '';
+    const staffQuery = hasStaffColumns ? `&staffId=${encodeURIComponent(staffId)}` : '';
     router.push(`/calendar/new?date=${day}&time=${timeStr}${staffQuery}`);
   };
 
@@ -372,10 +358,7 @@ export function CalendarWeek({
     });
   };
 
-  const slots = Array.from(
-    { length: HOURS.length * SLOTS_PER_HOUR },
-    (_, i) => i * SLOT_MINUTES,
-  );
+  const slots = Array.from({ length: HOURS.length * SLOTS_PER_HOUR }, (_, i) => i * SLOT_MINUTES);
 
   // Ohne Mitarbeiterinnen würde gridTemplate `repeat(0, …)` = invalid
   // CSS werden und die Woche ohne Spalten rendern. Gleicher Empty-State
@@ -410,10 +393,7 @@ export function CalendarWeek({
         ref={scrollRef}
         className="cursor-grab overflow-x-auto rounded-lg border border-border bg-surface"
       >
-        <div
-          className="grid w-full"
-          style={{ gridTemplateColumns: gridTemplate, minWidth }}
-        >
+        <div className="grid w-full" style={{ gridTemplateColumns: gridTemplate, minWidth }}>
           {/* Day-Header */}
           <div className="sticky left-0 z-10 border-b border-r border-border bg-surface" />
           {days.map((d) => {
@@ -431,9 +411,7 @@ export function CalendarWeek({
                 <div
                   className={cn(
                     'mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold tabular-nums',
-                    isToday
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-text-primary',
+                    isToday ? 'bg-accent text-accent-foreground' : 'text-text-primary',
                   )}
                 >
                   {d.getDate()}
@@ -460,8 +438,7 @@ export function CalendarWeek({
                       <span
                         className="h-2 w-2 shrink-0 rounded-full"
                         style={{
-                          backgroundColor:
-                            s.color ?? 'hsl(var(--border-strong))',
+                          backgroundColor: s.color ?? 'hsl(var(--border-strong))',
                         }}
                       />
                       <span className="truncate text-[10px] font-semibold text-text-secondary">
@@ -533,18 +510,10 @@ export function CalendarWeek({
         <div className="pointer-events-none fixed bottom-6 left-1/2 z-40 -translate-x-1/2">
           <div className="pointer-events-auto flex items-center gap-4 rounded-lg border border-border bg-surface-raised px-4 py-2.5 text-sm shadow-lg">
             <span className="text-text-secondary">
-              Termin auf{' '}
-              <span className="font-medium text-text-primary">
-                {undo.newLabel}
-              </span>{' '}
+              Termin auf <span className="font-medium text-text-primary">{undo.newLabel}</span>{' '}
               verschoben.
             </span>
-            <Button
-              onClick={handleUndo}
-              variant="secondary"
-              size="sm"
-              disabled={pending}
-            >
+            <Button onClick={handleUndo} variant="secondary" size="sm" disabled={pending}>
               Rückgängig
             </Button>
           </div>
@@ -585,9 +554,7 @@ function DayStaffColumn({
     <div
       className={cn(
         'relative',
-        dayLeftBorder
-          ? 'border-l-2 border-l-border-strong'
-          : 'border-l border-border',
+        dayLeftBorder ? 'border-l-2 border-l-border-strong' : 'border-l border-border',
       )}
       style={{ height: totalHeight }}
     >
@@ -688,25 +655,22 @@ function WeekDraggableAppt({
   compact: boolean;
 }): React.JSX.Element {
   const router = useRouter();
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: appt.id });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: appt.id,
+  });
   const style: React.CSSProperties = {
     position: 'absolute',
     top: topPx,
     left: 4,
     right: 4,
     height: heightPx,
-    transform: transform
-      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
-      : undefined,
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     opacity: isDragging ? 0.85 : 1,
     zIndex: isDragging ? 20 : 1,
     touchAction: 'manipulation',
     cursor: isDragging ? 'grabbing' : 'grab',
   };
-  const clientName = appt.client
-    ? `${appt.client.firstName} ${appt.client.lastName}`
-    : 'Blockzeit';
+  const clientName = appt.client ? `${appt.client.firstName} ${appt.client.lastName}` : 'Blockzeit';
   const services = appt.items.map((i) => i.service.name).join(', ') || '—';
   const timeLabel = new Date(appt.startAt).toLocaleTimeString('de-CH', {
     hour: '2-digit',
@@ -733,17 +697,9 @@ function WeekDraggableAppt({
           status={appt.status}
           staffColor={appt.staff.color}
           compact={compact}
-          noShowRisk={
-            appt.client?.noShowRisk != null ? Number(appt.client.noShowRisk) : null
-          }
-          vip={
-            appt.client?.lifetimeValue != null &&
-            Number(appt.client.lifetimeValue) >= 2000
-          }
-          className={cn(
-            'h-full',
-            isDragging && 'shadow-lg ring-2 ring-accent',
-          )}
+          noShowRisk={appt.client?.noShowRisk != null ? Number(appt.client.noShowRisk) : null}
+          vip={appt.client?.lifetimeValue != null && Number(appt.client.lifetimeValue) >= 2000}
+          className={cn('h-full', isDragging && 'shadow-lg ring-2 ring-accent')}
         />
       </div>
     </div>

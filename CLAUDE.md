@@ -6,7 +6,7 @@ Du baust **SALON OS**, eine globale All-in-One-Plattform für Beauty- und Wellne
 
 1. **Lies immer zuerst `SPEC.md` und die relevanten Dateien in `specs/` bevor du Code schreibst.** Die Specs sind die Wahrheit.
 2. **Global von Tag 1:** Multi-Tenant, Multi-Currency, Multi-Language (i18n), Multi-Tax, Multi-Timezone.
-3. **API-first:** Jedes Feature hat eine dokumentierte REST- *und* GraphQL-API. UI ist nur *ein* Client.
+3. **API-first:** Jedes Feature hat eine dokumentierte REST- _und_ GraphQL-API. UI ist nur _ein_ Client.
 4. **Mobile-first UX:** Salonmitarbeiter:innen arbeiten am Tablet/Handy — niemals schlechter als am Desktop.
 5. **Multi-Tenant mit Row-Level-Security (RLS):** Jede Tabelle hat `tenant_id`, Postgres RLS erzwingt Isolation.
 6. **KI ist eine eigene Schicht, kein Marketing-Gag.** Siehe `specs/ai-layer.md`.
@@ -18,6 +18,7 @@ Du baust **SALON OS**, eine globale All-in-One-Plattform für Beauty- und Wellne
 ## Reihenfolge (strikt halten!)
 
 ### Phase 0 — Foundation (Woche 1)
+
 1. Monorepo aufsetzen: Turborepo + pnpm + TypeScript + Biome/ESLint + Prettier + Vitest + Playwright.
 2. Docker Compose für lokale Entwicklung: Postgres 16, Redis, Mailhog, Minio/S3-kompatibel.
 3. CI/CD: GitHub Actions → Build, Test, Lint, Type-check, Security-scan (Trivy, Snyk).
@@ -27,7 +28,9 @@ Du baust **SALON OS**, eine globale All-in-One-Plattform für Beauty- und Wellne
 7. E2E-Smoketest: Login → Dashboard rendert → grün in CI.
 
 ### Phase 1 — MVP (Woche 2–12) — siehe `specs/roadmap.md`
+
 Der MVP ist **nicht** "alles". Der MVP ist:
+
 - Buchungsmodul (Kalender, Online-Booking, Deposits, Reminders, Waitlist)
 - CRM (Kunden, Notizen, Historie, Formulare)
 - Services & Personal (Teams, Rollen, Arbeitszeiten, Services, Preise, Dauer)
@@ -39,9 +42,11 @@ Der MVP ist **nicht** "alles". Der MVP ist:
 - Branded Booking-Seite (public.salon-os.com/{slug})
 
 ### Phase 2 — V1 (Monat 4–6)
+
 Inventar, Loyalty, Memberships, Gift Cards, Marketing-Kampagnen, Automated Flows, Reviews-Automation, Branded Client App (iOS+Android via React Native/Expo), AI Receptionist (Voice+SMS), Precision Scheduling, Payroll, Commissions, Xero/QuickBooks/DATEV-Export, TSE-Anbindung (fiskaly o. ä.).
 
 ### Phase 3 — V2 (Monat 7–12)
+
 Marktplatz, Dynamic Pricing, AR Try-On, Multi-Location Enterprise, Franchise-Dashboards, Public API + Webhooks + Partner-Portal, Zapier/Make-App, White-Label für Ketten, Medspa/HIPAA-Modul.
 
 ## Wie du mit den Specs arbeitest

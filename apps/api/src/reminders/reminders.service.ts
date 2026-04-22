@@ -60,14 +60,9 @@ export class RemindersService implements OnModuleDestroy {
 
   // ─── Legacy direct-enqueue (fire-and-forget fallback) ────────────────────
 
-  async sendConfirmationNow(args: {
-    appointmentId: string;
-    tenantId: string;
-  }): Promise<void> {
+  async sendConfirmationNow(args: { appointmentId: string; tenantId: string }): Promise<void> {
     if (!this.queue) {
-      this.logger.warn(
-        `sendConfirmationNow: queue null → skip appt=${args.appointmentId}`,
-      );
+      this.logger.warn(`sendConfirmationNow: queue null → skip appt=${args.appointmentId}`);
       return;
     }
     try {
@@ -90,9 +85,7 @@ export class RemindersService implements OnModuleDestroy {
       );
       this.logger.log(`Confirmation enqueued: appt=${args.appointmentId}`);
     } catch (err) {
-      this.logger.error(
-        `Confirmation enqueue FAILED: ${(err as Error).message}`,
-      );
+      this.logger.error(`Confirmation enqueue FAILED: ${(err as Error).message}`);
       throw err;
     }
   }
@@ -131,10 +124,7 @@ export class RemindersService implements OnModuleDestroy {
 
   async cancelReminder(appointmentId: string): Promise<void> {
     if (!this.queue) return;
-    for (const id of [
-      `reminder-email-${appointmentId}`,
-      `confirmation-${appointmentId}`,
-    ]) {
+    for (const id of [`reminder-email-${appointmentId}`, `confirmation-${appointmentId}`]) {
       const job = await this.queue.getJob(id);
       if (job) await job.remove();
     }

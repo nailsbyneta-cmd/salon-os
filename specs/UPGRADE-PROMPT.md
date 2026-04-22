@@ -47,17 +47,18 @@ Was du bisher gebaut hast, ist vermutlich **0815** — Standard-Admin-UI, Standa
 7. Arbeite die Liste aus `UPGRADE-PLAN.md` in dieser Reihenfolge ab:
    a. Baseline-Lücken aus `feature-completeness.md` (P0 + relevante P1)
    b. **Killer-Features aus `differentiation.md`** — insbesondere P0-Differenziatoren:
-      - #21 Drag-to-Reschedule mit Haptics + Undo
-      - #22 Single-Thumb-Staff-App
-      - #23 Offline-First
-      - #24 Tap-to-Pay on Phone
-      - #25 Universal Command Palette (⌘K)
-      - #28 Tip-Split-Automation
-      - #31 1-Klick-DSGVO-Export
-   c. Dann P1-Differenziatoren (die, die Konkurrenz wirklich nervös machen: #1, #4, #13, #18, #19, #26, #32, #33)
-   d. Dann P2, iterativ in V2
+   - #21 Drag-to-Reschedule mit Haptics + Undo
+   - #22 Single-Thumb-Staff-App
+   - #23 Offline-First
+   - #24 Tap-to-Pay on Phone
+   - #25 Universal Command Palette (⌘K)
+   - #28 Tip-Split-Automation
+   - #31 1-Klick-DSGVO-Export
+     c. Dann P1-Differenziatoren (die, die Konkurrenz wirklich nervös machen: #1, #4, #13, #18, #19, #26, #32, #33)
+     d. Dann P2, iterativ in V2
 
 **Pro Feature gilt:**
+
 - Verwende die Design-Tokens aus `packages/ui/`
 - Baue Storybook-Story für neue Komponenten
 - Schreibe Tests (Unit + Integration + 1 E2E)

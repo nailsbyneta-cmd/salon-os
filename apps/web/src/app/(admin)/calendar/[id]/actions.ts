@@ -3,10 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { apiFetch } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
-export async function updateAppointmentNotes(
-  appointmentId: string,
-  form: FormData,
-): Promise<void> {
+export async function updateAppointmentNotes(appointmentId: string, form: FormData): Promise<void> {
   const ctx = getCurrentTenant();
   const notes = form.get('notes')?.toString() ?? '';
   const internalNotes = form.get('internalNotes')?.toString() ?? '';

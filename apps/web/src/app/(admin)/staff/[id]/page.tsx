@@ -58,7 +58,7 @@ function mondayOfCurrentZurichWeek(): {
   // war der Offset hardcoded und kippte zwischen Oktober und März.
   const todayCh = todayInZone();
   const [y, m, d] = todayCh.split('-').map(Number);
-  const pivot = new Date(Date.UTC(y, m - 1, d));
+  const pivot = new Date(Date.UTC(y ?? 0, (m ?? 1) - 1, d ?? 1));
   const weekday = pivot.getUTCDay();
   const daysSinceMonday = weekday === 0 ? 6 : weekday - 1;
   const monday = new Date(pivot);
@@ -89,9 +89,7 @@ function zurichDayKey(iso: string): string {
 // (WAITLIST/DRAFT/REQUESTED etc.). Nur diese 4 zählen als 'gebuchter Slot'.
 const BOOKED_STATUSES = new Set(['BOOKED', 'CONFIRMED', 'CHECKED_IN', 'IN_SERVICE', 'COMPLETED']);
 
-async function loadWeekStats(
-  staffId: string,
-): Promise<WeekStats> {
+async function loadWeekStats(staffId: string): Promise<WeekStats> {
   const ctx = getCurrentTenant();
   const { fromIso, toIso } = mondayOfCurrentZurichWeek();
   const qs = new URLSearchParams({ staffId, from: fromIso, to: toIso });
@@ -202,10 +200,7 @@ export default async function StaffDetailPage({
   params: Promise<{ id: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
-  const [{ staff: s, allServices }, weekStats] = await Promise.all([
-    load(id),
-    loadWeekStats(id),
-  ]);
+  const [{ staff: s, allServices }, weekStats] = await Promise.all([load(id), loadWeekStats(id)]);
   if (!s) notFound();
 
   const save = updateStaff.bind(null, id);
@@ -224,9 +219,7 @@ export default async function StaffDetailPage({
       <header className="mb-6 mt-4 flex flex-wrap items-center gap-4">
         <Avatar name={displayName} color={s.color} size="xl" />
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-            Profil
-          </p>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Profil</p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             {displayName}
           </h1>
@@ -300,9 +293,7 @@ export default async function StaffDetailPage({
                         {weekStats.revenueChf.toLocaleString('de-CH', {
                           maximumFractionDigits: 0,
                         })}
-                        <span className="ml-1 text-sm font-normal text-text-muted">
-                          CHF
-                        </span>
+                        <span className="ml-1 text-sm font-normal text-text-muted">CHF</span>
                       </div>
                       <div className="mt-0.5 text-[10px] text-text-muted">
                         erledigt · Ø{' '}
@@ -324,25 +315,14 @@ export default async function StaffDetailPage({
           <form action={save} className="space-y-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Vorname" required>
-                <Input
-                  name="firstName"
-                  defaultValue={s.firstName}
-                  required
-                />
+                <Input name="firstName" defaultValue={s.firstName} required />
               </Field>
               <Field label="Nachname" required>
-                <Input
-                  name="lastName"
-                  defaultValue={s.lastName}
-                  required
-                />
+                <Input name="lastName" defaultValue={s.lastName} required />
               </Field>
             </div>
 
-            <Field
-              label="Anzeigename (optional)"
-              hint="Fällt zurück auf Vor + Nachname wenn leer"
-            >
+            <Field label="Anzeigename (optional)" hint="Fällt zurück auf Vor + Nachname wenn leer">
               <Input
                 name="displayName"
                 defaultValue={s.displayName ?? ''}
@@ -352,19 +332,10 @@ export default async function StaffDetailPage({
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="E-Mail" required>
-                <Input
-                  type="email"
-                  name="email"
-                  defaultValue={s.email}
-                  required
-                />
+                <Input type="email" name="email" defaultValue={s.email} required />
               </Field>
               <Field label="Telefon">
-                <Input
-                  type="tel"
-                  name="phone"
-                  defaultValue={s.phone ?? ''}
-                />
+                <Input type="tel" name="phone" defaultValue={s.phone ?? ''} />
               </Field>
             </div>
 
@@ -381,11 +352,7 @@ export default async function StaffDetailPage({
                 </Select>
               </Field>
               <Field label="Anstellung" required>
-                <Select
-                  name="employmentType"
-                  defaultValue={s.employmentType}
-                  required
-                >
+                <Select name="employmentType" defaultValue={s.employmentType} required>
                   <option value="EMPLOYEE">Angestellt</option>
                   <option value="CONTRACTOR">Freelance</option>
                   <option value="BOOTH_RENTER">Stuhlmiete</option>
@@ -400,11 +367,7 @@ export default async function StaffDetailPage({
                 label="Kalender-Farbe"
                 hint="HEX wie #e91e63 — Farbstreifen in Kalender-Karten"
               >
-                <Input
-                  name="color"
-                  defaultValue={s.color ?? ''}
-                  placeholder="#e91e63"
-                />
+                <Input name="color" defaultValue={s.color ?? ''} placeholder="#e91e63" />
               </Field>
               <Field label="Foto-URL" hint="Erscheint auf Public-Buchungs-Seite">
                 <Input
@@ -416,10 +379,7 @@ export default async function StaffDetailPage({
               </Field>
             </div>
 
-            <Field
-              label="Kurz-Bio"
-              hint="Zeigt auf Public-Buchungs-Seite unter ‚Unser Team'"
-            >
+            <Field label="Kurz-Bio" hint="Zeigt auf Public-Buchungs-Seite unter ‚Unser Team'">
               <Textarea
                 name="bio"
                 rows={3}
@@ -435,10 +395,7 @@ export default async function StaffDetailPage({
               {allServices.length === 0 ? (
                 <p className="text-xs text-text-muted">
                   Keine Services angelegt. Gehe zu{' '}
-                  <Link
-                    href="/services/new"
-                    className="text-accent hover:underline"
-                  >
+                  <Link href="/services/new" className="text-accent hover:underline">
                     /services
                   </Link>{' '}
                   um welche anzulegen.
@@ -458,12 +415,9 @@ export default async function StaffDetailPage({
                         className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
                       />
                       <span className="flex-1 min-w-0">
-                        <span className="block truncate text-text-primary">
-                          {svc.name}
-                        </span>
+                        <span className="block truncate text-text-primary">{svc.name}</span>
                         <span className="block text-[11px] text-text-muted">
-                          {svc.durationMinutes} Min ·{' '}
-                          {Number(svc.basePrice).toFixed(2)} CHF
+                          {svc.durationMinutes} Min · {Number(svc.basePrice).toFixed(2)} CHF
                         </span>
                       </span>
                     </label>
@@ -479,9 +433,7 @@ export default async function StaffDetailPage({
                 defaultChecked={s.active}
                 className="h-4 w-4 accent-accent"
               />
-              <span>
-                Aktiv — erscheint in Kalender-Spalten + Online-Booking
-              </span>
+              <span>Aktiv — erscheint in Kalender-Spalten + Online-Booking</span>
             </label>
 
             <div className="flex items-center justify-end gap-2 pt-2">

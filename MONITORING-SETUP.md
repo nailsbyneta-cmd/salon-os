@@ -35,12 +35,12 @@ So richtest du die **automatische Überwachung** ein. Nach dem Setup läuft alle
 
 ## Was lokal installiert wird
 
-| Datei                                           | Zweck                                     |
-| ----------------------------------------------- | ----------------------------------------- |
-| `~/salon-os/monitor.sh`                         | Prüft Projekt-Status, triggert Dispatch   |
-| `~/salon-os/dispatch.sh`                        | Sendet macOS-Notification                 |
-| `~/Library/LaunchAgents/com.lorenc.salon-os.monitor.plist` | Startet monitor.sh alle 30 min |
-| `~/.salon-os-monitor/` (auto-created)           | Logs + Dedup-State                        |
+| Datei                                                      | Zweck                                   |
+| ---------------------------------------------------------- | --------------------------------------- |
+| `~/salon-os/monitor.sh`                                    | Prüft Projekt-Status, triggert Dispatch |
+| `~/salon-os/dispatch.sh`                                   | Sendet macOS-Notification               |
+| `~/Library/LaunchAgents/com.lorenc.salon-os.monitor.plist` | Startet monitor.sh alle 30 min          |
+| `~/.salon-os-monitor/` (auto-created)                      | Logs + Dedup-State                      |
 
 ## Setup in 3 Schritten
 
@@ -62,20 +62,24 @@ cd ~/salon-os && bash setup-monitor.sh
 ```
 
 Du solltest bekommen:
+
 - Eine Test-Notification "SALON OS ready" auf deinem Mac (und iPhone, wenn iCloud-Sync an)
 - `✅ Setup fertig.` am Ende
 
 ### 3. iPhone-Push aktivieren (einmalig)
 
 **Auf dem Mac:**
+
 - Systemeinstellungen → Benachrichtigungen → ganz nach unten scrollen
 - "Benachrichtigungen auf iPhone von Mac erlauben" → **AN**
 
 **Auf dem iPhone:**
+
 - Einstellungen → Allgemein → AirPlay & Handoff → "Continuity-Benachrichtigungen" → **AN**
 - Einstellungen → Mitteilungen → Skripteditor (osascript-Quelle) + Terminal-Notifier → alle Mitteilungsoptionen AN
 
 Teste jetzt manuell:
+
 ```bash
 bash ~/salon-os/dispatch.sh "Test" "Sollte auf Mac + iPhone ankommen" "normal"
 ```
@@ -104,13 +108,13 @@ Der Monitor liest diese Files automatisch.
 
 ## Alerts, die du bekommst
 
-| Trigger                                      | Notification                                    | Priorität |
-| -------------------------------------------- | ----------------------------------------------- | --------- |
-| 🔴 Blocker > 2 h offen                       | "Claude Code hängt — kritischer Blocker"        | URGENT    |
-| ≥ 3 offene Fragen                            | "Claude Code wartet auf X Antworten"            | Normal    |
-| Kein Commit seit 6 h (während Bürozeiten)    | "Stillstand — hängt Claude Code?"               | Warning   |
-| CI-Status rot                                | "Build kaputt"                                  | URGENT    |
-| Morgens 09:00 täglich                        | "Morning-Report: Phase X, Y Fragen, Z Blocker" | Normal    |
+| Trigger                                   | Notification                                   | Priorität |
+| ----------------------------------------- | ---------------------------------------------- | --------- |
+| 🔴 Blocker > 2 h offen                    | "Claude Code hängt — kritischer Blocker"       | URGENT    |
+| ≥ 3 offene Fragen                         | "Claude Code wartet auf X Antworten"           | Normal    |
+| Kein Commit seit 6 h (während Bürozeiten) | "Stillstand — hängt Claude Code?"              | Warning   |
+| CI-Status rot                             | "Build kaputt"                                 | URGENT    |
+| Morgens 09:00 täglich                     | "Morning-Report: Phase X, Y Fragen, Z Blocker" | Normal    |
 
 ## Manuelle Befehle
 
@@ -145,16 +149,19 @@ Ich prüfe dann stichprobenartig deinen Code und sag dir, ob Claude Code wirklic
 ## Troubleshooting
 
 **Ich bekomme keine Notifications:**
+
 - Mac: Einstellungen → Benachrichtigungen → Skripteditor + terminal-notifier → alle an
 - Teste: `osascript -e 'display notification "test"'`
 - Wenn das klappt, aber vom Monitor nichts kommt: Log prüfen `cat /tmp/salon-os-monitor.err`
 
 **iPhone kriegt nichts trotz Continuity:**
+
 - iPhone + Mac gleichgesetzt? → `System Settings → Apple ID → alle Geräte derselben ID`
 - iCloud-Schlüsselbund aktiviert auf beiden?
 - Bluetooth + WLAN an auf beiden Geräten?
 
 **Monitor läuft nicht:**
+
 - `launchctl list | grep salon-os` — wenn kein Output: `launchctl load ~/Library/LaunchAgents/com.lorenc.salon-os.monitor.plist`
 - Logs: `cat /tmp/salon-os-monitor.log /tmp/salon-os-monitor.err`
 

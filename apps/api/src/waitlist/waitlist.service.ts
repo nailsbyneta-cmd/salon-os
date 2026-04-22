@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { PrismaClient, WaitlistEntry } from '@salon-os/db';
 import { normalizePhone } from '@salon-os/utils';
 import { WITH_TENANT } from '../db/db.module.js';
@@ -65,9 +60,7 @@ export class WaitlistService {
       throw new BadRequestException('latestAt muss nach earliestAt liegen.');
     }
     if (!input.clientId && !input.newClient) {
-      throw new BadRequestException(
-        'Entweder clientId oder newClient-Daten angeben.',
-      );
+      throw new BadRequestException('Entweder clientId oder newClient-Daten angeben.');
     }
 
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
@@ -80,9 +73,7 @@ export class WaitlistService {
             lastName: input.newClient.lastName,
             email: input.newClient.email ?? null,
             phone: input.newClient.phone ?? null,
-            phoneE164: input.newClient.phone
-              ? normalizePhone(input.newClient.phone)
-              : null,
+            phoneE164: input.newClient.phone ? normalizePhone(input.newClient.phone) : null,
             source: 'waitlist-admin',
           },
         });
@@ -158,10 +149,7 @@ export class WaitlistService {
         client: { is: { blocked: false, deletedAt: null } },
         ...(opts.preferredStaffId
           ? {
-              OR: [
-                { preferredStaffId: null },
-                { preferredStaffId: opts.preferredStaffId },
-              ],
+              OR: [{ preferredStaffId: null }, { preferredStaffId: opts.preferredStaffId }],
             }
           : {}),
       };
@@ -218,17 +206,16 @@ export class WaitlistService {
           deletedAt: null,
         },
       });
-      const client = existingClient
-        ?? (await tx.client.create({
+      const client =
+        existingClient ??
+        (await tx.client.create({
           data: {
             tenantId: tenant.id,
             firstName: input.client.firstName,
             lastName: input.client.lastName,
             email: input.client.email,
             phone: input.client.phone ?? null,
-            phoneE164: input.client.phone
-              ? normalizePhone(input.client.phone)
-              : null,
+            phoneE164: input.client.phone ? normalizePhone(input.client.phone) : null,
             source: 'waitlist',
           },
         }));

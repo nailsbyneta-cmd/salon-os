@@ -16,8 +16,7 @@ import {
 const redisUrl = process.env['REDIS_URL'] ?? 'redis://localhost:6379';
 const postmarkToken = process.env['POSTMARK_SERVER_TOKEN'];
 const fromEmail = process.env['REMINDER_FROM_EMAIL'] ?? 'noreply@salon-os.com';
-const webBaseUrl =
-  process.env['WEB_PUBLIC_URL'] ?? 'https://web-production-e5e8d.up.railway.app';
+const webBaseUrl = process.env['WEB_PUBLIC_URL'] ?? 'https://web-production-e5e8d.up.railway.app';
 
 function parseRedisUrl(url: string): {
   host: string;
@@ -34,11 +33,7 @@ function parseRedisUrl(url: string): {
   };
 }
 
-async function sendEmail(opts: {
-  to: string;
-  subject: string;
-  body: string;
-}): Promise<void> {
+async function sendEmail(opts: { to: string; subject: string; body: string }): Promise<void> {
   if (!postmarkToken) {
     console.log(
       `[worker][email] (dry-run, no POSTMARK_SERVER_TOKEN) to=${opts.to} subject="${opts.subject}"`,
@@ -114,8 +109,7 @@ async function processReminder(job: Job<ReminderJob>): Promise<void> {
   const cancelUrl = `${webBaseUrl}/appointment/${appt.id}?t=${cancelToken}`;
   const rescheduleUrl = `${webBaseUrl}/appointment/${appt.id}?t=${rescheduleToken}`;
   const apiBase =
-    process.env['API_PUBLIC_URL'] ??
-    'https://salon-os-production-2346.up.railway.app';
+    process.env['API_PUBLIC_URL'] ?? 'https://salon-os-production-2346.up.railway.app';
   const icalUrl = `${apiBase}/v1/public/appointments/${appt.id}.ics?t=${cancelToken}`;
 
   const when = appt.startAt.toLocaleString('de-CH', {
@@ -218,9 +212,7 @@ async function enqueueReminder(
   );
 }
 
-async function runMarketingScan(
-  remindersQueue: Queue<ReminderJob>,
-): Promise<void> {
+async function runMarketingScan(remindersQueue: Queue<ReminderJob>): Promise<void> {
   const now = new Date();
   const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
   const dd = String(now.getUTCDate()).padStart(2, '0');
@@ -228,9 +220,7 @@ async function runMarketingScan(
   // 1) Birthdays — clients whose birthday matches today's month-day.
   //    Prisma's Date-Filter ist kein SQL-extract(), also machen wir's
   //    als Raw-Query (tenant-agnostisch, da RLS greift nur in Transaktionen).
-  const birthdayClients = await prisma.$queryRawUnsafe<
-    Array<{ id: string; tenantId: string }>
-  >(
+  const birthdayClients = await prisma.$queryRawUnsafe<Array<{ id: string; tenantId: string }>>(
     `SELECT id, "tenantId" FROM "client"
      WHERE "birthday" IS NOT NULL
        AND "deletedAt" IS NULL
@@ -318,9 +308,7 @@ async function runMarketingScan(
 }
 
 console.log(`[worker] ready, Redis = ${redisUrl}`);
-console.log(
-  `[worker] postmark ${postmarkToken ? 'configured' : 'NOT set — dry-run mode'}`,
-);
+console.log(`[worker] postmark ${postmarkToken ? 'configured' : 'NOT set — dry-run mode'}`);
 
 const remindersQueueProducer = new Queue<ReminderJob>(QUEUE_REMINDERS, {
   connection: parseRedisUrl(redisUrl),
@@ -367,14 +355,11 @@ void marketingQueue.upsertJobScheduler(
   },
 );
 
-
 worker.on('completed', (job) => {
   console.log(`[worker][${QUEUE_REMINDERS}] completed ${job.id}`);
 });
 worker.on('failed', (job, err) => {
-  console.error(
-    `[worker][${QUEUE_REMINDERS}] failed ${job?.id ?? '?'}: ${err.message}`,
-  );
+  console.error(`[worker][${QUEUE_REMINDERS}] failed ${job?.id ?? '?'}: ${err.message}`);
 });
 
 setInterval(() => {
@@ -434,7 +419,12 @@ async function pollOutbox(): Promise<void> {
             await remindersQueueProducer.add(
               `reminder-${appointmentId}`,
               { appointmentId, tenantId, channel: 'email', kind: 'reminder-24h' },
-              { delay, jobId: `reminder-email-${appointmentId}`, removeOnComplete: true, attempts: 3 },
+              {
+                delay,
+                jobId: `reminder-email-${appointmentId}`,
+                removeOnComplete: true,
+                attempts: 3,
+              },
             );
           }
         } else {

@@ -6,20 +6,20 @@
 
 Claude Code: **wenn du jemals unsicher bist, wie ein UI-Element aussehen soll, schau auf diese Referenzen**:
 
-| Bereich                | Referenz                        | Warum                                                     |
-| ---------------------- | ------------------------------- | --------------------------------------------------------- |
-| Gesamt-Ästhetik        | **Linear**                      | Minimal, schnell, tastatur-first, dunkle Eleganz          |
-| Dashboard & Charts     | **Stripe Dashboard**            | Klar, datenreich ohne Unordnung, lesbar auch bei 100 Rows |
-| Mobile-Feel            | **Cash App**                    | Groß, taktil, Haptics, Einhand-bedienbar                  |
-| Kalender               | **Cron / Notion Calendar**      | Dragging fühlt sich natürlich an, Conflict-Detection live |
-| Onboarding             | **Superhuman / Raycast**        | Geführt, schnell produktiv, nie bevormundend              |
-| Booking-Flow           | **Resy / OpenTable**            | 3 Schritte max, nie unterbrochen, immer klar wo du bist   |
-| Empty States           | **Basecamp / Intercom**         | Nie leer, immer hilfreiche Illustration + nächste Aktion  |
-| Kommandozeile (⌘K)     | **Linear / Raycast**            | Alles in 3 Keystrokes                                     |
-| Marktplatz             | **Airbnb**                      | Bilder groß, Filter smooth, Trust-Signale prominent       |
-| Formulare              | **Typeform**                    | Eine Frage pro Screen, freundliche Sprache, Progress-Bar  |
-| Benachrichtigungen     | **Slack**                       | Unterscheidung Rauschen vs. wichtig, Bündelung            |
-| Settings               | **Notion / Vercel**             | Suchbar, kategorisiert, nie überladen                     |
+| Bereich            | Referenz                   | Warum                                                     |
+| ------------------ | -------------------------- | --------------------------------------------------------- |
+| Gesamt-Ästhetik    | **Linear**                 | Minimal, schnell, tastatur-first, dunkle Eleganz          |
+| Dashboard & Charts | **Stripe Dashboard**       | Klar, datenreich ohne Unordnung, lesbar auch bei 100 Rows |
+| Mobile-Feel        | **Cash App**               | Groß, taktil, Haptics, Einhand-bedienbar                  |
+| Kalender           | **Cron / Notion Calendar** | Dragging fühlt sich natürlich an, Conflict-Detection live |
+| Onboarding         | **Superhuman / Raycast**   | Geführt, schnell produktiv, nie bevormundend              |
+| Booking-Flow       | **Resy / OpenTable**       | 3 Schritte max, nie unterbrochen, immer klar wo du bist   |
+| Empty States       | **Basecamp / Intercom**    | Nie leer, immer hilfreiche Illustration + nächste Aktion  |
+| Kommandozeile (⌘K) | **Linear / Raycast**       | Alles in 3 Keystrokes                                     |
+| Marktplatz         | **Airbnb**                 | Bilder groß, Filter smooth, Trust-Signale prominent       |
+| Formulare          | **Typeform**               | Eine Frage pro Screen, freundliche Sprache, Progress-Bar  |
+| Benachrichtigungen | **Slack**                  | Unterscheidung Rauschen vs. wichtig, Bündelung            |
+| Settings           | **Notion / Vercel**        | Suchbar, kategorisiert, nie überladen                     |
 
 ## Brand-Voice
 
@@ -65,6 +65,7 @@ Claude Code: **wenn du jemals unsicher bist, wie ein UI-Element aussehen soll, s
 ```
 
 Größen via Fluid-Typography (clamp):
+
 ```
 --text-xs:   clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem)
 --text-sm:   clamp(0.875rem, 0.8rem + 0.3vw, 1rem)
@@ -118,7 +119,7 @@ Kein 4-Pixel-Button neben 12-Pixel-Card — immer konsistent pro Kontext.
 --shadow-glow: 0 0 0 4px rgba(212, 165, 116, 0.12) (brand-focus-ring)
 ```
 
-Schatten haben immer *zwei Layer* (große weiche + kleine harte) für physischen Look.
+Schatten haben immer _zwei Layer_ (große weiche + kleine harte) für physischen Look.
 
 ## Motion-System
 
@@ -153,6 +154,7 @@ Schatten haben immer *zwei Layer* (große weiche + kleine harte) für physischen
 **Basis:** **shadcn/ui** + **Radix UI** + **Tailwind CSS** + eigene Salon-spezifische Komponenten.
 
 **Muss vom ersten Tag:**
+
 - Button (5 Varianten: primary, secondary, ghost, danger, link; 3 Größen)
 - Input, Textarea, Select, Combobox, DatePicker, TimePicker
 - Badge, Tag, Chip
@@ -166,6 +168,7 @@ Schatten haben immer *zwei Layer* (große weiche + kleine harte) für physischen
 - ErrorBoundary (mit "Copy to Clipboard"-Fehler-ID)
 
 **Salon-spezifisch (eigene Komponenten):**
+
 - `<AppointmentCard />` (Kalender-Item, drag-bar, status-color)
 - `<ClientAvatar />` (mit Initialen-Fallback + VIP-Ring)
 - `<ServiceBadge />` (Farbe pro Service-Kategorie)
@@ -177,17 +180,20 @@ Schatten haben immer *zwei Layer* (große weiche + kleine harte) für physischen
 ## Layout-Prinzipien
 
 ### Web-Admin
+
 - **Sidebar links, 240 px** (einklappbar auf 56 px mit Icons)
 - **Oben: Global-Search (⌘K), User-Menu, Benachrichtigungen**
 - **Main-Area max-width 1440 px** (bei größeren Screens zentriert)
 - **Bottom-Status-Bar:** aktuelle Timezone, Sync-Status, Connection-Status
 
 ### Staff-Mobile
+
 - **Bottom-Tab-Navigation** (5 Tabs max: Heute, Kalender, Kunden, Messages, Mehr)
 - **Floating-Action-Button** unten rechts für Schnell-Aktionen
 - **Top-Bar minimal**, nur Seiten-Titel + Kontext-Actions
 
 ### Consumer-App + Marketplace
+
 - **Ergebnis-Ansicht: Karte oben (collapsible) + Liste darunter**
 - **Buchungs-Flow als Bottom-Sheet** (nicht Full-Screen, damit Kontext sichtbar bleibt)
 - **Preis & CTA IMMER sichtbar** (sticky footer)

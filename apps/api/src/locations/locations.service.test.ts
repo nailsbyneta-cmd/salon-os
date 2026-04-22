@@ -18,8 +18,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 

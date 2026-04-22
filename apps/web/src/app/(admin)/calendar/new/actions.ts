@@ -69,10 +69,7 @@ export async function createAppointment(form: FormData): Promise<void> {
     throw new Error('Bitte Service, Mitarbeiterin, Datum und Zeit wählen.');
   }
 
-  const [service, location] = await Promise.all([
-    fetchService(serviceId),
-    fetchFirstLocation(),
-  ]);
+  const [service, location] = await Promise.all([fetchService(serviceId), fetchFirstLocation()]);
 
   // Salon-Zeit (Europe/Zurich) mit korrektem DST-Offset.
   const startAtIso = toLocalIso(date, time, 'Europe/Zurich');

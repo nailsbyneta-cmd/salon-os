@@ -10,11 +10,7 @@ import {
   Post,
 } from '@nestjs/common';
 import type { CreateLocationInput, UpdateLocationInput } from '@salon-os/types';
-import {
-  createLocationSchema,
-  updateLocationSchema,
-  uuidSchema,
-} from '@salon-os/types';
+import { createLocationSchema, updateLocationSchema, uuidSchema } from '@salon-os/types';
 import type { Location } from '@salon-os/db';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { LocationsService } from './locations.service.js';

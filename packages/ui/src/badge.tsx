@@ -9,8 +9,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const toneStyle: Record<Tone, string> = {
-  neutral:
-    'bg-surface-raised text-text-secondary border border-border',
+  neutral: 'bg-surface-raised text-text-secondary border border-border',
   success: 'bg-success/10 text-success border border-success/20',
   warning: 'bg-warning/10 text-warning border border-warning/20',
   danger: 'bg-danger/10 text-danger border border-danger/20',
@@ -45,12 +44,7 @@ export function Badge({
       )}
       {...props}
     >
-      {dot ? (
-        <span
-          aria-hidden
-          className={cn('h-1.5 w-1.5 rounded-full', dotColor[tone])}
-        />
-      ) : null}
+      {dot ? <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', dotColor[tone])} /> : null}
       {children}
     </span>
   );

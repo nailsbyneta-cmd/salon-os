@@ -22,8 +22,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 
@@ -81,7 +86,9 @@ describe('ServicesService', () => {
 
     it('does not add bookable filter when not provided', async () => {
       await service.list({});
-      const where = (prisma.service.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }).where;
+      const where = (
+        prisma.service.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }
+      ).where;
       expect(where).not.toHaveProperty('bookable');
     });
   });

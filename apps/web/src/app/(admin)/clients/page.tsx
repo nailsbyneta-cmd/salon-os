@@ -1,14 +1,5 @@
 import Link from 'next/link';
-import {
-  Avatar,
-  Badge,
-  Button,
-  Card,
-  CardBody,
-  EmptyState,
-  Input,
-  cn,
-} from '@salon-os/ui';
+import { Avatar, Badge, Button, Card, CardBody, EmptyState, Input, cn } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
@@ -79,9 +70,9 @@ export default async function ClientsPage({
   searchParams: Promise<{ q?: string; filter?: string }>;
 }): Promise<React.JSX.Element> {
   const { q, filter } = await searchParams;
-  const filterKey: FilterKey = (FILTERS.some((f) => f.key === filter)
-    ? filter
-    : 'all') as FilterKey;
+  const filterKey: FilterKey = (
+    FILTERS.some((f) => f.key === filter) ? filter : 'all'
+  ) as FilterKey;
   const allClients = await loadClients(q);
   const clients = applyFilter(allClients, filterKey);
 
@@ -89,28 +80,19 @@ export default async function ClientsPage({
     <div className="w-full p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-            CRM
-          </p>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">CRM</p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             Kundinnen
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
             {clients.length} von {allClients.length}{' '}
             {allClients.length === 1 ? 'Kundin' : 'Kundinnen'}
-            {filterKey !== 'all'
-              ? ` · ${FILTERS.find((f) => f.key === filterKey)?.label}`
-              : ''}
+            {filterKey !== 'all' ? ` · ${FILTERS.find((f) => f.key === filterKey)?.label}` : ''}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <form className="flex gap-2" method="get">
-            <Input
-              name="q"
-              defaultValue={q ?? ''}
-              placeholder="Suchen…"
-              className="w-56"
-            />
+            <Input name="q" defaultValue={q ?? ''} placeholder="Suchen…" className="w-56" />
             <Button type="submit" variant="secondary">
               Suchen
             </Button>
@@ -129,10 +111,7 @@ export default async function ClientsPage({
             ↓ CSV
           </a>
           <Link href="/clients/new">
-            <Button
-              variant="primary"
-              iconLeft={<span className="text-base leading-none">+</span>}
-            >
+            <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
               Neue Kundin
             </Button>
           </Link>
@@ -145,8 +124,7 @@ export default async function ClientsPage({
           if (q) qs.set('q', q);
           if (f.key !== 'all') qs.set('filter', f.key);
           const href = qs.toString() ? `/clients?${qs.toString()}` : '/clients';
-          const count =
-            f.key === 'all' ? allClients.length : applyFilter(allClients, f.key).length;
+          const count = f.key === 'all' ? allClients.length : applyFilter(allClients, f.key).length;
           return (
             <Link
               key={f.key}
@@ -160,10 +138,7 @@ export default async function ClientsPage({
             >
               {f.label}
               <span
-                className={cn(
-                  'tabular-nums',
-                  filterKey === f.key ? 'opacity-80' : 'opacity-60',
-                )}
+                className={cn('tabular-nums', filterKey === f.key ? 'opacity-80' : 'opacity-60')}
               >
                 {count}
               </span>
@@ -184,16 +159,10 @@ export default async function ClientsPage({
               <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
                 <tr>
                   <th className="px-4 py-3 sm:px-5">Name</th>
-                  <th className="hidden px-4 py-3 sm:table-cell sm:px-5">
-                    Kontakt
-                  </th>
-                  <th className="hidden px-4 py-3 md:table-cell md:px-5">
-                    Letzter Besuch
-                  </th>
+                  <th className="hidden px-4 py-3 sm:table-cell sm:px-5">Kontakt</th>
+                  <th className="hidden px-4 py-3 md:table-cell md:px-5">Letzter Besuch</th>
                   <th className="px-4 py-3 text-right sm:px-5">Besuche</th>
-                  <th className="hidden px-4 py-3 lg:table-cell lg:px-5">
-                    Tags
-                  </th>
+                  <th className="hidden px-4 py-3 lg:table-cell lg:px-5">Tags</th>
                 </tr>
               </thead>
               <tbody>
@@ -210,88 +179,80 @@ export default async function ClientsPage({
                     .filter(Boolean)
                     .join(', ');
                   return (
-                  <tr
-                    key={c.id}
-                    className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
-                  >
-                    <td className="px-4 py-3 sm:px-5">
-                      <Link
-                        href={`/clients/${c.id}`}
-                        className="flex items-center gap-3 font-medium text-text-primary hover:underline"
-                        aria-label={
-                          a11y
-                            ? `${c.firstName} ${c.lastName} — ${a11y}`
-                            : undefined
-                        }
-                      >
-                        <Avatar
-                          name={`${c.firstName} ${c.lastName}`}
-                          size="sm"
-                          color="hsl(var(--brand-accent))"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex min-w-0 items-center gap-1.5">
-                            {riskTier === 'hoch' ? (
-                              <span
-                                className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger text-[10px] font-bold leading-none text-white"
-                                title={`No-Show-Risiko ${Math.round(risk)}%`}
-                                aria-hidden="true"
-                              >
-                                !
+                    <tr
+                      key={c.id}
+                      className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
+                    >
+                      <td className="px-4 py-3 sm:px-5">
+                        <Link
+                          href={`/clients/${c.id}`}
+                          className="flex items-center gap-3 font-medium text-text-primary hover:underline"
+                          aria-label={a11y ? `${c.firstName} ${c.lastName} — ${a11y}` : undefined}
+                        >
+                          <Avatar
+                            name={`${c.firstName} ${c.lastName}`}
+                            size="sm"
+                            color="hsl(var(--brand-accent))"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              {riskTier === 'hoch' ? (
+                                <span
+                                  className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger text-[10px] font-bold leading-none text-white"
+                                  title={`No-Show-Risiko ${Math.round(risk)}%`}
+                                  aria-hidden="true"
+                                >
+                                  !
+                                </span>
+                              ) : riskTier === 'mittel' ? (
+                                <span
+                                  className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-warning text-[10px] font-bold leading-none text-white"
+                                  title={`No-Show-Risiko ${Math.round(risk)}%`}
+                                  aria-hidden="true"
+                                >
+                                  !
+                                </span>
+                              ) : null}
+                              {isVip ? (
+                                <span
+                                  className="shrink-0 text-sm leading-none text-accent"
+                                  title="VIP (Lifetime >= 2000 CHF)"
+                                  aria-hidden="true"
+                                >
+                                  ★
+                                </span>
+                              ) : null}
+                              <span className="min-w-0 truncate">
+                                {c.firstName} {c.lastName}
                               </span>
-                            ) : riskTier === 'mittel' ? (
-                              <span
-                                className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-warning text-[10px] font-bold leading-none text-white"
-                                title={`No-Show-Risiko ${Math.round(risk)}%`}
-                                aria-hidden="true"
-                              >
-                                !
-                              </span>
-                            ) : null}
-                            {isVip ? (
-                              <span
-                                className="shrink-0 text-sm leading-none text-accent"
-                                title="VIP (Lifetime >= 2000 CHF)"
-                                aria-hidden="true"
-                              >
-                                ★
-                              </span>
-                            ) : null}
-                            <span className="min-w-0 truncate">
-                              {c.firstName} {c.lastName}
+                            </span>
+                            {/* Kontakt auf Mobile unter den Namen */}
+                            <span className="mt-0.5 block truncate text-xs font-normal text-text-muted sm:hidden">
+                              {c.email ?? c.phone ?? '—'}
                             </span>
                           </span>
-                          {/* Kontakt auf Mobile unter den Namen */}
-                          <span className="mt-0.5 block truncate text-xs font-normal text-text-muted sm:hidden">
-                            {c.email ?? c.phone ?? '—'}
-                          </span>
-                        </span>
-                      </Link>
-                    </td>
-                    <td className="hidden px-4 py-3 text-text-secondary sm:table-cell sm:px-5">
-                      {c.email ?? '—'}
-                      {c.phone ? (
-                        <span className="ml-2 text-text-muted">· {c.phone}</span>
-                      ) : null}
-                    </td>
-                    <td className="hidden px-4 py-3 text-text-secondary md:table-cell md:px-5">
-                      {c.lastVisitAt
-                        ? new Date(c.lastVisitAt).toLocaleDateString('de-CH')
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium sm:px-5">
-                      {c.totalVisits}
-                    </td>
-                    <td className="hidden px-4 py-3 lg:table-cell lg:px-5">
-                      <div className="flex flex-wrap gap-1">
-                        {c.tags.slice(0, 3).map((t) => (
-                          <Badge key={t} tone="neutral">
-                            {t}
-                          </Badge>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
+                        </Link>
+                      </td>
+                      <td className="hidden px-4 py-3 text-text-secondary sm:table-cell sm:px-5">
+                        {c.email ?? '—'}
+                        {c.phone ? <span className="ml-2 text-text-muted">· {c.phone}</span> : null}
+                      </td>
+                      <td className="hidden px-4 py-3 text-text-secondary md:table-cell md:px-5">
+                        {c.lastVisitAt ? new Date(c.lastVisitAt).toLocaleDateString('de-CH') : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums font-medium sm:px-5">
+                        {c.totalVisits}
+                      </td>
+                      <td className="hidden px-4 py-3 lg:table-cell lg:px-5">
+                        <div className="flex flex-wrap gap-1">
+                          {c.tags.slice(0, 3).map((t) => (
+                            <Badge key={t} tone="neutral">
+                              {t}
+                            </Badge>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>

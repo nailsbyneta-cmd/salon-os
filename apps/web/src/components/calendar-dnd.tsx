@@ -80,9 +80,7 @@ function durationMinutes(startIso: string, endIso: string): number {
   return (new Date(endIso).getTime() - new Date(startIso).getTime()) / 60000;
 }
 
-function parseDropId(
-  raw: string,
-): { staffId: string; minute: number } | null {
+function parseDropId(raw: string): { staffId: string; minute: number } | null {
   if (!raw.startsWith('slot:')) return null;
   const rest = raw.slice('slot:'.length);
   const sep = rest.lastIndexOf(':');
@@ -131,9 +129,7 @@ export function CalendarDnd({
   // Nach Mount wird fitPxPerMin als Floor dazu genommen.
   const availableHeight = Math.max(400, viewport.h - CAL_VERTICAL_OFFSET);
   const fitPxPerMin = availableHeight / (HOURS.length * 60);
-  const pxPerMin = mounted
-    ? Math.max(base.pxPerMin * zoom, fitPxPerMin)
-    : base.pxPerMin * zoom;
+  const pxPerMin = mounted ? Math.max(base.pxPerMin * zoom, fitPxPerMin) : base.pxPerMin * zoom;
   const cfg = {
     pxPerMin,
     colWidth: Math.max(50, Math.round(base.colMinWidth * zoom)),
@@ -179,8 +175,7 @@ export function CalendarDnd({
     const el = scrollRef.current;
     if (!el) return;
     const containerTopInPage = el.getBoundingClientRect().top + window.scrollY;
-    const targetY =
-      containerTopInPage + minutesFromCalStart * pxPerMin - window.innerHeight / 3;
+    const targetY = containerTopInPage + minutesFromCalStart * pxPerMin - window.innerHeight / 3;
     window.scrollTo({ top: Math.max(0, targetY), behavior: 'instant' as ScrollBehavior });
     scrolledToNowRef.current = true;
   }, [day, mounted, pxPerMin]);
@@ -189,9 +184,7 @@ export function CalendarDnd({
     const hours = Math.floor((CAL_START_MIN + minute) / 60);
     const mins = (CAL_START_MIN + minute) % 60;
     const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-    router.push(
-      `/calendar/new?date=${day}&time=${timeStr}&staffId=${encodeURIComponent(staffId)}`,
-    );
+    router.push(`/calendar/new?date=${day}&time=${timeStr}&staffId=${encodeURIComponent(staffId)}`);
   };
 
   // Desktop: Maus startet Drag nach 6px. Mobile: Touch startet Drag
@@ -339,10 +332,7 @@ export function CalendarDnd({
     });
   };
 
-  const slots = Array.from(
-    { length: HOURS.length * SLOTS_PER_HOUR },
-    (_, i) => i * SLOT_MINUTES,
-  );
+  const slots = Array.from({ length: HOURS.length * SLOTS_PER_HOUR }, (_, i) => i * SLOT_MINUTES);
   const totalHeight = HOURS.length * 60 * cfg.pxPerMin;
 
   if (staffList.length === 0) {
@@ -358,9 +348,7 @@ export function CalendarDnd({
   }
 
   const activeStaffIds = new Set(appts.map((a) => a.staffId));
-  const visibleStaff = onlyActive
-    ? staffList.filter((s) => activeStaffIds.has(s.id))
-    : staffList;
+  const visibleStaff = onlyActive ? staffList.filter((s) => activeStaffIds.has(s.id)) : staffList;
   const shownStaff = visibleStaff.length === 0 ? staffList : visibleStaff;
   const hiddenCount = staffList.length - shownStaff.length;
 
@@ -390,8 +378,7 @@ export function CalendarDnd({
             gridTemplateColumns: gridCols,
             // minWidth = Mindestbreite für horizontales Scrollen auf schmalen
             // Viewports. Auf grossen Monitoren stretched 1fr den Rest.
-            minWidth:
-              cfg.timeColWidth + shownStaff.length * cfg.colWidth,
+            minWidth: cfg.timeColWidth + shownStaff.length * cfg.colWidth,
           }}
         >
           {/* Header-Zeile */}
@@ -401,18 +388,12 @@ export function CalendarDnd({
               key={`h-${s.id}`}
               className="sticky top-0 z-20 flex items-center gap-2 border-b border-l border-border bg-surface px-3 py-2"
             >
-              <Avatar
-                name={`${s.firstName} ${s.lastName}`}
-                color={s.color}
-                size="sm"
-              />
+              <Avatar name={`${s.firstName} ${s.lastName}`} color={s.color} size="sm" />
               <div className="min-w-0">
                 <div className="truncate text-xs font-semibold text-text-primary">
                   {s.firstName}
                 </div>
-                <div className="truncate text-[10px] text-text-muted">
-                  {s.lastName}
-                </div>
+                <div className="truncate text-[10px] text-text-muted">{s.lastName}</div>
               </div>
             </div>
           ))}
@@ -475,18 +456,10 @@ export function CalendarDnd({
         <div className="pointer-events-none fixed bottom-6 left-1/2 z-40 -translate-x-1/2 animate-fade-in">
           <div className="pointer-events-auto flex items-center gap-4 rounded-lg border border-border bg-surface-raised px-4 py-2.5 text-sm shadow-lg">
             <span className="text-text-secondary">
-              Termin auf{' '}
-              <span className="font-medium text-text-primary">
-                {undo.newStartLabel}
-              </span>{' '}
+              Termin auf <span className="font-medium text-text-primary">{undo.newStartLabel}</span>{' '}
               verschoben.
             </span>
-            <Button
-              onClick={handleUndo}
-              variant="secondary"
-              size="sm"
-              disabled={pending}
-            >
+            <Button onClick={handleUndo} variant="secondary" size="sm" disabled={pending}>
               Rückgängig
             </Button>
           </div>
@@ -571,17 +544,16 @@ function DraggableAppt({
   compact: boolean;
 }): React.JSX.Element {
   const router = useRouter();
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: appt.id });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: appt.id,
+  });
   const style: React.CSSProperties = {
     position: 'absolute',
     top: topPx,
     left: 4,
     right: 6,
     height: heightPx,
-    transform: transform
-      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
-      : undefined,
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     opacity: isDragging ? 0.85 : 1,
     zIndex: isDragging ? 20 : 1,
     // Mouse: 'none' damit Maus-Drag frei ziehen kann
@@ -590,9 +562,7 @@ function DraggableAppt({
     touchAction: 'manipulation',
     cursor: isDragging ? 'grabbing' : 'grab',
   };
-  const clientName = appt.client
-    ? `${appt.client.firstName} ${appt.client.lastName}`
-    : 'Blockzeit';
+  const clientName = appt.client ? `${appt.client.firstName} ${appt.client.lastName}` : 'Blockzeit';
   const services = appt.items.map((i) => i.service.name).join(', ') || '—';
   const timeLabel = new Date(appt.startAt).toLocaleTimeString('de-CH', {
     hour: '2-digit',
@@ -624,13 +594,8 @@ function DraggableAppt({
           status={appt.status}
           staffColor={appt.staff.color}
           compact={compact}
-          noShowRisk={
-            appt.client?.noShowRisk != null ? Number(appt.client.noShowRisk) : null
-          }
-          vip={
-            appt.client?.lifetimeValue != null &&
-            Number(appt.client.lifetimeValue) >= 2000
-          }
+          noShowRisk={appt.client?.noShowRisk != null ? Number(appt.client.noShowRisk) : null}
+          vip={appt.client?.lifetimeValue != null && Number(appt.client.lifetimeValue) >= 2000}
           className={`h-full ${isDragging ? 'shadow-lg ring-2 ring-accent' : ''}`}
         />
         {!isDragging ? (
@@ -647,13 +612,7 @@ function DraggableAppt({
   );
 }
 
-function NowLine({
-  day,
-  pxPerMin,
-}: {
-  day: string;
-  pxPerMin: number;
-}): React.JSX.Element | null {
+function NowLine({ day, pxPerMin }: { day: string; pxPerMin: number }): React.JSX.Element | null {
   const [now, setNow] = React.useState(() => new Date());
   React.useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 60_000);

@@ -43,17 +43,13 @@ export async function saveLocationHours(
       body: { openingHours: schedule },
     });
   } catch (err) {
-    if (err instanceof ApiError)
-      throw new Error(err.problem?.title ?? err.message);
+    if (err instanceof ApiError) throw new Error(err.problem?.title ?? err.message);
     throw err;
   }
   revalidateAll();
 }
 
-export async function updateLocation(
-  locationId: string,
-  form: FormData,
-): Promise<void> {
+export async function updateLocation(locationId: string, form: FormData): Promise<void> {
   const name = form.get('name')?.toString().trim();
   if (!name) throw new Error('Name ist Pflicht.');
 
@@ -74,8 +70,7 @@ export async function updateLocation(
       body,
     });
   } catch (err) {
-    if (err instanceof ApiError)
-      throw new Error(err.problem?.title ?? err.message);
+    if (err instanceof ApiError) throw new Error(err.problem?.title ?? err.message);
     throw err;
   }
   revalidateAll();
@@ -173,10 +168,7 @@ export async function deleteReview(id: string): Promise<void> {
   redirect('/settings#reviews');
 }
 
-export async function toggleReviewFeatured(
-  id: string,
-  featured: boolean,
-): Promise<void> {
+export async function toggleReviewFeatured(id: string, featured: boolean): Promise<void> {
   await apiFetch(`/v1/salon/reviews/${id}`, {
     method: 'PATCH',
     ...ctxHeaders(),

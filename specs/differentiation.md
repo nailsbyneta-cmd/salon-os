@@ -25,7 +25,7 @@ Für jedes Feature gilt: entweder wir sind **mindestens so gut wie der beste Kon
    Jeder Anruf wird von KI angenommen. Kann buchen, stornieren, umbuchen, Fragen beantworten, Mensch weiterleiten bei Komplexem. Vapi + Claude Sonnet 4. Im Durchschnitt spart das 12 Stunden/Woche pro Salon.
 
 5. **Smart-Search-Booking**
-   Kunde schreibt natürlich: *"Balayage nächste Woche nach 17 Uhr mit Lisa, max. 300 €"* → System versteht, filtert, bucht in 3 Taps.
+   Kunde schreibt natürlich: _"Balayage nächste Woche nach 17 Uhr mit Lisa, max. 300 €"_ → System versteht, filtert, bucht in 3 Taps.
 
 6. **AI-generierte Social-Posts**
    Nach jedem Service → automatisch Before/After-Kollage + passende Captions + Hashtags + Instagram/TikTok-Export. Stylist bestätigt, Post geht raus. Macht 80 % der Social-Arbeit weg.
@@ -54,7 +54,7 @@ Für jedes Feature gilt: entweder wir sind **mindestens so gut wie der beste Kon
     Fresha nimmt 20 % auf jede Marketplace-Buchung, egal ob Neukunde. Wir: **10 % nur auf echte Neukunden, nur 1× pro Kunde, danach 0 %**. Transparent im Dashboard.
 
 14. **Cross-Salon Wallet**
-    Kunde sammelt Plattform-Credits, einlösbar bei *allen* teilnehmenden Salons. Macht uns zum Netzwerk, nicht nur zur Buchungs-Seite.
+    Kunde sammelt Plattform-Credits, einlösbar bei _allen_ teilnehmenden Salons. Macht uns zum Netzwerk, nicht nur zur Buchungs-Seite.
 
 15. **Verified-Review-Only**
     Nur Kunden mit echter Buchung können reviewen. Fake-Review-Filter via ML. Badge "Verifiziert" sichtbar.
@@ -63,7 +63,7 @@ Für jedes Feature gilt: entweder wir sind **mindestens so gut wie der beste Kon
     Karte, die in Echtzeit zeigt, welcher Salon gerade freie Slots hat. Perfekt für Walk-ins, Barber, Spontan-Nagel.
 
 17. **AR Try-On im Marketplace**
-    Kunde wählt Salon → Services mit AR Try-On markiert → direkt im Browser/App die neue Frisur/Farbe/Nägel ausprobieren *bevor* er bucht. Conversion × 3.
+    Kunde wählt Salon → Services mit AR Try-On markiert → direkt im Browser/App die neue Frisur/Farbe/Nägel ausprobieren _bevor_ er bucht. Conversion × 3.
 
 18. **Branded-App pro Salon (kostenlos)**
     Jeder Pro-Kunde bekommt seine eigene iOS+Android-App mit seinem Logo. Wir bauen automatisch via Expo EAS + Fastlane, Salon muss nichts tun. Null andere haben das zu dem Preis.
@@ -72,7 +72,7 @@ Für jedes Feature gilt: entweder wir sind **mindestens so gut wie der beste Kon
     Verschenken in 10 Sekunden, Empfänger sieht animierte Karte, kann direkt buchen.
 
 20. **Social-Booking-First**
-    "Jetzt buchen"-Buttons in Instagram, TikTok, Facebook, Google Maps, Apple Business Connect, Linktree — alle mit *einem* Klick im Admin einrichtbar.
+    "Jetzt buchen"-Buttons in Instagram, TikTok, Facebook, Google Maps, Apple Business Connect, Linktree — alle mit _einem_ Klick im Admin einrichtbar.
 
 ### Operations & Staff (10 Features)
 
@@ -143,6 +143,7 @@ Für jedes Feature gilt: entweder wir sind **mindestens so gut wie der beste Kon
 ## Als Claude Code das liest, muss ihm klar sein:
 
 **Das ist NICHT optional.** Jedes der 40 Features gehört in die Roadmap. Priorisierung:
+
 - P0 (MVP, Phase 1): 21, 22, 23, 24, 25, 28, 31
 - P1 (V1, Phase 2): 1, 4, 5, 11, 13, 14, 15, 16, 18, 19, 20, 26, 27, 29, 32, 33, 36, 38
 - P2 (V2, Phase 3): 2, 3, 6, 7, 8, 9, 10, 12, 17, 30, 34, 35, 37, 39, 40
@@ -151,11 +152,11 @@ Für jedes Feature gilt: entweder wir sind **mindestens so gut wie der beste Kon
 
 - Jedes Feature hat einen **Competitor-Benchmark**: "Besser als X in Y-Dimension, weil Z."
 - Vor dem Launch eines Features: mindestens 1 Hero-Screenshot in Notion, der so schön ist, dass wir ihn auf die Landingpage packen wollen.
-- Kein Feature "fertig" bevor: es in der Staff-App *und* Admin-App *und* (wo relevant) Consumer-App funktioniert, einheitlich.
+- Kein Feature "fertig" bevor: es in der Staff-App _und_ Admin-App _und_ (wo relevant) Consumer-App funktioniert, einheitlich.
 
 ## Kulturelle Leitplanken
 
 - **Kopieren ist erlaubt, aber nur wenn wir es besser machen.**
 - **Features, die Konkurrenten haben, aber die kacke sind** (z. B. langsames Fresha-Checkout) → bauen wir von Grund auf neu, nicht nachmachen.
 - **Features, die keiner hat** (z. B. AR Mirror) → sind unser Werbungs-Narrativ.
-- **Features, die alle haben und alle gleich** (z. B. Service-Liste) → müssen bei uns einfach *funktionieren*, aber brauchen keine Revolution.
+- **Features, die alle haben und alle gleich** (z. B. Service-Liste) → müssen bei uns einfach _funktionieren_, aber brauchen keine Revolution.

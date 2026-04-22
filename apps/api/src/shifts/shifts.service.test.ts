@@ -30,8 +30,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 
@@ -63,13 +68,15 @@ describe('ShiftsService', () => {
 
     it('adds staffId filter when provided', async () => {
       await service.list({ from: NOW, to: NOW, staffId: 'staff1' });
-      const where = (prisma.shift.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }).where;
+      const where = (prisma.shift.findMany.mock.calls[0]![0] as { where: Record<string, unknown> })
+        .where;
       expect(where).toMatchObject({ staffId: 'staff1' });
     });
 
     it('omits staffId filter when not provided', async () => {
       await service.list({ from: NOW, to: NOW });
-      const where = (prisma.shift.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }).where;
+      const where = (prisma.shift.findMany.mock.calls[0]![0] as { where: Record<string, unknown> })
+        .where;
       expect(where).not.toHaveProperty('staffId');
     });
   });
@@ -134,13 +141,21 @@ describe('ShiftsService', () => {
 
     it('skips days where shift already exists', async () => {
       prisma.shift.count.mockResolvedValue(1);
-      const result = await service.bulkGenerateFromLocation({ staffId: 'staff1', locationId: 'loc1', days: 7 });
+      const result = await service.bulkGenerateFromLocation({
+        staffId: 'staff1',
+        locationId: 'loc1',
+        days: 7,
+      });
       expect(prisma.shift.create).not.toHaveBeenCalled();
       expect(result.skipped).toBeGreaterThan(0);
     });
 
     it('caps days at 60 max', async () => {
-      const result = await service.bulkGenerateFromLocation({ staffId: 'staff1', locationId: 'loc1', days: 999 });
+      const result = await service.bulkGenerateFromLocation({
+        staffId: 'staff1',
+        locationId: 'loc1',
+        days: 999,
+      });
       const totalProcessed = result.created + result.skipped;
       expect(totalProcessed).toBeLessThanOrEqual(60);
     });
@@ -164,7 +179,11 @@ describe('ShiftsService', () => {
     it('returns correct created + skipped counts', async () => {
       // All shifts non-existing → should create for days matching opening hours
       prisma.shift.count.mockResolvedValue(0);
-      const result = await service.bulkGenerateFromLocation({ staffId: 'staff1', locationId: 'loc1', days: 7 });
+      const result = await service.bulkGenerateFromLocation({
+        staffId: 'staff1',
+        locationId: 'loc1',
+        days: 7,
+      });
       expect(result.created + result.skipped).toBe(7);
     });
   });

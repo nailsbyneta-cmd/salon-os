@@ -115,8 +115,7 @@ export async function searchCommand(query: string): Promise<SearchHit[]> {
 
   const staff: SearchHit[] = staffRes.staff
     .filter((s) => {
-      const full = `${s.firstName} ${s.lastName} ${s.displayName ?? ''}`
-        .toLowerCase();
+      const full = `${s.firstName} ${s.lastName} ${s.displayName ?? ''}`.toLowerCase();
       return full.includes(needle);
     })
     .slice(0, 5)
@@ -131,12 +130,7 @@ export async function searchCommand(query: string): Promise<SearchHit[]> {
   // Appointments: API filtert bereits auf q + limit. Client-side nur noch
   // terminale Status rauskicken + null-client skip.
   const appointments: SearchHit[] = apptsRes.appointments
-    .filter(
-      (a) =>
-        a.status !== 'CANCELLED' &&
-        a.status !== 'NO_SHOW' &&
-        a.client !== null,
-    )
+    .filter((a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW' && a.client !== null)
     .slice(0, 5)
     .map((a) => {
       const clientName = `${a.client!.firstName} ${a.client!.lastName}`;

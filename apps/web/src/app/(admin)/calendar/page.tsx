@@ -104,8 +104,7 @@ export default async function CalendarPage({
   searchParams: Promise<{ date?: string; view?: string }>;
 }): Promise<React.JSX.Element> {
   const { date, view: viewParam } = await searchParams;
-  const view: View =
-    viewParam === 'week' ? 'week' : viewParam === 'month' ? 'month' : 'day';
+  const view: View = viewParam === 'week' ? 'week' : viewParam === 'month' ? 'month' : 'day';
   const day = date ?? todayInZone();
 
   let from: Date;
@@ -137,9 +136,7 @@ export default async function CalendarPage({
   }
   const [appts, staff] = await Promise.all([
     loadAppointments(from, to),
-    view === 'day' || view === 'week'
-      ? loadStaff()
-      : Promise.resolve([] as DndStaff[]),
+    view === 'day' || view === 'week' ? loadStaff() : Promise.resolve([] as DndStaff[]),
   ]);
 
   const title =
@@ -174,15 +171,12 @@ export default async function CalendarPage({
     <div className="w-full p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-            Kalender
-          </p>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Kalender</p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             {title}
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
-            {appts.length} Termine · Studio 1
-            {view === 'day' ? ' · Ziehen zum Umbuchen' : ''}
+            {appts.length} Termine · Studio 1{view === 'day' ? ' · Ziehen zum Umbuchen' : ''}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -258,13 +252,7 @@ export default async function CalendarPage({
   );
 }
 
-function ViewToggle({
-  current,
-  day,
-}: {
-  current: View;
-  day: string;
-}): React.JSX.Element {
+function ViewToggle({ current, day }: { current: View; day: string }): React.JSX.Element {
   const opts: Array<{ id: View; label: string }> = [
     { id: 'day', label: 'Tag' },
     { id: 'week', label: 'Woche' },
@@ -291,9 +279,7 @@ function ViewToggle({
 }
 
 function ApptActions({ a }: { a: Appt }): React.JSX.Element {
-  const clientName = a.client
-    ? `${a.client.firstName} ${a.client.lastName}`
-    : 'Blockzeit';
+  const clientName = a.client ? `${a.client.firstName} ${a.client.lastName}` : 'Blockzeit';
   const services = a.items.map((i) => i.service.name).join(', ') || '—';
   const start = new Date(a.startAt).toLocaleTimeString('de-CH', {
     hour: '2-digit',
@@ -307,18 +293,12 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
   // als no-show flaggbar sein. Plus 10 Min Karenz.
   const noShowEligible =
     Date.now() - new Date(a.endAt).getTime() > 10 * 60_000 &&
-    (a.status === 'BOOKED' ||
-      a.status === 'CONFIRMED' ||
-      a.status === 'CHECKED_IN');
+    (a.status === 'BOOKED' || a.status === 'CONFIRMED' || a.status === 'CHECKED_IN');
 
   // Risiko-Stufen analog ClientBrief: mittel 25-39 (amber), hoch >=40 (rot).
   // Terminale Status (CANCELLED, NO_SHOW, COMPLETED) zeigen kein Badge.
-  const riskRaw =
-    a.client?.noShowRisk != null ? Number(a.client.noShowRisk) : null;
-  const isTerminal =
-    a.status === 'CANCELLED' ||
-    a.status === 'NO_SHOW' ||
-    a.status === 'COMPLETED';
+  const riskRaw = a.client?.noShowRisk != null ? Number(a.client.noShowRisk) : null;
+  const isTerminal = a.status === 'CANCELLED' || a.status === 'NO_SHOW' || a.status === 'COMPLETED';
   const riskTier: 'hoch' | 'mittel' | null =
     isTerminal || riskRaw == null || !Number.isFinite(riskRaw)
       ? null
@@ -327,14 +307,11 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
         : riskRaw >= 25
           ? 'mittel'
           : null;
-  const vip =
-    a.client?.lifetimeValue != null && Number(a.client.lifetimeValue) >= 2000;
+  const vip = a.client?.lifetimeValue != null && Number(a.client.lifetimeValue) >= 2000;
 
   return (
     <li className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
-      <span className="w-16 tabular-nums font-semibold text-text-primary">
-        {start}
-      </span>
+      <span className="w-16 tabular-nums font-semibold text-text-primary">{start}</span>
       <div className="min-w-0 flex-1">
         <Link
           href={`/calendar/${a.id}`}
@@ -391,7 +368,7 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
             </Button>
           </form>
         ) : null}
-        {(a.status === 'BOOKED' || a.status === 'CONFIRMED') ? (
+        {a.status === 'BOOKED' || a.status === 'CONFIRMED' ? (
           <form action={transition.bind(null, 'check-in')}>
             <Button type="submit" variant="secondary" size="sm">
               Eingecheckt
@@ -419,9 +396,7 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
             </Button>
           </form>
         ) : null}
-        {a.status !== 'COMPLETED' &&
-        a.status !== 'CANCELLED' &&
-        a.status !== 'NO_SHOW' ? (
+        {a.status !== 'COMPLETED' && a.status !== 'CANCELLED' && a.status !== 'NO_SHOW' ? (
           <form action={cancel.bind(null, 'Auf Kundenwunsch')}>
             <Button type="submit" variant="ghost" size="sm">
               Storno

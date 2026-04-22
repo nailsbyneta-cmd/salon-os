@@ -70,16 +70,17 @@ async function loadClientAppointments(clientId: string): Promise<Appt[]> {
   }
 }
 
-const statusTone: Record<string, 'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'> = {
-  BOOKED: 'info',
-  CONFIRMED: 'success',
-  CHECKED_IN: 'warning',
-  IN_SERVICE: 'accent',
-  COMPLETED: 'neutral',
-  CANCELLED: 'danger',
-  NO_SHOW: 'danger',
-  WAITLIST: 'neutral',
-};
+const statusTone: Record<string, 'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'> =
+  {
+    BOOKED: 'info',
+    CONFIRMED: 'success',
+    CHECKED_IN: 'warning',
+    IN_SERVICE: 'accent',
+    COMPLETED: 'neutral',
+    CANCELLED: 'danger',
+    NO_SHOW: 'danger',
+    WAITLIST: 'neutral',
+  };
 
 const statusLabel: Record<string, string> = {
   BOOKED: 'Gebucht',
@@ -153,9 +154,7 @@ export default async function ClientDetailPage({
     if (diffsMs.length >= 2) {
       const avgMs = diffsMs.reduce((s, d) => s + d, 0) / diffsMs.length;
       const avgDays = Math.round(avgMs / 86_400_000);
-      const lastVisitMs = new Date(
-        completedPast[completedPast.length - 1]!.startAt,
-      ).getTime();
+      const lastVisitMs = new Date(completedPast[completedPast.length - 1]!.startAt).getTime();
       const predictedNextMs = lastVisitMs + avgMs;
       const diffMs = predictedNextMs - Date.now();
       const diffDays = Math.round(diffMs / 86_400_000);
@@ -168,8 +167,7 @@ export default async function ClientDetailPage({
 
   // Deutsche Pluralisierung für Tag/Woche.
   const tag = (n: number): string => `${n} ${n === 1 ? 'Tag' : 'Tagen'}`;
-  const woche = (n: number): string =>
-    `${n} ${n === 1 ? 'Woche' : 'Wochen'}`;
+  const woche = (n: number): string => `${n} ${n === 1 ? 'Woche' : 'Wochen'}`;
 
   return (
     <div className="mx-auto w-full max-w-[1400px] p-4 md:p-8">
@@ -220,8 +218,7 @@ export default async function ClientDetailPage({
           {client.blocked ? (
             <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">
               <span aria-hidden="true">🔒</span>
-              Gesperrt — nicht für automatische Kontakte (Geburtstag,
-              Win-Back, Waitlist-Match)
+              Gesperrt — nicht für automatische Kontakte (Geburtstag, Win-Back, Waitlist-Match)
             </div>
           ) : null}
           <p className="mt-1 text-sm text-text-secondary">
@@ -331,17 +328,11 @@ export default async function ClientDetailPage({
               <p className="text-xs font-semibold uppercase tracking-wider text-accent">
                 Treue-Status
               </p>
-              <p className="mt-1 text-2xl font-display font-semibold">
-                {loyalty.tier.label}
-              </p>
-              <p className="mt-0.5 text-xs text-text-secondary">
-                {loyalty.tier.benefitHint}
-              </p>
+              <p className="mt-1 text-2xl font-display font-semibold">{loyalty.tier.label}</p>
+              <p className="mt-0.5 text-xs text-text-secondary">{loyalty.tier.benefitHint}</p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold tabular-nums text-text-primary">
-                {loyalty.points}
-              </p>
+              <p className="text-3xl font-bold tabular-nums text-text-primary">{loyalty.points}</p>
               <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
                 Punkte
               </p>
@@ -421,8 +412,7 @@ export default async function ClientDetailPage({
                 </span>
               ) : (
                 <span className="inline-flex items-center rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-text-secondary">
-                  Nächster Besuch ca. in{' '}
-                  {woche(Math.round(cadence.diffDays / 7))}
+                  Nächster Besuch ca. in {woche(Math.round(cadence.diffDays / 7))}
                 </span>
               )}
             </div>
@@ -436,21 +426,14 @@ export default async function ClientDetailPage({
             <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
               Am häufigsten gebucht
             </p>
-            <ul
-              className="mt-3 flex flex-wrap gap-2"
-              aria-label="Am häufigsten gebuchte Services"
-            >
+            <ul className="mt-3 flex flex-wrap gap-2" aria-label="Am häufigsten gebuchte Services">
               {topServices.map((svc) => (
                 <li
                   key={svc.serviceId}
                   className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm"
                 >
-                  <span className="font-medium text-text-primary">
-                    {svc.name}
-                  </span>
-                  <span className="text-xs tabular-nums text-text-muted">
-                    {svc.count}×
-                  </span>
+                  <span className="font-medium text-text-primary">{svc.name}</span>
+                  <span className="text-xs tabular-nums text-text-muted">{svc.count}×</span>
                 </li>
               ))}
             </ul>
@@ -516,9 +499,8 @@ export default async function ClientDetailPage({
           DSGVO · Datenschutz
         </h2>
         <p className="mt-2 text-sm text-text-secondary">
-          Kundin fragt nach ihren Daten oder möchte gelöscht werden? Ein Klick.
-          Export enthält Profil + alle Termine, Löschung markiert zur
-          30-Tage-Entfernung.
+          Kundin fragt nach ihren Daten oder möchte gelöscht werden? Ein Klick. Export enthält
+          Profil + alle Termine, Löschung markiert zur 30-Tage-Entfernung.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <a
@@ -571,17 +553,12 @@ function ApptRow({
         </span>
       </div>
       <div className="flex-1">
-        <Link
-          href={`/calendar/${a.id}`}
-          className="block hover:underline"
-        >
+        <Link href={`/calendar/${a.id}`} className="block hover:underline">
           <div className="font-medium text-text-primary">{service}</div>
           <div className="text-xs text-text-muted">{staff}</div>
         </Link>
       </div>
-      <Badge tone={statusTone[a.status] ?? 'neutral'}>
-        {statusLabel[a.status] ?? a.status}
-      </Badge>
+      <Badge tone={statusTone[a.status] ?? 'neutral'}>{statusLabel[a.status] ?? a.status}</Badge>
       {showRebook && a.status !== 'CANCELLED' && a.status !== 'NO_SHOW' ? (
         <Link
           href={rebookHref}

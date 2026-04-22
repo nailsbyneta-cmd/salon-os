@@ -1,7 +1,7 @@
 packages:
   # mobile-staff / mobile-client werden erst nach Expo-Init (Phase 1 Wo 5)
   # aktiv. Bis dahin würden sie den Workspace-Resolver verwirren.
-  - "apps/api"
-  - "apps/web"
-  - "apps/worker"
-  - "packages/*"
+  - 'apps/api'
+  - 'apps/web'
+  - 'apps/worker'
+  - 'packages/*'

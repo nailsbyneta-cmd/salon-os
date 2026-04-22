@@ -917,4 +917,3 @@ Für Dev + Demo:
 - **DSGVO Art. 20** (Datenportabilität): vollständiger ZIP-Export pro Client (JSON + CSV + Medien).
 - **Tenant-Export:** vollständiger DB-Dump als `.sql.gz` + Media-ZIP, per Support anforderbar, verschlüsselt (PGP).
 - **Right-to-be-forgotten:** kaskadierende Löschung mit Audit-Log-Eintrag (ohne PII im Log).
-

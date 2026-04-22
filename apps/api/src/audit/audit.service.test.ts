@@ -15,8 +15,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 
@@ -104,13 +109,17 @@ describe('AuditService', () => {
 
     it('filters by entity when provided', async () => {
       await service.list({ entity: 'Client' });
-      const where = (prisma.auditLog.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }).where;
+      const where = (
+        prisma.auditLog.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }
+      ).where;
       expect(where).toMatchObject({ entity: 'Client' });
     });
 
     it('filters by entityId when provided', async () => {
       await service.list({ entityId: 'c1' });
-      const where = (prisma.auditLog.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }).where;
+      const where = (
+        prisma.auditLog.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }
+      ).where;
       expect(where).toMatchObject({ entityId: 'c1' });
     });
 

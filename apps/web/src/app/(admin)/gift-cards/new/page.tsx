@@ -12,15 +12,13 @@ export default function NewGiftCardPage(): React.JSX.Element {
         ← Gutscheine
       </Link>
       <header className="mb-6 mt-4">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Gift-Cards
-        </p>
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Gift-Cards</p>
         <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           Neuen Gutschein ausstellen
         </h1>
         <p className="mt-2 text-sm text-text-secondary">
-          Der Code wird automatisch generiert. Teile ihn mit der Empfängerin via
-          iMessage, WhatsApp oder Mail.
+          Der Code wird automatisch generiert. Teile ihn mit der Empfängerin via iMessage, WhatsApp
+          oder Mail.
         </p>
       </header>
 
@@ -29,14 +27,7 @@ export default function NewGiftCardPage(): React.JSX.Element {
           <form action={issueGiftCard} className="space-y-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Betrag (CHF)" required>
-                <Input
-                  type="number"
-                  name="amount"
-                  min={10}
-                  step="10"
-                  defaultValue={100}
-                  required
-                />
+                <Input type="number" name="amount" min={10} step="10" defaultValue={100} required />
               </Field>
               <Field label="Gültigkeit">
                 <Select name="expiresInDays" defaultValue="365">

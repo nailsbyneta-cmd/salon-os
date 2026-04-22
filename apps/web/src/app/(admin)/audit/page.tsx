@@ -45,7 +45,10 @@ const entityLabel: Record<string, string> = {
   Staff: 'Team',
 };
 
-const actionLabel: Record<string, { label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'accent' }> = {
+const actionLabel: Record<
+  string,
+  { label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'accent' }
+> = {
   create: { label: 'Angelegt', tone: 'success' },
   update: { label: 'Geändert', tone: 'info' },
   reschedule: { label: 'Umgebucht', tone: 'accent' },
@@ -88,8 +91,8 @@ export default async function AuditPage({
             Audit-Log
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Append-only Chronologie aller wichtigen Änderungen. Pflicht-Nachweis
-            für DSGVO / Schweizer DSG.
+            Append-only Chronologie aller wichtigen Änderungen. Pflicht-Nachweis für DSGVO /
+            Schweizer DSG.
           </p>
         </div>
       </header>

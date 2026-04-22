@@ -13,9 +13,7 @@ import * as React from 'react';
  * blocken den Pan-Start, damit Termin-Karten / Links / Inputs normal
  * funktionieren.
  */
-export function usePanScroll<T extends HTMLElement>(
-  ref: React.RefObject<T | null>,
-): void {
+export function usePanScroll<T extends HTMLElement>(ref: React.RefObject<T | null>): void {
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;

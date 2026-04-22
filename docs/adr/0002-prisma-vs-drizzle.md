@@ -10,7 +10,7 @@ Wir nutzen **Prisma 6** als ORM für Postgres.
 
 ## Warum
 
-- `specs/tech-stack.md` erlaubt Prisma *oder* Drizzle, sagt: ADR treffen.
+- `specs/tech-stack.md` erlaubt Prisma _oder_ Drizzle, sagt: ADR treffen.
 - Prisma hat:
   - **Bessere Migrations-Story** (shadow-DB, review-friendly SQL-Output,
     `prisma migrate deploy` für CD).

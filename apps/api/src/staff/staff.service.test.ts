@@ -29,8 +29,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 
@@ -69,25 +74,29 @@ describe('StaffService', () => {
   describe('list()', () => {
     it('filters only active staff by default', async () => {
       await service.list();
-      const where = (prisma.staff.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }).where;
+      const where = (prisma.staff.findMany.mock.calls[0]![0] as { where: Record<string, unknown> })
+        .where;
       expect(where).toMatchObject({ active: true, deletedAt: null });
     });
 
     it('filters by active=false when specified', async () => {
       await service.list({ active: false });
-      const where = (prisma.staff.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }).where;
+      const where = (prisma.staff.findMany.mock.calls[0]![0] as { where: Record<string, unknown> })
+        .where;
       expect(where).toMatchObject({ active: false });
     });
 
     it('adds locationAssignments filter when locationId given', async () => {
       await service.list({ locationId: 'loc1' });
-      const where = (prisma.staff.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }).where;
+      const where = (prisma.staff.findMany.mock.calls[0]![0] as { where: Record<string, unknown> })
+        .where;
       expect(where).toMatchObject({ locationAssignments: { some: { locationId: 'loc1' } } });
     });
 
     it('does not add locationAssignments filter when no locationId', async () => {
       await service.list();
-      const where = (prisma.staff.findMany.mock.calls[0]![0] as { where: Record<string, unknown> }).where;
+      const where = (prisma.staff.findMany.mock.calls[0]![0] as { where: Record<string, unknown> })
+        .where;
       expect(where).not.toHaveProperty('locationAssignments');
     });
   });
@@ -139,7 +148,9 @@ describe('StaffService', () => {
       prisma.staff.create.mockResolvedValue(BASE_STAFF);
       await service.create({ ...BASE_STAFF, locationIds: ['loc1', 'loc2'] });
       const createCall = prisma.staff.create.mock.calls[0]![0] as {
-        data: { locationAssignments: { create: Array<{ locationId: string; isPrimary: boolean }> } };
+        data: {
+          locationAssignments: { create: Array<{ locationId: string; isPrimary: boolean }> };
+        };
       };
       expect(createCall.data.locationAssignments.create[0]!.isPrimary).toBe(true);
       expect(createCall.data.locationAssignments.create[1]!.isPrimary).toBe(false);
@@ -162,14 +173,18 @@ describe('StaffService', () => {
   describe('update()', () => {
     it('throws NotFoundException when staff not found', async () => {
       prisma.staff.findFirst.mockResolvedValue(null);
-      await expect(service.update('staff1', { firstName: 'New' })).rejects.toThrow(NotFoundException);
+      await expect(service.update('staff1', { firstName: 'New' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('replaces location assignments when locationIds provided', async () => {
       prisma.staff.findFirst.mockResolvedValue(BASE_STAFF);
       prisma.staff.update.mockResolvedValue({ ...BASE_STAFF, firstName: 'New' });
       await service.update('staff1', { locationIds: ['loc2'] });
-      expect(prisma.staffLocation.deleteMany).toHaveBeenCalledWith({ where: { staffId: 'staff1' } });
+      expect(prisma.staffLocation.deleteMany).toHaveBeenCalledWith({
+        where: { staffId: 'staff1' },
+      });
       expect(prisma.staffLocation.createMany).toHaveBeenCalled();
     });
 
@@ -231,7 +246,9 @@ describe('StaffService', () => {
   describe('setWeeklySchedule()', () => {
     it('throws NotFoundException when staff not found', async () => {
       prisma.staff.findFirst.mockResolvedValue(null);
-      await expect(service.setWeeklySchedule('staff1', {} as never)).rejects.toThrow(NotFoundException);
+      await expect(service.setWeeklySchedule('staff1', {} as never)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('saves schedule to weeklySchedule field', async () => {

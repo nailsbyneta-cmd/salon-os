@@ -213,15 +213,9 @@ export function CommandPalette({
           />
           <Kbd>esc</Kbd>
         </div>
-        <ul
-          ref={listRef}
-          className="max-h-[60vh] overflow-y-auto py-2"
-          role="listbox"
-        >
+        <ul ref={listRef} className="max-h-[60vh] overflow-y-auto py-2" role="listbox">
           {flat.length === 0 ? (
-            <li className="px-4 py-8 text-center text-sm text-text-muted">
-              Keine Treffer.
-            </li>
+            <li className="px-4 py-8 text-center text-sm text-text-muted">Keine Treffer.</li>
           ) : (
             grouped.map(([group, groupItems]) => (
               <li key={group}>

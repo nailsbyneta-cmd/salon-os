@@ -53,10 +53,7 @@ export default async function GiftCardsPage(): Promise<React.JSX.Element> {
           </p>
         </div>
         <Link href="/gift-cards/new">
-          <Button
-            variant="primary"
-            iconLeft={<span className="text-base leading-none">+</span>}
-          >
+          <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
             Neuer Gutschein
           </Button>
         </Link>
@@ -81,19 +78,11 @@ export default async function GiftCardsPage(): Promise<React.JSX.Element> {
               <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
                 <tr>
                   <th className="px-4 py-3 sm:px-5">Code</th>
-                  <th className="hidden px-4 py-3 md:table-cell md:px-5">
-                    Empfänger
-                  </th>
-                  <th className="hidden px-4 py-3 text-right sm:table-cell sm:px-5">
-                    Betrag
-                  </th>
+                  <th className="hidden px-4 py-3 md:table-cell md:px-5">Empfänger</th>
+                  <th className="hidden px-4 py-3 text-right sm:table-cell sm:px-5">Betrag</th>
                   <th className="px-4 py-3 text-right sm:px-5">Guthaben</th>
-                  <th className="hidden px-4 py-3 sm:table-cell sm:px-5">
-                    Status
-                  </th>
-                  <th className="hidden px-4 py-3 lg:table-cell lg:px-5">
-                    Gültig bis
-                  </th>
+                  <th className="hidden px-4 py-3 sm:table-cell sm:px-5">Status</th>
+                  <th className="hidden px-4 py-3 lg:table-cell lg:px-5">Gültig bis</th>
                 </tr>
               </thead>
               <tbody>
@@ -111,10 +100,7 @@ export default async function GiftCardsPage(): Promise<React.JSX.Element> {
                       className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
                     >
                       <td className="px-4 py-3 font-mono font-medium text-text-primary sm:px-5">
-                        <Link
-                          href={`/gift-cards/${c.code}`}
-                          className="block hover:underline"
-                        >
+                        <Link href={`/gift-cards/${c.code}`} className="block hover:underline">
                           {c.code}
                         </Link>
                         {/* Mobile-only: Empfänger unter Code */}
@@ -127,24 +113,14 @@ export default async function GiftCardsPage(): Promise<React.JSX.Element> {
                       <td className="hidden px-4 py-3 text-text-secondary md:table-cell md:px-5">
                         {c.recipientName ?? '—'}
                         {c.recipientEmail ? (
-                          <span className="ml-2 text-xs text-text-muted">
-                            · {c.recipientEmail}
-                          </span>
+                          <span className="ml-2 text-xs text-text-muted">· {c.recipientEmail}</span>
                         ) : null}
                       </td>
                       <td className="hidden px-4 py-3 text-right sm:table-cell sm:px-5">
-                        <PriceDisplay
-                          amount={c.amount}
-                          currency={c.currency}
-                          size="sm"
-                        />
+                        <PriceDisplay amount={c.amount} currency={c.currency} size="sm" />
                       </td>
                       <td className="px-4 py-3 text-right sm:px-5">
-                        <PriceDisplay
-                          amount={c.balance}
-                          currency={c.currency}
-                          size="sm"
-                        />
+                        <PriceDisplay amount={c.balance} currency={c.currency} size="sm" />
                       </td>
                       <td className="hidden px-4 py-3 sm:table-cell sm:px-5">
                         <Badge

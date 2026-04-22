@@ -48,9 +48,7 @@ export class ShiftsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(
-    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
-  ): Promise<void> {
+  async remove(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<void> {
     await this.svc.remove(id);
   }
 
@@ -70,7 +68,11 @@ export class ShiftsController {
         }),
       ),
     )
-    input: { staffId: string; locationId: string; days: number },
+    input: {
+      staffId: string;
+      locationId: string;
+      days: number;
+    },
   ): Promise<{ created: number; skipped: number }> {
     return this.svc.bulkGenerateFromLocation(input);
   }

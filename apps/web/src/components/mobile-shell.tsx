@@ -17,11 +17,7 @@ const tabs: Tab[] = [
   { href: '/m/more', label: 'Mehr', icon: <IconMore /> },
 ];
 
-export function MobileShell({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.JSX.Element {
+export function MobileShell({ children }: { children: React.ReactNode }): React.JSX.Element {
   const pathname = usePathname() ?? '/m';
 
   return (
@@ -32,10 +28,7 @@ export function MobileShell({
       <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-surface/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto grid max-w-2xl grid-cols-4">
           {tabs.map((tab) => {
-            const active =
-              tab.href === '/m'
-                ? pathname === '/m'
-                : pathname.startsWith(tab.href);
+            const active = tab.href === '/m' ? pathname === '/m' : pathname.startsWith(tab.href);
             return (
               <Link
                 key={tab.href}

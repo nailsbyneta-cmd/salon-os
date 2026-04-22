@@ -75,9 +75,7 @@ export async function GET(req: Request): Promise<Response> {
           a.status === 'CANCELLED' || a.status === 'NO_SHOW'
             ? 0
             : a.items.reduce((s, i) => s + Number(i.price), 0);
-        const clientName = a.client
-          ? `${a.client.firstName} ${a.client.lastName}`
-          : 'Blockzeit';
+        const clientName = a.client ? `${a.client.firstName} ${a.client.lastName}` : 'Blockzeit';
         return [
           date.toLocaleDateString('de-CH'),
           date.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }),

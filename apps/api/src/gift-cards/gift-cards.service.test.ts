@@ -26,8 +26,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 
@@ -69,7 +74,9 @@ describe('GiftCardsService', () => {
     it('creates gift card with balance equal to amount', async () => {
       prisma.giftCard.create.mockResolvedValue(BASE_CARD);
       await service.issue({ amount: 100 });
-      const call = prisma.giftCard.create.mock.calls[0]![0] as { data: { amount: number; balance: number } };
+      const call = prisma.giftCard.create.mock.calls[0]![0] as {
+        data: { amount: number; balance: number };
+      };
       expect(call.data.amount).toBe(100);
       expect(call.data.balance).toBe(100);
     });
@@ -117,9 +124,7 @@ describe('GiftCardsService', () => {
     });
 
     it('retries code generation on collision', async () => {
-      prisma.giftCard.findUnique
-        .mockResolvedValueOnce({ id: 'existing' })
-        .mockResolvedValue(null);
+      prisma.giftCard.findUnique.mockResolvedValueOnce({ id: 'existing' }).mockResolvedValue(null);
       prisma.giftCard.create.mockResolvedValue(BASE_CARD);
       await service.issue({ amount: 100 });
       expect(prisma.giftCard.create).toHaveBeenCalledOnce();
@@ -200,13 +205,19 @@ describe('GiftCardsService', () => {
       prisma.giftCard.update.mockResolvedValue({ ...BASE_CARD, balance: 0 });
       await service.redeem(BASE_CARD.code, 50);
       expect(prisma.giftCard.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ redeemedAt: expect.any(Date) }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ redeemedAt: expect.any(Date) }),
+        }),
       );
     });
 
     it('does not overwrite redeemedAt when balance remains > 0', async () => {
       const existingRedeemedAt = null;
-      prisma.giftCard.findUnique.mockResolvedValue({ ...BASE_CARD, balance: 100, redeemedAt: existingRedeemedAt });
+      prisma.giftCard.findUnique.mockResolvedValue({
+        ...BASE_CARD,
+        balance: 100,
+        redeemedAt: existingRedeemedAt,
+      });
       prisma.giftCard.update.mockResolvedValue({ ...BASE_CARD, balance: 60 });
       await service.redeem(BASE_CARD.code, 40);
       const call = prisma.giftCard.update.mock.calls[0]![0] as { data: { redeemedAt: null } };
@@ -214,7 +225,11 @@ describe('GiftCardsService', () => {
     });
 
     it('normalises code to uppercase', async () => {
-      prisma.giftCard.findUnique.mockResolvedValue({ ...BASE_CARD, balance: 100, redeemedAt: null });
+      prisma.giftCard.findUnique.mockResolvedValue({
+        ...BASE_CARD,
+        balance: 100,
+        redeemedAt: null,
+      });
       prisma.giftCard.update.mockResolvedValue(BASE_CARD);
       await service.redeem('abcd-efgh-ijkl', 10);
       expect(prisma.giftCard.findUnique).toHaveBeenCalledWith(

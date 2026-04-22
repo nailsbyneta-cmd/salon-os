@@ -10,23 +10,12 @@ import {
   Post,
 } from '@nestjs/common';
 import { z } from 'zod';
-import type {
-  SalonFAQ,
-  SalonGalleryImage,
-  SalonReview,
-  Tenant,
-} from '@salon-os/db';
+import type { SalonFAQ, SalonGalleryImage, SalonReview, Tenant } from '@salon-os/db';
 import { uuidSchema } from '@salon-os/types';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { SalonSettingsService } from './salon-settings.service.js';
 
-const optionalUrl = z
-  .string()
-  .trim()
-  .max(500)
-  .optional()
-  .nullable()
-  .or(z.literal(''));
+const optionalUrl = z.string().trim().max(500).optional().nullable().or(z.literal(''));
 
 const brandingSchema = z.object({
   tagline: z.string().max(300).optional().nullable(),
@@ -109,9 +98,7 @@ export class SalonSettingsController {
 
   @Delete('faqs/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteFaq(
-    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
-  ): Promise<void> {
+  async deleteFaq(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<void> {
     await this.svc.deleteFaq(id);
   }
 
@@ -141,17 +128,13 @@ export class SalonSettingsController {
   ): Promise<SalonReview> {
     return this.svc.updateReview(id, {
       ...input,
-      ...(input.sourceUrl !== undefined
-        ? { sourceUrl: input.sourceUrl || null }
-        : {}),
+      ...(input.sourceUrl !== undefined ? { sourceUrl: input.sourceUrl || null } : {}),
     });
   }
 
   @Delete('reviews/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteReview(
-    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
-  ): Promise<void> {
+  async deleteReview(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<void> {
     await this.svc.deleteReview(id);
   }
 
@@ -181,9 +164,7 @@ export class SalonSettingsController {
 
   @Delete('gallery/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteGallery(
-    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
-  ): Promise<void> {
+  async deleteGallery(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<void> {
     await this.svc.deleteGalleryImage(id);
   }
 }

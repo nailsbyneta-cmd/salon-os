@@ -1,10 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [
-    "**/.env.*local",
-    ".env",
-    "tsconfig.base.json"
-  ],
+  "globalDependencies": ["**/.env.*local", ".env", "tsconfig.base.json"],
   "globalPassThroughEnv": [
     "NODE_ENV",
     "CI",
@@ -17,12 +13,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**",
-        "dist/**",
-        "build/**"
-      ]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**"]
     },
     "dev": {
       "cache": false,

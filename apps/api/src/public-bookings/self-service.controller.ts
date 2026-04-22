@@ -78,10 +78,7 @@ export class SelfServiceController {
 
   /** Kunde lädt ihre Termin-Daten (lesbar mit Token). */
   @Get(':id')
-  async get(
-    @Param('id') id: string,
-    @Query('t') token: string,
-  ): Promise<unknown> {
+  async get(@Param('id') id: string, @Query('t') token: string): Promise<unknown> {
     if (!token) throw new BadRequestException('Token fehlt.');
     const payload = verifySelfServiceToken(token);
     if (!payload || payload.appointmentId !== id) {
@@ -116,10 +113,7 @@ export class SelfServiceController {
   @Get(':id.ics')
   @Header('Content-Type', 'text/calendar; charset=utf-8')
   @Header('Content-Disposition', 'attachment; filename="termin.ics"')
-  async ics(
-    @Param('id') rawId: string,
-    @Query('t') token: string,
-  ): Promise<string> {
+  async ics(@Param('id') rawId: string, @Query('t') token: string): Promise<string> {
     const id = rawId.endsWith('.ics') ? rawId.slice(0, -4) : rawId;
     if (!token) throw new BadRequestException('Token fehlt.');
     const payload = verifySelfServiceToken(token);
@@ -138,11 +132,7 @@ export class SelfServiceController {
     if (!appt) throw new NotFoundException('Termin nicht gefunden.');
     const services = appt.items.map((i) => i.service.name).join(', ');
     const summary = `${appt.tenant.name}: ${services}`;
-    const location = [
-      appt.location.name,
-      appt.location.address1,
-      appt.location.city,
-    ]
+    const location = [appt.location.name, appt.location.address1, appt.location.city]
       .filter(Boolean)
       .join(', ');
     return buildIcal(appt.tenant.name, [
@@ -160,10 +150,7 @@ export class SelfServiceController {
 
   @Post(':id/cancel')
   @HttpCode(HttpStatus.OK)
-  async cancel(
-    @Param('id') id: string,
-    @Query('t') token: string,
-  ): Promise<{ ok: true }> {
+  async cancel(@Param('id') id: string, @Query('t') token: string): Promise<{ ok: true }> {
     if (!token) throw new BadRequestException('Token fehlt.');
     const { tenantId } = this.resolveToken(token, 'cancel', id);
 
@@ -214,9 +201,7 @@ export class SelfServiceController {
         existing.status === 'NO_SHOW' ||
         existing.status === 'COMPLETED'
       ) {
-        throw new ConflictException(
-          'Termin kann in diesem Status nicht umgebucht werden.',
-        );
+        throw new ConflictException('Termin kann in diesem Status nicht umgebucht werden.');
       }
 
       const newStart = new Date(body.startAt);

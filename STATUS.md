@@ -5,14 +5,17 @@
 **Fortschritt Phase 1:** ~35 % Baseline, ~20 % Differenzierung (siehe AUDIT.md)
 
 ## In Arbeit
+
 - [ ] User testet aktuelle Runde, dann nächstes Feature
 
 ## P0-Bugfix-Run (2026-04-20/21)
+
 - ✅ **P0-01 Business-Hours-Bug** — Booking-Seite zeigte alle Tage „geschlossen"; Slot-Generator ignorierte openingHours. Web-Parser für Array-of-Intervals, API-Slot-Gen DST-safe via Intl.DateTimeFormat.
 - ✅ **P0-02 Time-Slot-Kontrast** — Slot-Picker Design-Tokens, hover/focus-Ring, Card-Empty-State.
 - ✅ **P0-03 Confirm + Success** — UI-Komponenten statt native, autocomplete, Error-Banner, success-Icon.
 
 ## Session 2026-04-21 — Mobile-Polish + Quick-Actions + Reminder
+
 - ✅ **Confirm-Summary auf Booking** — Service+Preis+Staff prominent vor Formular.
 - ✅ **Impressum + Datenschutz** als Public-Routes aus /v1/public/:slug/info.
 - ✅ **SEO + OpenGraph** — Title 50-60ch, Description 110-160ch, heroImageUrl als OG-Image.
@@ -42,6 +45,7 @@
 - ✅ **Calendar-Header Mobile** kompakter (size=sm, „Neu" statt „Neuer Termin").
 
 ## Fertig seit letztem Audit (2026-04-19 → 2026-04-20)
+
 - ✅ Block A Design-System-Grundlagen: Tokens, Dark-Mode, ⌘K, Hero-Screens
 - ✅ Block B: Drag-to-Reschedule, Click-to-Book, Self-Service, Confirmation-Email
 - ✅ Diff #25 Command Palette (Clients + Services Live-Search)
@@ -59,11 +63,13 @@
 - ✅ .ics Add-to-Calendar bei jeder Buchung
 
 ## Nächste Schritte (nach „Go-Upgrade")
+
 1. Block A Härtung: Tests + OTel + Outbox + WorkOS + Rate-Limits + a11y-Gate
 2. Block B Design-System-Härtung: Ladle + Chromatic + fehlende Komponenten
 3. Block C Baseline-P0-Lücken: Forms & Consent, POS-Volltiefe, RBAC, Time-Clock
 
 ## Metriken (aktuell)
+
 - Tests: nur 3 Test-Dateien (health.controller, types/index, utils/money) — **zu dünn**
 - E2E/Playwright: **0**
 - Lighthouse: ungetestet
@@ -72,5 +78,6 @@
 - Axe-Violations: ungetestet
 
 ## Bemerkungen
+
 - AUDIT.md und UPGRADE-PLAN.md auf Stand 2026-04-20 aktualisiert
 - Collaboration-Dateien (STATUS/BLOCKERS/QUESTIONS/ANSWERS/DISPATCH) frisch angelegt

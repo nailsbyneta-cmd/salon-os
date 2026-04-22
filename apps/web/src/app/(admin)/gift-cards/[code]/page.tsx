@@ -60,9 +60,7 @@ export default async function GiftCardDetailPage({
       </Link>
 
       <header className="mb-6 mt-4">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Gutschein
-        </p>
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Gutschein</p>
         <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           {card.recipientName ?? 'An eine liebe Person'}
         </h1>
@@ -73,14 +71,10 @@ export default async function GiftCardDetailPage({
           <div className="text-[10px] font-medium uppercase tracking-[0.3em] opacity-80">
             Beautycenter by Neta
           </div>
-          <div className="mt-8 font-mono text-2xl font-bold tracking-[0.2em]">
-            {card.code}
-          </div>
+          <div className="mt-8 font-mono text-2xl font-bold tracking-[0.2em]">{card.code}</div>
           <div className="mt-8 flex items-baseline justify-between">
             <div>
-              <div className="text-[10px] uppercase tracking-wider opacity-80">
-                Guthaben
-              </div>
+              <div className="text-[10px] uppercase tracking-wider opacity-80">Guthaben</div>
               <div className="mt-1 text-3xl font-bold tabular-nums">
                 {Number(card.balance).toFixed(2)} {card.currency}
               </div>
@@ -102,9 +96,7 @@ export default async function GiftCardDetailPage({
             <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
               Nachricht
             </p>
-            <p className="mt-2 whitespace-pre-line text-sm text-text-primary">
-              {card.message}
-            </p>
+            <p className="mt-2 whitespace-pre-line text-sm text-text-primary">{card.message}</p>
           </CardBody>
         </Card>
       ) : null}

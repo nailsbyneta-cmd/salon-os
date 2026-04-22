@@ -34,9 +34,7 @@ async function loadInfo(slug: string): Promise<Info | null> {
   }
 }
 
-function addressLine(
-  loc: Info['locations'][number],
-): Array<{ label: string; value: string }> {
+function addressLine(loc: Info['locations'][number]): Array<{ label: string; value: string }> {
   const lines: Array<{ label: string; value: string }> = [];
   if (loc.address1) lines.push({ label: 'Adresse', value: loc.address1 });
   if (loc.address2) lines.push({ label: '', value: loc.address2 });
@@ -67,9 +65,7 @@ export default async function ImpressumPage({
       </Link>
 
       <header>
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Impressum
-        </p>
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Impressum</p>
         <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-text-primary">
           Angaben gemäss Art. 3 UWG
         </h1>
@@ -81,18 +77,12 @@ export default async function ImpressumPage({
             <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
               Anbieter
             </h2>
-            <p className="mt-2 text-base font-medium text-text-primary">
-              {info.tenant.name}
-            </p>
+            <p className="mt-2 text-base font-medium text-text-primary">{info.tenant.name}</p>
             {loc ? (
               <dl className="mt-2 space-y-1 text-text-secondary">
                 {addressLine(loc).map((l, i) => (
                   <div key={i} className="flex gap-2">
-                    {l.label ? (
-                      <dt className="w-20 shrink-0 text-text-muted">
-                        {l.label}
-                      </dt>
-                    ) : null}
+                    {l.label ? <dt className="w-20 shrink-0 text-text-muted">{l.label}</dt> : null}
                     <dd>{l.value}</dd>
                   </div>
                 ))}
@@ -115,15 +105,14 @@ export default async function ImpressumPage({
               Haftungsausschluss
             </h2>
             <p className="mt-2 text-text-secondary">
-              Die Inhalte dieser Website wurden mit grösstmöglicher Sorgfalt
-              erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität
-              der Inhalte können wir jedoch keine Gewähr übernehmen.
+              Die Inhalte dieser Website wurden mit grösstmöglicher Sorgfalt erstellt. Für die
+              Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr
+              übernehmen.
             </p>
             <p className="mt-2 text-text-secondary">
-              Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine
-              Haftung für die Inhalte externer Links. Für den Inhalt der
-              verlinkten Seiten sind ausschliesslich deren Betreiber
-              verantwortlich.
+              Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte
+              externer Links. Für den Inhalt der verlinkten Seiten sind ausschliesslich deren
+              Betreiber verantwortlich.
             </p>
           </section>
 
@@ -133,10 +122,7 @@ export default async function ImpressumPage({
             </h2>
             <p className="mt-2 text-text-secondary">
               Zur Datenverarbeitung siehe{' '}
-              <Link
-                href={`/book/${slug}/datenschutz`}
-                className="text-accent hover:underline"
-              >
+              <Link href={`/book/${slug}/datenschutz`} className="text-accent hover:underline">
                 Datenschutzerklärung
               </Link>
               .

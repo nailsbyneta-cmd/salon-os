@@ -156,9 +156,7 @@ export class StaffService {
           ...(rest.email !== undefined ? { email: rest.email } : {}),
           ...(rest.phone !== undefined ? { phone: rest.phone ?? null } : {}),
           ...(rest.role !== undefined ? { role: rest.role } : {}),
-          ...(rest.employmentType !== undefined
-            ? { employmentType: rest.employmentType }
-            : {}),
+          ...(rest.employmentType !== undefined ? { employmentType: rest.employmentType } : {}),
           ...(rest.commissionRate !== undefined
             ? { commissionRate: rest.commissionRate ?? null }
             : {}),
@@ -203,7 +201,10 @@ export class StaffService {
         }
         // Prisma-Decimal-Vergleich via .toString() (Decimal-Objekt vs. null).
         if (a !== null && typeof a === 'object' && 'toString' in a) {
-          if ((a as { toString(): string }).toString() !== (b as { toString(): string } | null)?.toString()) {
+          if (
+            (a as { toString(): string }).toString() !==
+            (b as { toString(): string } | null)?.toString()
+          ) {
             diff[k as string] = { from: a, to: b };
           }
           continue;
@@ -239,10 +240,7 @@ export class StaffService {
     });
   }
 
-  async setWeeklySchedule(
-    id: string,
-    schedule: WeeklySchedule,
-  ): Promise<Staff> {
+  async setWeeklySchedule(id: string, schedule: WeeklySchedule): Promise<Staff> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
       const existing = await tx.staff.findFirst({

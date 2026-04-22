@@ -56,18 +56,15 @@ export default async function DatenschutzPage({
               1. Verantwortlich
             </h2>
             <p className="mt-2">
-              {info.tenant.name} ist verantwortlich für die Verarbeitung der
-              auf dieser Website und über die Online-Buchung erhobenen
-              personenbezogenen Daten im Sinne des Schweizer
+              {info.tenant.name} ist verantwortlich für die Verarbeitung der auf dieser Website und
+              über die Online-Buchung erhobenen personenbezogenen Daten im Sinne des Schweizer
               Datenschutzgesetzes (DSG) sowie — soweit anwendbar — der
               EU-Datenschutz-Grundverordnung (DSGVO).
               {contactEmail ? (
                 <>
-                  {' '}Kontakt:{' '}
-                  <a
-                    href={`mailto:${contactEmail}`}
-                    className="text-accent hover:underline"
-                  >
+                  {' '}
+                  Kontakt:{' '}
+                  <a href={`mailto:${contactEmail}`} className="text-accent hover:underline">
                     {contactEmail}
                   </a>
                   .
@@ -85,8 +82,7 @@ export default async function DatenschutzPage({
               <li>Termindaten (Service, Zeitpunkt, Mitarbeiterin)</li>
               <li>Notizen zur Behandlung, wenn du diese freiwillig angibst</li>
               <li>
-                Technische Daten (IP-Adresse, Browser-Typ) bei Aufruf der
-                Online-Booking-Seite
+                Technische Daten (IP-Adresse, Browser-Typ) bei Aufruf der Online-Booking-Seite
               </li>
             </ul>
           </section>
@@ -96,21 +92,12 @@ export default async function DatenschutzPage({
               3. Warum wir Daten verarbeiten
             </h2>
             <ul className="mt-2 list-inside list-disc space-y-1">
+              <li>Abwicklung und Bestätigung deines Termins (vertragliche Pflicht)</li>
+              <li>Terminbestätigungen und Erinnerungen per E-Mail (berechtigtes Interesse)</li>
               <li>
-                Abwicklung und Bestätigung deines Termins (vertragliche
-                Pflicht)
+                Kundenhistorie für bessere Betreuung beim nächsten Besuch (berechtigtes Interesse)
               </li>
-              <li>
-                Terminbestätigungen und Erinnerungen per E-Mail (berechtigtes
-                Interesse)
-              </li>
-              <li>
-                Kundenhistorie für bessere Betreuung beim nächsten Besuch
-                (berechtigtes Interesse)
-              </li>
-              <li>
-                Marketing-Mailings NUR wenn du ausdrücklich zugestimmt hast
-              </li>
+              <li>Marketing-Mailings NUR wenn du ausdrücklich zugestimmt hast</li>
             </ul>
           </section>
 
@@ -119,10 +106,9 @@ export default async function DatenschutzPage({
               4. Weitergabe an Dritte
             </h2>
             <p className="mt-2">
-              Wir geben deine Daten nur dann an Dritte weiter, wenn es für die
-              Vertragsabwicklung nötig ist (z.B. E-Mail-Versand via Postmark,
-              Zahlungsabwicklung via Stripe). Alle Auftragsverarbeiter sind
-              DSGVO-konform.
+              Wir geben deine Daten nur dann an Dritte weiter, wenn es für die Vertragsabwicklung
+              nötig ist (z.B. E-Mail-Versand via Postmark, Zahlungsabwicklung via Stripe). Alle
+              Auftragsverarbeiter sind DSGVO-konform.
             </p>
           </section>
 
@@ -131,10 +117,9 @@ export default async function DatenschutzPage({
               5. Aufbewahrung
             </h2>
             <p className="mt-2">
-              Termin- und Kundendaten werden für die Dauer der Kundenbeziehung
-              + 10 Jahre (Schweizer Buchhaltungsgesetz) aufbewahrt. Du kannst
-              jederzeit die Löschung verlangen; wir löschen alle nicht
-              gesetzlich aufbewahrungspflichtigen Daten.
+              Termin- und Kundendaten werden für die Dauer der Kundenbeziehung + 10 Jahre (Schweizer
+              Buchhaltungsgesetz) aufbewahrt. Du kannst jederzeit die Löschung verlangen; wir
+              löschen alle nicht gesetzlich aufbewahrungspflichtigen Daten.
             </p>
           </section>
 
@@ -143,16 +128,14 @@ export default async function DatenschutzPage({
               6. Deine Rechte
             </h2>
             <p className="mt-2">
-              Du hast jederzeit Anspruch auf Auskunft, Berichtigung, Löschung,
-              Einschränkung der Verarbeitung, Widerspruch gegen die
-              Verarbeitung und auf Datenübertragbarkeit. Schreib uns einfach
+              Du hast jederzeit Anspruch auf Auskunft, Berichtigung, Löschung, Einschränkung der
+              Verarbeitung, Widerspruch gegen die Verarbeitung und auf Datenübertragbarkeit. Schreib
+              uns einfach
               {contactEmail ? (
                 <>
-                  {' '}an{' '}
-                  <a
-                    href={`mailto:${contactEmail}`}
-                    className="text-accent hover:underline"
-                  >
+                  {' '}
+                  an{' '}
+                  <a href={`mailto:${contactEmail}`} className="text-accent hover:underline">
                     {contactEmail}
                   </a>
                   .
@@ -168,10 +151,9 @@ export default async function DatenschutzPage({
               7. Cookies
             </h2>
             <p className="mt-2">
-              Diese Website verwendet nur technisch notwendige Cookies
-              (Session, Theme-Präferenz). Es werden keine Tracking- oder
-              Marketing-Cookies gesetzt. Keine Weitergabe an Google Analytics
-              oder ähnliche Dienste.
+              Diese Website verwendet nur technisch notwendige Cookies (Session, Theme-Präferenz).
+              Es werden keine Tracking- oder Marketing-Cookies gesetzt. Keine Weitergabe an Google
+              Analytics oder ähnliche Dienste.
             </p>
           </section>
         </CardBody>

@@ -30,11 +30,7 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.JSX.Element {
+export default function RootLayout({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
     <html lang="de-CH" className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-text-primary antialiased">

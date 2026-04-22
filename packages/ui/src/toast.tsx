@@ -39,25 +39,18 @@ const toneIcon: Record<Tone, string> = {
   danger: '✕',
 };
 
-export function ToastProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.JSX.Element {
+export function ToastProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const [items, setItems] = React.useState<ToastItem[]>([]);
 
-  const push = React.useCallback(
-    (t: Omit<ToastItem, 'id'>) => {
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      const item: ToastItem = { id, ...t };
-      setItems((prev) => [...prev, item]);
-      const duration = t.duration ?? 4000;
-      setTimeout(() => {
-        setItems((prev) => prev.filter((x) => x.id !== id));
-      }, duration);
-    },
-    [],
-  );
+  const push = React.useCallback((t: Omit<ToastItem, 'id'>) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const item: ToastItem = { id, ...t };
+    setItems((prev) => [...prev, item]);
+    const duration = t.duration ?? 4000;
+    setTimeout(() => {
+      setItems((prev) => prev.filter((x) => x.id !== id));
+    }, duration);
+  }, []);
 
   const value = React.useMemo(() => ({ push }), [push]);
 
@@ -80,9 +73,7 @@ export function ToastProvider({
             <div className="flex-1 text-sm">
               <div className="font-medium text-text-primary">{t.title}</div>
               {t.description ? (
-                <div className="mt-0.5 text-xs text-text-secondary">
-                  {t.description}
-                </div>
+                <div className="mt-0.5 text-xs text-text-secondary">{t.description}</div>
               ) : null}
             </div>
             <button

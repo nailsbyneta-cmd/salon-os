@@ -9,6 +9,7 @@
 ## Stack-Übersicht
 
 ### Frontend Web
+
 - **Next.js 15** (App Router, React Server Components)
 - **TypeScript 5.5+** (strict)
 - **Tailwind CSS 4** + **shadcn/ui** als Design-System
@@ -23,6 +24,7 @@
 - **Socket.io-client** oder **Server-Sent Events** für Realtime
 
 ### Frontend Mobile
+
 - **React Native** + **Expo** (EAS Build + EAS Submit)
 - **NativeWind** (Tailwind für RN)
 - **React Native Reanimated**, **React Native Gesture Handler**
@@ -31,6 +33,7 @@
 - **Fastlane** für Store-Auto-Deployment (White-Label-Apps generiert)
 
 ### Backend
+
 - **NestJS** (oder **Hono**/**Fastify** für leichtere Services)
 - **TypeScript strict**
 - **Prisma ORM** (oder **Drizzle** — ADR treffen)
@@ -45,13 +48,15 @@
 - **Argon2id** für Passwörter (falls keine externe Auth)
 
 ### Auth
+
 - **WorkOS** (Passkeys + SSO + Directory Sync für Enterprise)
-  *oder* **Clerk** (schneller Start, aber weniger Enterprise)
-  *oder* **Auth0** (Klassiker)
+  _oder_ **Clerk** (schneller Start, aber weniger Enterprise)
+  _oder_ **Auth0** (Klassiker)
   Entscheidung: **WorkOS** für Enterprise-Ready von Tag 1.
 - Rollen-System: RBAC + Row-Level-Security, Policies in Postgres + Service-Layer.
 
 ### Payments
+
 - **Stripe** (primär)
   - Stripe Connect (Marketplace-Modell → Stylist-Payouts, Booth-Renter getrennt)
   - Stripe Terminal (Hardware)
@@ -62,6 +67,7 @@
 - Adapter-Muster: `IPaymentProvider`-Interface, Provider-Auswahl je Tenant.
 
 ### Messaging
+
 - **Twilio Programmable Messaging** + **Voice** + **WhatsApp Business API**
 - **Vonage** als Fallback
 - **Postmark** für Transactional E-Mail
@@ -69,6 +75,7 @@
 - **OneSignal** für Push (Branded Apps)
 
 ### AI
+
 - **OpenAI GPT-4.1/4o** (primär)
 - **Anthropic Claude Opus/Sonnet 4** (Fallback / Fachwissen / lange Kontexte)
 - **Cohere Embed v3** oder OpenAI text-embedding-3-large (Embeddings)
@@ -80,14 +87,17 @@
 - **Vapi** oder **Retell** für Voice-Agent-Infrastruktur (sparen Monate Arbeit)
 
 ### Search
+
 - **Meilisearch** (selbstgehostet) oder **Typesense** Cloud
 - Use-Cases: Service-Suche, Kunde-Suche, Marketplace-Suche
 
 ### Storage
+
 - **AWS S3** oder **Cloudflare R2** (kostengünstiger)
 - **Cloudinary** oder **Imgix** für Bild-CDN + Transformationen
 
 ### Infra
+
 - **AWS** primär:
   - **ECS Fargate** oder **EKS** für Services
   - **RDS for Postgres** (Multi-AZ, mit Read-Replicas)
@@ -100,6 +110,7 @@
 - Alternative: **Fly.io** für schnellen Start, später Migration zu AWS wenn > 1000 Tenants
 
 ### CI/CD
+
 - **GitHub Actions**
 - **Turborepo Remote Cache** (Vercel-Hosting oder eigener S3-Cache)
 - **Changesets** für Versionierung
@@ -110,6 +121,7 @@
 - **k6** Load-Testing
 
 ### Observability & Ops
+
 - **Grafana Cloud** oder **Datadog** für Metrics/Traces/Logs
 - **Sentry** für Error-Tracking
 - **PagerDuty** oder **Opsgenie** für Incident-Response
@@ -117,6 +129,7 @@
 - **Linear** oder **Height** für Issue-Tracking (nicht Jira!)
 
 ### Security
+
 - **Doppler** oder **HashiCorp Vault** für Secrets
 - **Cloudflare Zero Trust** + WAF
 - **ModSecurity** / AWS WAF
@@ -126,6 +139,7 @@
 - **Bug-Bounty** via HackerOne nach Launch
 
 ### Feature Flags
+
 - **GrowthBook** (selbstgehostet, kostenlos) oder **Statsig** (Cloud)
 - Feature-Flags per Tenant, User, %-Rollout
 
@@ -180,35 +194,37 @@ CREATE POLICY appointment_tenant_isolation ON appointment
 Jeder Request setzt `SET app.current_tenant_id = '…'` via Middleware.
 
 **Vorteile:**
+
 - Günstig (eine DB)
 - Einfache Cross-Tenant-Analytics (z. B. Marketplace-Statistiken)
 - Migration zu Schema-per-Tenant später möglich für Enterprise
 
 **Grenzen:**
+
 - Enterprise-Kunden verlangen evtl. eigene DB → dann Schema-per-Tenant oder eigene Instanz.
 - Plan: ab 20 Locations + spezieller Compliance-Anfrage → dedizierter Tenant auf eigener Instanz.
 
 ## API-Oberflächen
 
-| Typ                  | Zweck                                           | Technologie             |
-| -------------------- | ----------------------------------------------- | ----------------------- |
-| **Internal tRPC**    | zwischen Next-Frontend und Backend              | tRPC + Zod              |
-| **Public REST**      | Partner, Zapier, Make, externe Integrationen    | NestJS + OpenAPI 3.1    |
-| **Public GraphQL**   | Mobile-Apps, komplexe Queries                   | GraphQL-Yoga + Dataloader|
-| **Webhooks**         | Events an externe Systeme                       | signed (HMAC), retry    |
-| **Realtime**         | Kalender-Updates, Chat, Queue                   | Socket.io + Pg-LISTEN   |
+| Typ                | Zweck                                        | Technologie               |
+| ------------------ | -------------------------------------------- | ------------------------- |
+| **Internal tRPC**  | zwischen Next-Frontend und Backend           | tRPC + Zod                |
+| **Public REST**    | Partner, Zapier, Make, externe Integrationen | NestJS + OpenAPI 3.1      |
+| **Public GraphQL** | Mobile-Apps, komplexe Queries                | GraphQL-Yoga + Dataloader |
+| **Webhooks**       | Events an externe Systeme                    | signed (HMAC), retry      |
+| **Realtime**       | Kalender-Updates, Chat, Queue                | Socket.io + Pg-LISTEN     |
 
 Siehe `specs/api.md` für Endpunkte.
 
 ## Skalierungs-Roadmap
 
-| Nutzer-Stufe       | Architektur                                                 |
-| ------------------ | ----------------------------------------------------------- |
-| 0–1 k Salons       | Monolith, 1 ECS-Service, 1 RDS-Postgres (Multi-AZ)          |
-| 1 k–10 k Salons    | Monolith + Read-Replicas, BullMQ mit Redis-Cluster          |
-| 10 k–50 k Salons   | CQRS für Reporting (Postgres → ClickHouse/Materialize)      |
-| 50 k–200 k Salons  | Service-Zerlegung: Booking-Service, Payments, AI getrennt   |
-| 200 k+             | Region-basierte Shards, Multi-Region-Deployment (EU/US/AP)  |
+| Nutzer-Stufe      | Architektur                                                |
+| ----------------- | ---------------------------------------------------------- |
+| 0–1 k Salons      | Monolith, 1 ECS-Service, 1 RDS-Postgres (Multi-AZ)         |
+| 1 k–10 k Salons   | Monolith + Read-Replicas, BullMQ mit Redis-Cluster         |
+| 10 k–50 k Salons  | CQRS für Reporting (Postgres → ClickHouse/Materialize)     |
+| 50 k–200 k Salons | Service-Zerlegung: Booking-Service, Payments, AI getrennt  |
+| 200 k+            | Region-basierte Shards, Multi-Region-Deployment (EU/US/AP) |
 
 ## Sicherheits-Checkliste
 
@@ -227,15 +243,15 @@ Siehe `specs/api.md` für Endpunkte.
 
 ## Performance-Budgets
 
-| Endpoint                        | P95-Ziel |
-| ------------------------------- | -------- |
-| `GET /bookings`                 | 150 ms   |
-| `POST /bookings`                | 300 ms   |
-| `GET /calendar/day`             | 250 ms   |
-| `GET /client/:id`               | 200 ms   |
-| Web Startseite (TTI)            | 1,5 s    |
-| Online-Booking-Seite (TTI)      | 2,0 s    |
-| Mobile-App Cold Start           | 2,5 s    |
-| Mobile-App Warm Start           | 1,0 s    |
+| Endpoint                   | P95-Ziel |
+| -------------------------- | -------- |
+| `GET /bookings`            | 150 ms   |
+| `POST /bookings`           | 300 ms   |
+| `GET /calendar/day`        | 250 ms   |
+| `GET /client/:id`          | 200 ms   |
+| Web Startseite (TTI)       | 1,5 s    |
+| Online-Booking-Seite (TTI) | 2,0 s    |
+| Mobile-App Cold Start      | 2,5 s    |
+| Mobile-App Warm Start      | 1,0 s    |
 
 Monatliche Performance-Reports, Regressions-Alert über PR-Checks.

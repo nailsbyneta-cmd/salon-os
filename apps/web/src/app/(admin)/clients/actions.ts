@@ -102,10 +102,7 @@ export async function updateClient(id: string, form: FormData): Promise<void> {
  * blocked=true schliesst sie aus: Birthday-Gratulieren, Win-Back,
  * Waitlist-Match. Rückgängig machen via erneutes Toggle.
  */
-export async function toggleClientBlocked(
-  id: string,
-  nextBlocked: boolean,
-): Promise<void> {
+export async function toggleClientBlocked(id: string, nextBlocked: boolean): Promise<void> {
   const ctx = getCurrentTenant();
   try {
     await apiFetch(`/v1/clients/${id}`, {

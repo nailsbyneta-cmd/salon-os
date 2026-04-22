@@ -1,15 +1,9 @@
-import {
-  Injectable,
-  Logger,
-  type NestMiddleware,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger, type NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { unsealSession, COOKIE_NAME } from '@salon-os/auth';
 import { runWithTenant } from './tenant.context.js';
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-7][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-7][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const ALLOWED_ROLES = new Set([
   'OWNER',
@@ -36,7 +30,11 @@ const IS_PRODUCTION = process.env['NODE_ENV'] === 'production';
 export class TenantMiddleware implements NestMiddleware {
   private readonly logger = new Logger(TenantMiddleware.name);
 
-  async use(req: FastifyRequest['raw'], _res: unknown, next: (err?: unknown) => void): Promise<void> {
+  async use(
+    req: FastifyRequest['raw'],
+    _res: unknown,
+    next: (err?: unknown) => void,
+  ): Promise<void> {
     const originalUrl = (req as unknown as { originalUrl?: string }).originalUrl ?? '';
     const path = originalUrl || req.url || '';
 
@@ -78,16 +76,12 @@ export class TenantMiddleware implements NestMiddleware {
       return;
     }
 
-    runWithTenant(
-      { tenantId: session.tenantId, userId: session.userId, role: session.role },
-      () => next(),
+    runWithTenant({ tenantId: session.tenantId, userId: session.userId, role: session.role }, () =>
+      next(),
     );
   }
 
-  private handleDevAuth(
-    req: FastifyRequest['raw'],
-    next: (err?: unknown) => void,
-  ): void {
+  private handleDevAuth(req: FastifyRequest['raw'], next: (err?: unknown) => void): void {
     const headers = req.headers;
     const tenantId = readHeader(headers, 'x-tenant-id');
     const userId = readHeader(headers, 'x-user-id');
@@ -115,10 +109,7 @@ export class TenantMiddleware implements NestMiddleware {
   }
 }
 
-function readHeader(
-  headers: NodeJS.Dict<string | string[]>,
-  name: string,
-): string | undefined {
+function readHeader(headers: NodeJS.Dict<string | string[]>, name: string): string | undefined {
   const v = headers[name];
   if (Array.isArray(v)) return v[0];
   return v;

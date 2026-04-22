@@ -65,10 +65,7 @@ function vEvent(ev: IcalEvent): string {
   return lines.map(fold).join('\r\n');
 }
 
-export function buildIcal(
-  calendarName: string,
-  events: IcalEvent[],
-): string {
+export function buildIcal(calendarName: string, events: IcalEvent[]): string {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',

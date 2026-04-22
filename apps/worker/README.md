@@ -5,6 +5,7 @@ Background workers auf Basis von BullMQ + Redis.
 ## Was hier läuft
 
 Phase 1 Queues:
+
 - `reminders` — Termin-Erinnerungen per SMS + E-Mail (24h / 2h vor Termin)
 - `emails` — Transactional + Marketing via Postmark/Resend
 - `exports` — DSGVO-Exports + Reports (async generiert, R2-Upload)

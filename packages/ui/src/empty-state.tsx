@@ -36,9 +36,7 @@ export function EmptyState({
         <DefaultIllustration />
       )}
       <h3 className="text-base font-semibold text-text-primary">{title}</h3>
-      {description ? (
-        <p className="max-w-md text-sm text-text-secondary">{description}</p>
-      ) : null}
+      {description ? <p className="max-w-md text-sm text-text-secondary">{description}</p> : null}
       {action ? <div className="mt-2">{action}</div> : null}
     </div>
   );
@@ -54,7 +52,14 @@ function DefaultIllustration(): React.JSX.Element {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
-      <circle cx="44" cy="44" r="40" className="stroke-border" strokeWidth="2" strokeDasharray="4 4" />
+      <circle
+        cx="44"
+        cy="44"
+        r="40"
+        className="stroke-border"
+        strokeWidth="2"
+        strokeDasharray="4 4"
+      />
       <path
         d="M28 44h32M44 28v32"
         className="stroke-text-muted"

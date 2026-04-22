@@ -329,8 +329,9 @@ Wenn Claude Code ein Feature auslässt weil "nicht so wichtig": **falsch**. Jede
 ## Verwendung dieser Checklist
 
 Vor jedem Phasen-Ende liest Claude Code diese Datei durch und markiert **ehrlich**, was vorhanden ist und was fehlt. Dann:
+
 - Rot (fehlt, P0): sofort nachholen vor Phase-End
 - Gelb (fehlt, P1/P2): in Phase-Plan einsortieren, nicht vergessen
 - Grün (da): weiter
 
-**Die Hälfte dieser Liste ist in P0/P1 (MVP + V1) zu bauen. Die andere Hälfte spätestens in V2.** Kein Feature ist "nice to have". Alle sind Baseline. Was uns *einzigartig* macht, ist separat in `differentiation.md`.
+**Die Hälfte dieser Liste ist in P0/P1 (MVP + V1) zu bauen. Die andere Hälfte spätestens in V2.** Kein Feature ist "nice to have". Alle sind Baseline. Was uns _einzigartig_ macht, ist separat in `differentiation.md`.

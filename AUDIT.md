@@ -25,16 +25,17 @@ ganzen Repo), a11y-Audits, i18n, HIPAA/TSE/E-Rechnung.
 
 ## Scoring
 
-| Dimension               | Score (vorher) | Score (jetzt) | Begründung |
-| ----------------------- | -------------: | ------------: | ---------- |
-| Code-Qualität           | 6/10           | **6/10**      | TS strict + Zod + RLS ✓, eigene Tokens ✓. Immer noch nur 3 Test-Dateien, kein OTel, keine Outbox, kein WorkOS. |
-| Design-Polish           | 3/10           | **6/10**      | Tokens + Dark-Mode + Motion-Grundlagen + eigene Komponenten existieren. Aber: kein Storybook, keine Visual-Regression, keine Illustrationen, Empty-States noch text-only an vielen Stellen. |
-| Feature-Vollständigkeit | ~15/100        | **~35/100**   | Kalender, Booking, CRM, POS-Lite, Reminders, DSGVO-Export, Loyalty, Gift-Cards, Waitlist, Inventar-Light, Marketing-Automation, Audit-Log da. Siehe Matrix. |
-| Einzigartigkeit         | 0/10           | **4/10**      | P0-Differenziatoren teilweise: ⌘K, DSGVO-1-Klick, Tip-Picker, Staff-PWA, Celebrations, Predictive-No-Show-Scoring (!). Noch fehlt echte Offline, echte Tap-to-Pay, echte Tip-Split-Automation, Expo-Apps. |
+| Dimension               | Score (vorher) | Score (jetzt) | Begründung                                                                                                                                                                                                |
+| ----------------------- | -------------: | ------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Code-Qualität           |           6/10 |      **6/10** | TS strict + Zod + RLS ✓, eigene Tokens ✓. Immer noch nur 3 Test-Dateien, kein OTel, keine Outbox, kein WorkOS.                                                                                            |
+| Design-Polish           |           3/10 |      **6/10** | Tokens + Dark-Mode + Motion-Grundlagen + eigene Komponenten existieren. Aber: kein Storybook, keine Visual-Regression, keine Illustrationen, Empty-States noch text-only an vielen Stellen.               |
+| Feature-Vollständigkeit |        ~15/100 |   **~35/100** | Kalender, Booking, CRM, POS-Lite, Reminders, DSGVO-Export, Loyalty, Gift-Cards, Waitlist, Inventar-Light, Marketing-Automation, Audit-Log da. Siehe Matrix.                                               |
+| Einzigartigkeit         |           0/10 |      **4/10** | P0-Differenziatoren teilweise: ⌘K, DSGVO-1-Klick, Tip-Picker, Staff-PWA, Celebrations, Predictive-No-Show-Scoring (!). Noch fehlt echte Offline, echte Tap-to-Pay, echte Tip-Split-Automation, Expo-Apps. |
 
 ## Was NEU existiert (seit letztem Audit)
 
 ### Design-System (`packages/ui/`)
+
 - `tokens.css` mit Brand-Tokens (Farben, Typo, Spacing, Radius, Shadows)
 - `theme-provider.tsx` + Dark-Mode-Toggle
 - Komponenten: Button, Input, Card, Badge, Avatar, Skeleton, Toast,
@@ -46,6 +47,7 @@ ganzen Repo), a11y-Audits, i18n, HIPAA/TSE/E-Rechnung.
   StaffScheduleGrid, TreatmentTimer, BeforeAfterSlider
 
 ### Admin-Web (`apps/web/src/app/(admin)/`)
+
 - Kalender: Tagesansicht + Wochenansicht + Monatsansicht mit Multi-Staff-
   Sub-Spalten, Drag-to-Reschedule, Click-to-Book, Zoom, Nur-Aktive-Toggle
 - POS-Tablet-Checkout (`/pos/[id]`) mit Trinkgeld-Picker + Payment-Methods
@@ -58,11 +60,13 @@ ganzen Repo), a11y-Audits, i18n, HIPAA/TSE/E-Rechnung.
 - Settings-Seite
 
 ### Mobile-Staff-PWA (`apps/web/src/app/(mobile)/m/`)
+
 - Route-Prefix `/m/*` — iPhone-installierbar, separater PWA-Scope
 - Seiten: `calendar`, `clients`, `more`
 - **Fehlt:** echte Expo-Staff-App (nur Web-PWA).
 
 ### Public-Booking (`apps/web/src/app/(booking)/`)
+
 - Salon-Homepage `/book/[slug]` mit Hero, Team, FAQ, Reviews, Galerie,
   Öffnungszeiten, Kontakt, Branding
 - Confirm + Success-Flow
@@ -70,6 +74,7 @@ ganzen Repo), a11y-Audits, i18n, HIPAA/TSE/E-Rechnung.
 - `/appointment/*` für Self-Service (Cancel/Reschedule via Link)
 
 ### API (`apps/api/src/`)
+
 - Neue Module: `audit`, `gift-cards`, `products`, `salon-settings`,
   `waitlist`
 - Bestehende erweitert: payments (Stripe Deposit + Webhook), reminders
@@ -78,11 +83,13 @@ ganzen Repo), a11y-Audits, i18n, HIPAA/TSE/E-Rechnung.
 - GiST-Exclusion-Constraint gegen Doppelbuchung ✓
 
 ### Worker (`apps/worker/`)
+
 - BullMQ: Reminders (24h vor startAt)
 - Marketing-Automation-Job (täglich): Birthday, Rebook, Win-Back
 - Lifetime-Counters + Predictive-No-Show-Scoring
 
 ### Prisma-Migrations (8 Stück)
+
 `0001_init`, `0002_phase1_module1`, `0003_rename_role_setting`,
 `0004_pos_payment`, `0005_gift_cards`, `0006_waitlist`, `0007_inventory`,
 `0008_branding_faq_reviews_gallery`.
@@ -90,6 +97,7 @@ ganzen Repo), a11y-Audits, i18n, HIPAA/TSE/E-Rechnung.
 ## Was NOCH IMMER FEHLT
 
 ### Design-System — **Polish fehlt**
+
 - ❌ Storybook/Ladle — Komponenten sind nicht isoliert dokumentiert
 - ❌ Chromatic / Percy — keine Visual-Regression in CI
 - ❌ Modal/Drawer/Popover als dedizierte Komponenten (oft ad-hoc im Page)
@@ -117,6 +125,7 @@ P0 (7 Stück — Ziel: alle im MVP):
 | 31 | 1-Klick-DSGVO-Export | ✅ existiert |
 
 P1 (18 Stück — Ziel V1):
+
 - #1 Predictive No-Show ✅ (Scoring da, Auto-Deposit-Request fehlt)
 - #4 AI Voice Receptionist ❌
 - #14 Cross-Salon Wallet ❌
@@ -140,26 +149,26 @@ Sustainability, HIPAA, Consent pro Behandlung).
 
 ## Feature-Completeness-Matrix (aktualisiert)
 
-| # | Kategorie | Vor 24h | Jetzt | Lücken |
-|---|-----------|--------:|------:|--------|
-| 1 | Kalender | 5/20 | **10/20** | Month-View ✓, Recurring/Group/Resource/Buffer-UI/Break/Unavailability/Print/Sync/Keyboard fehlen |
-| 2 | Online-Booking | 8/22 | **14/22** | Widget, Multi-Service-Flow, Formular-Step, Magic-Link, Coupon, Multi-Language, WCAG-AA-geprüft fehlen |
-| 3 | POS/Payments | 1/23 | **6/23** | Tap-to-Pay real, Split-Payment, Retail-Scan, Refund, Receipt-Formate, TSE, Cash-Drawer, Recurring-Billing, Dunning fehlen |
-| 4 | CRM | 5/21 | **10/21** | Foto-Historie, Color-Formula, Allergien-Flag, VIP-Ring, Merge, Portal, Chat, Blacklist, Familien, CLV-Scoring fehlen |
-| 5 | Forms & Consent | 0/13 | **0/13** | Komplett offen |
-| 6 | Staff/HR | 5/15 | **6/15** | RBAC, Time-Clock, Shift-Swap, Time-Off, Commission, Payroll, Performance, Cert-Reminders, Self-Service fehlen |
-| 7 | Inventar | 0/13 | **5/13** | Barcode, Supplier, POs, Auto-Reorder, Backbar-Usage, Audit, Waste, COGS, Integrations fehlen |
-| 8 | Marketing | 1/17 | **6/17** | Campaign-Editor, SMS/WhatsApp, Segmentation, Landing-Pages, UTM, Pixels, Deliverability, Referral, Brand-Kit fehlen |
-| 9 | Loyalty/Gift/Memberships | 0/11 | **4/11** | Punch-Card, Packages, Memberships, Proration, Corporate-Accounts fehlen |
-| 10 | Reporting | 5/16 | **7/16** | Auslastung, Rebook-Rate, Cohorts, CLV, Marge, Inventar-Turnover, Custom-Dashboard, Scheduled-Reports, Benchmarks fehlen |
-| 11 | Kommunikation | 0/9 | **0/9** | Komplett offen |
-| 12 | Multi-Location | 1/8 | **1/8** | Kein Switcher, keine Cross-Reports, kein Head-Office-View |
-| 13 | Marketplace | 0/12 | **0/12** | Phase 2 |
-| 14 | Mobile Apps | 1/10 | **3/10** | PWA ✓, Push-Notifications, echte Expo-Apps, White-Label, Offline, Biometric, Deep-Links fehlen |
-| 15 | AI-Layer | 0/12 | **1/12** | Nur No-Show-Scoring; alles andere P2 |
-| 16 | Integrations | 2/15 | **3/15** | Stripe + Postmark Stubs, sonst fast nichts |
-| 17 | Compliance/Security | 1/15 | **3/15** | RLS ✓, Audit-Log ✓, DSGVO-Export ✓. 2FA, SSO, HIPAA, PCI, TSE, E-Rechnung, SOC2, Pentests fehlen |
-| 18 | Developer/API | 3/11 | **3/11** | OpenAPI, GraphQL, Webhooks, OAuth, SDK, Sandbox, Partner-Portal, Zapier/Make fehlen |
+| #   | Kategorie                | Vor 24h |     Jetzt | Lücken                                                                                                                    |
+| --- | ------------------------ | ------: | --------: | ------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Kalender                 |    5/20 | **10/20** | Month-View ✓, Recurring/Group/Resource/Buffer-UI/Break/Unavailability/Print/Sync/Keyboard fehlen                          |
+| 2   | Online-Booking           |    8/22 | **14/22** | Widget, Multi-Service-Flow, Formular-Step, Magic-Link, Coupon, Multi-Language, WCAG-AA-geprüft fehlen                     |
+| 3   | POS/Payments             |    1/23 |  **6/23** | Tap-to-Pay real, Split-Payment, Retail-Scan, Refund, Receipt-Formate, TSE, Cash-Drawer, Recurring-Billing, Dunning fehlen |
+| 4   | CRM                      |    5/21 | **10/21** | Foto-Historie, Color-Formula, Allergien-Flag, VIP-Ring, Merge, Portal, Chat, Blacklist, Familien, CLV-Scoring fehlen      |
+| 5   | Forms & Consent          |    0/13 |  **0/13** | Komplett offen                                                                                                            |
+| 6   | Staff/HR                 |    5/15 |  **6/15** | RBAC, Time-Clock, Shift-Swap, Time-Off, Commission, Payroll, Performance, Cert-Reminders, Self-Service fehlen             |
+| 7   | Inventar                 |    0/13 |  **5/13** | Barcode, Supplier, POs, Auto-Reorder, Backbar-Usage, Audit, Waste, COGS, Integrations fehlen                              |
+| 8   | Marketing                |    1/17 |  **6/17** | Campaign-Editor, SMS/WhatsApp, Segmentation, Landing-Pages, UTM, Pixels, Deliverability, Referral, Brand-Kit fehlen       |
+| 9   | Loyalty/Gift/Memberships |    0/11 |  **4/11** | Punch-Card, Packages, Memberships, Proration, Corporate-Accounts fehlen                                                   |
+| 10  | Reporting                |    5/16 |  **7/16** | Auslastung, Rebook-Rate, Cohorts, CLV, Marge, Inventar-Turnover, Custom-Dashboard, Scheduled-Reports, Benchmarks fehlen   |
+| 11  | Kommunikation            |     0/9 |   **0/9** | Komplett offen                                                                                                            |
+| 12  | Multi-Location           |     1/8 |   **1/8** | Kein Switcher, keine Cross-Reports, kein Head-Office-View                                                                 |
+| 13  | Marketplace              |    0/12 |  **0/12** | Phase 2                                                                                                                   |
+| 14  | Mobile Apps              |    1/10 |  **3/10** | PWA ✓, Push-Notifications, echte Expo-Apps, White-Label, Offline, Biometric, Deep-Links fehlen                            |
+| 15  | AI-Layer                 |    0/12 |  **1/12** | Nur No-Show-Scoring; alles andere P2                                                                                      |
+| 16  | Integrations             |    2/15 |  **3/15** | Stripe + Postmark Stubs, sonst fast nichts                                                                                |
+| 17  | Compliance/Security      |    1/15 |  **3/15** | RLS ✓, Audit-Log ✓, DSGVO-Export ✓. 2FA, SSO, HIPAA, PCI, TSE, E-Rechnung, SOC2, Pentests fehlen                          |
+| 18  | Developer/API            |    3/11 |  **3/11** | OpenAPI, GraphQL, Webhooks, OAuth, SDK, Sandbox, Partner-Portal, Zapier/Make fehlen                                       |
 
 **Summe Baseline: ~82 / ~236 ≈ 35 %** (vorher ~15 %).
 
@@ -185,8 +194,8 @@ Sustainability, HIPAA, Consent pro Behandlung).
 - **Design-Tokens als CSS-Vars** in `packages/ui/tokens.css` sind das
   richtige Fundament. Dark-Mode-Variante mit gespiegelten Tokens funktioniert.
 - **Kalender-Wochen-+Tages-Multi-Staff-Ansicht** mit GiST-Exclusion + Drag
-  + Click-to-Book ist bereits weit über Baseline — das macht Konkurrenz
-  nicht besser.
+  - Click-to-Book ist bereits weit über Baseline — das macht Konkurrenz
+    nicht besser.
 - **Predictive No-Show-Scoring** ist ein echter P1-Differenziator (#1),
   der jetzt Grundlage gelegt hat.
 - **Salon-Homepage** unter `/book/[slug]` mit Reviews/FAQ/Gallery/Team

@@ -101,9 +101,7 @@ export function PosForm({
             >
               <span className="text-lg">{m.emoji}</span>
               <span className="font-medium">{m.label}</span>
-              {m.hint ? (
-                <span className="text-[9px] text-text-muted">{m.hint}</span>
-              ) : null}
+              {m.hint ? <span className="text-[9px] text-text-muted">{m.hint}</span> : null}
             </button>
           ))}
         </div>
@@ -120,9 +118,7 @@ export function PosForm({
         </div>
         <div className="mt-3 flex items-baseline justify-between border-t border-border pt-3">
           <span className="text-base font-semibold text-text-primary">Total</span>
-          <span className="text-xl font-bold tabular-nums">
-            {total.toFixed(2)} CHF
-          </span>
+          <span className="text-xl font-bold tabular-nums">{total.toFixed(2)} CHF</span>
         </div>
       </div>
 

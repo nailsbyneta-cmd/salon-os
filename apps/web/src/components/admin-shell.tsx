@@ -2,19 +2,9 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  cn,
-  CommandPalette,
-  type CommandItem,
-  useTheme,
-  Kbd,
-  Avatar,
-} from '@salon-os/ui';
+import { cn, CommandPalette, type CommandItem, useTheme, Kbd, Avatar } from '@salon-os/ui';
 import { searchCommand } from '@/app/search-action';
-import {
-  getPendingCounts,
-  type PendingCounts,
-} from '@/app/pending-counts-action';
+import { getPendingCounts, type PendingCounts } from '@/app/pending-counts-action';
 import { Celebrate } from '@/components/celebrate';
 
 interface NavItem {
@@ -37,11 +27,7 @@ const nav: NavItem[] = [
   { href: '/settings', label: 'Einstellungen', icon: <IconGear /> },
 ];
 
-export function AdminShell({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.JSX.Element {
+export function AdminShell({ children }: { children: React.ReactNode }): React.JSX.Element {
   const pathname = usePathname();
   const router = useRouter();
   const { toggle, resolved } = useTheme();
@@ -83,17 +69,15 @@ export function AdminShell({
   const asyncLoader = React.useCallback(
     async (query: string): Promise<CommandItem[]> => {
       const hits = await searchCommand(query);
-      const groupByKind: Record<typeof hits[number]['kind'], string> = {
+      const groupByKind: Record<(typeof hits)[number]['kind'], string> = {
         client: 'Kundinnen',
         appointment: 'Termine',
         staff: 'Team',
         service: 'Services',
       };
-      const iconByKind = (kind: typeof hits[number]['kind'], label: string): React.ReactNode => {
+      const iconByKind = (kind: (typeof hits)[number]['kind'], label: string): React.ReactNode => {
         if (kind === 'client' || kind === 'staff') {
-          return (
-            <Avatar name={label} size="sm" color="hsl(var(--brand-accent))" />
-          );
+          return <Avatar name={label} size="sm" color="hsl(var(--brand-accent))" />;
         }
         if (kind === 'appointment') return <span>📅</span>;
         return <span>🛎️</span>;
@@ -173,9 +157,7 @@ export function AdminShell({
           </div>
           <div>
             <div className="text-sm font-semibold tracking-tight">SALON OS</div>
-            <div className="text-[9px] uppercase tracking-wider text-text-muted">
-              Beautycenter
-            </div>
+            <div className="text-[9px] uppercase tracking-wider text-text-muted">Beautycenter</div>
           </div>
         </Link>
         <button
@@ -261,10 +243,7 @@ export function AdminShell({
 
         <nav className="flex-1 px-2 py-2">
           {nav.map((item) => {
-            const active =
-              item.href === '/'
-                ? pathname === '/'
-                : pathname?.startsWith(item.href);
+            const active = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href);
             // Badge-Count + kontextueller Label pro Nav-Item.
             const badgeMeta: {
               count: number;
@@ -291,8 +270,7 @@ export function AdminShell({
                       }
                     : { count: 0, tone: 'neutral', context: '' };
             const badgeCount = badgeMeta.count;
-            const badgeLabel =
-              badgeCount > 99 ? '99+' : String(badgeCount);
+            const badgeLabel = badgeCount > 99 ? '99+' : String(badgeCount);
             return (
               <Link
                 key={item.href}
@@ -304,19 +282,10 @@ export function AdminShell({
                     : 'text-text-secondary hover:bg-surface-raised hover:text-text-primary',
                 )}
                 aria-label={
-                  badgeCount > 0
-                    ? `${item.label} — ${badgeCount} ${badgeMeta.context}`
-                    : undefined
+                  badgeCount > 0 ? `${item.label} — ${badgeCount} ${badgeMeta.context}` : undefined
                 }
               >
-                <span
-                  className={cn(
-                    'text-text-muted',
-                    active && 'text-accent',
-                  )}
-                >
-                  {item.icon}
-                </span>
+                <span className={cn('text-text-muted', active && 'text-accent')}>{item.icon}</span>
                 <span className="flex-1">{item.label}</span>
                 {/* Reserved-space placeholder verhindert CLS wenn counts
                     asynchron reinkommen. */}

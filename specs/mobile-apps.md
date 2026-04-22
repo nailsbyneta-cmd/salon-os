@@ -5,6 +5,7 @@
 Ein einziger React-Native-Monorepo-Workspace (`apps/mobile-staff`, `apps/mobile-client`, Template für White-Label):
 
 ### 1. Staff App (Mitarbeiter)
+
 - **Primär Tablet + Smartphone**
 - Funktionen:
   - Eigener Kalender (Day/Week)
@@ -21,6 +22,7 @@ Ein einziger React-Native-Monorepo-Workspace (`apps/mobile-staff`, `apps/mobile-
 - Offline-Modus: Termine + Checkout, Sync wenn online
 
 ### 2. Consumer Marketplace App
+
 - **Nur Smartphone (iOS + Android)**
 - Konsumenten-App für Marktplatz
 - Features:
@@ -32,6 +34,7 @@ Ein einziger React-Native-Monorepo-Workspace (`apps/mobile-staff`, `apps/mobile-
   - In-App-Chat mit Salon
 
 ### 3. White-Label Branded App (Salon-spezifisch)
+
 - **iOS + Android, pro Tenant automatisch gebaut**
 - Technologie: **Expo EAS** + dynamisches Config-Generation
 - Pipeline:
@@ -50,6 +53,7 @@ Ein einziger React-Native-Monorepo-Workspace (`apps/mobile-staff`, `apps/mobile-
 ## Tech-Details
 
 ### Stack
+
 - **React Native** 0.75+ (New Architecture)
 - **Expo SDK 52+** (Expo Router, EAS Build, EAS Submit)
 - **NativeWind** (Tailwind für RN)
@@ -65,18 +69,21 @@ Ein einziger React-Native-Monorepo-Workspace (`apps/mobile-staff`, `apps/mobile-
 - **Expo-Camera + AR-SDK** (Perfect Corp React-Native-Bridge)
 
 ### CI/CD für Branded-Apps
+
 - Master-Template im Repo
 - CI-Job: `new-branded-app` → Config generieren → EAS Build → Artefakt → Admin-Notification
 - Zertifikat-Verwaltung: wir betreiben einen Fastlane-„Match"-Repo
 - App-Store-Update-Pipeline: Push-Update-Dienst (OTA) via Expo Updates für JS-Bugfixes ohne Store-Freigabe
 
 ### Performance
+
 - Cold Start < 2,5 s
 - Warm Start < 1 s
 - Kalender-Scroll 60 fps
 - Bilder: lazy-loaded, blurhash-placeholder, CDN-optimiert
 
 ## UI-Prinzipien
+
 - Single-Thumb-Bedienung (Bottom-Tabs + untere Bedienleisten)
 - Große Touch-Targets (≥ 44 pt iOS, ≥ 48 dp Android)
 - Haptics bei wichtigen Aktionen
@@ -84,12 +91,14 @@ Ein einziger React-Native-Monorepo-Workspace (`apps/mobile-staff`, `apps/mobile-
 - Accessibility: VoiceOver + TalkBack vollständig
 
 ## Staff-App-UX-Highlights
+
 - „Heute"-Startbildschirm: alle Termine + offene Aufgaben + unbeantwortete Nachrichten
 - Drag-to-Reschedule im Kalender
 - Swipe-Aktionen (Check-in / Cancel / No-Show)
 - Split-Screen: links Termin-Detail, rechts Kunden-Historie (Tablet)
 
 ## Client-App-UX-Highlights
+
 - „3-Tap-Rebook": Tab Home → letzte Dienstleistung antippen → Zeit wählen → Fertig
 - Smart-Search beim Buchen: „Haar-Farbe nächste Woche nach 17 Uhr"
 - AR-Try-On mit Teilen zu Instagram/TikTok

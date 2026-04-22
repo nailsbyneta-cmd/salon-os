@@ -3,6 +3,7 @@
 ## Woche 0 — 2026-04-19 — Phase 0 Start
 
 **Fertig**
+
 - Monorepo-Scaffold (Turborepo + pnpm 9 + TypeScript strict)
 - Apps-Skelette: `api` (NestJS + Fastify), `web` (Next.js 15), `worker` (BullMQ)
 - Packages-Skelette: `db` (Prisma), `auth` (WorkOS-Stub), `ui`, `types`, `utils`, `config`
@@ -14,12 +15,15 @@
 - ADRs: 0001 Turborepo, 0002 Prisma, 0003 Fastify
 
 **In Arbeit**
+
 - —
 
 **Blockiert**
+
 - Keine Blocker.
 
 **Fertig — Phase 0 Abschluss + Start Modul 1 (selber Tag)**
+
 - ESLint-Configs + Vitest-Configs + erste grüne Tests (utils/types/api-health)
 - Deploy: `apps/api/fly.toml` + `Dockerfile`, `apps/worker/fly.toml` + `Dockerfile`,
   `apps/web/vercel.json` (alle Zürich-Region)
@@ -42,6 +46,7 @@
 
 **Nächste Woche (Phase 0 final → Phase 1 Fortsetzung)**
 User-seitige Schritte zum Demo-Run:
+
 - `pnpm install`
 - `pnpm db:up && pnpm --filter @salon-os/db db:migrate && pnpm --filter @salon-os/db db:seed`
 - `pnpm dev`
@@ -51,6 +56,7 @@ User-seitige Schritte zum Demo-Run:
 - Vercel + Fly.io + Doppler-Projekte einrichten
 
 Claude-seitig (nächster Arbeitsblock):
+
 - Staff + Services + Appointments-Module analog zu Clients aufbauen ✅ Services + Appointments erledigt (Commit 58b8a0d)
 - Kalender-UI in `apps/web` (Day/Week-View, Drag&Drop) — ✅ Day-View read-only erledigt (Commit 0cc5a87), Drag&Drop folgt in Woche 5
 - Branded Booking-Page (`/book/[tenant-slug]`) — offen (Woche 6)
@@ -60,11 +66,13 @@ Claude-seitig (nächster Arbeitsblock):
 ## Session-Ende 2026-04-19 — Gesamtstand
 
 **Repo-Stats**
+
 - 5 Commits
 - 135 getrackte Files
 - `main`-Branch, noch kein Remote (kein Push)
 
 **Was läuft nach `pnpm install` + `db:up` + `db:migrate` + `db:seed`**
+
 - API: NestJS + Fastify + RFC-7807-Filter + ZodValidationPipe +
   TenantMiddleware (Platzhalter-Header) + DbModule
 - API-Module: `/health`, `/v1/clients`, `/v1/services`, `/v1/service-categories`,
@@ -77,6 +85,7 @@ Claude-seitig (nächster Arbeitsblock):
   Trigram-Index auf Client-Namen, vollständige Policies pro Rolle
 
 **Noch nicht gebaut (Phase-1-Fortsetzung)**
+
 - Staff-CRUD-Modul (analog Clients)
 - Rooms-CRUD-Modul
 - Shifts / TimeOff-Admin-UI
@@ -88,6 +97,7 @@ Claude-seitig (nächster Arbeitsblock):
 - Observability-Hooks (Sentry/OTel/PostHog) — no-op bis Keys da sind
 
 **Deliverable-Checkliste (PROMPT.md § "Woran wir den Erfolg messen")**
+
 - [ ] 1. Echter Salon löst Phorest ab — UI/Flows fehlen
 - [ ] 2. Kunden buchen online über Branded-Link — Booking-Page fehlt
 - [ ] 3. Mobile-App für Staff — Apps leer, Expo-Init fehlt
@@ -97,6 +107,7 @@ Claude-seitig (nächster Arbeitsblock):
 - [ ] 7. Fiskal/TSE via fiskaly — Adapter fehlt
 
 **Klare nächste Iteration (wenn du „weiter" sagst)**
+
 1. Staff-Modul + Rooms-Modul + Staff-UI auf `/staff` und `/locations`
 2. WorkOS-Integration → Auth-Flow → TenantMiddleware auf Cookie-Session
 3. Drag&Drop-Kalender (react-dnd oder dnd-kit) auf `/calendar`
@@ -111,6 +122,7 @@ Spec-Conformance / Build-Readiness) haben den Phase-0/M1-Stand durchleuchtet.
 Konsolidierte Befunde + Fixes:
 
 **Audit-Blocker alle gefixt** (Commit `chore(fix): audit`):
+
 - 🔴 B1 Migration-Ordering: `0001_rls_init` löschte RLS auf nicht-existierende
   Tabellen. Ersetzt durch `0001_init` mit komplettem DDL für tenant/user/
   location/tenant_membership/audit_log + Enums + RLS-Hilfsfunktionen + Policies
@@ -128,17 +140,19 @@ Konsolidierte Befunde + Fixes:
 - 🟡 B9 Mobile-Apps aus pnpm-workspace.yaml entfernt bis Expo-Init.
 
 **Phase 1 M1 komplettiert (3 Commits):**
+
 - **Locations-Modul** (`/v1/locations` CRUD + Zod-Schemas inkl. openingHours)
 - **Rooms-Modul** (`/v1/rooms` CRUD, `?locationId`-Filter, soft-deactivate)
 - **Staff-Modul** (`/v1/staff` CRUD + Location-Assignments + Service-Links
   als transactional replace-all-on-change)
 
 **Public Booking End-to-End** (entscheidender Meilenstein, Commit `feat: public-booking`):
+
 - Backend `apps/api/src/public-bookings/`:
   - `GET /v1/public/:tenantSlug/locations` + `services`
   - `GET /v1/public/:tenantSlug/services/:id/slots?date=&locationId=`
     → Slot-Generator (MVP: 09–18h im 30-Min-Raster, Staff-Filter auf Service
-    + Location, Overlap-Check gegen existierende Termine)
+    - Location, Overlap-Check gegen existierende Termine)
   - `POST /v1/public/:tenantSlug/bookings` → Client-Dedup via email/phone,
     Appointment + Item transaktional, Exclusion-Constraint-Conflict → 409
     `slot_taken`. "no preference" staffId pickt ersten qualifizierten Staff.
@@ -155,6 +169,7 @@ Konsolidierte Befunde + Fixes:
   `http://localhost:3000/book/beautycenter-by-neta`.
 
 **Phase-1-Erfolgskriterien nach Session 2:**
+
 - ✅ 1. „Ein echter Salon kann Phorest ablösen" — Owner-Admin (Staff,
   Services, Kalender, Clients) + Online-Buchung end-to-end lauffähig.
   Fehlt: Reminders, POS, Reports, Phorest-Import-Script.
@@ -168,6 +183,7 @@ Konsolidierte Befunde + Fixes:
 - ❌ 7. Fiskal/TSE via fiskaly — Adapter fehlt.
 
 **Was bewusst offen bleibt (folgt iterativ):**
+
 - Reminder-Worker (BullMQ: confirmation E-Mail/SMS 24h/2h vorher)
 - POS-Modul (Stripe-Adapter, Checkout-UI, Tagesabschluss)
 - Forms & Consultations (Schablonetechnik-Consent etc.)
@@ -183,11 +199,13 @@ Service + Zod-Schema + Tests) ist etabliert, alle weiteren Module folgen
 dem gleichen Blueprint.
 
 **Business-Entscheidungen bestätigt (2026-04-19)**
+
 - Brand: SALON OS (final, nicht Codename)
 - Tenant #1 / Design-Partner: Beautycenter by Neta
 - Primärregion: eu-central-2 (Zürich)
 
 **Offene Business-Fragen**
+
 - Vercel-Team + Fly.io-Org-Handles (für CI-Secrets)
 - WorkOS-Account-Setup — Org-Name, Branding
 - Doppler-Projekt: `salon-os-dev` / `salon-os-prod` Aufteilung ok?

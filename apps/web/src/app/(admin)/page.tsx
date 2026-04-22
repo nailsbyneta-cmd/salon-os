@@ -86,11 +86,7 @@ async function loadDashboard(): Promise<Dashboard> {
   const zYearNow = zurichYmd.find((p) => p.type === 'year')?.value ?? '2025';
   const zMonthNow = zurichYmd.find((p) => p.type === 'month')?.value ?? '01';
   const zDayNow = zurichYmd.find((p) => p.type === 'day')?.value ?? '01';
-  const monthStartIso = toLocalIso(
-    `${zYearNow}-${zMonthNow}-01`,
-    '00:00',
-    'Europe/Zurich',
-  );
+  const monthStartIso = toLocalIso(`${zYearNow}-${zMonthNow}-01`, '00:00', 'Europe/Zurich');
   const dayOfMonth = Number(zDayNow);
   // daysInMonth: JS Date(year, month, 0) = letzter Tag des Vormonats, wobei
   // month 1-basiert wirken muss. Number(zMonthNow) ist 1-12.
@@ -104,92 +100,69 @@ async function loadDashboard(): Promise<Dashboard> {
       throw err;
     });
 
-  const [
-    svc,
-    stf,
-    cli,
-    appts,
-    weekAppts,
-    gc,
-    wl,
-    lowStock,
-    tenantInfo,
-    monthApptsRes,
-  ] = await Promise.all([
-    safe(apiFetch<{ services: unknown[] }>('/v1/services', auth), { services: [] }),
-    safe(apiFetch<{ staff: unknown[] }>('/v1/staff', auth), { staff: [] }),
-    safe(
-      apiFetch<{
-        clients: Array<{
-          id: string;
-          firstName: string;
-          lastName: string;
-          birthday: string | null;
-          lastVisitAt: string | null;
-          totalVisits: number;
-          lifetimeValue: string | number;
-          phone: string | null;
-          phoneE164: string | null;
-          blocked: boolean;
-        }>;
-      }>('/v1/clients?limit=5000', auth),
-      { clients: [] },
-    ),
-    safe(
-      apiFetch<{ appointments: Dashboard['todayAppts'] }>(
-        `/v1/appointments?from=${start.toISOString()}&to=${end.toISOString()}`,
-        auth,
+  const [svc, stf, cli, appts, weekAppts, gc, wl, lowStock, tenantInfo, monthApptsRes] =
+    await Promise.all([
+      safe(apiFetch<{ services: unknown[] }>('/v1/services', auth), { services: [] }),
+      safe(apiFetch<{ staff: unknown[] }>('/v1/staff', auth), { staff: [] }),
+      safe(
+        apiFetch<{
+          clients: Array<{
+            id: string;
+            firstName: string;
+            lastName: string;
+            birthday: string | null;
+            lastVisitAt: string | null;
+            totalVisits: number;
+            lifetimeValue: string | number;
+            phone: string | null;
+            phoneE164: string | null;
+            blocked: boolean;
+          }>;
+        }>('/v1/clients?limit=5000', auth),
+        { clients: [] },
       ),
-      { appointments: [] },
-    ),
-    safe(
-      apiFetch<{
-        appointments: Array<{
-          startAt: string;
-          status: string;
-          items: Array<{ price: string; serviceId: string; service: { name: string } }>;
-        }>;
-      }>(
-        `/v1/appointments?from=${weekStart.toISOString()}&to=${end.toISOString()}`,
-        auth,
+      safe(
+        apiFetch<{ appointments: Dashboard['todayAppts'] }>(
+          `/v1/appointments?from=${start.toISOString()}&to=${end.toISOString()}`,
+          auth,
+        ),
+        { appointments: [] },
       ),
-      { appointments: [] },
-    ),
-    safe(
-      apiFetch<{ giftCards: Array<{ balance: string }> }>('/v1/gift-cards', auth),
-      { giftCards: [] },
-    ),
-    safe(apiFetch<{ entries: unknown[] }>('/v1/waitlist', auth), { entries: [] }),
-    safe(
-      apiFetch<{ products: unknown[] }>('/v1/products?lowStock=true', auth),
-      { products: [] },
-    ),
-    safe(
-      apiFetch<{ name: string }>('/v1/settings/tenant', auth),
-      { name: '' },
-    ),
-    safe(
-      apiFetch<{
-        appointments: Array<{
-          startAt: string;
-          status: string;
-          items: Array<{ price: string }>;
-        }>;
-      }>(
-        `/v1/appointments?from=${encodeURIComponent(monthStartIso)}&to=${end.toISOString()}`,
-        auth,
+      safe(
+        apiFetch<{
+          appointments: Array<{
+            startAt: string;
+            status: string;
+            items: Array<{ price: string; serviceId: string; service: { name: string } }>;
+          }>;
+        }>(`/v1/appointments?from=${weekStart.toISOString()}&to=${end.toISOString()}`, auth),
+        { appointments: [] },
       ),
-      { appointments: [] },
-    ),
-  ]);
+      safe(apiFetch<{ giftCards: Array<{ balance: string }> }>('/v1/gift-cards', auth), {
+        giftCards: [],
+      }),
+      safe(apiFetch<{ entries: unknown[] }>('/v1/waitlist', auth), { entries: [] }),
+      safe(apiFetch<{ products: unknown[] }>('/v1/products?lowStock=true', auth), { products: [] }),
+      safe(apiFetch<{ name: string }>('/v1/settings/tenant', auth), { name: '' }),
+      safe(
+        apiFetch<{
+          appointments: Array<{
+            startAt: string;
+            status: string;
+            items: Array<{ price: string }>;
+          }>;
+        }>(
+          `/v1/appointments?from=${encodeURIComponent(monthStartIso)}&to=${end.toISOString()}`,
+          auth,
+        ),
+        { appointments: [] },
+      ),
+    ]);
   // Monat-Umsatz (non-terminal).
   let monthRevenueCents = 0;
   for (const a of monthApptsRes.appointments) {
     if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') continue;
-    monthRevenueCents += a.items.reduce(
-      (s, i) => s + Math.round(Number(i.price) * 100),
-      0,
-    );
+    monthRevenueCents += a.items.reduce((s, i) => s + Math.round(Number(i.price) * 100), 0);
   }
   const tenantName = tenantInfo.name || 'unserem Salon';
 
@@ -245,14 +218,16 @@ async function loadDashboard(): Promise<Dashboard> {
     if (c.birthday.slice(5, 10) !== mmdd) return [];
     // Gesperrte Kundinnen nie gratulieren.
     if (c.blocked === true) return [];
-    return [{
-      id: c.id,
-      firstName: c.firstName,
-      lastName: c.lastName,
-      birthday: c.birthday,
-      phone: c.phone,
-      phoneE164: c.phoneE164,
-    }];
+    return [
+      {
+        id: c.id,
+        firstName: c.firstName,
+        lastName: c.lastName,
+        birthday: c.birthday,
+        phone: c.phone,
+        phoneE164: c.phoneE164,
+      },
+    ];
   });
 
   const revenueByDay = new Map<string, number>();
@@ -267,10 +242,7 @@ async function loadDashboard(): Promise<Dashboard> {
     if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') continue;
     const key = a.startAt.slice(0, 10);
     if (!revenueByDay.has(key)) continue;
-    const cents = a.items.reduce(
-      (s, i) => s + Math.round(Number(i.price) * 100),
-      0,
-    );
+    const cents = a.items.reduce((s, i) => s + Math.round(Number(i.price) * 100), 0);
     revenueByDay.set(key, (revenueByDay.get(key) ?? 0) + cents);
     if (a.status === 'COMPLETED') {
       for (const item of a.items) {
@@ -293,10 +265,7 @@ async function loadDashboard(): Promise<Dashboard> {
     staffCount: stf.staff.length,
     clientsCount: cli.clients.length,
     revenueLast7DaysCents,
-    giftCardsOutstanding: gc.giftCards.reduce(
-      (s, c) => s + Number(c.balance),
-      0,
-    ),
+    giftCardsOutstanding: gc.giftCards.reduce((s, c) => s + Number(c.balance), 0),
     waitlistCount: wl.entries.length,
     lowStockCount: lowStock.products.length,
     todayAppts: appts.appointments,
@@ -310,9 +279,7 @@ async function loadDashboard(): Promise<Dashboard> {
       const raw = process.env['SALON_MONTHLY_GOAL_CHF'];
       const parsed = Number(raw ?? '15000');
       if (!Number.isFinite(parsed) || parsed <= 0) {
-        console.warn(
-          `[dashboard] SALON_MONTHLY_GOAL_CHF="${raw}" ungültig — Fallback auf 15000.`,
-        );
+        console.warn(`[dashboard] SALON_MONTHLY_GOAL_CHF="${raw}" ungültig — Fallback auf 15000.`);
         return 15000 * 100;
       }
       return parsed * 100;
@@ -351,8 +318,7 @@ export default async function Home(): Promise<React.JSX.Element> {
     (a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW',
   );
   const revenueCents = activeAppts.reduce(
-    (sum, a) =>
-      sum + a.items.reduce((s, i) => s + Math.round(Number(i.price) * 100), 0),
+    (sum, a) => sum + a.items.reduce((s, i) => s + Math.round(Number(i.price) * 100), 0),
     0,
   );
   const completed = activeAppts.filter((a) => a.status === 'COMPLETED').length;
@@ -392,8 +358,7 @@ export default async function Home(): Promise<React.JSX.Element> {
   // noch nicht bestätigt sind — Neta ruft sie morgen früh persönlich durch.
   const riskToConfirm = upcoming.filter((a) => {
     if (a.status !== 'BOOKED') return false;
-    const risk =
-      a.client?.noShowRisk != null ? Number(a.client.noShowRisk) : NaN;
+    const risk = a.client?.noShowRisk != null ? Number(a.client.noShowRisk) : NaN;
     return Number.isFinite(risk) && risk >= 25;
   });
 
@@ -420,10 +385,7 @@ export default async function Home(): Promise<React.JSX.Element> {
   const perStaffMap = new Map<string, StaffLoad>();
   for (const a of activeAppts) {
     const key = `${a.staff.firstName} ${a.staff.lastName}`.trim();
-    const dur = Math.max(
-      0,
-      (new Date(a.endAt).getTime() - new Date(a.startAt).getTime()) / 60_000,
-    );
+    const dur = Math.max(0, (new Date(a.endAt).getTime() - new Date(a.startAt).getTime()) / 60_000);
     const prev = perStaffMap.get(key) ?? {
       name: key,
       color: a.staff.color,
@@ -434,13 +396,8 @@ export default async function Home(): Promise<React.JSX.Element> {
     prev.minutes += dur;
     perStaffMap.set(key, prev);
   }
-  const staffLoad = [...perStaffMap.values()].sort(
-    (x, y) => y.minutes - x.minutes,
-  );
-  const maxStaffMinutes = staffLoad.reduce(
-    (m, s) => (s.minutes > m ? s.minutes : m),
-    1,
-  );
+  const staffLoad = [...perStaffMap.values()].sort((x, y) => y.minutes - x.minutes);
+  const maxStaffMinutes = staffLoad.reduce((m, s) => (s.minutes > m ? s.minutes : m), 1);
 
   return (
     <div className="w-full p-4 md:p-8">
@@ -465,9 +422,7 @@ export default async function Home(): Promise<React.JSX.Element> {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/calendar/new?walkin=1">
-            <Button variant="secondary">
-              Walk-in
-            </Button>
+            <Button variant="secondary">Walk-in</Button>
           </Link>
           <Link href="/calendar/new">
             <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
@@ -505,8 +460,7 @@ export default async function Home(): Promise<React.JSX.Element> {
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <h2 className="text-sm font-semibold">Heute pro Stylistin</h2>
             <span className="text-xs text-text-muted">
-              {staffLoad.length}{' '}
-              {staffLoad.length === 1 ? 'Stylistin' : 'Stylistinnen'} aktiv
+              {staffLoad.length} {staffLoad.length === 1 ? 'Stylistin' : 'Stylistinnen'} aktiv
             </span>
           </div>
           <CardBody className="p-0">
@@ -519,18 +473,13 @@ export default async function Home(): Promise<React.JSX.Element> {
                 const pct = Math.round((s.minutes / maxStaffMinutes) * 100);
                 const dot = s.color ?? 'hsl(var(--brand-accent))';
                 return (
-                  <li
-                    key={s.name}
-                    className="flex items-center gap-3 px-5 py-3"
-                  >
+                  <li key={s.name} className="flex items-center gap-3 px-5 py-3">
                     <span
                       className="h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: dot }}
                       aria-hidden="true"
                     />
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                      {s.name}
-                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{s.name}</span>
                     <span className="shrink-0 text-xs tabular-nums text-text-muted">
                       {s.count} · {timeLabel}
                     </span>
@@ -573,8 +522,7 @@ export default async function Home(): Promise<React.JSX.Element> {
             const underPace =
               showProjection &&
               !onPace &&
-              (projection < goal * 0.85 ||
-                (dayProgress > 0.3 && pctCapped < 50));
+              (projection < goal * 0.85 || (dayProgress > 0.3 && pctCapped < 50));
             const barColor = beatGoal
               ? 'from-success via-success to-accent'
               : onPace
@@ -629,9 +577,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                             </span>
                           </>
                         ) : (
-                          <span className="text-text-muted">
-                            {' '}· Projektion ab Tag 3
-                          </span>
+                          <span className="text-text-muted"> · Projektion ab Tag 3</span>
                         )}
                       </div>
                     </div>
@@ -660,17 +606,16 @@ export default async function Home(): Promise<React.JSX.Element> {
               Umsatz · letzte 7 Tage
             </div>
             <div className="mt-1 font-display text-2xl font-semibold tabular-nums">
-              {(
-                d.revenueLast7DaysCents.reduce((s, c) => s + c, 0) / 100
-              ).toLocaleString('de-CH', { minimumFractionDigits: 0 })}{' '}
+              {(d.revenueLast7DaysCents.reduce((s, c) => s + c, 0) / 100).toLocaleString('de-CH', {
+                minimumFractionDigits: 0,
+              })}{' '}
               <span className="text-sm font-normal text-text-muted">CHF</span>
             </div>
             <div className="mt-0.5 text-xs text-text-muted">
               Ø{' '}
-              {(
-                d.revenueLast7DaysCents.reduce((s, c) => s + c, 0) /
-                700
-              ).toLocaleString('de-CH', { maximumFractionDigits: 0 })}{' '}
+              {(d.revenueLast7DaysCents.reduce((s, c) => s + c, 0) / 700).toLocaleString('de-CH', {
+                maximumFractionDigits: 0,
+              })}{' '}
               CHF pro Tag
             </div>
           </div>
@@ -684,10 +629,7 @@ export default async function Home(): Promise<React.JSX.Element> {
             <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
               Top Services · letzte 7 Tage
             </p>
-            <ul
-              className="mt-3 flex flex-wrap gap-2"
-              aria-label="Top Services der letzten 7 Tage"
-            >
+            <ul className="mt-3 flex flex-wrap gap-2" aria-label="Top Services der letzten 7 Tage">
               {d.topServicesWeek.map((svc, idx) => (
                 <li
                   key={svc.serviceId}
@@ -696,12 +638,8 @@ export default async function Home(): Promise<React.JSX.Element> {
                   <span className="text-[10px] font-semibold tabular-nums text-text-muted">
                     #{idx + 1}
                   </span>
-                  <span className="font-medium text-text-primary">
-                    {svc.name}
-                  </span>
-                  <span className="text-xs tabular-nums text-text-muted">
-                    {svc.count}×
-                  </span>
+                  <span className="font-medium text-text-primary">{svc.name}</span>
+                  <span className="text-xs tabular-nums text-text-muted">{svc.count}×</span>
                 </li>
               ))}
             </ul>
@@ -725,11 +663,7 @@ export default async function Home(): Promise<React.JSX.Element> {
         <Stat
           label="Low Stock"
           value={d.lowStockCount}
-          sub={
-            d.lowStockCount === 0
-              ? 'Alles auf Lager'
-              : 'Produkte nachbestellen'
-          }
+          sub={d.lowStockCount === 0 ? 'Alles auf Lager' : 'Produkte nachbestellen'}
           href="/inventory"
         />
       </section>
@@ -746,16 +680,9 @@ export default async function Home(): Promise<React.JSX.Element> {
             <ul className="space-y-2">
               {running.map((a) => {
                 const startMs = new Date(a.startAt).getTime();
-                const elapsedMin = Math.max(
-                  0,
-                  Math.floor((now.getTime() - startMs) / 60000),
-                );
-                const totalMin =
-                  (new Date(a.endAt).getTime() - startMs) / 60000;
-                const pct = Math.min(
-                  100,
-                  Math.max(0, (elapsedMin / totalMin) * 100),
-                );
+                const elapsedMin = Math.max(0, Math.floor((now.getTime() - startMs) / 60000));
+                const totalMin = (new Date(a.endAt).getTime() - startMs) / 60000;
+                const pct = Math.min(100, Math.max(0, (elapsedMin / totalMin) * 100));
                 const client = a.client
                   ? `${a.client.firstName} ${a.client.lastName}`
                   : 'Blockzeit';
@@ -774,8 +701,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                         </span>
                       </div>
                       <div className="mt-0.5 text-xs text-text-muted truncate">
-                        {a.items.map((i) => i.service.name).join(', ')} ·{' '}
-                        {a.staff.firstName}
+                        {a.items.map((i) => i.service.name).join(', ')} · {a.staff.firstName}
                       </div>
                       <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-raised">
                         <div
@@ -815,10 +741,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                   ? `https://wa.me/${waDigits}?text=${encodeURIComponent(waMsg)}`
                   : null;
                 return (
-                  <li
-                    key={b.id}
-                    className="flex flex-wrap items-center gap-2"
-                  >
+                  <li key={b.id} className="flex flex-wrap items-center gap-2">
                     <Link
                       href={`/clients/${b.id}`}
                       className="inline-flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-raised"
@@ -827,9 +750,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                         {b.firstName} {b.lastName}
                       </span>
                       {age != null ? (
-                        <span className="shrink-0 text-xs tabular-nums text-text-muted">
-                          {age}
-                        </span>
+                        <span className="shrink-0 text-xs tabular-nums text-text-muted">{age}</span>
                       ) : null}
                     </Link>
                     {waHref ? (
@@ -848,9 +769,7 @@ export default async function Home(): Promise<React.JSX.Element> {
               })}
             </ul>
             {d.birthdaysToday.length > 8 ? (
-              <p className="mt-2 text-xs text-text-muted">
-                +{d.birthdaysToday.length - 8} weitere
-              </p>
+              <p className="mt-2 text-xs text-text-muted">+{d.birthdaysToday.length - 8} weitere</p>
             ) : null}
           </CardBody>
         </Card>
@@ -866,16 +785,13 @@ export default async function Home(): Promise<React.JSX.Element> {
               </span>
             </div>
             <p className="mb-3 text-xs text-text-secondary">
-              Startzeit überschritten, noch nicht eingechecked — kurz anrufen.
-              Danach „No-Show" markieren (zählt in die Risiko-Statistik) oder
-              Termin im Kalender verschieben.
+              Startzeit überschritten, noch nicht eingechecked — kurz anrufen. Danach „No-Show"
+              markieren (zählt in die Risiko-Statistik) oder Termin im Kalender verschieben.
             </p>
             <ul className="space-y-2">
               {missed.slice(0, 5).map((a) => {
                 const client = a.client;
-                const clientName = client
-                  ? `${client.firstName} ${client.lastName}`
-                  : 'Blockzeit';
+                const clientName = client ? `${client.firstName} ${client.lastName}` : 'Blockzeit';
                 const minutesLate = Math.max(
                   0,
                   Math.round((now.getTime() - new Date(a.startAt).getTime()) / 60_000),
@@ -886,8 +802,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                     ? client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
                     : null;
                 const telHref = client?.phoneE164 ?? client?.phone ?? null;
-                const hasValidPhone =
-                  telHref != null && waDigits != null && waDigits.length >= 7;
+                const hasValidPhone = telHref != null && waDigits != null && waDigits.length >= 7;
                 return (
                   <li key={a.id}>
                     <div className="flex flex-wrap items-center gap-3 rounded-md bg-surface px-3 py-2.5">
@@ -897,10 +812,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                           minute: '2-digit',
                         })}
                       </span>
-                      <Link
-                        href={`/calendar/${a.id}`}
-                        className="min-w-0 flex-1 hover:underline"
-                      >
+                      <Link href={`/calendar/${a.id}`} className="min-w-0 flex-1 hover:underline">
                         <div className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
                           <span className="min-w-0 truncate">{clientName}</span>
                           <span className="shrink-0 rounded-full bg-danger/15 px-1.5 py-0.5 text-[10px] font-medium text-danger tabular-nums">
@@ -908,8 +820,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                           </span>
                         </div>
                         <div className="truncate text-xs text-text-muted">
-                          {a.items.map((i) => i.service.name).join(', ')} ·{' '}
-                          {a.staff.firstName}
+                          {a.items.map((i) => i.service.name).join(', ')} · {a.staff.firstName}
                         </div>
                       </Link>
                       <div className="flex shrink-0 gap-1.5">
@@ -933,9 +844,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                             </a>
                           </>
                         ) : (
-                          <span className="text-[11px] text-text-muted">
-                            keine Nummer
-                          </span>
+                          <span className="text-[11px] text-text-muted">keine Nummer</span>
                         )}
                         <form action={markNoShow.bind(null, a.id)}>
                           <Button
@@ -972,8 +881,8 @@ export default async function Home(): Promise<React.JSX.Element> {
               </span>
             </div>
             <p className="mb-3 text-xs text-text-secondary">
-              Kundinnen mit erhöhtem No-Show-Risiko — kurz anrufen oder WhatsApp
-              schreiben, dann via „Bestätigen" markieren.
+              Kundinnen mit erhöhtem No-Show-Risiko — kurz anrufen oder WhatsApp schreiben, dann via
+              „Bestätigen" markieren.
             </p>
             <ul className="space-y-2">
               {riskToConfirm.slice(0, 5).map((a) => {
@@ -991,8 +900,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                     ? client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
                     : null;
                 const telHref = client.phoneE164 ?? client.phone ?? null;
-                const hasValidPhone =
-                  telHref != null && waDigits != null && waDigits.length >= 7;
+                const hasValidPhone = telHref != null && waDigits != null && waDigits.length >= 7;
                 return (
                   <li key={a.id}>
                     <div className="flex flex-wrap items-center gap-3 rounded-md bg-surface px-3 py-2.5">
@@ -1002,10 +910,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                           minute: '2-digit',
                         })}
                       </span>
-                      <Link
-                        href={`/calendar/${a.id}`}
-                        className="min-w-0 flex-1 hover:underline"
-                      >
+                      <Link href={`/calendar/${a.id}`} className="min-w-0 flex-1 hover:underline">
                         <div className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
                           <span
                             className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold leading-none text-white ${riskTone}`}
@@ -1020,8 +925,7 @@ export default async function Home(): Promise<React.JSX.Element> {
                           </span>
                         </div>
                         <div className="truncate text-xs text-text-muted">
-                          {a.items.map((i) => i.service.name).join(', ')} ·{' '}
-                          {a.staff.firstName}
+                          {a.items.map((i) => i.service.name).join(', ')} · {a.staff.firstName}
                         </div>
                       </Link>
                       <div className="flex shrink-0 gap-1.5">
@@ -1045,16 +949,10 @@ export default async function Home(): Promise<React.JSX.Element> {
                             </a>
                           </>
                         ) : (
-                          <span className="text-[11px] text-text-muted">
-                            keine Nummer
-                          </span>
+                          <span className="text-[11px] text-text-muted">keine Nummer</span>
                         )}
-                        <form
-                          action={transitionAppointment.bind(null, a.id, 'confirm')}
-                        >
-                          <ConfirmApptButton
-                            label={`Termin von ${clientName} bestätigen`}
-                          />
+                        <form action={transitionAppointment.bind(null, a.id, 'confirm')}>
+                          <ConfirmApptButton label={`Termin von ${clientName} bestätigen`} />
                         </form>
                       </div>
                     </div>
@@ -1074,19 +972,14 @@ export default async function Home(): Promise<React.JSX.Element> {
       {d.winBack.length > 0 ? (
         <Card className="mb-4" elevation="flat">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <h2 className="text-sm font-semibold">
-              Vermisste Stammkundinnen · {d.winBack.length}
-            </h2>
-            <span className="text-xs text-text-muted">
-              keine Besuche in 90+ Tagen
-            </span>
+            <h2 className="text-sm font-semibold">Vermisste Stammkundinnen · {d.winBack.length}</h2>
+            <span className="text-xs text-text-muted">keine Besuche in 90+ Tagen</span>
           </div>
           <CardBody className="p-0">
             <ul className="divide-y divide-border">
               {d.winBack.slice(0, 6).map((w) => {
                 const daysAway = Math.floor(
-                  (now.getTime() - new Date(w.lastVisitAt).getTime()) /
-                    86_400_000,
+                  (now.getTime() - new Date(w.lastVisitAt).getTime()) / 86_400_000,
                 );
                 // Mirror der Heute-zu-bestätigen-Fallback-Logik: phoneE164
                 // bevorzugt, raw phone normalisieren als Backup (Legacy-Daten
@@ -1098,22 +991,15 @@ export default async function Home(): Promise<React.JSX.Element> {
                     : null;
                 const waUsable = waDigits != null && waDigits.length >= 7;
                 return (
-                  <li
-                    key={w.id}
-                    className="flex flex-wrap items-center gap-3 px-5 py-3"
-                  >
-                    <Link
-                      href={`/clients/${w.id}`}
-                      className="min-w-0 flex-1 hover:underline"
-                    >
+                  <li key={w.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                    <Link href={`/clients/${w.id}`} className="min-w-0 flex-1 hover:underline">
                       <div className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
                         <span className="min-w-0 truncate">
                           {w.firstName} {w.lastName}
                         </span>
                       </div>
                       <div className="truncate text-xs text-text-muted">
-                        Letzter Besuch vor {daysAway} Tagen · {w.totalVisits}{' '}
-                        Besuche ·{' '}
+                        Letzter Besuch vor {daysAway} Tagen · {w.totalVisits} Besuche ·{' '}
                         {w.lifetimeValue.toLocaleString('de-CH', {
                           maximumFractionDigits: 0,
                         })}{' '}
@@ -1148,10 +1034,7 @@ export default async function Home(): Promise<React.JSX.Element> {
         <Card className="md:col-span-2" elevation="flat">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <h2 className="text-sm font-semibold">Heute bevorstehend</h2>
-            <Link
-              href="/calendar"
-              className="text-xs text-text-muted hover:text-text-primary"
-            >
+            <Link href="/calendar" className="text-xs text-text-muted hover:text-text-primary">
               Alle →
             </Link>
           </div>
@@ -1166,12 +1049,8 @@ export default async function Home(): Promise<React.JSX.Element> {
                   const client = a.client
                     ? `${a.client.firstName} ${a.client.lastName}`
                     : 'Blockzeit';
-                  const services =
-                    a.items.map((i) => i.service.name).join(', ') || '—';
-                  const total = a.items.reduce(
-                    (s, i) => s + Number(i.price),
-                    0,
-                  );
+                  const services = a.items.map((i) => i.service.name).join(', ') || '—';
+                  const total = a.items.reduce((s, i) => s + Number(i.price), 0);
                   return (
                     <li key={a.id}>
                       <Link
@@ -1224,8 +1103,7 @@ export default async function Home(): Promise<React.JSX.Element> {
               </div>
               <h3 className="text-lg font-semibold">Kundenseite</h3>
               <p className="mt-1 text-xs text-text-secondary">
-                Teile den Link, wo auch immer — Kundinnen buchen direkt in den
-                Kalender.
+                Teile den Link, wo auch immer — Kundinnen buchen direkt in den Kalender.
               </p>
               <Link
                 href="/book/beautycenter-by-neta"
@@ -1249,8 +1127,8 @@ export default async function Home(): Promise<React.JSX.Element> {
               </div>
               <h3 className="text-lg font-semibold">⌘K Command Palette</h3>
               <p className="mt-1 text-xs text-text-secondary">
-                Cmd/Ctrl + K öffnet Schnell-Suche. Termine, Kunden, Services —
-                alles in 3 Tastenanschlägen.
+                Cmd/Ctrl + K öffnet Schnell-Suche. Termine, Kunden, Services — alles in 3
+                Tastenanschlägen.
               </p>
             </CardBody>
           </Card>

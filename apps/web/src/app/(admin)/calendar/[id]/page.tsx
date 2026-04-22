@@ -1,14 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import {
-  Avatar,
-  Badge,
-  Button,
-  Card,
-  CardBody,
-  PriceDisplay,
-  Textarea,
-} from '@salon-os/ui';
+import { Avatar, Badge, Button, Card, CardBody, PriceDisplay, Textarea } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { ClientBrief } from '@/components/client-brief';
@@ -180,12 +172,13 @@ export default async function AppointmentDetailPage({
   // auf alle Services. Parallel: Tenant-Name für pre-filled WA-Message.
   const isFreed = a.status === 'CANCELLED' || a.status === 'NO_SHOW';
   const allServiceIds = a.items.map((i) => i.serviceId).filter(Boolean);
-  const [matchesRes, tenantName] = isFreed && allServiceIds.length > 0
-    ? await Promise.all([
-        loadWaitlistMatches(allServiceIds, a.startAt, a.endAt, a.staffId),
-        loadTenantName(),
-      ])
-    : [{ entries: [] as WaitlistMatch[], total: 0 }, ''];
+  const [matchesRes, tenantName] =
+    isFreed && allServiceIds.length > 0
+      ? await Promise.all([
+          loadWaitlistMatches(allServiceIds, a.startAt, a.endAt, a.staffId),
+          loadTenantName(),
+        ])
+      : [{ entries: [] as WaitlistMatch[], total: 0 }, ''];
   const waitlistMatches = matchesRes.entries;
   const waitlistTotal = matchesRes.total;
 
@@ -217,9 +210,7 @@ export default async function AppointmentDetailPage({
 
       <header className="mb-8 mt-4 flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-            Termin
-          </p>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Termin</p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             {a.client ? (
               <Link
@@ -239,7 +230,10 @@ export default async function AppointmentDetailPage({
               month: 'long',
               year: 'numeric',
             })}{' '}
-            · <span className="tabular-nums">{start}–{end}</span>
+            ·{' '}
+            <span className="tabular-nums">
+              {start}–{end}
+            </span>
           </p>
         </div>
         <Badge tone={statusTone[a.status]} dot>
@@ -247,19 +241,12 @@ export default async function AppointmentDetailPage({
         </Badge>
       </header>
 
-      {a.client ? (
-        <ClientBrief
-          clientId={a.client.id}
-          appointmentStaffId={a.staffId}
-        />
-      ) : null}
+      {a.client ? <ClientBrief clientId={a.client.id} appointmentStaffId={a.staffId} /> : null}
 
       <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card>
           <CardBody>
-            <p className="text-xs font-medium uppercase tracking-wider text-text-muted">
-              Kontakt
-            </p>
+            <p className="text-xs font-medium uppercase tracking-wider text-text-muted">Kontakt</p>
             {a.client ? (
               <>
                 <p className="mt-2 text-sm text-text-primary">
@@ -276,10 +263,7 @@ export default async function AppointmentDetailPage({
                 </p>
                 {a.client.phone ? (
                   <p className="text-sm text-text-muted">
-                    <a
-                      href={`tel:${a.client.phone}`}
-                      className="hover:text-accent hover:underline"
-                    >
+                    <a href={`tel:${a.client.phone}`} className="hover:text-accent hover:underline">
                       {a.client.phone}
                     </a>
                   </p>
@@ -338,9 +322,7 @@ export default async function AppointmentDetailPage({
         </Card>
         <Card>
           <CardBody>
-            <p className="text-xs font-medium uppercase tracking-wider text-text-muted">
-              Bei
-            </p>
+            <p className="text-xs font-medium uppercase tracking-wider text-text-muted">Bei</p>
             <div className="mt-2 flex items-center gap-3">
               <Avatar
                 name={`${a.staff.firstName} ${a.staff.lastName}`}
@@ -358,15 +340,19 @@ export default async function AppointmentDetailPage({
         </Card>
       </section>
 
-      {a.client && (a.client.phone || a.client.email) && a.status !== 'CANCELLED' && a.status !== 'NO_SHOW' && a.status !== 'COMPLETED' ? (
+      {a.client &&
+      (a.client.phone || a.client.email) &&
+      a.status !== 'CANCELLED' &&
+      a.status !== 'NO_SHOW' &&
+      a.status !== 'COMPLETED' ? (
         <Card className="mb-6 bg-surface-raised/50">
           <CardBody>
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-text-muted">
               Reminder senden
             </p>
             <p className="mb-3 text-xs text-text-secondary">
-              Vorformulierte Nachricht öffnet sich in SMS / WhatsApp / Mail —
-              du kannst sie noch anpassen.
+              Vorformulierte Nachricht öffnet sich in SMS / WhatsApp / Mail — du kannst sie noch
+              anpassen.
             </p>
             <div className="flex flex-wrap gap-2">
               {a.client.phone ? (
@@ -443,7 +429,7 @@ export default async function AppointmentDetailPage({
               </Button>
             </form>
           ) : null}
-          {(a.status === 'BOOKED' || a.status === 'CONFIRMED') ? (
+          {a.status === 'BOOKED' || a.status === 'CONFIRMED' ? (
             <form action={transition.bind(null, 'check-in')}>
               <Button type="submit" variant="secondary">
                 Einchecken
@@ -462,16 +448,14 @@ export default async function AppointmentDetailPage({
               <Button variant="accent">Kassieren →</Button>
             </Link>
           ) : null}
-          {(a.status === 'CHECKED_IN' || a.status === 'IN_SERVICE') ? (
+          {a.status === 'CHECKED_IN' || a.status === 'IN_SERVICE' ? (
             <form action={transition.bind(null, 'complete')}>
               <Button type="submit" variant="secondary">
                 Ohne Kasse abschliessen
               </Button>
             </form>
           ) : null}
-          {(a.status === 'BOOKED' ||
-            a.status === 'CONFIRMED' ||
-            a.status === 'CHECKED_IN') ? (
+          {a.status === 'BOOKED' || a.status === 'CONFIRMED' || a.status === 'CHECKED_IN' ? (
             <form action={noShow}>
               <Button type="submit" variant="danger">
                 Nicht erschienen
@@ -496,8 +480,8 @@ export default async function AppointmentDetailPage({
               </span>
             </div>
             <p className="mb-3 text-xs text-text-secondary">
-              Slot frei geworden — diese Kundinnen haben sich für diesen
-              Service + Zeitraum vorgemerkt. Ein WhatsApp-Tipp reicht.
+              Slot frei geworden — diese Kundinnen haben sich für diesen Service + Zeitraum
+              vorgemerkt. Ein WhatsApp-Tipp reicht.
             </p>
             <ul className="space-y-2">
               {waitlistMatches.slice(0, 5).map((m) => {
@@ -526,14 +510,10 @@ export default async function AppointmentDetailPage({
                     className="flex flex-wrap items-center gap-3 rounded-md bg-surface px-3 py-2.5"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-text-primary truncate">
-                        {name}
-                      </div>
+                      <div className="text-sm font-medium text-text-primary truncate">{name}</div>
                       <div className="text-xs text-text-muted truncate">
                         {m.service.name}
-                        {m.staff
-                          ? ` · bei ${m.staff.firstName} ${m.staff.lastName[0]}.`
-                          : ''}
+                        {m.staff ? ` · bei ${m.staff.firstName} ${m.staff.lastName[0]}.` : ''}
                         {m.notes ? ` · „${m.notes}"` : ''}
                       </div>
                     </div>
@@ -566,10 +546,7 @@ export default async function AppointmentDetailPage({
             {waitlistTotal > 5 ? (
               <p className="mt-2 text-xs text-text-muted">
                 +{waitlistTotal - 5} weitere auf der{' '}
-                <Link
-                  href="/waitlist"
-                  className="underline hover:text-text-primary"
-                >
+                <Link href="/waitlist" className="underline hover:text-text-primary">
                   Warteliste
                 </Link>
               </p>
@@ -582,10 +559,7 @@ export default async function AppointmentDetailPage({
         ? (() => {
             const client = a.client;
             return (
-              <Card
-                className="mb-6 border-l-4 border-l-accent bg-accent/5"
-                elevation="flat"
-              >
+              <Card className="mb-6 border-l-4 border-l-accent bg-accent/5" elevation="flat">
                 <CardBody>
                   <div className="mb-2 flex items-center gap-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-accent">
@@ -593,8 +567,8 @@ export default async function AppointmentDetailPage({
                     </span>
                   </div>
                   <p className="mb-3 text-xs text-text-secondary">
-                    Ein Tap und {client.firstName} kriegt einen vorausgefüllten
-                    Termin in der Zukunft — Zeit + Service noch editierbar.
+                    Ein Tap und {client.firstName} kriegt einen vorausgefüllten Termin in der
+                    Zukunft — Zeit + Service noch editierbar.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {[4, 6, 8].map((weeks) => {
@@ -604,9 +578,7 @@ export default async function AppointmentDetailPage({
                         staffId: a.staffId,
                         date,
                       });
-                      const niceDate = new Date(
-                        `${date}T12:00:00Z`,
-                      ).toLocaleDateString('de-CH', {
+                      const niceDate = new Date(`${date}T12:00:00Z`).toLocaleDateString('de-CH', {
                         day: '2-digit',
                         month: 'short',
                         timeZone: 'Europe/Zurich',

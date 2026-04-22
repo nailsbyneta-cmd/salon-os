@@ -43,8 +43,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 
@@ -103,7 +108,11 @@ describe('PublicBookingsService', () => {
     prisma = makePrisma();
     const withTenant = makeWithTenant(prisma);
     reminders = makeReminders();
-    service = new PublicBookingsService(prismaPublic as never, withTenant as never, reminders as never);
+    service = new PublicBookingsService(
+      prismaPublic as never,
+      withTenant as never,
+      reminders as never,
+    );
   });
 
   // ── resolveTenant (via listServices) ─────────────────────────────────────
@@ -115,12 +124,22 @@ describe('PublicBookingsService', () => {
     });
 
     it('throws NotFoundException for SUSPENDED tenant', async () => {
-      prismaPublic.tenant.findUnique.mockResolvedValue({ id: 'tenant1', status: 'SUSPENDED', timezone: 'UTC', currency: 'CHF' });
+      prismaPublic.tenant.findUnique.mockResolvedValue({
+        id: 'tenant1',
+        status: 'SUSPENDED',
+        timezone: 'UTC',
+        currency: 'CHF',
+      });
       await expect(service.listServices('demo-salon')).rejects.toThrow(NotFoundException);
     });
 
     it('throws NotFoundException for CANCELLED tenant', async () => {
-      prismaPublic.tenant.findUnique.mockResolvedValue({ id: 'tenant1', status: 'CANCELLED', timezone: 'UTC', currency: 'CHF' });
+      prismaPublic.tenant.findUnique.mockResolvedValue({
+        id: 'tenant1',
+        status: 'CANCELLED',
+        timezone: 'UTC',
+        currency: 'CHF',
+      });
       await expect(service.listServices('demo-salon')).rejects.toThrow(NotFoundException);
     });
   });
@@ -132,7 +151,9 @@ describe('PublicBookingsService', () => {
       prisma.service.findMany.mockResolvedValue([{ ...BASE_SERVICE, bookable: true }]);
       const result = await service.listServices('demo-salon');
       expect(prisma.service.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ bookable: true, deletedAt: null }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ bookable: true, deletedAt: null }),
+        }),
       );
       expect(result).toHaveLength(1);
     });
@@ -151,7 +172,9 @@ describe('PublicBookingsService', () => {
     });
 
     it('converts Decimal latitude/longitude to Number', async () => {
-      prisma.location.findMany.mockResolvedValue([{ ...BASE_LOCATION, latitude: '47.3769', longitude: '8.5417' }]);
+      prisma.location.findMany.mockResolvedValue([
+        { ...BASE_LOCATION, latitude: '47.3769', longitude: '8.5417' },
+      ]);
       const result = await service.getPublicProfile('demo-salon');
       expect(typeof result.locations[0]!.latitude).toBe('number');
       expect(result.locations[0]!.latitude).toBeCloseTo(47.3769);
@@ -171,61 +194,109 @@ describe('PublicBookingsService', () => {
       prisma.service.findFirst.mockResolvedValue(BASE_SERVICE);
       prisma.location.findFirst.mockResolvedValue(BASE_LOCATION);
       prisma.staff.findMany.mockResolvedValue([]);
-      const result = await service.availability('demo-salon', 'svc1', { date: '2025-06-02', locationId: 'loc1' });
+      const result = await service.availability('demo-salon', 'svc1', {
+        date: '2025-06-02',
+        locationId: 'loc1',
+      });
       expect(result).toEqual([]);
     });
 
     it('throws NotFoundException when service not found', async () => {
       prisma.service.findFirst.mockResolvedValue(null);
-      await expect(service.availability('demo-salon', 'svc1', { date: '2025-06-02', locationId: 'loc1' }))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.availability('demo-salon', 'svc1', { date: '2025-06-02', locationId: 'loc1' }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('throws NotFoundException when location not found', async () => {
       prisma.service.findFirst.mockResolvedValue(BASE_SERVICE);
       prisma.location.findFirst.mockResolvedValue(null);
-      await expect(service.availability('demo-salon', 'svc1', { date: '2025-06-02', locationId: 'loc1' }))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.availability('demo-salon', 'svc1', { date: '2025-06-02', locationId: 'loc1' }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('returns empty array when day is closed (no openingHours entry)', async () => {
       prisma.service.findFirst.mockResolvedValue(BASE_SERVICE);
       // Sunday (2025-06-01 = Sunday), openingHours has no 'sun' key → closed
-      prisma.location.findFirst.mockResolvedValue({ ...BASE_LOCATION, openingHours: { mon: { open: '09:00', close: '18:00' } } });
+      prisma.location.findFirst.mockResolvedValue({
+        ...BASE_LOCATION,
+        openingHours: { mon: { open: '09:00', close: '18:00' } },
+      });
       prisma.staff.findMany.mockResolvedValue([BASE_STAFF]);
-      const result = await service.availability('demo-salon', 'svc1', { date: '2025-06-01', locationId: 'loc1' });
+      const result = await service.availability('demo-salon', 'svc1', {
+        date: '2025-06-01',
+        locationId: 'loc1',
+      });
       expect(result).toEqual([]);
     });
 
     it('generates slots for an open day without conflicts', async () => {
-      prisma.service.findFirst.mockResolvedValue({ ...BASE_SERVICE, durationMinutes: 60, bufferBeforeMin: 0, bufferAfterMin: 0 });
+      prisma.service.findFirst.mockResolvedValue({
+        ...BASE_SERVICE,
+        durationMinutes: 60,
+        bufferBeforeMin: 0,
+        bufferAfterMin: 0,
+      });
       // Monday 2025-06-02, open 09:00–11:00 → fits exactly 2 slots (09:00 + 09:30 start if duration=60? no: 09:00 and... 09:00+60=10:00 <= 11:00 close → slot at 09:00, then 09:30+60=10:30 <= 11:00 → slot at 09:30, then 10:00+60=11:00 <= 11:00 → slot at 10:00)
-      prisma.location.findFirst.mockResolvedValue({ ...BASE_LOCATION, openingHours: { mon: { open: '09:00', close: '11:00' } } });
+      prisma.location.findFirst.mockResolvedValue({
+        ...BASE_LOCATION,
+        openingHours: { mon: { open: '09:00', close: '11:00' } },
+      });
       prisma.staff.findMany.mockResolvedValue([BASE_STAFF]);
       prisma.appointment.findMany.mockResolvedValue([]);
-      const result = await service.availability('demo-salon', 'svc1', { date: '2025-06-02', locationId: 'loc1' });
+      const result = await service.availability('demo-salon', 'svc1', {
+        date: '2025-06-02',
+        locationId: 'loc1',
+      });
       expect(result.length).toBeGreaterThan(0);
       expect(result[0]).toMatchObject({ staffId: 'staff1', currency: 'CHF' });
     });
 
     it('excludes slots that overlap existing appointments', async () => {
-      prisma.service.findFirst.mockResolvedValue({ ...BASE_SERVICE, durationMinutes: 60, bufferBeforeMin: 0, bufferAfterMin: 0 });
-      prisma.location.findFirst.mockResolvedValue({ ...BASE_LOCATION, openingHours: { mon: { open: '09:00', close: '11:00' } } });
+      prisma.service.findFirst.mockResolvedValue({
+        ...BASE_SERVICE,
+        durationMinutes: 60,
+        bufferBeforeMin: 0,
+        bufferAfterMin: 0,
+      });
+      prisma.location.findFirst.mockResolvedValue({
+        ...BASE_LOCATION,
+        openingHours: { mon: { open: '09:00', close: '11:00' } },
+      });
       prisma.staff.findMany.mockResolvedValue([BASE_STAFF]);
       // Block all of 09:00–11:00 for staff1
       prisma.appointment.findMany.mockResolvedValue([
-        { staffId: 'staff1', startAt: new Date('2025-06-02T07:00:00Z'), endAt: new Date('2025-06-02T11:00:00Z') },
+        {
+          staffId: 'staff1',
+          startAt: new Date('2025-06-02T07:00:00Z'),
+          endAt: new Date('2025-06-02T11:00:00Z'),
+        },
       ]);
-      const result = await service.availability('demo-salon', 'svc1', { date: '2025-06-02', locationId: 'loc1' });
+      const result = await service.availability('demo-salon', 'svc1', {
+        date: '2025-06-02',
+        locationId: 'loc1',
+      });
       expect(result).toEqual([]);
     });
 
     it('caps result at 50 slots', async () => {
-      prisma.service.findFirst.mockResolvedValue({ ...BASE_SERVICE, durationMinutes: 1, bufferBeforeMin: 0, bufferAfterMin: 0 });
-      prisma.location.findFirst.mockResolvedValue({ ...BASE_LOCATION, openingHours: { mon: { open: '00:00', close: '23:59' } } });
+      prisma.service.findFirst.mockResolvedValue({
+        ...BASE_SERVICE,
+        durationMinutes: 1,
+        bufferBeforeMin: 0,
+        bufferAfterMin: 0,
+      });
+      prisma.location.findFirst.mockResolvedValue({
+        ...BASE_LOCATION,
+        openingHours: { mon: { open: '00:00', close: '23:59' } },
+      });
       prisma.staff.findMany.mockResolvedValue([BASE_STAFF]);
       prisma.appointment.findMany.mockResolvedValue([]);
-      const result = await service.availability('demo-salon', 'svc1', { date: '2025-06-02', locationId: 'loc1' });
+      const result = await service.availability('demo-salon', 'svc1', {
+        date: '2025-06-02',
+        locationId: 'loc1',
+      });
       expect(result.length).toBeLessThanOrEqual(50);
     });
   });
@@ -244,17 +315,25 @@ describe('PublicBookingsService', () => {
       prisma.service.findFirst.mockResolvedValue(BASE_SERVICE);
       prisma.staff.findFirst.mockResolvedValue(BASE_STAFF);
       prisma.client.create.mockResolvedValue({ id: 'client1', ...BASE_INPUT.client });
-      prisma.appointment.create.mockResolvedValue({ id: 'appt1', startAt: new Date(BASE_INPUT.startAt), items: [] });
+      prisma.appointment.create.mockResolvedValue({
+        id: 'appt1',
+        startAt: new Date(BASE_INPUT.startAt),
+        items: [],
+      });
     });
 
     it('throws NotFoundException when service not bookable', async () => {
       prisma.service.findFirst.mockResolvedValue(null);
-      await expect(service.createBooking('demo-salon', BASE_INPUT)).rejects.toThrow(NotFoundException);
+      await expect(service.createBooking('demo-salon', BASE_INPUT)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws NotFoundException when no staff available (no preference)', async () => {
       prisma.staff.findFirst.mockResolvedValue(null);
-      await expect(service.createBooking('demo-salon', BASE_INPUT)).rejects.toThrow(NotFoundException);
+      await expect(service.createBooking('demo-salon', BASE_INPUT)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('reuses existing client when email matches', async () => {
@@ -268,7 +347,9 @@ describe('PublicBookingsService', () => {
       prisma.client.findFirst.mockResolvedValue(null);
       await service.createBooking('demo-salon', BASE_INPUT);
       expect(prisma.client.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ email: 'anna@test.ch', source: 'public_booking' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ email: 'anna@test.ch', source: 'public_booking' }),
+        }),
       );
     });
 
@@ -292,7 +373,9 @@ describe('PublicBookingsService', () => {
       const err = Object.assign(new Error('exclusion_violation'), { code: '23P01' });
       prisma.appointment.create.mockRejectedValue(err);
       prisma.client.findFirst.mockResolvedValue(null);
-      await expect(service.createBooking('demo-salon', BASE_INPUT)).rejects.toThrow(ConflictException);
+      await expect(service.createBooking('demo-salon', BASE_INPUT)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('sends confirmation reminder after successful booking', async () => {

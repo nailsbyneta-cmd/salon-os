@@ -41,8 +41,7 @@ export async function apiFetch<T>(path: string, opts: ApiOptions): Promise<T> {
   if (opts.role) headers['x-role'] = opts.role;
 
   if (method !== 'GET' && method !== 'DELETE') {
-    headers['idempotency-key'] =
-      opts.idempotencyKey ?? crypto.randomUUID();
+    headers['idempotency-key'] = opts.idempotencyKey ?? crypto.randomUUID();
   }
 
   const res = await fetch(`${API_URL}${path}`, {

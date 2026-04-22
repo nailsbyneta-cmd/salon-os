@@ -57,15 +57,11 @@ export default async function SelfServicePage({
     return (
       <main className="space-y-6 text-center">
         <header>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-            Termin
-          </p>
-          <h1 className="mt-3 font-display text-3xl font-semibold">
-            Link abgelaufen
-          </h1>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Termin</p>
+          <h1 className="mt-3 font-display text-3xl font-semibold">Link abgelaufen</h1>
           <p className="mt-3 text-sm text-text-secondary">
-            Dieser Link ist ungültig oder abgelaufen. Kontaktiere uns bitte direkt,
-            wenn du deinen Termin ändern möchtest.
+            Dieser Link ist ungültig oder abgelaufen. Kontaktiere uns bitte direkt, wenn du deinen
+            Termin ändern möchtest.
           </p>
         </header>
       </main>
@@ -97,19 +93,11 @@ export default async function SelfServicePage({
         <CardBody>
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-text-muted">
-                Termin
-              </p>
+              <p className="text-xs font-medium uppercase tracking-wider text-text-muted">Termin</p>
               <p className="mt-1 text-base font-medium text-text-primary">{when}</p>
             </div>
             <Badge
-              tone={
-                isCancelled
-                  ? 'danger'
-                  : appt.status === 'COMPLETED'
-                    ? 'neutral'
-                    : 'success'
-              }
+              tone={isCancelled ? 'danger' : appt.status === 'COMPLETED' ? 'neutral' : 'success'}
               dot
             >
               {statusLabel[appt.status] ?? appt.status}
@@ -123,9 +111,7 @@ export default async function SelfServicePage({
               <dd className="mt-1 text-text-primary">{services}</dd>
             </div>
             <div>
-              <dt className="text-xs font-medium uppercase tracking-wider text-text-muted">
-                Bei
-              </dt>
+              <dt className="text-xs font-medium uppercase tracking-wider text-text-muted">Bei</dt>
               <dd className="mt-1 text-text-primary">{staffName}</dd>
             </div>
           </dl>
@@ -147,11 +133,7 @@ export default async function SelfServicePage({
               📅 Zum Kalender hinzufügen
             </a>
           </div>
-          <SelfServiceActions
-            appointmentId={appt.id}
-            token={t}
-            action={appt.action}
-          />
+          <SelfServiceActions appointmentId={appt.id} token={t} action={appt.action} />
         </>
       )}
 

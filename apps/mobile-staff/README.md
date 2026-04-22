@@ -11,6 +11,7 @@ pnpm dlx create-expo-app@latest --template blank-typescript apps/mobile-staff
 ```
 
 Danach:
+
 - Expo SDK 52+ (New Architecture)
 - NativeWind (Tailwind für RN)
 - TanStack Query + Zustand

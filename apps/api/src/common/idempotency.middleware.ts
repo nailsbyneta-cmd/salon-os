@@ -40,7 +40,9 @@ export class IdempotencyMiddleware implements NestMiddleware {
     }
 
     try {
-      const explicit = (req.headers as Record<string, string | string[] | undefined>)['idempotency-key'];
+      const explicit = (req.headers as Record<string, string | string[] | undefined>)[
+        'idempotency-key'
+      ];
       const keySource = explicit
         ? String(Array.isArray(explicit) ? explicit[0] : explicit)
         : `${req.socket.remoteAddress}:${hashBody(req.body)}`;
@@ -57,7 +59,8 @@ export class IdempotencyMiddleware implements NestMiddleware {
             type: 'https://salon-os.com/problems/duplicate-request',
             title: 'Duplicate request',
             status: 409,
-            detail: 'This request was already processed. Retry with a new Idempotency-Key if intentional.',
+            detail:
+              'This request was already processed. Retry with a new Idempotency-Key if intentional.',
           }),
         );
         return;

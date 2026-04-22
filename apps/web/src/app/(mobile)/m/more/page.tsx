@@ -40,9 +40,7 @@ export default function MorePage(): React.JSX.Element {
   return (
     <div>
       <header className="px-5 pt-8 pb-5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-text-muted">
-          Mehr
-        </p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-text-muted">Mehr</p>
         <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight">
           Beautycenter by Neta
         </h1>
@@ -56,20 +54,13 @@ export default function MorePage(): React.JSX.Element {
             </h2>
             <ul className="overflow-hidden rounded-lg border border-border bg-surface">
               {section.items.map((item, idx) => (
-                <li
-                  key={item.href}
-                  className={
-                    idx > 0 ? 'border-t border-border' : ''
-                  }
-                >
+                <li key={item.href} className={idx > 0 ? 'border-t border-border' : ''}>
                   <Link
                     href={item.href as never}
                     className="flex items-center gap-3 px-4 py-3 active:bg-surface-raised transition-colors"
                   >
                     <span className="text-xl">{item.emoji}</span>
-                    <span className="flex-1 text-sm font-medium">
-                      {item.label}
-                    </span>
+                    <span className="flex-1 text-sm font-medium">{item.label}</span>
                     <span className="text-text-muted">›</span>
                   </Link>
                 </li>

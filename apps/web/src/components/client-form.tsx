@@ -17,47 +17,26 @@ interface Props {
   cancelHref: string;
 }
 
-export function ClientForm({
-  action,
-  mode,
-  defaults,
-  cancelHref,
-}: Props): React.JSX.Element {
+export function ClientForm({ action, mode, defaults, cancelHref }: Props): React.JSX.Element {
   return (
     <Card>
       <CardBody>
         <form action={action} className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Vorname" required>
-              <Input
-                name="firstName"
-                required
-                defaultValue={defaults?.firstName ?? ''}
-              />
+              <Input name="firstName" required defaultValue={defaults?.firstName ?? ''} />
             </Field>
             <Field label="Nachname" required>
-              <Input
-                name="lastName"
-                required
-                defaultValue={defaults?.lastName ?? ''}
-              />
+              <Input name="lastName" required defaultValue={defaults?.lastName ?? ''} />
             </Field>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Field label="E-Mail">
-              <Input
-                type="email"
-                name="email"
-                defaultValue={defaults?.email ?? ''}
-              />
+              <Input type="email" name="email" defaultValue={defaults?.email ?? ''} />
             </Field>
             <Field label="Telefon">
-              <Input
-                type="tel"
-                name="phone"
-                defaultValue={defaults?.phone ?? ''}
-              />
+              <Input type="tel" name="phone" defaultValue={defaults?.phone ?? ''} />
             </Field>
           </div>
 
@@ -82,11 +61,7 @@ export function ClientForm({
             label="Interne Notiz"
             hint="Nur für Team sichtbar. Allergien, Vorlieben, spezielle Wünsche."
           >
-            <Textarea
-              name="notes"
-              rows={3}
-              defaultValue={defaults?.notes ?? ''}
-            />
+            <Textarea name="notes" rows={3} defaultValue={defaults?.notes ?? ''} />
           </Field>
 
           <fieldset className="rounded-md border border-border p-4">

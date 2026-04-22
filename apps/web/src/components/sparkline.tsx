@@ -28,10 +28,7 @@ export function Sparkline({
 }): React.JSX.Element {
   if (data.length === 0) {
     return (
-      <div
-        className={cn('text-[10px] text-text-muted', className)}
-        style={{ width, height }}
-      >
+      <div className={cn('text-[10px] text-text-muted', className)} style={{ width, height }}>
         — keine Daten —
       </div>
     );
@@ -47,20 +44,17 @@ export function Sparkline({
     return [x, y] as const;
   });
 
-  const path = points
-    .map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`))
-    .join(' ');
+  const path = points.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)).join(' ');
 
-  const area =
-    `${path} L${width},${height} L0,${height} Z`;
+  const area = `${path} L${width},${height} L0,${height} Z`;
 
   const last = points[points.length - 1]!;
 
   const toneVar = tone === 'warning' ? '--warning' : '--brand-accent';
   const gradId = `sparkline-grad-${tone}`;
   const a11yProps = ariaLabel
-    ? ({ role: 'img' as const, 'aria-label': ariaLabel })
-    : ({ 'aria-hidden': true });
+    ? { role: 'img' as const, 'aria-label': ariaLabel }
+    : { 'aria-hidden': true };
   return (
     <svg
       width={width}
@@ -84,12 +78,7 @@ export function Sparkline({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle
-        cx={last[0]}
-        cy={last[1]}
-        r="2.5"
-        fill={`hsl(var(${toneVar}))`}
-      />
+      <circle cx={last[0]} cy={last[1]} r="2.5" fill={`hsl(var(${toneVar}))`} />
     </svg>
   );
 }

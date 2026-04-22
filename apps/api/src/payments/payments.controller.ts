@@ -56,9 +56,7 @@ export class PaymentsController {
   ): Promise<{ received: true }> {
     const raw = (req as unknown as { rawBody?: string | Buffer }).rawBody;
     if (!raw) {
-      throw new BadRequestException(
-        'Raw body missing — konfiguriere Fastify mit rawBody=true',
-      );
+      throw new BadRequestException('Raw body missing — konfiguriere Fastify mit rawBody=true');
     }
     const event = this.svc.constructEvent(raw, signature);
 
@@ -76,9 +74,7 @@ export class PaymentsController {
           data: {
             depositPaid: true,
             depositPaidAt: new Date(),
-            depositAmount: session.amount_total
-              ? session.amount_total / 100
-              : undefined,
+            depositAmount: session.amount_total ? session.amount_total / 100 : undefined,
           },
         });
       }

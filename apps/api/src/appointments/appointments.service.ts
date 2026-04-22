@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { PrismaClient, Appointment } from '@salon-os/db';
 import type {
   CreateAppointmentInput,
@@ -140,50 +135,45 @@ export class AppointmentsService {
   async create(input: CreateAppointmentInput): Promise<Appointment> {
     const ctx = requireTenantContext();
     try {
-      const created = await this.withTenant(
-        ctx.tenantId,
-        ctx.userId,
-        ctx.role,
-        async (tx) => {
-          const appt = await tx.appointment.create({
-            data: {
-              tenantId: ctx.tenantId,
-              locationId: input.locationId,
-              clientId: input.clientId ?? null,
-              staffId: input.staffId,
-              roomId: input.roomId ?? null,
-              startAt: new Date(input.startAt),
-              endAt: new Date(input.endAt),
-              bookedVia: input.bookedVia,
-              notes: input.notes ?? null,
-              internalNotes: input.internalNotes ?? null,
-              items: {
-                create: input.items.map((it) => ({
-                  serviceId: it.serviceId,
-                  staffId: it.staffId,
-                  price: it.price,
-                  duration: it.duration,
-                  taxClass: it.taxClass ?? null,
-                  notes: it.notes ?? null,
-                })),
-              },
+      const created = await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+        const appt = await tx.appointment.create({
+          data: {
+            tenantId: ctx.tenantId,
+            locationId: input.locationId,
+            clientId: input.clientId ?? null,
+            staffId: input.staffId,
+            roomId: input.roomId ?? null,
+            startAt: new Date(input.startAt),
+            endAt: new Date(input.endAt),
+            bookedVia: input.bookedVia,
+            notes: input.notes ?? null,
+            internalNotes: input.internalNotes ?? null,
+            items: {
+              create: input.items.map((it) => ({
+                serviceId: it.serviceId,
+                staffId: it.staffId,
+                price: it.price,
+                duration: it.duration,
+                taxClass: it.taxClass ?? null,
+                notes: it.notes ?? null,
+              })),
             },
-            include: { items: true },
-          });
-          await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
-            entity: 'Appointment',
-            entityId: appt.id,
-            action: 'create',
-            diff: {
-              startAt: appt.startAt.toISOString(),
-              staffId: appt.staffId,
-              clientId: appt.clientId,
-              bookedVia: appt.bookedVia,
-            },
-          });
-          return appt;
-        },
-      );
+          },
+          include: { items: true },
+        });
+        await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+          entity: 'Appointment',
+          entityId: appt.id,
+          action: 'create',
+          diff: {
+            startAt: appt.startAt.toISOString(),
+            staffId: appt.staffId,
+            clientId: appt.clientId,
+            bookedVia: appt.bookedVia,
+          },
+        });
+        return appt;
+      });
 
       // Confirmation sofort + 24h-Reminder. Fehler dürfen den Buchungsflow
       // nicht killen.
@@ -233,9 +223,7 @@ export class AppointmentsService {
           tipAmount: body.tipAmount,
           paymentMethod: body.paymentMethod,
           paidAt: new Date(),
-          ...(body.completeAppointment
-            ? { status: 'COMPLETED', completedAt: new Date() }
-            : {}),
+          ...(body.completeAppointment ? { status: 'COMPLETED', completedAt: new Date() } : {}),
         },
         include: {
           items: { include: { service: { select: { name: true } } } },
@@ -307,55 +295,50 @@ export class AppointmentsService {
 
   async cancel(id: string, input: CancelAppointmentInput): Promise<Appointment> {
     const ctx = requireTenantContext();
-    const cancelled = await this.withTenant(
-      ctx.tenantId,
-      ctx.userId,
-      ctx.role,
-      async (tx) => {
-        const existing = await tx.appointment.findFirst({ where: { id } });
-        if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
+    const cancelled = await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.appointment.findFirst({ where: { id } });
+      if (!existing) throw new NotFoundException(`Appointment ${id} not found`);
 
-        const targetStatus = input.noShow ? 'NO_SHOW' : 'CANCELLED';
-        // Idempotenz: gleicher Zielstatus → unveränderte Zeile zurückgeben.
-        if (existing.status === targetStatus) {
-          return tx.appointment.findFirstOrThrow({
-            where: { id },
-            include: { items: true },
-          });
-        }
-        // Keine Rückwärts-Transitions aus Endstatus.
-        if (
-          existing.status === 'COMPLETED' ||
-          (existing.status === 'CANCELLED' && input.noShow) ||
-          (existing.status === 'NO_SHOW' && !input.noShow)
-        ) {
-          throw new ConflictException(
-            `Terminstatus ${existing.status} kann nicht zu ${targetStatus} geändert werden.`,
-          );
-        }
-
-        const updated = await tx.appointment.update({
+      const targetStatus = input.noShow ? 'NO_SHOW' : 'CANCELLED';
+      // Idempotenz: gleicher Zielstatus → unveränderte Zeile zurückgeben.
+      if (existing.status === targetStatus) {
+        return tx.appointment.findFirstOrThrow({
           where: { id },
-          data: {
-            status: targetStatus,
-            cancelledAt: new Date(),
-            cancelReason: input.reason ?? null,
-            noShow: input.noShow,
-          },
           include: { items: true },
         });
-        if (existing.clientId) {
-          await this.recomputeNoShowRisk(tx, existing.clientId);
-        }
-        await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
-          entity: 'Appointment',
-          entityId: id,
-          action: input.noShow ? 'no-show' : 'cancel',
-          diff: { reason: input.reason ?? null },
-        });
-        return updated;
-      },
-    );
+      }
+      // Keine Rückwärts-Transitions aus Endstatus.
+      if (
+        existing.status === 'COMPLETED' ||
+        (existing.status === 'CANCELLED' && input.noShow) ||
+        (existing.status === 'NO_SHOW' && !input.noShow)
+      ) {
+        throw new ConflictException(
+          `Terminstatus ${existing.status} kann nicht zu ${targetStatus} geändert werden.`,
+        );
+      }
+
+      const updated = await tx.appointment.update({
+        where: { id },
+        data: {
+          status: targetStatus,
+          cancelledAt: new Date(),
+          cancelReason: input.reason ?? null,
+          noShow: input.noShow,
+        },
+        include: { items: true },
+      });
+      if (existing.clientId) {
+        await this.recomputeNoShowRisk(tx, existing.clientId);
+      }
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Appointment',
+        entityId: id,
+        action: input.noShow ? 'no-show' : 'cancel',
+        diff: { reason: input.reason ?? null },
+      });
+      return updated;
+    });
 
     this.reminders.cancelReminder(id).catch(() => {
       /* logged in RemindersService */
@@ -376,10 +359,7 @@ export class AppointmentsService {
    * Gespeichert auf Client.noShowRisk (0-100). Wird nach jedem Cancel/
    * Complete/NoShow aus der Transaktion heraus aktualisiert.
    */
-  private async recomputeNoShowRisk(
-    tx: PrismaClient,
-    clientId: string,
-  ): Promise<void> {
+  private async recomputeNoShowRisk(tx: PrismaClient, clientId: string): Promise<void> {
     const recent = await tx.appointment.findMany({
       where: {
         clientId,

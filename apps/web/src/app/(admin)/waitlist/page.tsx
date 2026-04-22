@@ -68,10 +68,7 @@ export default async function WaitlistPage(): Promise<React.JSX.Element> {
           </p>
         </div>
         <Link href="/waitlist/new">
-          <Button
-            variant="primary"
-            iconLeft={<span className="text-base leading-none">+</span>}
-          >
+          <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
             Neuer Eintrag
           </Button>
         </Link>
@@ -98,8 +95,7 @@ export default async function WaitlistPage(): Promise<React.JSX.Element> {
                   : e.client.phone
                     ? e.client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
                     : null;
-                const hasPhone =
-                  telHref != null && waDigits != null && waDigits.length >= 7;
+                const hasPhone = telHref != null && waDigits != null && waDigits.length >= 7;
                 return (
                   <li key={e.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
                     <Avatar name={name} size="md" color="hsl(var(--brand-accent))" />

@@ -69,10 +69,7 @@ async function loadBirthdays(): Promise<Birthday[]> {
     });
     return res.clients
       .filter(
-        (c) =>
-          !c.blocked &&
-          typeof c.birthday === 'string' &&
-          c.birthday.slice(5, 10) === mmdd,
+        (c) => !c.blocked && typeof c.birthday === 'string' && c.birthday.slice(5, 10) === mmdd,
       )
       .map((c) => ({ id: c.id, firstName: c.firstName, lastName: c.lastName }));
   } catch (err) {
@@ -81,19 +78,17 @@ async function loadBirthdays(): Promise<Birthday[]> {
   }
 }
 
-const statusTone: Record<
-  string,
-  'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'
-> = {
-  BOOKED: 'info',
-  CONFIRMED: 'success',
-  CHECKED_IN: 'warning',
-  IN_SERVICE: 'accent',
-  COMPLETED: 'neutral',
-  CANCELLED: 'danger',
-  NO_SHOW: 'danger',
-  WAITLIST: 'neutral',
-};
+const statusTone: Record<string, 'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'> =
+  {
+    BOOKED: 'info',
+    CONFIRMED: 'success',
+    CHECKED_IN: 'warning',
+    IN_SERVICE: 'accent',
+    COMPLETED: 'neutral',
+    CANCELLED: 'danger',
+    NO_SHOW: 'danger',
+    WAITLIST: 'neutral',
+  };
 
 const statusShort: Record<string, string> = {
   BOOKED: 'Gebucht',
@@ -109,15 +104,12 @@ const statusShort: Record<string, string> = {
 export default async function MobileToday(): Promise<React.JSX.Element> {
   const [appts, birthdays] = await Promise.all([loadToday(), loadBirthdays()]);
   const now = new Date();
-  const active = appts.filter(
-    (a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW',
-  );
+  const active = appts.filter((a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW');
   const upcoming = active.filter((a) => new Date(a.startAt) >= now);
   const done = active.filter((a) => a.status === 'COMPLETED');
   const riskToConfirm = upcoming.filter((a) => {
     if (a.status !== 'BOOKED') return false;
-    const risk =
-      a.client?.noShowRisk != null ? Number(a.client.noShowRisk) : NaN;
+    const risk = a.client?.noShowRisk != null ? Number(a.client.noShowRisk) : NaN;
     return Number.isFinite(risk) && risk >= 25;
   });
   const revenueCents = active.reduce(
@@ -128,9 +120,7 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
   return (
     <div>
       <header className="px-5 pt-8 pb-5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-text-muted">
-          Heute
-        </p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-text-muted">Heute</p>
         <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight">
           {now.toLocaleDateString('de-CH', {
             weekday: 'long',
@@ -152,10 +142,7 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
             🎂 Heute Geburtstag · {birthdays.length}{' '}
             {birthdays.length === 1 ? 'Kundin' : 'Kundinnen'}
           </p>
-          <ul
-            className="mt-2 flex flex-wrap gap-2"
-            aria-label="Geburtstage heute"
-          >
+          <ul className="mt-2 flex flex-wrap gap-2" aria-label="Geburtstage heute">
             {birthdays.slice(0, 6).map((b) => (
               <li key={b.id}>
                 <Link
@@ -168,9 +155,7 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
               </li>
             ))}
             {birthdays.length > 6 ? (
-              <li className="self-center text-[11px] text-text-muted">
-                +{birthdays.length - 6}
-              </li>
+              <li className="self-center text-[11px] text-text-muted">+{birthdays.length - 6}</li>
             ) : null}
           </ul>
         </div>
@@ -182,8 +167,8 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
           className="mx-5 mb-4 block rounded-lg border-l-4 border-l-warning bg-warning/5 px-4 py-3 active:scale-[0.99] transition-transform"
         >
           <p className="text-xs font-semibold text-warning">
-            ⚠ {riskToConfirm.length}{' '}
-            {riskToConfirm.length === 1 ? 'Termin' : 'Termine'} zu bestätigen
+            ⚠ {riskToConfirm.length} {riskToConfirm.length === 1 ? 'Termin' : 'Termine'} zu
+            bestätigen
           </p>
           <p className="mt-0.5 text-[11px] text-text-secondary">
             Kurz anrufen — No-Show-Risiko &ge; 25%. Zur Liste ↓
@@ -206,18 +191,11 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
           </h2>
           <ul className="space-y-2">
             {upcoming.map((a) => {
-              const name = a.client
-                ? `${a.client.firstName} ${a.client.lastName}`
-                : 'Blockzeit';
+              const name = a.client ? `${a.client.firstName} ${a.client.lastName}` : 'Blockzeit';
               const service = a.items.map((i) => i.service.name).join(', ') || '—';
               const isTerminal =
-                a.status === 'CANCELLED' ||
-                a.status === 'NO_SHOW' ||
-                a.status === 'COMPLETED';
-              const riskRaw =
-                a.client?.noShowRisk != null
-                  ? Number(a.client.noShowRisk)
-                  : null;
+                a.status === 'CANCELLED' || a.status === 'NO_SHOW' || a.status === 'COMPLETED';
+              const riskRaw = a.client?.noShowRisk != null ? Number(a.client.noShowRisk) : null;
               const riskTier: 'hoch' | 'mittel' | null =
                 isTerminal || riskRaw == null || !Number.isFinite(riskRaw)
                   ? null
@@ -280,9 +258,7 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
                               ★
                             </span>
                           ) : null}
-                          <span className="min-w-0 truncate font-medium">
-                            {name}
-                          </span>
+                          <span className="min-w-0 truncate font-medium">{name}</span>
                         </span>
                         <span className="text-xs tabular-nums text-text-muted shrink-0">
                           {new Date(a.startAt).toLocaleTimeString('de-CH', {
@@ -291,9 +267,7 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
                           })}
                         </span>
                       </div>
-                      <div className="text-xs text-text-muted truncate">
-                        {service}
-                      </div>
+                      <div className="text-xs text-text-muted truncate">{service}</div>
                     </div>
                     <Badge tone={statusTone[a.status] ?? 'neutral'}>
                       {statusShort[a.status] ?? a.status}
@@ -320,13 +294,9 @@ function Stat({
 }): React.JSX.Element {
   return (
     <div className="rounded-lg border border-border bg-surface px-3 py-3 text-center">
-      <div className="text-[9px] font-medium uppercase tracking-wider text-text-muted">
-        {label}
-      </div>
+      <div className="text-[9px] font-medium uppercase tracking-wider text-text-muted">{label}</div>
       <div className="mt-1 text-2xl font-bold tabular-nums">{value}</div>
-      {unit ? (
-        <div className="text-[9px] font-medium text-text-muted">{unit}</div>
-      ) : null}
+      {unit ? <div className="text-[9px] font-medium text-text-muted">{unit}</div> : null}
     </div>
   );
 }

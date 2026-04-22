@@ -36,6 +36,7 @@ jedes Modul nach Spec-Vorlage in specs/features.md.
 ## Coding-Standards
 
 Siehe Root-[CLAUDE.md](../../CLAUDE.md). TL;DR:
+
 - Jeder Controller validiert Input mit Zod bevor er die Service-Schicht erreicht.
 - Jeder Write-Endpoint liest `Idempotency-Key`-Header.
 - Jede DB-Operation läuft unter RLS mit gesetzter `app.current_tenant_id`.

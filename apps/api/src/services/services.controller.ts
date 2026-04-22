@@ -10,11 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import {
-  createServiceSchema,
-  updateServiceSchema,
-  uuidSchema,
-} from '@salon-os/types';
+import { createServiceSchema, updateServiceSchema, uuidSchema } from '@salon-os/types';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { ServicesService } from './services.service.js';

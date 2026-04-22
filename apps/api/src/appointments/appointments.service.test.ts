@@ -23,8 +23,13 @@ function makePrisma() {
 }
 
 function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
-  return vi.fn((_tid: string, _uid: string | null, _role: string | null, fn: (tx: unknown) => Promise<unknown>) =>
-    fn(prisma),
+  return vi.fn(
+    (
+      _tid: string,
+      _uid: string | null,
+      _role: string | null,
+      fn: (tx: unknown) => Promise<unknown>,
+    ) => fn(prisma),
   );
 }
 
@@ -81,12 +86,20 @@ describe('AppointmentsService', () => {
     });
 
     it('blocks backward transition from COMPLETED to CANCELLED', async () => {
-      prisma.appointment.findFirst.mockResolvedValue({ id: 'appt1', status: 'COMPLETED', clientId: null });
+      prisma.appointment.findFirst.mockResolvedValue({
+        id: 'appt1',
+        status: 'COMPLETED',
+        clientId: null,
+      });
       await expect(service.cancel('appt1', { noShow: false })).rejects.toThrow(ConflictException);
     });
 
     it('blocks backward transition from CANCELLED to NO_SHOW', async () => {
-      prisma.appointment.findFirst.mockResolvedValue({ id: 'appt1', status: 'CANCELLED', clientId: null });
+      prisma.appointment.findFirst.mockResolvedValue({
+        id: 'appt1',
+        status: 'CANCELLED',
+        clientId: null,
+      });
       await expect(service.cancel('appt1', { noShow: true })).rejects.toThrow(ConflictException);
     });
 
@@ -101,12 +114,18 @@ describe('AppointmentsService', () => {
       ]);
       await service.cancel('appt1', { noShow: true });
       expect(prisma.appointment.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status: 'NO_SHOW', noShow: true }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'NO_SHOW', noShow: true }),
+        }),
       );
     });
 
     it('cancels reminder after successful cancel', async () => {
-      prisma.appointment.findFirst.mockResolvedValue({ id: 'appt1', status: 'CONFIRMED', clientId: null });
+      prisma.appointment.findFirst.mockResolvedValue({
+        id: 'appt1',
+        status: 'CONFIRMED',
+        clientId: null,
+      });
       prisma.appointment.update.mockResolvedValue({ id: 'appt1', status: 'CANCELLED', items: [] });
       await service.cancel('appt1', { noShow: false });
       expect(reminders.cancelReminder).toHaveBeenCalledWith('appt1');
@@ -157,7 +176,9 @@ describe('AppointmentsService', () => {
       prisma.appointment.update.mockResolvedValue({ ...existing, status: 'CHECKED_IN', items: [] });
       await service.transition('appt1', 'CHECKED_IN');
       expect(prisma.appointment.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ checkedInAt: expect.any(Date) }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ checkedInAt: expect.any(Date) }),
+        }),
       );
     });
 
@@ -189,7 +210,9 @@ describe('AppointmentsService', () => {
     });
 
     it('wraps appointment_no_overlap_per_staff message in ConflictException on reschedule', async () => {
-      const err = Object.assign(new Error('appointment_no_overlap_per_staff constraint'), { code: 'P2002' });
+      const err = Object.assign(new Error('appointment_no_overlap_per_staff constraint'), {
+        code: 'P2002',
+      });
       withTenant.mockRejectedValueOnce(err);
       await expect(
         service.reschedule('appt1', {
@@ -218,7 +241,9 @@ describe('AppointmentsService', () => {
   // ── noShowRisk scoring ────────────────────────────────────────────────────
 
   describe('noShowRisk scoring (via cancel)', () => {
-    async function cancelAndCaptureRiskUpdate(recentAppointments: { status: string; startAt: Date }[]) {
+    async function cancelAndCaptureRiskUpdate(
+      recentAppointments: { status: string; startAt: Date }[],
+    ) {
       const existing = { id: 'appt1', status: 'CONFIRMED', clientId: 'c1' };
       prisma.appointment.findFirst.mockResolvedValue(existing);
       prisma.appointment.update.mockResolvedValue({ ...existing, status: 'NO_SHOW', items: [] });
@@ -227,7 +252,9 @@ describe('AppointmentsService', () => {
       const updateCall = prisma.client.update.mock.calls.find(
         (c) => c[0]?.where?.id === 'c1' && c[0]?.data?.noShowRisk !== undefined,
       );
-      return updateCall ? (updateCall[0] as { data: { noShowRisk: number | null } }).data.noShowRisk : undefined;
+      return updateCall
+        ? (updateCall[0] as { data: { noShowRisk: number | null } }).data.noShowRisk
+        : undefined;
     }
 
     it('sets noShowRisk to null when fewer than 3 appointments', async () => {
@@ -245,7 +272,10 @@ describe('AppointmentsService', () => {
     });
 
     it('computes score = 0 for all completed', async () => {
-      const recent = Array.from({ length: 5 }, () => ({ status: 'COMPLETED', startAt: new Date() }));
+      const recent = Array.from({ length: 5 }, () => ({
+        status: 'COMPLETED',
+        startAt: new Date(),
+      }));
       const risk = await cancelAndCaptureRiskUpdate(recent);
       expect(risk).toBe(0);
     });

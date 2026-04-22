@@ -1,6 +1,7 @@
 # @salon-os/web
 
 Next.js 15 Frontend für SALON OS. Enthält:
+
 - **Admin-Dashboard** (Owner/Manager)
 - **Staff-Desktop-View** (Kalender, POS, Kunden am Desktop/Tablet)
 - **Branded Booking-Pages** unter `book.{tenant-slug}.salon-os.com`

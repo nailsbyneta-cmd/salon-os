@@ -86,9 +86,7 @@ export class AuditService {
         },
         orderBy: { createdAt: 'desc' },
         take: take + 1,
-        ...(opts.cursor
-          ? { skip: 1, cursor: { id: opts.cursor } }
-          : {}),
+        ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
       });
       const hasMore = entries.length > take;
       const page = hasMore ? entries.slice(0, take) : entries;

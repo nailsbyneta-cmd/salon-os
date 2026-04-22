@@ -49,15 +49,11 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
     <div className="w-full p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-            Team
-          </p>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Team</p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             Mitarbeiterinnen
           </h1>
-          <p className="mt-1 text-sm text-text-secondary">
-            {staff.length} aktive Teammitglieder
-          </p>
+          <p className="mt-1 text-sm text-text-secondary">{staff.length} aktive Teammitglieder</p>
         </div>
         <Link href="/staff/new">
           <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
@@ -85,10 +81,7 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
             return (
               <Card key={s.id} elevation="hoverable">
                 <CardBody>
-                  <Link
-                    href={`/staff/${s.id}`}
-                    className="block"
-                  >
+                  <Link href={`/staff/${s.id}`} className="block">
                     <div className="flex items-center gap-3">
                       <Avatar name={name} color={s.color} size="lg" />
                       <div>
@@ -114,10 +107,7 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
                     </Link>
                     {s.role !== 'OWNER' ? (
                       <form action={deleteStaff.bind(null, s.id)}>
-                        <button
-                          type="submit"
-                          className="text-xs text-danger hover:underline"
-                        >
+                        <button type="submit" className="text-xs text-danger hover:underline">
                           Entfernen
                         </button>
                       </form>

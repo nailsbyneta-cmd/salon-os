@@ -39,9 +39,7 @@ export function Stat({
         </span>
         {icon ? <span className="text-text-muted">{icon}</span> : null}
       </div>
-      <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">
-        {value}
-      </div>
+      <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</div>
       <div className="mt-1 flex items-center gap-2 text-xs text-text-muted">
         {trend ? (
           <span

@@ -59,9 +59,7 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
     <div className="w-full p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-            Katalog
-          </p>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Katalog</p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             Services
           </h1>
@@ -101,15 +99,9 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
                     <thead className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wider text-text-muted">
                       <tr>
                         <th className="px-4 py-3 sm:px-5">Service</th>
-                        <th className="hidden w-24 px-4 py-3 sm:table-cell sm:px-5">
-                          Dauer
-                        </th>
-                        <th className="w-24 px-4 py-3 text-right sm:w-28 sm:px-5">
-                          Preis
-                        </th>
-                        <th className="hidden w-24 px-4 py-3 md:table-cell md:px-5">
-                          Status
-                        </th>
+                        <th className="hidden w-24 px-4 py-3 sm:table-cell sm:px-5">Dauer</th>
+                        <th className="w-24 px-4 py-3 text-right sm:w-28 sm:px-5">Preis</th>
+                        <th className="hidden w-24 px-4 py-3 md:table-cell md:px-5">Status</th>
                         <th className="hidden w-20 px-4 py-3 md:table-cell md:px-5"></th>
                       </tr>
                     </thead>

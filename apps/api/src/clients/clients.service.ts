@@ -1,9 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { PrismaClient, Client } from '@salon-os/db';
-import type {
-  CreateClientInput,
-  UpdateClientInput,
-} from '@salon-os/types';
+import type { CreateClientInput, UpdateClientInput } from '@salon-os/types';
 import { normalizePhone } from '@salon-os/utils';
 import { AuditService } from '../audit/audit.service.js';
 import { WITH_TENANT } from '../db/db.module.js';
@@ -122,9 +119,7 @@ export class ClientsService {
           ...(input.pronouns !== undefined ? { pronouns: input.pronouns ?? null } : {}),
           ...(input.address !== undefined ? { address: input.address ?? undefined } : {}),
           ...(input.language !== undefined ? { language: input.language } : {}),
-          ...(input.marketingOptIn !== undefined
-            ? { marketingOptIn: input.marketingOptIn }
-            : {}),
+          ...(input.marketingOptIn !== undefined ? { marketingOptIn: input.marketingOptIn } : {}),
           ...(input.smsOptIn !== undefined ? { smsOptIn: input.smsOptIn } : {}),
           ...(input.emailOptIn !== undefined ? { emailOptIn: input.emailOptIn } : {}),
           ...(input.allergies !== undefined ? { allergies: input.allergies } : {}),
@@ -308,10 +303,7 @@ export class ClientsService {
       });
       const totalSpent = appointments
         .filter((a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW')
-        .reduce(
-          (sum, a) => sum + a.items.reduce((s, i) => s + Number(i.price), 0),
-          0,
-        );
+        .reduce((sum, a) => sum + a.items.reduce((s, i) => s + Number(i.price), 0), 0);
       return {
         exportedAt: new Date().toISOString(),
         basisGdpr: 'EU GDPR Art. 15 / Swiss DSG Art. 25',
@@ -355,4 +347,3 @@ export class ClientsService {
     });
   }
 }
-

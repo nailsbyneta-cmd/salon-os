@@ -96,9 +96,7 @@ export type ImportClientsInput = z.infer<typeof importClientsSchema>;
 export const importClientsResultSchema = z.object({
   created: z.number().int(),
   skipped: z.number().int(),
-  errors: z.array(
-    z.object({ row: z.number().int(), message: z.string() }),
-  ),
+  errors: z.array(z.object({ row: z.number().int(), message: z.string() })),
 });
 export type ImportClientsResult = z.infer<typeof importClientsResultSchema>;
 
@@ -302,12 +300,9 @@ export const createStaffSchema = z.object({
 });
 export type CreateStaffInput = z.infer<typeof createStaffSchema>;
 
-export const updateStaffSchema = createStaffSchema
-  .partial()
-  .omit({ userId: true })
-  .extend({
-    active: z.boolean().optional(),
-  });
+export const updateStaffSchema = createStaffSchema.partial().omit({ userId: true }).extend({
+  active: z.boolean().optional(),
+});
 export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
 
 // ─── Shift + TimeOff ───────────────────────────────────────────
