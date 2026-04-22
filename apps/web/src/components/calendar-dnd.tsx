@@ -32,6 +32,9 @@ export interface DndAppt {
     firstName: string;
     lastName: string;
     phone?: string | null;
+    // E.164-Format (+41791234567) wird serverseitig aus `phone` normalisiert
+    // und ist die autoritative Quelle für wa.me + tel:-Links.
+    phoneE164?: string | null;
     // Prisma-Decimal-Spalten kommen als string ('42.50') im JSON, Number()
     // toleriert beide Formate. UI nutzt lifetimeValue für VIP-Heuristik
     // (analog zu /clients?filter=vip: lifetimeValue >= 2000).

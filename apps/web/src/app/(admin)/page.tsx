@@ -22,6 +22,7 @@ interface Dashboard {
       firstName: string;
       lastName: string;
       phone?: string | null;
+      phoneE164?: string | null;
       noShowRisk?: string | number | null;
       lifetimeValue?: string | number | null;
     } | null;
@@ -327,9 +328,17 @@ export default async function Home(): Promise<React.JSX.Element> {
                 const clientName = `${client.firstName} ${client.lastName}`;
                 const risk = Math.round(Number(client.noShowRisk));
                 const riskTone = risk >= 40 ? 'bg-danger' : 'bg-warning';
-                const phoneClean = client.phone
-                  ? client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
-                  : null;
+                // wa.me erwartet E.164 ohne führendes +. Fallback: raw phone
+                // normalisiert, falls phoneE164 fehlt (z.B. Import ohne
+                // Normalisierung). Mindestlänge 7 um tel:-Junk auszuschliessen.
+                const waDigits = client.phoneE164
+                  ? client.phoneE164.replace(/^\+/, '')
+                  : client.phone
+                    ? client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
+                    : null;
+                const telHref = client.phoneE164 ?? client.phone ?? null;
+                const hasValidPhone =
+                  telHref != null && waDigits != null && waDigits.length >= 7;
                 return (
                   <li key={a.id}>
                     <div className="flex flex-wrap items-center gap-3 rounded-md bg-surface px-3 py-2.5">
@@ -362,26 +371,24 @@ export default async function Home(): Promise<React.JSX.Element> {
                         </div>
                       </Link>
                       <div className="flex shrink-0 gap-1.5">
-                        {client.phone ? (
+                        {hasValidPhone ? (
                           <>
                             <a
-                              href={`tel:${client.phone}`}
-                              className="inline-flex h-9 items-center gap-1 rounded-md border border-border bg-surface px-2.5 text-xs font-medium text-text-secondary hover:bg-surface-raised hover:text-text-primary"
+                              href={`tel:${telHref}`}
+                              className="inline-flex h-10 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary hover:bg-surface-raised hover:text-text-primary md:h-9"
                               aria-label={`${clientName} anrufen`}
                             >
                               📞
                             </a>
-                            {phoneClean ? (
-                              <a
-                                href={`https://wa.me/${phoneClean}`}
-                                target="_blank"
-                                rel="noopener"
-                                className="inline-flex h-9 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-2.5 text-xs font-medium text-success hover:bg-success/20"
-                                aria-label={`${clientName} auf WhatsApp schreiben`}
-                              >
-                                WA
-                              </a>
-                            ) : null}
+                            <a
+                              href={`https://wa.me/${waDigits}`}
+                              target="_blank"
+                              rel="noopener"
+                              className="inline-flex h-10 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success hover:bg-success/20 md:h-9"
+                              aria-label={`${clientName} auf WhatsApp schreiben`}
+                            >
+                              WA
+                            </a>
                           </>
                         ) : (
                           <span className="text-[11px] text-text-muted">

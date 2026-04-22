@@ -12,6 +12,7 @@ interface Client {
   lastName: string;
   email: string | null;
   phone: string | null;
+  phoneE164?: string | null;
   gender: string | null;
   birthday: string | null;
   notesInternal: string | null;
@@ -177,7 +178,7 @@ export default async function ClientDetailPage({
                     💬 SMS
                   </a>
                   <a
-                    href={`https://wa.me/${client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
+                    href={`https://wa.me/${(client.phoneE164 ?? client.phone).replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
                     target="_blank"
                     rel="noopener"
                     className="inline-flex h-11 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success transition-colors hover:bg-success/20"
