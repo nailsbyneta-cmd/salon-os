@@ -146,6 +146,7 @@ export class ClientsService {
         'phone',
         'birthday',
         'pronouns',
+        'photoUrl',
         'address',
         'language',
         'marketingOptIn',
@@ -156,6 +157,7 @@ export class ClientsService {
         'preferredStaffId',
         'source',
         'notesInternal',
+        'blocked',
       ];
       for (const k of trackedKeys) {
         const a = existing[k];

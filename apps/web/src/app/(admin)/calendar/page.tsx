@@ -305,11 +305,11 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
   const transition = transitionAppointment.bind(null, a.id);
   const cancel = cancelAppointment.bind(null, a.id);
   const noShow = markNoShow.bind(null, a.id);
-  // Termin gilt als "vorbei" wenn Start + 15 Min in der Vergangenheit — erst
-  // dann macht "Nicht erschienen" Sinn (vorher könnte sie noch kommen).
-  const isOverdue = Date.now() - new Date(a.startAt).getTime() > 15 * 60_000;
+  // „Nicht da" ist erst sinnvoll wenn der Service-Slot zu Ende ist — laufende
+  // Behandlungen von langen Services (Balayage 4h) dürfen nicht vorzeitig
+  // als no-show flaggbar sein. Plus 10 Min Karenz.
   const noShowEligible =
-    isOverdue &&
+    Date.now() - new Date(a.endAt).getTime() > 10 * 60_000 &&
     (a.status === 'BOOKED' ||
       a.status === 'CONFIRMED' ||
       a.status === 'CHECKED_IN');

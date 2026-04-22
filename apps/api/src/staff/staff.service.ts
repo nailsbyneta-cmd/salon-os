@@ -249,10 +249,17 @@ export class StaffService {
         where: { id, deletedAt: null },
       });
       if (!existing) throw new NotFoundException(`Staff ${id} not found`);
-      return tx.staff.update({
+      const updated = await tx.staff.update({
         where: { id },
         data: { weeklySchedule: schedule as Prisma.InputJsonValue },
       });
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Staff',
+        entityId: id,
+        action: 'update-schedule',
+        diff: { from: existing.weeklySchedule, to: schedule },
+      });
+      return updated;
     });
   }
 }
