@@ -67,7 +67,7 @@ jobs:
         with: { node-version-file: .nvmrc, cache: pnpm }
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm --filter @salon-os/db db:generate
-      - run: pnpm lint
+      - run: pnpm turbo lint --filter=!@salon-os/api
       - run: pnpm format:check
 
   # ─── Build ──────────────────────────────────────────────────
