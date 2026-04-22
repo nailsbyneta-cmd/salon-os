@@ -152,12 +152,16 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
             🎂 Heute Geburtstag · {birthdays.length}{' '}
             {birthdays.length === 1 ? 'Kundin' : 'Kundinnen'}
           </p>
-          <ul className="mt-1.5 flex flex-wrap gap-1.5">
+          <ul
+            className="mt-2 flex flex-wrap gap-2"
+            aria-label="Geburtstage heute"
+          >
             {birthdays.slice(0, 6).map((b) => (
               <li key={b.id}>
                 <Link
                   href={`/clients/${b.id}`}
-                  className="inline-flex items-center rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-text-primary active:scale-[0.98] transition-transform"
+                  className="inline-flex min-h-[44px] items-center rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-text-primary active:scale-[0.98] transition-transform"
+                  aria-label={`${b.firstName} ${b.lastName} — heute Geburtstag`}
                 >
                   {b.firstName} {b.lastName}
                 </Link>
