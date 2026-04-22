@@ -51,17 +51,27 @@ export function AdminShell({
   const asyncLoader = React.useCallback(
     async (query: string): Promise<CommandItem[]> => {
       const hits = await searchCommand(query);
+      const groupByKind: Record<typeof hits[number]['kind'], string> = {
+        client: 'Kundinnen',
+        appointment: 'Termine',
+        staff: 'Team',
+        service: 'Services',
+      };
+      const iconByKind = (kind: typeof hits[number]['kind'], label: string): React.ReactNode => {
+        if (kind === 'client' || kind === 'staff') {
+          return (
+            <Avatar name={label} size="sm" color="hsl(var(--brand-accent))" />
+          );
+        }
+        if (kind === 'appointment') return <span>📅</span>;
+        return <span>🛎️</span>;
+      };
       return hits.map((hit) => ({
         id: hit.id,
         label: hit.label,
         hint: hit.hint,
-        group: hit.kind === 'client' ? 'Kundinnen' : 'Services',
-        icon:
-          hit.kind === 'client' ? (
-            <Avatar name={hit.label} size="sm" color="hsl(var(--brand-accent))" />
-          ) : (
-            <span>🛎️</span>
-          ),
+        group: groupByKind[hit.kind],
+        icon: iconByKind(hit.kind, hit.label),
         action: () => router.push(hit.href as never),
       }));
     },
