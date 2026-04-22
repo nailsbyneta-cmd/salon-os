@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Card, CardBody, Stat as StatCard, cn } from '@salon-os/ui';
+import { Sparkline } from '@/components/sparkline';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
@@ -32,6 +33,25 @@ interface PeriodStats {
     revenueCents: number;
   }>;
   byDay: Map<string, { count: number; revenueCents: number }>;
+  byWeek: Array<{
+    weekStart: string; // YYYY-MM-DD (Monday UTC)
+    total: number;
+    noShow: number;
+    cancelled: number;
+  }>;
+}
+
+function mondayKeyUtc(iso: string): string {
+  // Week-key = Montag-UTC der ISO-Woche. Klein genug dass DST-Wackler die
+  // Wochenzuordnung nicht verschieben; für Rate-Trends über 12+ Wochen
+  // sind UTC-Buckets stabil genug.
+  const d = new Date(iso);
+  const day = d.getUTCDay(); // 0=Sun, 1=Mon, ...
+  const diff = day === 0 ? 6 : day - 1;
+  const monday = new Date(d);
+  monday.setUTCDate(d.getUTCDate() - diff);
+  monday.setUTCHours(0, 0, 0, 0);
+  return `${monday.getUTCFullYear()}-${String(monday.getUTCMonth() + 1).padStart(2, '0')}-${String(monday.getUTCDate()).padStart(2, '0')}`;
 }
 
 type PeriodKey = 'today' | '7d' | '30d' | '90d' | '1y';
@@ -111,10 +131,22 @@ function computeStats(appts: Appt[]): PeriodStats {
   let cancelled = 0;
   let revenueCents = 0;
 
+  const weekMap = new Map<
+    string,
+    { total: number; noShow: number; cancelled: number }
+  >();
+
   for (const a of appts) {
     const dayKey = a.startAt.slice(0, 10);
     const dayBucket = byDay.get(dayKey) ?? { count: 0, revenueCents: 0 };
     dayBucket.count += 1;
+
+    const wk = mondayKeyUtc(a.startAt);
+    const wkBucket = weekMap.get(wk) ?? { total: 0, noShow: 0, cancelled: 0 };
+    wkBucket.total += 1;
+    if (a.status === 'NO_SHOW') wkBucket.noShow += 1;
+    if (a.status === 'CANCELLED') wkBucket.cancelled += 1;
+    weekMap.set(wk, wkBucket);
 
     if (a.status === 'COMPLETED') completed += 1;
     if (a.status === 'NO_SHOW') noShow += 1;
@@ -184,6 +216,10 @@ function computeStats(appts: Appt[]): PeriodStats {
     (a, b) => b.revenueCents - a.revenueCents,
   );
 
+  const byWeek = Array.from(weekMap.entries())
+    .map(([weekStart, v]) => ({ weekStart, ...v }))
+    .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+
   return {
     count: appts.length,
     revenueCents,
@@ -195,6 +231,7 @@ function computeStats(appts: Appt[]): PeriodStats {
     topClients,
     perStaff,
     byDay,
+    byWeek,
   };
 }
 
@@ -341,6 +378,66 @@ export default async function ReportsPage({
           }
         />
       </section>
+
+      {/* No-Show + Storno-Rate-Trend: nur anzeigen wenn >= 4 Wochen Daten,
+          sonst ist der Trend nicht aussagekräftig. */}
+      {stats.byWeek.length >= 4 ? (
+        <Card className="mb-8">
+          <CardBody>
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                No-Show + Storno-Rate · pro Woche
+              </h2>
+              <p className="text-[11px] text-text-muted">
+                {stats.byWeek.length} Wochen ·{' '}
+                {Math.round(
+                  ((stats.noShowCount + stats.cancelledCount) /
+                    Math.max(stats.count, 1)) *
+                    100,
+                )}
+                % Gesamt-Rate
+              </p>
+            </div>
+            <div className="flex items-end gap-4">
+              <Sparkline
+                data={stats.byWeek.map((w) =>
+                  w.total > 0
+                    ? Math.round(((w.noShow + w.cancelled) / w.total) * 100)
+                    : 0,
+                )}
+                width={Math.min(480, stats.byWeek.length * 36)}
+                height={56}
+                className="flex-1"
+              />
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-text-muted">
+              {stats.byWeek.slice(-12).map((w) => {
+                const rate =
+                  w.total > 0
+                    ? Math.round(((w.noShow + w.cancelled) / w.total) * 100)
+                    : 0;
+                return (
+                  <span
+                    key={w.weekStart}
+                    className="inline-flex min-w-[62px] flex-1 flex-col items-center gap-0.5 rounded bg-surface px-1 py-0.5"
+                    title={`${w.total} Termine, ${w.noShow} No-Show, ${w.cancelled} Storno`}
+                  >
+                    <span className="tabular-nums text-text-primary">
+                      {rate}%
+                    </span>
+                    <span className="tabular-nums">
+                      {new Date(w.weekStart).toLocaleDateString('de-CH', {
+                        day: '2-digit',
+                        month: '2-digit',
+                      })}
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
 
       {/* Umsatz pro Tag */}
       <Card className="mb-8">
