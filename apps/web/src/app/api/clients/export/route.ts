@@ -15,6 +15,8 @@ interface Client {
   emailOptIn: boolean;
   smsOptIn: boolean;
   createdAt: string;
+  lifetimeValue?: string | number | null;
+  noShowRisk?: string | number | null;
 }
 
 function csvEscape(v: string | null | undefined): string {
@@ -46,6 +48,8 @@ export async function GET(): Promise<Response> {
         'emailOptIn',
         'smsOptIn',
         'createdAt',
+        'lifetimeValue',
+        'noShowRisk',
       ].join(','),
       ...res.clients.map((c) =>
         [
@@ -61,6 +65,8 @@ export async function GET(): Promise<Response> {
           String(c.emailOptIn),
           String(c.smsOptIn),
           csvEscape(c.createdAt),
+          csvEscape(c.lifetimeValue != null ? String(c.lifetimeValue) : ''),
+          csvEscape(c.noShowRisk != null ? String(c.noShowRisk) : ''),
         ].join(','),
       ),
     ];
