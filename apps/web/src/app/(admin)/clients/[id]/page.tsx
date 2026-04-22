@@ -106,16 +106,23 @@ export default async function ClientDetailPage({
   // Top-3 Service-Präferenzen — nur aus COMPLETED-Terminen zählen, storniert
   // + no-show ignorieren (sind kein ehrliches Signal für 'mag diesen Service').
   // Alle Services des Termins zählen (multi-item Checkout).
-  const serviceCounts = new Map<string, number>();
+  // Key = serviceId statt name, damit Umbenennungen oder zwei Services mit
+  // gleichem Namen (z. B. 'Maniküre') nicht fälschlich kollabieren.
+  // Sort ist stabil: past ist nach startAt DESC (recent wins bei Gleichstand).
+  const serviceCounts = new Map<string, { name: string; count: number }>();
   for (const a of past) {
     if (a.status !== 'COMPLETED') continue;
     for (const item of a.items) {
-      const key = item.service.name;
-      serviceCounts.set(key, (serviceCounts.get(key) ?? 0) + 1);
+      const prev = serviceCounts.get(item.serviceId);
+      serviceCounts.set(item.serviceId, {
+        name: item.service.name,
+        count: (prev?.count ?? 0) + 1,
+      });
     }
   }
   const topServices = Array.from(serviceCounts.entries())
-    .sort((a, b) => b[1] - a[1])
+    .map(([serviceId, v]) => ({ serviceId, ...v }))
+    .sort((a, b) => b.count - a.count)
     .slice(0, 3);
 
   return (
@@ -316,15 +323,20 @@ export default async function ClientDetailPage({
             <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
               Am häufigsten gebucht
             </p>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {topServices.map(([name, count]) => (
+            <ul
+              className="mt-3 flex flex-wrap gap-2"
+              aria-label="Am häufigsten gebuchte Services"
+            >
+              {topServices.map((svc) => (
                 <li
-                  key={name}
+                  key={svc.serviceId}
                   className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm"
                 >
-                  <span className="font-medium text-text-primary">{name}</span>
+                  <span className="font-medium text-text-primary">
+                    {svc.name}
+                  </span>
                   <span className="text-xs tabular-nums text-text-muted">
-                    {count}×
+                    {svc.count}×
                   </span>
                 </li>
               ))}
