@@ -19,7 +19,9 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      eqeqeq: ['error', 'always'],
+      // null-check-Pattern `x != null` (= null OR undefined) weiterhin
+      // erlauben — die verbose 2-fach-Version bläht Null-Checks auf.
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
     },
   },
   { ignores: ['dist/', 'build/', '.next/', 'node_modules/', '*.config.*'] },
