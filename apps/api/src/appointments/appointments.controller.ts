@@ -32,6 +32,8 @@ export class AppointmentsController {
     @Query('locationId') locationId?: string,
     @Query('staffId') staffId?: string,
     @Query('clientId') clientId?: string,
+    @Query('q') q?: string,
+    @Query('limit') limit?: string,
   ): Promise<{ appointments: Appointment[] }> {
     if (!from || !to) {
       throw new BadRequestException('from + to query params are required (ISO 8601)');
@@ -41,12 +43,18 @@ export class AppointmentsController {
     if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
       throw new BadRequestException('from / to must be valid ISO datetimes');
     }
+    const parsedLimit = limit ? Number(limit) : undefined;
     const appointments = await this.svc.list({
       from: fromDate,
       to: toDate,
       locationId,
       staffId,
       clientId,
+      q: q?.trim() || undefined,
+      limit:
+        parsedLimit && Number.isFinite(parsedLimit) && parsedLimit > 0
+          ? Math.min(parsedLimit, 500)
+          : undefined,
     });
     return { appointments };
   }

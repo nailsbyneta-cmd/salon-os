@@ -59,24 +59,29 @@ export async function searchCommand(query: string): Promise<SearchHit[]> {
     throw e;
   });
 
-  // Upcoming Appointments suchen — Client-Name match, ab heute bis +30 Tage.
-  // Liefert nur Appointments deren Client einer der gefundenen Clients ist,
-  // oder via kombinierter Filter-Klausel clientName-match.
+  // Upcoming Appointments suchen — Client-Name match, ab heute bis +14 Tage.
+  // Server-seitiger q-Filter + limit=10 damit Payload konstant klein bleibt.
   const now = new Date();
   const fromIso = now.toISOString();
   const toDate = new Date();
-  toDate.setDate(toDate.getDate() + 30);
+  toDate.setDate(toDate.getDate() + 14);
   const toIso = toDate.toISOString();
+  const apptQs = new URLSearchParams({
+    from: fromIso,
+    to: toIso,
+    q,
+    limit: '10',
+  });
   const fetchAppts = apiFetch<{
     appointments: Array<{
       id: string;
       startAt: string;
       status: string;
       client: { firstName: string; lastName: string } | null;
-      staff: { firstName: string; lastName: string };
+      staff: { firstName: string; lastName: string } | null;
       items: Array<{ service: { name: string } }>;
     }>;
-  }>(`/v1/appointments?from=${fromIso}&to=${toIso}`, auth).catch((e) => {
+  }>(`/v1/appointments?${apptQs.toString()}`, auth).catch((e) => {
     if (e instanceof ApiError) return { appointments: [] };
     throw e;
   });
@@ -123,17 +128,14 @@ export async function searchCommand(query: string): Promise<SearchHit[]> {
       href: `/staff/${s.id}`,
     }));
 
-  // Appointments: Match auf Client-Name; max 5. Status-Filter: keine
-  // CANCELLED/NO_SHOW (die interessieren Neta im Quick-Search nicht).
+  // Appointments: API filtert bereits auf q + limit. Client-side nur noch
+  // terminale Status rauskicken + null-client skip.
   const appointments: SearchHit[] = apptsRes.appointments
     .filter(
       (a) =>
         a.status !== 'CANCELLED' &&
         a.status !== 'NO_SHOW' &&
-        a.client &&
-        `${a.client.firstName} ${a.client.lastName}`
-          .toLowerCase()
-          .includes(needle),
+        a.client !== null,
     )
     .slice(0, 5)
     .map((a) => {
@@ -147,11 +149,12 @@ export async function searchCommand(query: string): Promise<SearchHit[]> {
         timeZone: 'Europe/Zurich',
       });
       const services = a.items.map((i) => i.service.name).join(', ');
+      const staffHint = a.staff?.firstName ?? '—';
       return {
         id: `appt:${a.id}`,
         kind: 'appointment' as const,
         label: `${clientName} · ${when}`,
-        hint: `${services || '—'} · ${a.staff.firstName}`,
+        hint: `${services || '—'} · ${staffHint}`,
         href: `/calendar/${a.id}`,
       };
     });

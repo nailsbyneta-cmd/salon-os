@@ -56,6 +56,8 @@ export class AppointmentsService {
     locationId?: string;
     staffId?: string;
     clientId?: string;
+    q?: string;
+    limit?: number;
   }): Promise<Appointment[]> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
@@ -65,7 +67,30 @@ export class AppointmentsService {
           ...(opts.locationId ? { locationId: opts.locationId } : {}),
           ...(opts.staffId ? { staffId: opts.staffId } : {}),
           ...(opts.clientId ? { clientId: opts.clientId } : {}),
+          ...(opts.q
+            ? {
+                client: {
+                  is: {
+                    OR: [
+                      {
+                        firstName: {
+                          contains: opts.q,
+                          mode: 'insensitive' as const,
+                        },
+                      },
+                      {
+                        lastName: {
+                          contains: opts.q,
+                          mode: 'insensitive' as const,
+                        },
+                      },
+                    ],
+                  },
+                },
+              }
+            : {}),
         },
+        ...(opts.limit ? { take: opts.limit } : {}),
         include: {
           items: { include: { service: { select: { name: true } } } },
           client: {
