@@ -255,13 +255,27 @@ export default async function Home(): Promise<React.JSX.Element> {
   const completed = activeAppts.filter((a) => a.status === 'COMPLETED').length;
   const running = activeAppts.filter((a) => a.status === 'IN_SERVICE');
 
-  // Delta heute vs. Durchschnitt der letzten 6 Tage. Nur anzeigen wenn
-  // mindestens 3 der 6 Vortage Umsatz hatten (sonst irreführend).
+  // Delta heute vs. Ø der aktiven letzten Tage. Guards:
+  //  1. Mindestens 3 der 6 Vortage hatten Umsatz (sonst irreführend nach
+  //     Schliesstagen/Ferien).
+  //  2. Geschäftstag weit genug fortgeschritten (>=18:00 in Europe/Zurich) —
+  //     vorher vergleicht man kumulierten Vormittag mit ganzen Vortagen,
+  //     Ergebnis wäre konstant stark negativ.
+  //  3. Divisor = Anzahl aktiver Tage, nicht 6 — Ostern-Pause verzerrt
+  //     sonst künstlich positiv.
+  const chHour = Number(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/Zurich',
+      hour: '2-digit',
+      hour12: false,
+    }).format(now),
+  );
+  const dayMostlyDone = Number.isFinite(chHour) && chHour >= 18;
   const prior6 = d.revenueLast7DaysCents.slice(0, 6);
   const prior6Active = prior6.filter((c) => c > 0);
   const prior6AvgCents =
-    prior6Active.length >= 3
-      ? prior6.reduce((s, c) => s + c, 0) / 6
+    dayMostlyDone && prior6Active.length >= 3
+      ? prior6Active.reduce((s, c) => s + c, 0) / prior6Active.length
       : null;
   const revenueDeltaPct =
     prior6AvgCents != null && prior6AvgCents > 0
