@@ -254,6 +254,19 @@ export default async function Home(): Promise<React.JSX.Element> {
   );
   const completed = activeAppts.filter((a) => a.status === 'COMPLETED').length;
   const running = activeAppts.filter((a) => a.status === 'IN_SERVICE');
+
+  // Delta heute vs. Durchschnitt der letzten 6 Tage. Nur anzeigen wenn
+  // mindestens 3 der 6 Vortage Umsatz hatten (sonst irreführend).
+  const prior6 = d.revenueLast7DaysCents.slice(0, 6);
+  const prior6Active = prior6.filter((c) => c > 0);
+  const prior6AvgCents =
+    prior6Active.length >= 3
+      ? prior6.reduce((s, c) => s + c, 0) / 6
+      : null;
+  const revenueDeltaPct =
+    prior6AvgCents != null && prior6AvgCents > 0
+      ? Math.round(((revenueCents - prior6AvgCents) / prior6AvgCents) * 100)
+      : null;
   const upcoming = activeAppts
     .filter((a) => new Date(a.startAt) >= now && a.status !== 'IN_SERVICE')
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
@@ -307,7 +320,11 @@ export default async function Home(): Promise<React.JSX.Element> {
           value={(revenueCents / 100).toLocaleString('de-CH', {
             minimumFractionDigits: 0,
           })}
-          sub="CHF · exkl. storniert"
+          sub={
+            revenueDeltaPct != null
+              ? `CHF · ${revenueDeltaPct > 0 ? '+' : ''}${revenueDeltaPct}% vs. Ø 6 Tage`
+              : 'CHF · exkl. storniert'
+          }
           href="/reports?period=today"
         />
         <Stat label="Kundinnen" value={d.clientsCount} href="/clients" />
