@@ -148,6 +148,43 @@ export function CalendarDnd({
     setAppts(initialAppts);
   }, [initialAppts]);
 
+  // Auto-Scroll zur aktuellen Uhrzeit beim Öffnen des heutigen Tag-
+  // Views — Neta soll nicht manuell runterscrollen. Nur einmal, beim
+  // ersten Paint mit korrektem pxPerMin. todayStr via Zurich-TZ damit
+  // User vom Handy im Ausland nicht falsch landen.
+  const scrolledToNowRef = React.useRef(false);
+  React.useEffect(() => {
+    if (scrolledToNowRef.current) return;
+    if (!mounted) return;
+    const todayZurich = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Zurich',
+    }).format(new Date());
+    if (day !== todayZurich) return;
+    const now = new Date();
+    const zurichHour = Number(
+      new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Zurich',
+        hour: '2-digit',
+        hour12: false,
+      }).format(now),
+    );
+    const zurichMin = Number(
+      new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Zurich',
+        minute: '2-digit',
+      }).format(now),
+    );
+    const minutesFromCalStart = zurichHour * 60 + zurichMin - CAL_START_MIN;
+    if (minutesFromCalStart < 0 || minutesFromCalStart > HOURS.length * 60) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const containerTopInPage = el.getBoundingClientRect().top + window.scrollY;
+    const targetY =
+      containerTopInPage + minutesFromCalStart * pxPerMin - window.innerHeight / 3;
+    window.scrollTo({ top: Math.max(0, targetY), behavior: 'instant' as ScrollBehavior });
+    scrolledToNowRef.current = true;
+  }, [day, mounted, pxPerMin]);
+
   const handleSlotClick = (staffId: string, minute: number): void => {
     const hours = Math.floor((CAL_START_MIN + minute) / 60);
     const mins = (CAL_START_MIN + minute) % 60;
