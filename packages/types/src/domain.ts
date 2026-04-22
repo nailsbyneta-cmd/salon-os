@@ -83,7 +83,9 @@ export const createClientSchema = z.object({
 });
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 
-export const updateClientSchema = createClientSchema.partial();
+export const updateClientSchema = createClientSchema.partial().extend({
+  blocked: z.boolean().optional(),
+});
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 
 export const importClientsSchema = z.object({

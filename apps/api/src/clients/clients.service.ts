@@ -136,6 +136,9 @@ export class ClientsService {
           ...(input.notesInternal !== undefined
             ? { notesInternal: input.notesInternal ?? null }
             : {}),
+          ...((input as { blocked?: boolean }).blocked !== undefined
+            ? { blocked: (input as { blocked: boolean }).blocked }
+            : {}),
         },
       });
 

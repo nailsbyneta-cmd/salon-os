@@ -96,3 +96,32 @@ export async function updateClient(id: string, form: FormData): Promise<void> {
   revalidatePath('/clients');
   redirect(`/clients/${id}`);
 }
+
+/**
+ * Toggle `blocked`-Flag einer Kundin via PATCH /v1/clients/:id.
+ * blocked=true schliesst sie aus: Birthday-Gratulieren, Win-Back,
+ * Waitlist-Match. Rückgängig machen via erneutes Toggle.
+ */
+export async function toggleClientBlocked(
+  id: string,
+  nextBlocked: boolean,
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  try {
+    await apiFetch(`/v1/clients/${id}`, {
+      method: 'PATCH',
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+      body: { blocked: nextBlocked },
+    });
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw new Error(err.problem?.title ?? err.message);
+    }
+    throw err;
+  }
+  revalidatePath(`/clients/${id}`);
+  revalidatePath('/clients');
+  revalidatePath('/');
+}

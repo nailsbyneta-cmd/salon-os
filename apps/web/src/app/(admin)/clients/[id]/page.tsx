@@ -4,6 +4,7 @@ import { Avatar, Badge, Button, Card, CardBody, PriceDisplay, Stat } from '@salo
 import { computeLoyalty } from '@salon-os/utils';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { toggleClientBlocked } from '../actions';
 import { forgetClient } from './actions';
 
 interface Client {
@@ -22,6 +23,7 @@ interface Client {
   lastVisitAt: string | null;
   createdAt: string;
   noShowRisk: string | null;
+  blocked: boolean;
 }
 
 interface Appt {
@@ -208,8 +210,34 @@ export default async function ClientDetailPage({
               >
                 Bearbeiten
               </Link>
+              <form
+                action={toggleClientBlocked.bind(null, client.id, !client.blocked)}
+              >
+                <button
+                  type="submit"
+                  className={
+                    client.blocked
+                      ? 'inline-flex h-9 items-center rounded-md border border-warning/30 bg-warning/10 px-3 text-xs font-medium text-warning hover:bg-warning/20'
+                      : 'inline-flex h-9 items-center rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary hover:bg-surface-raised hover:text-danger hover:border-danger/30'
+                  }
+                  aria-label={
+                    client.blocked
+                      ? 'Sperre aufheben'
+                      : 'Kundin sperren (keine Gratulationen, Win-Back, Waitlist-Match)'
+                  }
+                >
+                  {client.blocked ? '🔒 Entsperren' : '🔒 Sperren'}
+                </button>
+              </form>
             </div>
           </div>
+          {client.blocked ? (
+            <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">
+              <span aria-hidden="true">🔒</span>
+              Gesperrt — nicht für automatische Kontakte (Geburtstag,
+              Win-Back, Waitlist-Match)
+            </div>
+          ) : null}
           <p className="mt-1 text-sm text-text-secondary">
             {client.email ? (
               <a href={`mailto:${client.email}`} className="hover:text-accent hover:underline">
