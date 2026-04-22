@@ -14,7 +14,7 @@
   },
   "files": ["dist", "prisma"],
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "node -e \"try{require('fs').accessSync('prisma/schema.prisma')}catch(e){process.exit(1)}\" && prisma generate || true",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
