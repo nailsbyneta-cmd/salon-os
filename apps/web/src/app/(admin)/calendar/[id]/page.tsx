@@ -414,46 +414,59 @@ export default async function AppointmentDetailPage({
         </section>
       ) : null}
 
-      {a.status === 'COMPLETED' && a.client ? (
-        <Card className="mb-6 border-l-4 border-l-accent bg-accent/5" elevation="flat">
-          <CardBody>
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-                Folgetermin vormerken
-              </span>
-            </div>
-            <p className="mb-3 text-xs text-text-secondary">
-              Ein Tap und {a.client.firstName} kriegt einen vorausgefüllten
-              Termin in der Zukunft — Zeit + Service noch editierbar.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {[4, 6, 8].map((weeks) => {
-                const date = addDaysIso(day, weeks * 7);
-                const qs = new URLSearchParams({
-                  clientId: a.client!.id,
-                  staffId: a.staffId,
-                  date,
-                });
-                return (
-                  <Link
-                    key={weeks}
-                    href={`/calendar/new?${qs.toString()}`}
-                    className="inline-flex h-10 items-center gap-1 rounded-md border border-border bg-surface px-4 text-xs font-medium text-text-secondary hover:border-accent hover:bg-accent/5 hover:text-text-primary md:h-9"
-                  >
-                    +{weeks} Wochen
-                    <span className="ml-1 text-[10px] text-text-muted tabular-nums">
-                      {new Date(date).toLocaleDateString('de-CH', {
+      {a.status === 'COMPLETED' && a.client
+        ? (() => {
+            const client = a.client;
+            return (
+              <Card
+                className="mb-6 border-l-4 border-l-accent bg-accent/5"
+                elevation="flat"
+              >
+                <CardBody>
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                      Folgetermin vormerken
+                    </span>
+                  </div>
+                  <p className="mb-3 text-xs text-text-secondary">
+                    Ein Tap und {client.firstName} kriegt einen vorausgefüllten
+                    Termin in der Zukunft — Zeit + Service noch editierbar.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {[4, 6, 8].map((weeks) => {
+                      const date = addDaysIso(day, weeks * 7);
+                      const qs = new URLSearchParams({
+                        clientId: client.id,
+                        staffId: a.staffId,
+                        date,
+                      });
+                      const niceDate = new Date(
+                        `${date}T12:00:00Z`,
+                      ).toLocaleDateString('de-CH', {
                         day: '2-digit',
                         month: 'short',
-                      })}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </CardBody>
-        </Card>
-      ) : null}
+                        timeZone: 'Europe/Zurich',
+                      });
+                      return (
+                        <Link
+                          key={weeks}
+                          href={`/calendar/new?${qs.toString()}`}
+                          className="inline-flex h-10 items-center gap-1 rounded-md border border-border bg-surface px-4 text-xs font-medium text-text-secondary hover:border-accent hover:bg-accent/5 hover:text-text-primary md:h-9"
+                          aria-label={`Folgetermin in ${weeks} Wochen am ${niceDate} vormerken`}
+                        >
+                          +{weeks} Wochen
+                          <span className="ml-1 text-[10px] text-text-muted tabular-nums">
+                            {niceDate}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })()
+        : null}
 
       <Card>
         <CardBody>
