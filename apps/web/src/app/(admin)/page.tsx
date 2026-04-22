@@ -5,7 +5,7 @@ import { ConfirmApptButton } from '@/components/confirm-appt-button';
 import { Sparkline } from '@/components/sparkline';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
-import { transitionAppointment } from './calendar/actions';
+import { markNoShow, transitionAppointment } from './calendar/actions';
 
 interface BirthdayClient {
   id: string;
@@ -398,6 +398,16 @@ export default async function Home(): Promise<React.JSX.Element> {
     return Number.isFinite(risk) && risk >= 25;
   });
 
+  // „Heute nicht gekommen": Start liegt mehr als 10min in der Vergangenheit,
+  // Kundin ist weder eingechecked noch weiter fortgeschritten. 10min Puffer
+  // damit normale Verspätung nicht sofort alarmiert.
+  const MISSED_GRACE_MIN = 10;
+  const missedCutoffMs = now.getTime() - MISSED_GRACE_MIN * 60_000;
+  const missed = d.todayAppts.filter((a) => {
+    if (a.status !== 'BOOKED' && a.status !== 'CONFIRMED') return false;
+    return new Date(a.startAt).getTime() < missedCutoffMs;
+  });
+
   return (
     <div className="w-full p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3 md:mb-8">
@@ -751,6 +761,112 @@ export default async function Home(): Promise<React.JSX.Element> {
             {d.birthdaysToday.length > 8 ? (
               <p className="mt-2 text-xs text-text-muted">
                 +{d.birthdaysToday.length - 8} weitere
+              </p>
+            ) : null}
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {missed.length > 0 ? (
+        <Card className="mb-4 border-l-4 border-l-danger bg-danger/5" elevation="flat">
+          <CardBody>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-danger">
+                🚨 Heute nicht gekommen · {missed.length}{' '}
+                {missed.length === 1 ? 'Termin' : 'Termine'}
+              </span>
+            </div>
+            <p className="mb-3 text-xs text-text-secondary">
+              Startzeit überschritten, noch nicht eingechecked — kurz anrufen.
+              Danach „No-Show" markieren (zählt in die Risiko-Statistik) oder
+              Termin im Kalender verschieben.
+            </p>
+            <ul className="space-y-2">
+              {missed.slice(0, 5).map((a) => {
+                const client = a.client;
+                const clientName = client
+                  ? `${client.firstName} ${client.lastName}`
+                  : 'Blockzeit';
+                const minutesLate = Math.max(
+                  0,
+                  Math.round((now.getTime() - new Date(a.startAt).getTime()) / 60_000),
+                );
+                const waDigits = client?.phoneE164
+                  ? client.phoneE164.replace(/^\+/, '')
+                  : client?.phone
+                    ? client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
+                    : null;
+                const telHref = client?.phoneE164 ?? client?.phone ?? null;
+                const hasValidPhone =
+                  telHref != null && waDigits != null && waDigits.length >= 7;
+                return (
+                  <li key={a.id}>
+                    <div className="flex flex-wrap items-center gap-3 rounded-md bg-surface px-3 py-2.5">
+                      <span className="w-14 shrink-0 text-sm font-semibold tabular-nums text-text-primary">
+                        {new Date(a.startAt).toLocaleTimeString('de-CH', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                      <Link
+                        href={`/calendar/${a.id}`}
+                        className="min-w-0 flex-1 hover:underline"
+                      >
+                        <div className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
+                          <span className="min-w-0 truncate">{clientName}</span>
+                          <span className="shrink-0 rounded-full bg-danger/15 px-1.5 py-0.5 text-[10px] font-medium text-danger tabular-nums">
+                            {minutesLate}min zu spät
+                          </span>
+                        </div>
+                        <div className="truncate text-xs text-text-muted">
+                          {a.items.map((i) => i.service.name).join(', ')} ·{' '}
+                          {a.staff.firstName}
+                        </div>
+                      </Link>
+                      <div className="flex shrink-0 gap-1.5">
+                        {hasValidPhone ? (
+                          <>
+                            <a
+                              href={`tel:${telHref}`}
+                              className="inline-flex h-10 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary hover:bg-surface-raised hover:text-text-primary md:h-9"
+                              aria-label={`${clientName} anrufen`}
+                            >
+                              📞
+                            </a>
+                            <a
+                              href={`https://wa.me/${waDigits}`}
+                              target="_blank"
+                              rel="noopener"
+                              className="inline-flex h-10 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success hover:bg-success/20 md:h-9"
+                              aria-label={`${clientName} auf WhatsApp schreiben`}
+                            >
+                              WA
+                            </a>
+                          </>
+                        ) : (
+                          <span className="text-[11px] text-text-muted">
+                            keine Nummer
+                          </span>
+                        )}
+                        <form action={markNoShow.bind(null, a.id)}>
+                          <Button
+                            type="submit"
+                            variant="secondary"
+                            size="sm"
+                            aria-label={`Termin von ${clientName} als No-Show markieren`}
+                          >
+                            No-Show
+                          </Button>
+                        </form>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {missed.length > 5 ? (
+              <p className="mt-3 text-xs text-text-muted">
+                +{missed.length - 5} weitere — im Kalender sichtbar.
               </p>
             ) : null}
           </CardBody>
