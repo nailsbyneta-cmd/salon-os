@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { PrismaClient, Staff } from '@salon-os/db';
 import { Prisma } from '@salon-os/db';
 import type { CreateStaffInput, UpdateStaffInput } from '@salon-os/types';
+import { AuditService } from '../audit/audit.service.js';
 import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 
@@ -19,7 +20,10 @@ type WithTenantFn = <T>(
 
 @Injectable()
 export class StaffService {
-  constructor(@Inject(WITH_TENANT) private readonly withTenant: WithTenantFn) {}
+  constructor(
+    @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
+    private readonly audit: AuditService,
+  ) {}
 
   async list(opts: { locationId?: string; active?: boolean } = {}): Promise<Staff[]> {
     const ctx = requireTenantContext();
@@ -72,7 +76,7 @@ export class StaffService {
           })
         ).id;
 
-      return tx.staff.create({
+      const created = await tx.staff.create({
         data: {
           tenantId: ctx.tenantId,
           userId,
@@ -101,6 +105,19 @@ export class StaffService {
           },
         },
       });
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Staff',
+        entityId: created.id,
+        action: 'create',
+        diff: {
+          firstName: created.firstName,
+          lastName: created.lastName,
+          email: created.email,
+          role: created.role,
+          employmentType: created.employmentType,
+        },
+      });
+      return created;
     });
   }
 
@@ -130,7 +147,7 @@ export class StaffService {
       }
 
       const { locationIds: _l, serviceIds: _s, ...rest } = input;
-      return tx.staff.update({
+      const updated = await tx.staff.update({
         where: { id },
         data: {
           ...(rest.firstName !== undefined ? { firstName: rest.firstName } : {}),
@@ -153,11 +170,40 @@ export class StaffService {
           ...(rest.startsAt !== undefined
             ? { startsAt: rest.startsAt ? new Date(rest.startsAt) : null }
             : {}),
-          ...((rest as { active?: boolean }).active !== undefined
-            ? { active: (rest as { active?: boolean }).active! }
-            : {}),
+          ...(rest.active !== undefined ? { active: rest.active } : {}),
         },
       });
+      // Diff aus existing → updated für nur-geänderte Felder.
+      const diff: Record<string, { from: unknown; to: unknown }> = {};
+      const trackedKeys: Array<keyof typeof updated> = [
+        'firstName',
+        'lastName',
+        'displayName',
+        'email',
+        'phone',
+        'role',
+        'employmentType',
+        'color',
+        'photoUrl',
+        'bio',
+        'active',
+      ];
+      for (const k of trackedKeys) {
+        if (existing[k] !== updated[k]) {
+          diff[k as string] = { from: existing[k], to: updated[k] };
+        }
+      }
+      if (input.locationIds) diff['locationIds'] = { from: null, to: input.locationIds };
+      if (input.serviceIds) diff['serviceIds'] = { from: null, to: input.serviceIds };
+      if (Object.keys(diff).length > 0) {
+        await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+          entity: 'Staff',
+          entityId: id,
+          action: 'update',
+          diff,
+        });
+      }
+      return updated;
     });
   }
 
@@ -167,6 +213,11 @@ export class StaffService {
       await tx.staff.update({
         where: { id },
         data: { deletedAt: new Date(), active: false },
+      });
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Staff',
+        entityId: id,
+        action: 'soft-delete',
       });
     });
   }

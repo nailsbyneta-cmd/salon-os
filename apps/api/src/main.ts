@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import { AppModule } from './app.module.js';
 
 /**
@@ -36,6 +37,25 @@ async function bootstrap(): Promise<void> {
   await app.register(cors, {
     origin: (process.env['ALLOWED_ORIGINS'] ?? 'http://localhost:3000').split(','),
     credentials: true,
+  });
+
+  // Rate-Limit global: 60 req/min/IP. Admin-Routen sind ohnehin per
+  // Web-Basic-Auth geschützt; schützt vor allem /v1/public/* (Booking,
+  // Waitlist, Self-Service) gegen Enumeration + Brute-Force.
+  await app.register(rateLimit, {
+    global: true,
+    max: 60,
+    timeWindow: '1 minute',
+    hook: 'preHandler',
+    keyGenerator: (req) =>
+      (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ??
+      req.ip,
+    errorResponseBuilder: (_req, ctx) => ({
+      type: 'https://salon-os.com/problems/rate-limit',
+      title: 'Zu viele Anfragen',
+      status: 429,
+      detail: `Bitte warte ${Math.ceil(ctx.ttl / 1000)}s und versuch es erneut.`,
+    }),
   });
 
   const port = Number(process.env['PORT'] ?? 4000);

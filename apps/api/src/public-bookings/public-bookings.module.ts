@@ -9,6 +9,9 @@ import { SelfServiceController } from './self-service.controller.js';
  * PRISMA_PUBLIC ist eine SEPARATE, nicht-RLS-gefilterte Prisma-Instanz für
  * den initialen Tenant-Lookup per Slug — danach wird wieder auf die
  * tenant-scoped Connection via withTenant() gewechselt.
+ *
+ * DbModule, AuditModule, RemindersModule sind @Global() — keine expliziten
+ * imports nötig.
  */
 @Module({
   controllers: [PublicBookingsController, SelfServiceController],

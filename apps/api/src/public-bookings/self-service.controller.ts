@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Get,
   Header,
@@ -15,23 +16,49 @@ import {
 import { z } from 'zod';
 import type { PrismaClient } from '@salon-os/db';
 import { buildIcal, verifySelfServiceToken } from '@salon-os/utils';
+import { AuditService } from '../audit/audit.service.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
+import { WITH_TENANT } from '../db/db.module.js';
 import { RemindersService } from '../reminders/reminders.service.js';
 
 const rescheduleSchema = z.object({
   startAt: z.string().datetime({ offset: true }),
 });
 
+type WithTenantFn = <T>(
+  tenantId: string,
+  userId: string | null,
+  role: string | null,
+  fn: (tx: PrismaClient) => Promise<T>,
+) => Promise<T>;
+
+const PG_EXCLUSION_VIOLATION = 'P2002';
+const PG_RAW_EXCLUSION = '23P01';
+
+function isConflictError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const code = (err as { code?: string }).code;
+  return (
+    code === PG_EXCLUSION_VIOLATION ||
+    code === PG_RAW_EXCLUSION ||
+    err.message.includes('appointment_no_overlap_per_staff') ||
+    err.message.includes('exclusion_violation')
+  );
+}
+
 /**
  * Self-Service-Endpunkte für E-Mail-Links.
- * Token = HMAC-signiert mit Action + Appointment-ID + Expiry.
+ * Token = HMAC-signiert mit Action + Appointment-ID + Tenant-ID + Expiry.
  * Öffentlich (kein Tenant-Header), aber Token ersetzt die Auth.
+ * Schreibpfade laufen durch withTenant(tenantId) — RLS + Audit-Log gewahrt.
  */
 @Controller('v1/public/appointments')
 export class SelfServiceController {
   constructor(
     @Inject('PRISMA_PUBLIC') private readonly prisma: PrismaClient,
+    @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
     private readonly reminders: RemindersService,
+    private readonly audit: AuditService,
   ) {}
 
   private resolveToken(
@@ -140,19 +167,32 @@ export class SelfServiceController {
   ): Promise<{ ok: true }> {
     if (!token) throw new BadRequestException('Token fehlt.');
     const { tenantId } = this.resolveToken(token, 'cancel', id);
-    const existing = await this.prisma.appointment.findFirst({
-      where: { id, tenantId },
+
+    await this.withTenant(tenantId, null, null, async (tx) => {
+      const existing = await tx.appointment.findFirst({ where: { id } });
+      if (!existing) throw new NotFoundException('Termin nicht gefunden.');
+      if (existing.status === 'CANCELLED') return;
+      if (existing.status === 'COMPLETED' || existing.status === 'NO_SHOW') {
+        throw new ConflictException(
+          'Termin ist bereits abgeschlossen und kann nicht storniert werden.',
+        );
+      }
+      await tx.appointment.update({
+        where: { id },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+          cancelReason: 'Auf Kundenwunsch (Self-Service)',
+        },
+      });
+      await this.audit.withinTx(tx, tenantId, null, {
+        entity: 'Appointment',
+        entityId: id,
+        action: 'cancel-self-service',
+        diff: { from: existing.status, to: 'CANCELLED' },
+      });
     });
-    if (!existing) throw new NotFoundException('Termin nicht gefunden.');
-    if (existing.status === 'CANCELLED') return { ok: true };
-    await this.prisma.appointment.update({
-      where: { id },
-      data: {
-        status: 'CANCELLED',
-        cancelledAt: new Date(),
-        cancelReason: 'Auf Kundenwunsch (Self-Service)',
-      },
-    });
+
     await this.reminders.cancelReminder(id).catch(() => undefined);
     return { ok: true };
   }
@@ -166,21 +206,64 @@ export class SelfServiceController {
   ): Promise<{ ok: true; startAt: string; endAt: string }> {
     if (!token) throw new BadRequestException('Token fehlt.');
     const { tenantId } = this.resolveToken(token, 'reschedule', id);
-    const existing = await this.prisma.appointment.findFirst({
-      where: { id, tenantId },
+
+    const result = await this.withTenant(tenantId, null, null, async (tx) => {
+      const existing = await tx.appointment.findFirst({ where: { id } });
+      if (!existing) throw new NotFoundException('Termin nicht gefunden.');
+      if (
+        existing.status === 'CANCELLED' ||
+        existing.status === 'NO_SHOW' ||
+        existing.status === 'COMPLETED'
+      ) {
+        throw new ConflictException(
+          'Termin kann in diesem Status nicht umgebucht werden.',
+        );
+      }
+
+      const newStart = new Date(body.startAt);
+      if (newStart.getTime() <= Date.now()) {
+        throw new BadRequestException('Neuer Termin muss in der Zukunft liegen.');
+      }
+      const durationMs = existing.endAt.getTime() - existing.startAt.getTime();
+      const newEnd = new Date(newStart.getTime() + durationMs);
+
+      try {
+        await tx.appointment.update({
+          where: { id },
+          data: {
+            startAt: newStart,
+            endAt: newEnd,
+            rescheduledFromId: existing.id,
+          },
+        });
+      } catch (err) {
+        if (isConflictError(err)) {
+          throw new ConflictException({
+            title: 'Zeitslot bereits belegt.',
+            detail:
+              'Bitte wähle einen anderen Zeitpunkt — der gewünschte Slot ist nicht mehr frei.',
+          });
+        }
+        throw err;
+      }
+
+      await this.audit.withinTx(tx, tenantId, null, {
+        entity: 'Appointment',
+        entityId: id,
+        action: 'reschedule-self-service',
+        diff: {
+          from: { startAt: existing.startAt, endAt: existing.endAt },
+          to: { startAt: newStart, endAt: newEnd },
+        },
+      });
+
+      return { startAt: newStart, endAt: newEnd };
     });
-    if (!existing) throw new NotFoundException('Termin nicht gefunden.');
-    const newStart = new Date(body.startAt);
-    const durationMs = existing.endAt.getTime() - existing.startAt.getTime();
-    const newEnd = new Date(newStart.getTime() + durationMs);
-    await this.prisma.appointment.update({
-      where: { id },
-      data: {
-        startAt: newStart,
-        endAt: newEnd,
-        rescheduledFromId: existing.id,
-      },
-    });
-    return { ok: true, startAt: newStart.toISOString(), endAt: newEnd.toISOString() };
+
+    return {
+      ok: true,
+      startAt: result.startAt.toISOString(),
+      endAt: result.endAt.toISOString(),
+    };
   }
 }

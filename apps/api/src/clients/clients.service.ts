@@ -103,7 +103,7 @@ export class ClientsService {
       });
       if (!existing) throw new NotFoundException(`Client ${id} not found`);
 
-      return tx.client.update({
+      const updated = await tx.client.update({
         where: { id },
         data: {
           ...(input.firstName !== undefined ? { firstName: input.firstName } : {}),
@@ -137,6 +137,47 @@ export class ClientsService {
             : {}),
         },
       });
+
+      const diff: Record<string, { from: unknown; to: unknown }> = {};
+      const trackedKeys: Array<keyof typeof updated> = [
+        'firstName',
+        'lastName',
+        'email',
+        'phone',
+        'birthday',
+        'marketingOptIn',
+        'smsOptIn',
+        'emailOptIn',
+        'notesInternal',
+        'tags',
+        'preferredStaffId',
+      ];
+      for (const k of trackedKeys) {
+        const a = existing[k];
+        const b = updated[k];
+        // Arrays (tags, allergies) tief vergleichen.
+        if (Array.isArray(a) && Array.isArray(b)) {
+          if (JSON.stringify(a) !== JSON.stringify(b))
+            diff[k as string] = { from: a, to: b };
+        } else if (a !== b) {
+          if (a instanceof Date || b instanceof Date) {
+            if ((a as Date | null)?.getTime?.() !== (b as Date | null)?.getTime?.()) {
+              diff[k as string] = { from: a, to: b };
+            }
+          } else {
+            diff[k as string] = { from: a, to: b };
+          }
+        }
+      }
+      if (Object.keys(diff).length > 0) {
+        await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+          entity: 'Client',
+          entityId: id,
+          action: 'update',
+          diff,
+        });
+      }
+      return updated;
     });
   }
 
