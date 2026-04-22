@@ -9,11 +9,22 @@ export function Sparkline({
   width = 180,
   height = 40,
   className,
+  min: minOverride,
+  max: maxOverride,
+  tone = 'accent',
+  ariaLabel,
 }: {
   data: number[];
   width?: number;
   height?: number;
   className?: string;
+  /** Feste y-Min. Default: Math.min(...data, 0). */
+  min?: number;
+  /** Feste y-Max. Default: Math.max(...data, 1). */
+  max?: number;
+  /** 'accent' (positive Metrik) oder 'warning' (negative Metrik). */
+  tone?: 'accent' | 'warning';
+  ariaLabel?: string;
 }): React.JSX.Element {
   if (data.length === 0) {
     return (
@@ -25,8 +36,8 @@ export function Sparkline({
       </div>
     );
   }
-  const max = Math.max(...data, 1);
-  const min = Math.min(...data, 0);
+  const max = maxOverride ?? Math.max(...data, 1);
+  const min = minOverride ?? Math.min(...data, 0);
   const range = Math.max(max - min, 1);
   const step = data.length > 1 ? width / (data.length - 1) : width;
 
@@ -45,30 +56,40 @@ export function Sparkline({
 
   const last = points[points.length - 1]!;
 
+  const toneVar = tone === 'warning' ? '--warning' : '--brand-accent';
+  const gradId = `sparkline-grad-${tone}`;
+  const a11yProps = ariaLabel
+    ? ({ role: 'img' as const, 'aria-label': ariaLabel })
+    : ({ 'aria-hidden': true });
   return (
     <svg
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
       className={cn('overflow-visible', className)}
-      aria-hidden
+      {...a11yProps}
     >
       <defs>
-        <linearGradient id="sparkline-grad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="hsl(var(--brand-accent))" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="hsl(var(--brand-accent))" stopOpacity="0" />
+        <linearGradient id={gradId} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={`hsl(var(${toneVar}))`} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={`hsl(var(${toneVar}))`} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={area} fill="url(#sparkline-grad)" />
+      <path d={area} fill={`url(#${gradId})`} />
       <path
         d={path}
         fill="none"
-        stroke="hsl(var(--brand-accent))"
+        stroke={`hsl(var(${toneVar}))`}
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx={last[0]} cy={last[1]} r="2.5" fill="hsl(var(--brand-accent))" />
+      <circle
+        cx={last[0]}
+        cy={last[1]}
+        r="2.5"
+        fill={`hsl(var(${toneVar}))`}
+      />
     </svg>
   );
 }

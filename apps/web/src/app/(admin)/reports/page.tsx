@@ -46,12 +46,46 @@ function mondayKeyUtc(iso: string): string {
   // Wochenzuordnung nicht verschieben; für Rate-Trends über 12+ Wochen
   // sind UTC-Buckets stabil genug.
   const d = new Date(iso);
-  const day = d.getUTCDay(); // 0=Sun, 1=Mon, ...
+  const day = d.getUTCDay();
   const diff = day === 0 ? 6 : day - 1;
-  const monday = new Date(d);
-  monday.setUTCDate(d.getUTCDate() - diff);
-  monday.setUTCHours(0, 0, 0, 0);
-  return `${monday.getUTCFullYear()}-${String(monday.getUTCMonth() + 1).padStart(2, '0')}-${String(monday.getUTCDate()).padStart(2, '0')}`;
+  d.setUTCDate(d.getUTCDate() - diff);
+  d.setUTCHours(0, 0, 0, 0);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
+function fillWeekGaps(
+  byWeek: Array<{ weekStart: string; total: number; noShow: number; cancelled: number }>,
+): typeof byWeek {
+  if (byWeek.length <= 1) return byWeek;
+  const out: typeof byWeek = [];
+  const first = new Date(byWeek[0]!.weekStart + 'T00:00:00Z');
+  const last = new Date(byWeek[byWeek.length - 1]!.weekStart + 'T00:00:00Z');
+  const existing = new Map(byWeek.map((w) => [w.weekStart, w]));
+  for (
+    let t = first.getTime();
+    t <= last.getTime();
+    t += 7 * 24 * 60 * 60 * 1000
+  ) {
+    const d = new Date(t);
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    out.push(
+      existing.get(key) ?? {
+        weekStart: key,
+        total: 0,
+        noShow: 0,
+        cancelled: 0,
+      },
+    );
+  }
+  return out;
+}
+
+function isoWeek(isoDate: string): number {
+  // ISO 8601 Wochen-Nummer für Montag YYYY-MM-DD.
+  const d = new Date(isoDate + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
 
 type PeriodKey = 'today' | '7d' | '30d' | '90d' | '1y';
@@ -216,9 +250,11 @@ function computeStats(appts: Appt[]): PeriodStats {
     (a, b) => b.revenueCents - a.revenueCents,
   );
 
-  const byWeek = Array.from(weekMap.entries())
-    .map(([weekStart, v]) => ({ weekStart, ...v }))
-    .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+  const byWeek = fillWeekGaps(
+    Array.from(weekMap.entries())
+      .map(([weekStart, v]) => ({ weekStart, ...v }))
+      .sort((a, b) => a.weekStart.localeCompare(b.weekStart)),
+  );
 
   return {
     count: appts.length,
@@ -379,65 +415,116 @@ export default async function ReportsPage({
         />
       </section>
 
-      {/* No-Show + Storno-Rate-Trend: nur anzeigen wenn >= 4 Wochen Daten,
-          sonst ist der Trend nicht aussagekräftig. */}
-      {stats.byWeek.length >= 4 ? (
-        <Card className="mb-8">
-          <CardBody>
-            <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-                No-Show + Storno-Rate · pro Woche
-              </h2>
-              <p className="text-[11px] text-text-muted">
-                {stats.byWeek.length} Wochen ·{' '}
-                {Math.round(
-                  ((stats.noShowCount + stats.cancelledCount) /
-                    Math.max(stats.count, 1)) *
-                    100,
-                )}
-                % Gesamt-Rate
-              </p>
-            </div>
-            <div className="flex items-end gap-4">
-              <Sparkline
-                data={stats.byWeek.map((w) =>
-                  w.total > 0
-                    ? Math.round(((w.noShow + w.cancelled) / w.total) * 100)
-                    : 0,
-                )}
-                width={Math.min(480, stats.byWeek.length * 36)}
-                height={56}
-                className="flex-1"
-              />
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-text-muted">
-              {stats.byWeek.slice(-12).map((w) => {
-                const rate =
-                  w.total > 0
-                    ? Math.round(((w.noShow + w.cancelled) / w.total) * 100)
-                    : 0;
-                return (
-                  <span
-                    key={w.weekStart}
-                    className="inline-flex min-w-[62px] flex-1 flex-col items-center gap-0.5 rounded bg-surface px-1 py-0.5"
-                    title={`${w.total} Termine, ${w.noShow} No-Show, ${w.cancelled} Storno`}
-                  >
-                    <span className="tabular-nums text-text-primary">
-                      {rate}%
-                    </span>
-                    <span className="tabular-nums">
-                      {new Date(w.weekStart).toLocaleDateString('de-CH', {
-                        day: '2-digit',
-                        month: '2-digit',
-                      })}
-                    </span>
-                  </span>
-                );
-              })}
-            </div>
-          </CardBody>
-        </Card>
-      ) : null}
+      {/* No-Show + Storno-Rate-Trend: nur anzeigen wenn >= 4 Wochen Daten. */}
+      {stats.byWeek.length >= 4
+        ? (() => {
+            // Konsistent: Sparkline + Chips zeigen beide die gleichen letzten
+            // 12 Wochen (oder weniger wenn Daten kürzer).
+            const displayWeeks = stats.byWeek.slice(-12);
+            const rates = displayWeeks.map((w) =>
+              w.total > 0
+                ? Math.round(((w.noShow + w.cancelled) / w.total) * 100)
+                : 0,
+            );
+            const overallRate = Math.round(
+              ((stats.noShowCount + stats.cancelledCount) /
+                Math.max(stats.count, 1)) *
+                100,
+            );
+            const latestRate = rates.at(-1) ?? 0;
+            const priorAvg =
+              rates.length > 1
+                ? rates.slice(0, -1).reduce((s, r) => s + r, 0) /
+                  (rates.length - 1)
+                : 0;
+            const trending = latestRate - priorAvg;
+            const tone: 'accent' | 'warning' =
+              latestRate >= 15 || trending >= 5 ? 'warning' : 'accent';
+            const fixedMax = Math.max(30, Math.max(...rates));
+            return (
+              <Card className="mb-8">
+                <CardBody>
+                  <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                      No-Show + Storno-Rate · pro Woche
+                    </h2>
+                    <p className="text-[11px] text-text-muted">
+                      {displayWeeks.length} Wochen · {overallRate}%
+                      Gesamt-Rate ·{' '}
+                      <span
+                        className={cn(
+                          tone === 'warning'
+                            ? 'font-semibold text-warning'
+                            : 'text-text-secondary',
+                        )}
+                      >
+                        aktuell {latestRate}%
+                      </span>
+                    </p>
+                  </div>
+                  <Sparkline
+                    data={rates}
+                    width={Math.min(480, displayWeeks.length * 36)}
+                    height={56}
+                    min={0}
+                    max={fixedMax}
+                    tone={tone}
+                    ariaLabel={`No-Show- und Storno-Rate über ${displayWeeks.length} Wochen, aktuell ${latestRate}%, Ø zuvor ${Math.round(
+                      priorAvg,
+                    )}%`}
+                  />
+                  <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
+                    {displayWeeks.map((w, i) => {
+                      const rate = rates[i] ?? 0;
+                      const isEmpty = w.total === 0;
+                      const kw = isoWeek(w.weekStart);
+                      return (
+                        <span
+                          key={w.weekStart}
+                          tabIndex={0}
+                          className={cn(
+                            'inline-flex min-w-[62px] flex-1 flex-col items-center gap-0.5 rounded px-1 py-0.5 outline-none focus-visible:ring-2 focus-visible:ring-accent',
+                            isEmpty
+                              ? 'bg-surface/50 text-text-muted'
+                              : rate >= 15
+                                ? 'bg-warning/10 text-warning'
+                                : 'bg-surface text-text-muted',
+                          )}
+                          title={
+                            isEmpty
+                              ? 'Keine Termine in dieser Woche'
+                              : `${w.total} Termine · ${w.noShow} No-Show · ${w.cancelled} Storno`
+                          }
+                          aria-label={`KW ${kw}, ${isEmpty ? 'keine Termine' : `${rate} Prozent No-Show und Storno`}`}
+                        >
+                          <span className="tabular-nums font-medium">
+                            {isEmpty ? '—' : `${rate}%`}
+                          </span>
+                          <span className="tabular-nums">
+                            KW {kw}
+                          </span>
+                          <span className="tabular-nums text-[9px] opacity-70">
+                            {new Date(
+                              `${w.weekStart}T12:00:00Z`,
+                            ).toLocaleDateString('de-CH', {
+                              day: '2-digit',
+                              month: '2-digit',
+                            })}
+                          </span>
+                          {!isEmpty ? (
+                            <span className="text-[9px] opacity-70">
+                              {w.total}T · {w.noShow + w.cancelled} aus
+                            </span>
+                          ) : null}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })()
+        : null}
 
       {/* Umsatz pro Tag */}
       <Card className="mb-8">
