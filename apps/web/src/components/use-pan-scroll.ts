@@ -56,6 +56,14 @@ export function usePanScroll<T extends HTMLElement>(
       startX = e.clientX;
       startScrollLeft = el.scrollLeft;
       pointerId = e.pointerId;
+      // Früh capturen: pointerleave auf Sticky-Children würde sonst in
+      // der armed-Phase den Pan töten, bevor die 6px-Schwelle erreicht
+      // ist. Capture leitet alle Moves an el weiter.
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* some pointers refuse capture; weiterarbeiten */
+      }
     };
 
     const onPointerMove = (e: PointerEvent): void => {
@@ -64,11 +72,6 @@ export function usePanScroll<T extends HTMLElement>(
       if (phase === 'armed') {
         if (Math.abs(dx) < THRESHOLD) return;
         phase = 'panning';
-        try {
-          el.setPointerCapture(e.pointerId);
-        } catch {
-          /* some pointers refuse capture; pan funktioniert trotzdem */
-        }
         el.style.cursor = 'grabbing';
         el.style.userSelect = 'none';
       }
@@ -85,20 +88,28 @@ export function usePanScroll<T extends HTMLElement>(
       const wasPanning = phase === 'panning';
       phase = 'idle';
       pointerId = null;
+      try {
+        el.releasePointerCapture(e.pointerId);
+      } catch {
+        /* capture may already be released */
+      }
       if (wasPanning) {
-        try {
-          el.releasePointerCapture(e.pointerId);
-        } catch {
-          /* capture may already be released */
-        }
         el.style.cursor = '';
         el.style.userSelect = '';
         // Click unterdrücken, damit Slot-onClick nach einem Pan nicht
-        // unbeabsichtigt einen Termin anlegt.
+        // unbeabsichtigt einen Termin anlegt. { once: true } + Timeout-
+        // Fallback falls der Click nie kommt (Release ausserhalb, kein
+        // bubble) — ohne Timeout würde der nächste echte Click
+        // geschluckt.
         el.addEventListener('click', suppressNextClick, {
           capture: true,
           once: true,
         });
+        window.setTimeout(() => {
+          el.removeEventListener('click', suppressNextClick, {
+            capture: true,
+          });
+        }, 300);
       }
     };
 
@@ -106,14 +117,12 @@ export function usePanScroll<T extends HTMLElement>(
     el.addEventListener('pointermove', onPointerMove);
     el.addEventListener('pointerup', stop);
     el.addEventListener('pointercancel', stop);
-    el.addEventListener('pointerleave', stop);
 
     return () => {
       el.removeEventListener('pointerdown', onPointerDown);
       el.removeEventListener('pointermove', onPointerMove);
       el.removeEventListener('pointerup', stop);
       el.removeEventListener('pointercancel', stop);
-      el.removeEventListener('pointerleave', stop);
     };
   }, [ref]);
 }

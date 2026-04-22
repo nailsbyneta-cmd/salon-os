@@ -112,14 +112,25 @@ export function CalendarWeek({
   const router = useRouter();
   const isMobile = useIsMobile();
   const viewport = useViewportSize();
+  const mounted = React.useSyncExternalStore(
+    (cb) => {
+      cb();
+      return () => {};
+    },
+    () => true,
+    () => false,
+  );
   const scrollRef = React.useRef<HTMLDivElement>(null);
   usePanScroll(scrollRef);
   const [zoom, , zoomControls] = useCalendarZoom();
   const [onlyActive, setOnlyActive] = useOnlyActiveStaff();
   const base = isMobile ? MOBILE : DESKTOP;
+  // SSR-safe: pre-mount nur base × zoom, post-mount fit-floor dazu.
   const availableHeight = Math.max(400, viewport.h - CAL_VERTICAL_OFFSET);
   const fitPxPerMin = availableHeight / (HOURS.length * 60);
-  const pxPerMin = Math.max(base.pxPerMin, fitPxPerMin) * zoom;
+  const pxPerMin = mounted
+    ? Math.max(base.pxPerMin * zoom, fitPxPerMin)
+    : base.pxPerMin * zoom;
   const cfg = {
     pxPerMin,
     colWidth: Math.max(40, Math.round(base.colMinWidth * zoom)),
@@ -326,6 +337,21 @@ export function CalendarWeek({
     { length: HOURS.length * SLOTS_PER_HOUR },
     (_, i) => i * SLOT_MINUTES,
   );
+
+  // Ohne Mitarbeiterinnen würde gridTemplate `repeat(0, …)` = invalid
+  // CSS werden und die Woche ohne Spalten rendern. Gleicher Empty-State
+  // wie in calendar-dnd.tsx.
+  if (staff.length === 0) {
+    return (
+      <div className="rounded-lg border border-border bg-surface p-12 text-center text-sm text-text-muted">
+        Keine Mitarbeiterinnen angelegt. Lege unter{' '}
+        <Link href="/staff" className="text-accent hover:underline">
+          Team
+        </Link>{' '}
+        jemanden an.
+      </div>
+    );
+  }
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>

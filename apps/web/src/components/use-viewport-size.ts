@@ -15,8 +15,13 @@ export interface ViewportSize {
 export function useViewportSize(): ViewportSize {
   const [size, setSize] = React.useState<ViewportSize>({ w: 1280, h: 800 });
   React.useEffect(() => {
-    const update = (): void =>
-      setSize({ w: window.innerWidth, h: window.innerHeight });
+    const update = (): void => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      // Browser-Chrome-Show/Hide auf Mobile triggert resize mit identischen
+      // Werten — ohne Guard würde jedes Render sinnlos neu berechnet.
+      setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+    };
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);

@@ -113,17 +113,27 @@ export function CalendarDnd({
   const router = useRouter();
   const isMobile = useIsMobile();
   const viewport = useViewportSize();
+  const mounted = React.useSyncExternalStore(
+    (cb) => {
+      cb();
+      return () => {};
+    },
+    () => true,
+    () => false,
+  );
   const scrollRef = React.useRef<HTMLDivElement>(null);
   usePanScroll(scrollRef);
   const [zoom, , zoomControls] = useCalendarZoom();
   const [onlyActive, setOnlyActive] = useOnlyActiveStaff();
   const base = isMobile ? MOBILE : DESKTOP;
-  // pxPerMin skaliert mit Viewport-Höhe — 11h sollen den sichtbaren
-  // Bereich füllen. Mindestens base.pxPerMin, damit Termine nie kleiner
-  // als Default werden.
+  // SSR: Nur base.pxPerMin × zoom — kein Viewport-fit, damit Server-
+  // und Client-Markup identisch sind (keine Hydration-Warnings).
+  // Nach Mount wird fitPxPerMin als Floor dazu genommen.
   const availableHeight = Math.max(400, viewport.h - CAL_VERTICAL_OFFSET);
   const fitPxPerMin = availableHeight / (HOURS.length * 60);
-  const pxPerMin = Math.max(base.pxPerMin, fitPxPerMin) * zoom;
+  const pxPerMin = mounted
+    ? Math.max(base.pxPerMin * zoom, fitPxPerMin)
+    : base.pxPerMin * zoom;
   const cfg = {
     pxPerMin,
     colWidth: Math.max(50, Math.round(base.colMinWidth * zoom)),

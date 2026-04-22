@@ -59,8 +59,10 @@ export function CalendarMonth({
 
   return (
     <div
-      className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface"
-      style={{ minHeight: 'calc(100dvh - 220px)' }}
+      // 100dvh braucht Safari 15.4+ / moderne Chromium. Ältere WebViews
+      // (WA/IG) fallen via CSS-Cascade auf 100vh zurück — erste declaration
+      // setzt den Fallback, zweite überschreibt wo unterstützt.
+      className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface [min-height:calc(100vh-220px)] [min-height:calc(100dvh-220px)]"
     >
       <div className="grid grid-cols-7 border-b border-border">
         {weekdayLabels.map((w) => (
