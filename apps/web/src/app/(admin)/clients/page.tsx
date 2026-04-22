@@ -23,17 +23,23 @@ interface ClientRow {
   tags: string[];
   lifetimeValue: string | number;
   marketingOptIn: boolean;
+  noShowRisk?: string | number | null;
 }
 
-type FilterKey = 'all' | 'vip' | 'stamm' | 'neu' | 'marketing';
+type FilterKey = 'all' | 'vip' | 'stamm' | 'neu' | 'risiko' | 'marketing';
 
 const FILTERS: Array<{ key: FilterKey; label: string }> = [
   { key: 'all', label: 'Alle' },
   { key: 'vip', label: 'VIP (ab Gold)' },
   { key: 'stamm', label: 'Stammkundinnen (10+)' },
   { key: 'neu', label: 'Neu (0 Besuche)' },
+  { key: 'risiko', label: 'No-Show-Risiko' },
   { key: 'marketing', label: 'Marketing-Opt-in' },
 ];
+
+function riskOf(c: ClientRow): number {
+  return c.noShowRisk != null ? Number(c.noShowRisk) : 0;
+}
 
 function applyFilter(clients: ClientRow[], f: FilterKey): ClientRow[] {
   switch (f) {
@@ -43,6 +49,8 @@ function applyFilter(clients: ClientRow[], f: FilterKey): ClientRow[] {
       return clients.filter((c) => c.totalVisits >= 10);
     case 'neu':
       return clients.filter((c) => c.totalVisits === 0);
+    case 'risiko':
+      return clients.filter((c) => riskOf(c) >= 25);
     case 'marketing':
       return clients.filter((c) => c.marketingOptIn);
     case 'all':
@@ -189,7 +197,19 @@ export default async function ClientsPage({
                 </tr>
               </thead>
               <tbody>
-                {clients.map((c) => (
+                {clients.map((c) => {
+                  const risk = riskOf(c);
+                  const riskTier: 'hoch' | 'mittel' | null =
+                    risk >= 40 ? 'hoch' : risk >= 25 ? 'mittel' : null;
+                  const isVip = Number(c.lifetimeValue) >= 2000;
+                  const a11y = [
+                    riskTier === 'hoch' ? 'hohes No-Show-Risiko' : null,
+                    riskTier === 'mittel' ? 'mittleres No-Show-Risiko' : null,
+                    isVip ? 'VIP' : null,
+                  ]
+                    .filter(Boolean)
+                    .join(', ');
+                  return (
                   <tr
                     key={c.id}
                     className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
@@ -198,18 +218,51 @@ export default async function ClientsPage({
                       <Link
                         href={`/clients/${c.id}`}
                         className="flex items-center gap-3 font-medium text-text-primary hover:underline"
+                        aria-label={
+                          a11y
+                            ? `${c.firstName} ${c.lastName} — ${a11y}`
+                            : undefined
+                        }
                       >
                         <Avatar
                           name={`${c.firstName} ${c.lastName}`}
                           size="sm"
                           color="hsl(var(--brand-accent))"
                         />
-                        <span className="min-w-0">
-                          <span className="block truncate">
-                            {c.firstName} {c.lastName}
+                        <span className="min-w-0 flex-1">
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            {riskTier === 'hoch' ? (
+                              <span
+                                className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger text-[10px] font-bold leading-none text-white"
+                                title={`No-Show-Risiko ${Math.round(risk)}%`}
+                                aria-hidden="true"
+                              >
+                                !
+                              </span>
+                            ) : riskTier === 'mittel' ? (
+                              <span
+                                className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-warning text-[10px] font-bold leading-none text-white"
+                                title={`No-Show-Risiko ${Math.round(risk)}%`}
+                                aria-hidden="true"
+                              >
+                                !
+                              </span>
+                            ) : null}
+                            {isVip ? (
+                              <span
+                                className="shrink-0 text-sm leading-none text-accent"
+                                title="VIP (Lifetime >= 2000 CHF)"
+                                aria-hidden="true"
+                              >
+                                ★
+                              </span>
+                            ) : null}
+                            <span className="min-w-0 truncate">
+                              {c.firstName} {c.lastName}
+                            </span>
                           </span>
                           {/* Kontakt auf Mobile unter den Namen */}
-                          <span className="block truncate text-xs font-normal text-text-muted sm:hidden">
+                          <span className="mt-0.5 block truncate text-xs font-normal text-text-muted sm:hidden">
                             {c.email ?? c.phone ?? '—'}
                           </span>
                         </span>
@@ -239,7 +292,8 @@ export default async function ClientsPage({
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </CardBody>
