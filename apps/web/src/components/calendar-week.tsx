@@ -146,6 +146,45 @@ export function CalendarWeek({
     setAppts(initialAppts);
   }, [initialAppts]);
 
+  // Auto-Scroll zur aktuellen Uhrzeit beim Öffnen der Woche, wenn
+  // heute in der Woche liegt — gleiche Logik wie Tag-View.
+  const scrolledToNowRef = React.useRef(false);
+  React.useEffect(() => {
+    if (scrolledToNowRef.current) return;
+    if (!mounted) return;
+    const todayZurich = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Zurich',
+    }).format(new Date());
+    const weekStartIso = weekStart.toISOString().slice(0, 10);
+    const weekEndDate = new Date(weekStart);
+    weekEndDate.setDate(weekStart.getDate() + 6);
+    const weekEndIso = weekEndDate.toISOString().slice(0, 10);
+    if (todayZurich < weekStartIso || todayZurich > weekEndIso) return;
+    const now = new Date();
+    const zurichHour = Number(
+      new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Zurich',
+        hour: '2-digit',
+        hour12: false,
+      }).format(now),
+    );
+    const zurichMin = Number(
+      new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Zurich',
+        minute: '2-digit',
+      }).format(now),
+    );
+    const minutesFromCalStart = zurichHour * 60 + zurichMin - CAL_START_MIN;
+    if (minutesFromCalStart < 0 || minutesFromCalStart > HOURS.length * 60) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const containerTopInPage = el.getBoundingClientRect().top + window.scrollY;
+    const targetY =
+      containerTopInPage + minutesFromCalStart * pxPerMin - window.innerHeight / 3;
+    window.scrollTo({ top: Math.max(0, targetY), behavior: 'instant' as ScrollBehavior });
+    scrolledToNowRef.current = true;
+  }, [mounted, pxPerMin, weekStart]);
+
   const days = React.useMemo(
     () =>
       Array.from({ length: 7 }, (_, i) => {
