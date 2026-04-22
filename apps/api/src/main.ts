@@ -1,3 +1,4 @@
+import './otel.js';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -26,9 +27,14 @@ function assertProductionSafety(): void {
 async function bootstrap(): Promise<void> {
   assertProductionSafety();
 
+  // trustProxy: 1 = genau 1 Hop vertrauen (Railway-Edge). `true` würde
+  // beliebig viele XFF-Hops akzeptieren und damit Client-seitiges Spoofing
+  // der Rate-Limit-Key erlauben. Lokal (NODE_ENV≠production) bleibt der
+  // Rechner sowieso direkt erreichbar — hier ist `true` akzeptabel.
+  const trustProxy = process.env['NODE_ENV'] === 'production' ? 1 : true;
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: false, trustProxy: true }),
+    new FastifyAdapter({ logger: false, trustProxy }),
   );
 
   await app.register(helmet, {

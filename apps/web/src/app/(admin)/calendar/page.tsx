@@ -6,7 +6,7 @@ import { CalendarWeek } from '@/components/calendar-week';
 import { CalendarMonth } from '@/components/calendar-month';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
-import { transitionAppointment, cancelAppointment } from './actions';
+import { transitionAppointment, cancelAppointment, markNoShow } from './actions';
 
 type Status = DndAppt['status'];
 type View = 'day' | 'week' | 'month';
@@ -304,6 +304,15 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
   });
   const transition = transitionAppointment.bind(null, a.id);
   const cancel = cancelAppointment.bind(null, a.id);
+  const noShow = markNoShow.bind(null, a.id);
+  // Termin gilt als "vorbei" wenn Start + 15 Min in der Vergangenheit — erst
+  // dann macht "Nicht erschienen" Sinn (vorher könnte sie noch kommen).
+  const isOverdue = Date.now() - new Date(a.startAt).getTime() > 15 * 60_000;
+  const noShowEligible =
+    isOverdue &&
+    (a.status === 'BOOKED' ||
+      a.status === 'CONFIRMED' ||
+      a.status === 'CHECKED_IN');
 
   return (
     <li className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
@@ -348,10 +357,19 @@ function ApptActions({ a }: { a: Appt }): React.JSX.Element {
             </Button>
           </Link>
         ) : null}
-        {a.status !== 'COMPLETED' && a.status !== 'CANCELLED' ? (
-          <form action={cancel.bind(null, 'Auf Kundenwunsch')}>
+        {noShowEligible ? (
+          <form action={noShow}>
             <Button type="submit" variant="danger" size="sm">
-              Stornieren
+              Nicht da
+            </Button>
+          </form>
+        ) : null}
+        {a.status !== 'COMPLETED' &&
+        a.status !== 'CANCELLED' &&
+        a.status !== 'NO_SHOW' ? (
+          <form action={cancel.bind(null, 'Auf Kundenwunsch')}>
+            <Button type="submit" variant="ghost" size="sm">
+              Storno
             </Button>
           </form>
         ) : null}
