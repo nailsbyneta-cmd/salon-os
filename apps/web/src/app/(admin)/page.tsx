@@ -6,6 +6,13 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { transitionAppointment } from './calendar/actions';
 
+interface BirthdayClient {
+  id: string;
+  firstName: string;
+  lastName: string;
+  birthday: string;
+}
+
 interface Dashboard {
   servicesCount: number;
   staffCount: number;
@@ -14,6 +21,7 @@ interface Dashboard {
   giftCardsOutstanding: number;
   waitlistCount: number;
   lowStockCount: number;
+  birthdaysToday: BirthdayClient[];
   todayAppts: Array<{
     id: string;
     startAt: string;
@@ -54,7 +62,17 @@ async function loadDashboard(): Promise<Dashboard> {
   const [svc, stf, cli, appts, weekAppts, gc, wl, lowStock] = await Promise.all([
     safe(apiFetch<{ services: unknown[] }>('/v1/services', auth), { services: [] }),
     safe(apiFetch<{ staff: unknown[] }>('/v1/staff', auth), { staff: [] }),
-    safe(apiFetch<{ clients: unknown[] }>('/v1/clients?limit=200', auth), { clients: [] }),
+    safe(
+      apiFetch<{
+        clients: Array<{
+          id: string;
+          firstName: string;
+          lastName: string;
+          birthday: string | null;
+        }>;
+      }>('/v1/clients?limit=1000', auth),
+      { clients: [] },
+    ),
     safe(
       apiFetch<{ appointments: Dashboard['todayAppts'] }>(
         `/v1/appointments?from=${start.toISOString()}&to=${end.toISOString()}`,
@@ -86,6 +104,25 @@ async function loadDashboard(): Promise<Dashboard> {
     ),
   ]);
 
+  // Heutige Geburtstage — clientseitig filtern, weil die API keinen MM-DD-
+  // Filter anbietet. Neta's Salon hat <2000 Kundinnen, Payload <500 KB.
+  const today = new Date();
+  const mmdd = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(
+    today.getDate(),
+  ).padStart(2, '0')}`;
+  const birthdaysToday: BirthdayClient[] = cli.clients
+    .filter((c): c is { id: string; firstName: string; lastName: string; birthday: string } =>
+      Boolean(c.birthday) &&
+      typeof c.birthday === 'string' &&
+      c.birthday.slice(5, 10) === mmdd,
+    )
+    .map((c) => ({
+      id: c.id,
+      firstName: c.firstName,
+      lastName: c.lastName,
+      birthday: c.birthday,
+    }));
+
   const revenueByDay = new Map<string, number>();
   for (let i = 0; i < 7; i++) {
     const d = new Date(weekStart);
@@ -116,7 +153,23 @@ async function loadDashboard(): Promise<Dashboard> {
     waitlistCount: wl.entries.length,
     lowStockCount: lowStock.products.length,
     todayAppts: appts.appointments,
+    birthdaysToday,
   };
+}
+
+function ageToday(birthday: string): number | null {
+  // birthday im Format "YYYY-MM-DD" oder ISO-Datetime.
+  const iso = birthday.slice(0, 10);
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const now = new Date();
+  let age = now.getFullYear() - y;
+  const curMMDD = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+    now.getDate(),
+  ).padStart(2, '0')}`;
+  const bdayMMDD = `${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  if (bdayMMDD > curMMDD) age -= 1;
+  return age >= 0 && age < 150 ? age : null;
 }
 
 const greetingByHour = (h: number): string => {
@@ -306,6 +359,46 @@ export default async function Home(): Promise<React.JSX.Element> {
                 );
               })}
             </ul>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {d.birthdaysToday.length > 0 ? (
+        <Card className="mb-4 border-l-4 border-l-accent bg-accent/5" elevation="flat">
+          <CardBody>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                🎂 Heute Geburtstag · {d.birthdaysToday.length}{' '}
+                {d.birthdaysToday.length === 1 ? 'Kundin' : 'Kundinnen'}
+              </span>
+            </div>
+            <ul className="flex flex-wrap gap-2">
+              {d.birthdaysToday.slice(0, 8).map((b) => {
+                const age = ageToday(b.birthday);
+                return (
+                  <li key={b.id}>
+                    <Link
+                      href={`/clients/${b.id}`}
+                      className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-raised"
+                    >
+                      <span className="font-medium text-text-primary">
+                        {b.firstName} {b.lastName}
+                      </span>
+                      {age != null ? (
+                        <span className="text-xs tabular-nums text-text-muted">
+                          {age}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            {d.birthdaysToday.length > 8 ? (
+              <p className="mt-2 text-xs text-text-muted">
+                +{d.birthdaysToday.length - 8} weitere
+              </p>
+            ) : null}
           </CardBody>
         </Card>
       ) : null}

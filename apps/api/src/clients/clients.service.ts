@@ -40,7 +40,7 @@ export class ClientsService {
             : {}),
         },
         orderBy: [{ lastVisitAt: 'desc' }, { lastName: 'asc' }],
-        take: Math.min(limit, 200),
+        take: Math.min(limit, 5000),
       });
     });
   }
