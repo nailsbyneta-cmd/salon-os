@@ -11,6 +11,10 @@ import {
   Avatar,
 } from '@salon-os/ui';
 import { searchCommand } from '@/app/search-action';
+import {
+  getPendingCounts,
+  type PendingCounts,
+} from '@/app/pending-counts-action';
 import { Celebrate } from '@/components/celebrate';
 
 interface NavItem {
@@ -43,9 +47,26 @@ export function AdminShell({
   const { toggle, resolved } = useTheme();
   const [paletteOpen, setPaletteOpen] = React.useState(false);
   const [navOpen, setNavOpen] = React.useState(false);
+  const [counts, setCounts] = React.useState<PendingCounts | null>(null);
 
   React.useEffect(() => {
     setNavOpen(false);
+  }, [pathname]);
+
+  // Pending-Counts bei Mount + Route-Change fetchen. Nicht öfter als alle
+  // 60 Sek aktualisieren (Kosten: je 3 API-Calls).
+  React.useEffect(() => {
+    let cancelled = false;
+    getPendingCounts()
+      .then((res) => {
+        if (!cancelled) setCounts(res);
+      })
+      .catch(() => {
+        // Bei Fehler Badge versteckt lassen.
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [pathname]);
 
   const asyncLoader = React.useCallback(
@@ -233,6 +254,21 @@ export function AdminShell({
               item.href === '/'
                 ? pathname === '/'
                 : pathname?.startsWith(item.href);
+            // Badge-Count pro Nav-Item bestimmen.
+            const badgeCount =
+              item.href === '/'
+                ? counts?.toConfirmToday ?? 0
+                : item.href === '/waitlist'
+                  ? counts?.waitlist ?? 0
+                  : item.href === '/inventory'
+                    ? counts?.lowStock ?? 0
+                    : 0;
+            const badgeTone =
+              item.href === '/'
+                ? 'warning'
+                : item.href === '/inventory'
+                  ? 'warning'
+                  : 'neutral';
             return (
               <Link
                 key={item.href}
@@ -243,6 +279,11 @@ export function AdminShell({
                     ? 'bg-surface-raised text-text-primary font-medium'
                     : 'text-text-secondary hover:bg-surface-raised hover:text-text-primary',
                 )}
+                aria-label={
+                  badgeCount > 0
+                    ? `${item.label}, ${badgeCount} ${badgeCount === 1 ? 'Eintrag' : 'Einträge'} pendent`
+                    : undefined
+                }
               >
                 <span
                   className={cn(
@@ -252,7 +293,20 @@ export function AdminShell({
                 >
                   {item.icon}
                 </span>
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {badgeCount > 0 ? (
+                  <span
+                    className={cn(
+                      'inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums',
+                      badgeTone === 'warning'
+                        ? 'bg-warning/15 text-warning'
+                        : 'bg-surface-raised text-text-secondary',
+                    )}
+                    aria-hidden="true"
+                  >
+                    {badgeCount}
+                  </span>
+                ) : null}
               </Link>
             );
           })}
