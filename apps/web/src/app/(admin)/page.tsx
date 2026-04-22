@@ -39,6 +39,10 @@ interface Dashboard {
   topServicesWeek: Array<{ serviceId: string; name: string; count: number }>;
   zurichYear: string;
   tenantName: string;
+  monthRevenueCents: number;
+  monthGoalCents: number;
+  monthDayOfMonth: number;
+  monthDaysInMonth: number;
   todayAppts: Array<{
     id: string;
     startAt: string;
@@ -70,14 +74,43 @@ async function loadDashboard(): Promise<Dashboard> {
   const weekStart = new Date(start);
   weekStart.setDate(weekStart.getDate() - 6);
 
+  // Monats-Umsatz-Ziel: Monatsbeginn bis jetzt. Wir nutzen Europe/Zurich-
+  // Monatsgrenzen für faire Rechnung.
+  const zurichYmd = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Zurich',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const zYearNow = zurichYmd.find((p) => p.type === 'year')?.value ?? '2025';
+  const zMonthNow = zurichYmd.find((p) => p.type === 'month')?.value ?? '01';
+  const zDayNow = zurichYmd.find((p) => p.type === 'day')?.value ?? '01';
+  const monthStartIso = `${zYearNow}-${zMonthNow}-01T00:00:00+02:00`;
+  const dayOfMonth = Number(zDayNow);
+  const daysInMonth = new Date(
+    Number(zYearNow),
+    Number(zMonthNow),
+    0,
+  ).getDate();
+
   const safe = <T,>(p: Promise<T>, fallback: T): Promise<T> =>
     p.catch((err) => {
       if (err instanceof ApiError) return fallback;
       throw err;
     });
 
-  const [svc, stf, cli, appts, weekAppts, gc, wl, lowStock, tenantInfo] =
-    await Promise.all([
+  const [
+    svc,
+    stf,
+    cli,
+    appts,
+    weekAppts,
+    gc,
+    wl,
+    lowStock,
+    tenantInfo,
+    monthApptsRes,
+  ] = await Promise.all([
     safe(apiFetch<{ services: unknown[] }>('/v1/services', auth), { services: [] }),
     safe(apiFetch<{ staff: unknown[] }>('/v1/staff', auth), { staff: [] }),
     safe(
@@ -130,7 +163,29 @@ async function loadDashboard(): Promise<Dashboard> {
       apiFetch<{ name: string }>('/v1/settings/tenant', auth),
       { name: '' },
     ),
+    safe(
+      apiFetch<{
+        appointments: Array<{
+          startAt: string;
+          status: string;
+          items: Array<{ price: string }>;
+        }>;
+      }>(
+        `/v1/appointments?from=${encodeURIComponent(monthStartIso)}&to=${end.toISOString()}`,
+        auth,
+      ),
+      { appointments: [] },
+    ),
   ]);
+  // Monat-Umsatz (non-terminal).
+  let monthRevenueCents = 0;
+  for (const a of monthApptsRes.appointments) {
+    if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') continue;
+    monthRevenueCents += a.items.reduce(
+      (s, i) => s + Math.round(Number(i.price) * 100),
+      0,
+    );
+  }
   const tenantName = tenantInfo.name || 'unserem Salon';
 
   // Heutige Geburtstage — clientseitig filtern, weil die API keinen MM-DD-
@@ -258,6 +313,10 @@ async function loadDashboard(): Promise<Dashboard> {
     topServicesWeek,
     zurichYear: zYear,
     tenantName,
+    monthRevenueCents,
+    monthGoalCents: Number(process.env['SALON_MONTHLY_GOAL_CHF'] ?? '15000') * 100,
+    monthDayOfMonth: dayOfMonth,
+    monthDaysInMonth: daysInMonth,
   };
 }
 
@@ -393,6 +452,69 @@ export default async function Home(): Promise<React.JSX.Element> {
         <Stat label="Kundinnen" value={d.clientsCount} href="/clients" />
         <Stat label="Services" value={d.servicesCount} href="/services" />
       </section>
+
+      {d.monthGoalCents > 0
+        ? (() => {
+            const rev = d.monthRevenueCents;
+            const goal = d.monthGoalCents;
+            const pct = Math.min(100, Math.round((rev / goal) * 100));
+            const dayProgress = d.monthDayOfMonth / d.monthDaysInMonth;
+            const projection = dayProgress > 0 ? rev / dayProgress : 0;
+            const onPace = projection >= goal;
+            const barColor = onPace
+              ? 'from-success to-success/70'
+              : pct < 50 && dayProgress > 0.5
+                ? 'from-warning to-warning/70'
+                : 'from-accent to-accent/70';
+            const fmtChf = (cents: number): string =>
+              (cents / 100).toLocaleString('de-CH', {
+                maximumFractionDigits: 0,
+              });
+            return (
+              <Card className="mb-4" elevation="flat">
+                <CardBody>
+                  <div className="flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wider text-text-muted">
+                        Monats-Umsatz · Tag {d.monthDayOfMonth}/
+                        {d.monthDaysInMonth}
+                      </div>
+                      <div className="mt-1 font-display text-2xl font-semibold tabular-nums">
+                        {fmtChf(rev)}{' '}
+                        <span className="text-sm font-normal text-text-muted">
+                          von {fmtChf(goal)} CHF
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-text-muted">
+                        {pct}% erreicht · Projektion bei gleichem Tempo:{' '}
+                        <span
+                          className={
+                            onPace
+                              ? 'font-semibold text-success'
+                              : 'font-semibold text-text-primary'
+                          }
+                        >
+                          {fmtChf(projection)} CHF
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-surface-raised">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${barColor} transition-all duration-slow ease-out-expo`}
+                      style={{ width: `${pct}%` }}
+                      role="progressbar"
+                      aria-valuenow={pct}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`Monats-Umsatz ${pct} Prozent erreicht`}
+                    />
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })()
+        : null}
 
       <Card className="mb-4" elevation="flat">
         <CardBody className="flex flex-wrap items-end justify-between gap-4 sm:gap-6">
