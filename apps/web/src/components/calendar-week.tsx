@@ -329,7 +329,7 @@ export function CalendarWeek({
       </div>
       <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <div
-          className="grid"
+          className="grid w-full"
           style={{ gridTemplateColumns: gridTemplate, minWidth }}
         >
           {/* Day-Header */}

@@ -316,8 +316,14 @@ export function CalendarDnd({
       </div>
       <div className="relative overflow-x-auto rounded-lg border border-border bg-surface">
         <div
-          className="grid"
-          style={{ gridTemplateColumns: gridCols, minWidth: 'fit-content' }}
+          className="grid w-full"
+          style={{
+            gridTemplateColumns: gridCols,
+            // minWidth = Mindestbreite für horizontales Scrollen auf schmalen
+            // Viewports. Auf grossen Monitoren stretched 1fr den Rest.
+            minWidth:
+              cfg.timeColWidth + shownStaff.length * cfg.colWidth,
+          }}
         >
           {/* Header-Zeile */}
           <div className="sticky top-0 z-20 border-b border-border bg-surface" />
