@@ -1,0 +1,113 @@
+'use client';
+import * as React from 'react';
+
+/**
+ * Click-and-drag horizontal panning für overflow-x-auto Container.
+ * User klickt irgendwo auf leere Fläche, hält die Maus gedrückt und
+ * zieht — Container scrollt mit. Touch-Geräte behalten natives
+ * Finger-Swipen (kein preventDefault auf touchstart).
+ *
+ * Skip-Logik: Pan startet NUR wenn auf der leeren Fläche gedrückt
+ * wurde. Elemente mit `data-no-pan`, interaktive Elemente (a, button,
+ * input, select, textarea) oder Drag-Handles (`[data-dnd-drag]`)
+ * blocken den Pan-Start, damit Termin-Karten / Links / Inputs normal
+ * funktionieren.
+ */
+export function usePanScroll<T extends HTMLElement>(
+  ref: React.RefObject<T | null>,
+): void {
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    // Zwei Phasen:
+    // 1. "armed": pointerdown erfasst; wartet auf Bewegung > THRESHOLD
+    // 2. "panning": Bewegung > THRESHOLD → ab hier scrollen + Click
+    //    unterdrücken
+    // Reine Clicks (< THRESHOLD Bewegung) gehen normal durch an das
+    // Ziel-Element (Slot erstellt Termin etc).
+    const THRESHOLD = 6;
+    let phase: 'idle' | 'armed' | 'panning' = 'idle';
+    let startX = 0;
+    let startScrollLeft = 0;
+    let pointerId: number | null = null;
+
+    const shouldSkip = (target: EventTarget | null): boolean => {
+      if (!(target instanceof Element)) return false;
+      if (target.closest('[data-no-pan]')) return true;
+      if (target.closest('[data-dnd-drag]')) return true;
+      if (target.closest('a,button,input,select,textarea,label')) return true;
+      return false;
+    };
+
+    const onPointerDown = (e: PointerEvent): void => {
+      // Nur Maus/Stift — Touch via native scroll. Linke Maustaste only.
+      if (e.pointerType === 'touch') return;
+      if (e.button !== 0) return;
+      if (shouldSkip(e.target)) return;
+
+      phase = 'armed';
+      startX = e.clientX;
+      startScrollLeft = el.scrollLeft;
+      pointerId = e.pointerId;
+    };
+
+    const onPointerMove = (e: PointerEvent): void => {
+      if (phase === 'idle' || e.pointerId !== pointerId) return;
+      const dx = e.clientX - startX;
+      if (phase === 'armed') {
+        if (Math.abs(dx) < THRESHOLD) return;
+        phase = 'panning';
+        try {
+          el.setPointerCapture(e.pointerId);
+        } catch {
+          /* some pointers refuse capture; pan funktioniert trotzdem */
+        }
+        el.style.cursor = 'grabbing';
+        el.style.userSelect = 'none';
+      }
+      el.scrollLeft = startScrollLeft - dx;
+    };
+
+    const suppressNextClick = (e: MouseEvent): void => {
+      e.stopPropagation();
+      e.preventDefault();
+    };
+
+    const stop = (e: PointerEvent): void => {
+      if (phase === 'idle' || e.pointerId !== pointerId) return;
+      const wasPanning = phase === 'panning';
+      phase = 'idle';
+      pointerId = null;
+      if (wasPanning) {
+        try {
+          el.releasePointerCapture(e.pointerId);
+        } catch {
+          /* capture may already be released */
+        }
+        el.style.cursor = '';
+        el.style.userSelect = '';
+        // Click unterdrücken, damit Slot-onClick nach einem Pan nicht
+        // unbeabsichtigt einen Termin anlegt.
+        el.addEventListener('click', suppressNextClick, {
+          capture: true,
+          once: true,
+        });
+      }
+    };
+
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', stop);
+    el.addEventListener('pointercancel', stop);
+    el.addEventListener('pointerleave', stop);
+
+    return () => {
+      el.removeEventListener('pointerdown', onPointerDown);
+      el.removeEventListener('pointermove', onPointerMove);
+      el.removeEventListener('pointerup', stop);
+      el.removeEventListener('pointercancel', stop);
+      el.removeEventListener('pointerleave', stop);
+    };
+  }, [ref]);
+}

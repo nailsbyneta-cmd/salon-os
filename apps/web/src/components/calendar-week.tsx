@@ -24,6 +24,7 @@ import { CalendarZoomControls } from './calendar-zoom-controls';
 import { useCalendarZoom } from './use-calendar-zoom';
 import { useIsMobile } from './use-is-mobile';
 import { useOnlyActiveStaff } from './use-only-active-staff';
+import { usePanScroll } from './use-pan-scroll';
 import { useViewportSize } from './use-viewport-size';
 
 interface WeekAppt {
@@ -111,6 +112,8 @@ export function CalendarWeek({
   const router = useRouter();
   const isMobile = useIsMobile();
   const viewport = useViewportSize();
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  usePanScroll(scrollRef);
   const [zoom, , zoomControls] = useCalendarZoom();
   const [onlyActive, setOnlyActive] = useOnlyActiveStaff();
   const base = isMobile ? MOBILE : DESKTOP;
@@ -338,7 +341,10 @@ export function CalendarWeek({
         </label>
         <CalendarZoomControls controls={zoomControls} />
       </div>
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <div
+        ref={scrollRef}
+        className="cursor-grab overflow-x-auto rounded-lg border border-border bg-surface"
+      >
         <div
           className="grid w-full"
           style={{ gridTemplateColumns: gridTemplate, minWidth }}
@@ -645,6 +651,7 @@ function WeekDraggableAppt({
   return (
     <div
       ref={setNodeRef}
+      data-dnd-drag
       style={style}
       {...attributes}
       {...listeners}
