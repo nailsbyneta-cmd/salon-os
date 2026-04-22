@@ -185,10 +185,7 @@ export default async function CalendarPage({
         <div className="flex flex-wrap items-center gap-2">
           <ViewToggle current={view} day={day} />
           <div className="flex items-center gap-1">
-            <Link
-              href={`/calendar?view=${view}&date=${prevDate}`}
-              title="Vorherige (←)"
-            >
+            <Link href={`/calendar?view=${view}&date=${prevDate}`} title="Vorherige (←)">
               <Button variant="secondary" size="sm" aria-label="Vorherige (←)">
                 ←
               </Button>
