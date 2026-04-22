@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Badge, Button, Card, CardBody, PriceDisplay, Stat } from '@salon-os/ui';
+import { toLocalIso } from '@salon-os/utils';
 import { ConfirmApptButton } from '@/components/confirm-appt-button';
 import { Sparkline } from '@/components/sparkline';
 import { apiFetch, ApiError } from '@/lib/api';
@@ -74,8 +75,8 @@ async function loadDashboard(): Promise<Dashboard> {
   const weekStart = new Date(start);
   weekStart.setDate(weekStart.getDate() - 6);
 
-  // Monats-Umsatz-Ziel: Monatsbeginn bis jetzt. Wir nutzen Europe/Zurich-
-  // Monatsgrenzen für faire Rechnung.
+  // Monats-Umsatz-Ziel: Monatsbeginn bis jetzt. Europe/Zurich-Monatsgrenzen
+  // via toLocalIso für DST-awaren Offset (Winter +01:00 / Sommer +02:00).
   const zurichYmd = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Zurich',
     year: 'numeric',
@@ -85,13 +86,17 @@ async function loadDashboard(): Promise<Dashboard> {
   const zYearNow = zurichYmd.find((p) => p.type === 'year')?.value ?? '2025';
   const zMonthNow = zurichYmd.find((p) => p.type === 'month')?.value ?? '01';
   const zDayNow = zurichYmd.find((p) => p.type === 'day')?.value ?? '01';
-  const monthStartIso = `${zYearNow}-${zMonthNow}-01T00:00:00+02:00`;
+  const monthStartIso = toLocalIso(
+    `${zYearNow}-${zMonthNow}-01`,
+    '00:00',
+    'Europe/Zurich',
+  );
   const dayOfMonth = Number(zDayNow);
-  const daysInMonth = new Date(
-    Number(zYearNow),
-    Number(zMonthNow),
-    0,
-  ).getDate();
+  // daysInMonth: JS Date(year, month, 0) = letzter Tag des Vormonats, wobei
+  // month 1-basiert wirken muss. Number(zMonthNow) ist 1-12.
+  const daysInMonth = Number.isFinite(Number(zMonthNow))
+    ? new Date(Number(zYearNow), Number(zMonthNow), 0).getDate()
+    : 30;
 
   const safe = <T,>(p: Promise<T>, fallback: T): Promise<T> =>
     p.catch((err) => {
@@ -314,7 +319,18 @@ async function loadDashboard(): Promise<Dashboard> {
     zurichYear: zYear,
     tenantName,
     monthRevenueCents,
-    monthGoalCents: Number(process.env['SALON_MONTHLY_GOAL_CHF'] ?? '15000') * 100,
+    monthGoalCents: (() => {
+      const raw = process.env['SALON_MONTHLY_GOAL_CHF'];
+      const parsed = Number(raw ?? '15000');
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[dashboard] SALON_MONTHLY_GOAL_CHF="${raw}" ungültig — Fallback auf 15000.`,
+        );
+        return 15000 * 100;
+      }
+      return parsed * 100;
+    })(),
     monthDayOfMonth: dayOfMonth,
     monthDaysInMonth: daysInMonth,
   };
@@ -457,15 +473,29 @@ export default async function Home(): Promise<React.JSX.Element> {
         ? (() => {
             const rev = d.monthRevenueCents;
             const goal = d.monthGoalCents;
-            const pct = Math.min(100, Math.round((rev / goal) * 100));
+            const rawPct = Math.round((rev / goal) * 100);
+            const pctCapped = Math.min(100, rawPct);
+            const beatGoal = rawPct > 100;
             const dayProgress = d.monthDayOfMonth / d.monthDaysInMonth;
             const projection = dayProgress > 0 ? rev / dayProgress : 0;
-            const onPace = projection >= goal;
-            const barColor = onPace
-              ? 'from-success to-success/70'
-              : pct < 50 && dayProgress > 0.5
-                ? 'from-warning to-warning/70'
-                : 'from-accent to-accent/70';
+            // Projektion erst ab Tag 3 zeigen — vorher ist die Rechnung zu
+            // volatil (single-booking × 30 Tage = unsinnig).
+            const showProjection = d.monthDayOfMonth >= 3;
+            const onPace = showProjection && projection >= goal;
+            // Warning-Gate frühzeitiger: `projection < goal * 0.85` oder
+            // `dayProgress > 0.3 && pct < 50`. Gibt Neta 3-5 Tage Vorlauf.
+            const underPace =
+              showProjection &&
+              !onPace &&
+              (projection < goal * 0.85 ||
+                (dayProgress > 0.3 && pctCapped < 50));
+            const barColor = beatGoal
+              ? 'from-success via-success to-accent'
+              : onPace
+                ? 'from-success to-success/70'
+                : underPace
+                  ? 'from-warning to-warning/70'
+                  : 'from-accent to-accent/70';
             const fmtChf = (cents: number): string =>
               (cents / 100).toLocaleString('de-CH', {
                 maximumFractionDigits: 0,
@@ -473,11 +503,20 @@ export default async function Home(): Promise<React.JSX.Element> {
             return (
               <Card className="mb-4" elevation="flat">
                 <CardBody>
-                  <div className="flex flex-wrap items-end justify-between gap-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <div className="text-xs font-medium uppercase tracking-wider text-text-muted">
-                        Monats-Umsatz · Tag {d.monthDayOfMonth}/
-                        {d.monthDaysInMonth}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
+                          Monats-Ziel
+                        </span>
+                        <span className="text-[11px] text-text-muted tabular-nums">
+                          Tag {d.monthDayOfMonth}/{d.monthDaysInMonth}
+                        </span>
+                        {beatGoal ? (
+                          <Badge tone="success" dot>
+                            🎉 Ziel geknackt · +{rawPct - 100}%
+                          </Badge>
+                        ) : null}
                       </div>
                       <div className="mt-1 font-display text-2xl font-semibold tabular-nums">
                         {fmtChf(rev)}{' '}
@@ -486,28 +525,40 @@ export default async function Home(): Promise<React.JSX.Element> {
                         </span>
                       </div>
                       <div className="mt-0.5 text-xs text-text-muted">
-                        {pct}% erreicht · Projektion bei gleichem Tempo:{' '}
-                        <span
-                          className={
-                            onPace
-                              ? 'font-semibold text-success'
-                              : 'font-semibold text-text-primary'
-                          }
-                        >
-                          {fmtChf(projection)} CHF
-                        </span>
+                        {rawPct}% erreicht
+                        {showProjection ? (
+                          <>
+                            {' · '}
+                            so wie's läuft landest du bei{' '}
+                            <span
+                              className={
+                                onPace
+                                  ? 'font-semibold text-success'
+                                  : underPace
+                                    ? 'font-semibold text-warning'
+                                    : 'font-semibold text-text-primary'
+                              }
+                            >
+                              {fmtChf(projection)} CHF
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-text-muted">
+                            {' '}· Projektion ab Tag 3
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
                   <div className="mt-3 h-3 overflow-hidden rounded-full bg-surface-raised">
                     <div
                       className={`h-full rounded-full bg-gradient-to-r ${barColor} transition-all duration-slow ease-out-expo`}
-                      style={{ width: `${pct}%` }}
+                      style={{ width: `${pctCapped}%` }}
                       role="progressbar"
-                      aria-valuenow={pct}
+                      aria-valuenow={rawPct}
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      aria-label={`Monats-Umsatz ${pct} Prozent erreicht`}
+                      aria-label={`Monats-Umsatz ${rawPct} Prozent erreicht${beatGoal ? ', Ziel übertroffen' : ''}`}
                     />
                   </div>
                 </CardBody>
