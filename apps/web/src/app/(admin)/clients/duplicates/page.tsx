@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Avatar, Badge, Button, Card, CardBody, EmptyState } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
-import { mergeClients } from './actions';
+import { MergeDialog } from './merge-dialog';
 
 interface ClientRow {
   id: string;
@@ -163,7 +163,6 @@ export default async function DuplicatesPage(): Promise<React.JSX.Element> {
                         ? new Date(c.lastVisitAt).toLocaleDateString('de-CH')
                         : '—';
                       const isPrimary = idx === 0;
-                      const mergeInto = primary ? mergeClients.bind(null, primary.id, c.id) : null;
                       return (
                         <li
                           key={c.id}
@@ -204,18 +203,8 @@ export default async function DuplicatesPage(): Promise<React.JSX.Element> {
                                 Öffnen
                               </Button>
                             </Link>
-                            {!isPrimary && mergeInto ? (
-                              <form action={mergeInto}>
-                                <Button
-                                  type="submit"
-                                  variant="accent"
-                                  size="sm"
-                                  aria-label={`${c.firstName} ${c.lastName} in Primary mergen`}
-                                  title={`Daten + Termine werden auf ${primary?.firstName} ${primary?.lastName} (★) übertragen, dieser Eintrag gelöscht`}
-                                >
-                                  → Mergen
-                                </Button>
-                              </form>
+                            {!isPrimary && primary ? (
+                              <MergeDialog primary={primary} duplicate={c} />
                             ) : null}
                           </div>
                         </li>
