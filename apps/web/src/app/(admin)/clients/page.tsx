@@ -92,12 +92,7 @@ export default async function ClientsPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <form className="flex gap-2" method="get">
-            <ClientSearchInline initialQ={q ?? ''} />
-            <Button type="submit" variant="secondary">
-              Suchen
-            </Button>
-          </form>
+          <ClientSearchInline initialQ={q ?? ''} />
           <Link
             href="/clients/import"
             className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-secondary hover:bg-surface-raised"
