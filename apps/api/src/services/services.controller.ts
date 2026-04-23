@@ -10,11 +10,27 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { createServiceSchema, updateServiceSchema, uuidSchema } from '@salon-os/types';
+import {
+  createServiceAddOnSchema,
+  createServiceOptionGroupSchema,
+  createServiceOptionSchema,
+  createServiceSchema,
+  updateServiceAddOnSchema,
+  updateServiceOptionGroupSchema,
+  updateServiceOptionSchema,
+  updateServiceSchema,
+  uuidSchema,
+} from '@salon-os/types';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { ServicesService } from './services.service.js';
-import type { Service, ServiceCategory } from '@salon-os/db';
+import type {
+  Service,
+  ServiceAddOn,
+  ServiceCategory,
+  ServiceOption,
+  ServiceOptionGroup,
+} from '@salon-os/db';
 
 const createCategorySchema = z.object({
   name: z.string().min(1).max(100),
@@ -80,5 +96,101 @@ export class ServicesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<void> {
     await this.svc.softDelete(id);
+  }
+
+  // ─── Option-Groups + Options ─────────────────────────────
+  @Get('services/:id/option-groups')
+  async listOptionGroups(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+  ): Promise<{ groups: Array<ServiceOptionGroup & { options: ServiceOption[] }> }> {
+    return { groups: await this.svc.listOptionGroups(id) };
+  }
+
+  @Post('services/:id/option-groups')
+  @HttpCode(HttpStatus.CREATED)
+  async createOptionGroup(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+    @Body(new ZodValidationPipe(createServiceOptionGroupSchema))
+    input: import('@salon-os/types').CreateServiceOptionGroupInput,
+  ): Promise<ServiceOptionGroup> {
+    return this.svc.createOptionGroup(id, input);
+  }
+
+  @Patch('option-groups/:groupId')
+  async updateOptionGroup(
+    @Param('groupId', new ZodValidationPipe(uuidSchema)) groupId: string,
+    @Body(new ZodValidationPipe(updateServiceOptionGroupSchema))
+    input: import('@salon-os/types').UpdateServiceOptionGroupInput,
+  ): Promise<ServiceOptionGroup> {
+    return this.svc.updateOptionGroup(groupId, input);
+  }
+
+  @Delete('option-groups/:groupId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteOptionGroup(
+    @Param('groupId', new ZodValidationPipe(uuidSchema)) groupId: string,
+  ): Promise<void> {
+    await this.svc.deleteOptionGroup(groupId);
+  }
+
+  @Post('service-options')
+  @HttpCode(HttpStatus.CREATED)
+  async createOption(
+    @Body(new ZodValidationPipe(createServiceOptionSchema))
+    input: import('@salon-os/types').CreateServiceOptionInput,
+  ): Promise<ServiceOption> {
+    return this.svc.createOption(input);
+  }
+
+  @Patch('service-options/:optionId')
+  async updateOption(
+    @Param('optionId', new ZodValidationPipe(uuidSchema)) optionId: string,
+    @Body(new ZodValidationPipe(updateServiceOptionSchema))
+    input: import('@salon-os/types').UpdateServiceOptionInput,
+  ): Promise<ServiceOption> {
+    return this.svc.updateOption(optionId, input);
+  }
+
+  @Delete('service-options/:optionId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteOption(
+    @Param('optionId', new ZodValidationPipe(uuidSchema)) optionId: string,
+  ): Promise<void> {
+    await this.svc.deleteOption(optionId);
+  }
+
+  // ─── Add-Ons ─────────────────────────────────────────────
+  @Get('services/:id/add-ons')
+  async listAddOns(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+  ): Promise<{ addOns: ServiceAddOn[] }> {
+    return { addOns: await this.svc.listAddOns(id) };
+  }
+
+  @Post('services/:id/add-ons')
+  @HttpCode(HttpStatus.CREATED)
+  async createAddOn(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+    @Body(new ZodValidationPipe(createServiceAddOnSchema))
+    input: import('@salon-os/types').CreateServiceAddOnInput,
+  ): Promise<ServiceAddOn> {
+    return this.svc.createAddOn(id, input);
+  }
+
+  @Patch('add-ons/:addOnId')
+  async updateAddOn(
+    @Param('addOnId', new ZodValidationPipe(uuidSchema)) addOnId: string,
+    @Body(new ZodValidationPipe(updateServiceAddOnSchema))
+    input: import('@salon-os/types').UpdateServiceAddOnInput,
+  ): Promise<ServiceAddOn> {
+    return this.svc.updateAddOn(addOnId, input);
+  }
+
+  @Delete('add-ons/:addOnId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteAddOn(
+    @Param('addOnId', new ZodValidationPipe(uuidSchema)) addOnId: string,
+  ): Promise<void> {
+    await this.svc.deleteAddOn(addOnId);
   }
 }

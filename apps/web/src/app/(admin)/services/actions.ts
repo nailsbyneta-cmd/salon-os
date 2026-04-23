@@ -93,6 +93,9 @@ export async function updateService(id: string, form: FormData): Promise<void> {
   const basePrice = Number(form.get('basePrice'));
   const description = form.get('description')?.toString().trim() || undefined;
   const bookable = form.get('bookable') === 'on';
+  const processingTimeMin = Number(form.get('processingTimeMin') ?? 0) || 0;
+  const activeTimeBefore = Number(form.get('activeTimeBefore') ?? 0) || 0;
+  const activeTimeAfter = Number(form.get('activeTimeAfter') ?? 0) || 0;
 
   if (!name) throw new Error('Name fehlt.');
 
@@ -108,6 +111,9 @@ export async function updateService(id: string, form: FormData): Promise<void> {
         durationMinutes,
         basePrice,
         bookable,
+        processingTimeMin,
+        activeTimeBefore,
+        activeTimeAfter,
       },
     });
   } catch (err) {
@@ -118,5 +124,150 @@ export async function updateService(id: string, form: FormData): Promise<void> {
   }
 
   revalidatePath('/services');
-  redirect('/services');
+  revalidatePath(`/services/${id}`);
+}
+
+// ─── Option-Groups + Options ──────────────────────────────────
+
+export async function createOptionGroup(
+  serviceId: string,
+  input: { name: string; required: boolean; multi: boolean; sortOrder: number },
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/services/${serviceId}/option-groups`, {
+    method: 'POST',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: input,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
+export async function updateOptionGroup(
+  serviceId: string,
+  groupId: string,
+  input: { name?: string; required?: boolean; multi?: boolean; sortOrder?: number },
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/option-groups/${groupId}`, {
+    method: 'PATCH',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: input,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
+export async function deleteOptionGroup(serviceId: string, groupId: string): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/option-groups/${groupId}`, {
+    method: 'DELETE',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
+export async function createOption(
+  serviceId: string,
+  input: {
+    groupId: string;
+    label: string;
+    priceDelta: number;
+    durationDeltaMin: number;
+    processingDeltaMin: number;
+    isDefault: boolean;
+    sortOrder: number;
+  },
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch('/v1/service-options', {
+    method: 'POST',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: input,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
+export async function updateOption(
+  serviceId: string,
+  optionId: string,
+  input: {
+    label?: string;
+    priceDelta?: number;
+    durationDeltaMin?: number;
+    processingDeltaMin?: number;
+    isDefault?: boolean;
+    sortOrder?: number;
+  },
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/service-options/${optionId}`, {
+    method: 'PATCH',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: input,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
+export async function deleteOption(serviceId: string, optionId: string): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/service-options/${optionId}`, {
+    method: 'DELETE',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
+// ─── Add-Ons ──────────────────────────────────────────────────
+
+export async function createAddOn(
+  serviceId: string,
+  input: { name: string; priceDelta: number; durationDeltaMin: number; sortOrder: number },
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/services/${serviceId}/add-ons`, {
+    method: 'POST',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: input,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
+export async function updateAddOn(
+  serviceId: string,
+  addOnId: string,
+  input: { name?: string; priceDelta?: number; durationDeltaMin?: number; sortOrder?: number },
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/add-ons/${addOnId}`, {
+    method: 'PATCH',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: input,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
+export async function deleteAddOn(serviceId: string, addOnId: string): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/add-ons/${addOnId}`, {
+    method: 'DELETE',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+  });
+  revalidatePath(`/services/${serviceId}`);
 }

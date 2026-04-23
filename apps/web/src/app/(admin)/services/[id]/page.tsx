@@ -4,6 +4,8 @@ import { Button, Card, CardBody, Field, Input, Select, Textarea } from '@salon-o
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { updateService } from '../actions';
+import { OptionsEditor, type Group } from './options-editor';
+import { AddOnsEditor, type AddOn } from './addons-editor';
 
 interface Service {
   id: string;
@@ -14,6 +16,9 @@ interface Service {
   basePrice: string;
   bookable: boolean;
   categoryId: string;
+  processingTimeMin: number;
+  activeTimeBefore: number;
+  activeTimeAfter: number;
 }
 
 interface Category {
@@ -21,15 +26,27 @@ interface Category {
   name: string;
 }
 
-async function load(id: string): Promise<{ service: Service; categories: Category[] } | null> {
+async function load(id: string): Promise<{
+  service: Service;
+  categories: Category[];
+  groups: Group[];
+  addOns: AddOn[];
+} | null> {
   const ctx = getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   try {
-    const [svc, cat] = await Promise.all([
+    const [svc, cat, groupsRes, addOnsRes] = await Promise.all([
       apiFetch<Service>(`/v1/services/${id}`, auth),
       apiFetch<{ categories: Category[] }>('/v1/service-categories', auth),
+      apiFetch<{ groups: Group[] }>(`/v1/services/${id}/option-groups`, auth),
+      apiFetch<{ addOns: AddOn[] }>(`/v1/services/${id}/add-ons`, auth),
     ]);
-    return { service: svc, categories: cat.categories };
+    return {
+      service: svc,
+      categories: cat.categories,
+      groups: groupsRes.groups,
+      addOns: addOnsRes.addOns,
+    };
   } catch (err) {
     if (err instanceof ApiError) return null;
     throw err;
@@ -44,11 +61,15 @@ export default async function EditServicePage({
   const { id } = await params;
   const data = await load(id);
   if (!data) notFound();
-  const { service, categories } = data;
+  const { service, categories, groups, addOns } = data;
   const action = updateService.bind(null, id);
 
+  // Wenn Processing-Time gesetzt ist, ist der aktive Anteil = before + after.
+  // Sonst ist die Standard-Dauer die aktive Zeit.
+  const hasProcessing = service.processingTimeMin > 0;
+
   return (
-    <div className="mx-auto max-w-2xl p-4 md:p-8">
+    <div className="mx-auto max-w-3xl p-4 md:p-8">
       <Link
         href="/services"
         className="text-xs text-text-muted transition-colors hover:text-text-primary"
@@ -64,7 +85,7 @@ export default async function EditServicePage({
         </h1>
       </header>
 
-      <Card>
+      <Card className="mb-4">
         <CardBody>
           <form action={action} className="space-y-5">
             <Field label="Name" required>
@@ -86,7 +107,7 @@ export default async function EditServicePage({
             </Field>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Dauer (Minuten)" required>
+              <Field label="Basis-Dauer (Min)" required hint="Gesamte aktive Zeit ohne Varianten">
                 <Input
                   type="number"
                   name="durationMinutes"
@@ -97,7 +118,7 @@ export default async function EditServicePage({
                   required
                 />
               </Field>
-              <Field label="Preis (CHF)" required>
+              <Field label="Basis-Preis (CHF)" required>
                 <Input
                   type="number"
                   name="basePrice"
@@ -108,6 +129,53 @@ export default async function EditServicePage({
                 />
               </Field>
             </div>
+
+            {/* Processing-Time — für Services mit Einwirkzeit (Färben etc.) */}
+            <details
+              open={hasProcessing}
+              className="rounded-md border border-border bg-surface/50 p-3"
+            >
+              <summary className="cursor-pointer text-sm font-semibold text-text-primary">
+                Processing-Time (Einwirkzeit)
+              </summary>
+              <p className="mt-1 text-xs text-text-secondary">
+                Für Services wo der Stylist zwischendrin frei ist — z.B. Färben: 20 Min
+                auftragen → 30 Min einwirken (frei) → 20 Min ausspülen. Während der Processing-Time
+                kann der Stylist einen anderen Kurz-Termin nehmen.
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Field label="Aktiv davor (Min)">
+                  <Input
+                    type="number"
+                    name="activeTimeBefore"
+                    min={0}
+                    max={240}
+                    step={5}
+                    defaultValue={service.activeTimeBefore}
+                  />
+                </Field>
+                <Field label="Einwirkzeit (Min)" hint="Stylist frei">
+                  <Input
+                    type="number"
+                    name="processingTimeMin"
+                    min={0}
+                    max={240}
+                    step={5}
+                    defaultValue={service.processingTimeMin}
+                  />
+                </Field>
+                <Field label="Aktiv danach (Min)">
+                  <Input
+                    type="number"
+                    name="activeTimeAfter"
+                    min={0}
+                    max={240}
+                    step={5}
+                    defaultValue={service.activeTimeAfter}
+                  />
+                </Field>
+              </div>
+            </details>
 
             <label className="flex items-center gap-2 text-sm text-text-secondary">
               <input
@@ -132,6 +200,9 @@ export default async function EditServicePage({
           </form>
         </CardBody>
       </Card>
+
+      <OptionsEditor serviceId={id} initialGroups={groups} />
+      <AddOnsEditor serviceId={id} initialAddOns={addOns} />
     </div>
   );
 }

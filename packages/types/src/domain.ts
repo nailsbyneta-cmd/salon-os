@@ -140,11 +140,51 @@ export const createServiceSchema = z.object({
   order: z.number().int().default(0),
   minDepositAmount: z.number().min(0).optional(),
   minDepositPct: z.number().min(0).max(100).optional(),
+  processingTimeMin: z.number().int().min(0).max(240).default(0),
+  activeTimeBefore: z.number().int().min(0).max(240).default(0),
+  activeTimeAfter: z.number().int().min(0).max(240).default(0),
 });
 export type CreateServiceInput = z.infer<typeof createServiceSchema>;
 
 export const updateServiceSchema = createServiceSchema.partial();
 export type UpdateServiceInput = z.infer<typeof updateServiceSchema>;
+
+// ─── Service Options (Mangomint-Stil Varianten) ────────────────
+
+export const createServiceOptionGroupSchema = z.object({
+  name: z.string().min(1).max(80),
+  required: z.boolean().default(true),
+  multi: z.boolean().default(false),
+  sortOrder: z.number().int().default(0),
+});
+export type CreateServiceOptionGroupInput = z.infer<typeof createServiceOptionGroupSchema>;
+export const updateServiceOptionGroupSchema = createServiceOptionGroupSchema.partial();
+export type UpdateServiceOptionGroupInput = z.infer<typeof updateServiceOptionGroupSchema>;
+
+export const createServiceOptionSchema = z.object({
+  groupId: uuidSchema,
+  label: z.string().min(1).max(80),
+  priceDelta: z.number().default(0),
+  durationDeltaMin: z.number().int().min(-240).max(240).default(0),
+  processingDeltaMin: z.number().int().min(-240).max(240).default(0),
+  isDefault: z.boolean().default(false),
+  sortOrder: z.number().int().default(0),
+});
+export type CreateServiceOptionInput = z.infer<typeof createServiceOptionSchema>;
+export const updateServiceOptionSchema = createServiceOptionSchema.partial().omit({ groupId: true });
+export type UpdateServiceOptionInput = z.infer<typeof updateServiceOptionSchema>;
+
+// ─── Service Add-Ons (Phorest-Stil) ────────────────────────────
+
+export const createServiceAddOnSchema = z.object({
+  name: z.string().min(1).max(120),
+  priceDelta: z.number().default(0),
+  durationDeltaMin: z.number().int().min(0).max(240).default(0),
+  sortOrder: z.number().int().default(0),
+});
+export type CreateServiceAddOnInput = z.infer<typeof createServiceAddOnSchema>;
+export const updateServiceAddOnSchema = createServiceAddOnSchema.partial();
+export type UpdateServiceAddOnInput = z.infer<typeof updateServiceAddOnSchema>;
 
 // ─── Appointment ───────────────────────────────────────────────
 

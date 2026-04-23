@@ -1,6 +1,22 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { PrismaClient, Service, ServiceCategory } from '@salon-os/db';
-import type { CreateServiceInput, UpdateServiceInput } from '@salon-os/types';
+import type {
+  PrismaClient,
+  Service,
+  ServiceAddOn,
+  ServiceCategory,
+  ServiceOption,
+  ServiceOptionGroup,
+} from '@salon-os/db';
+import type {
+  CreateServiceAddOnInput,
+  CreateServiceInput,
+  CreateServiceOptionGroupInput,
+  CreateServiceOptionInput,
+  UpdateServiceAddOnInput,
+  UpdateServiceInput,
+  UpdateServiceOptionGroupInput,
+  UpdateServiceOptionInput,
+} from '@salon-os/types';
 import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 
@@ -100,6 +116,146 @@ export class ServicesService {
     const ctx = requireTenantContext();
     await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
       await tx.service.update({ where: { id }, data: { deletedAt: new Date() } });
+    });
+  }
+
+  // ─── Option-Groups + Options ──────────────────────────────────
+
+  async listOptionGroups(
+    serviceId: string,
+  ): Promise<Array<ServiceOptionGroup & { options: ServiceOption[] }>> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      return tx.serviceOptionGroup.findMany({
+        where: { serviceId },
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+        include: { options: { orderBy: [{ sortOrder: 'asc' }, { label: 'asc' }] } },
+      });
+    });
+  }
+
+  async createOptionGroup(
+    serviceId: string,
+    input: CreateServiceOptionGroupInput,
+  ): Promise<ServiceOptionGroup> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const svc = await tx.service.findFirst({ where: { id: serviceId, deletedAt: null } });
+      if (!svc) throw new NotFoundException(`Service ${serviceId} not found`);
+      return tx.serviceOptionGroup.create({
+        data: {
+          tenantId: ctx.tenantId,
+          serviceId,
+          name: input.name,
+          required: input.required,
+          multi: input.multi,
+          sortOrder: input.sortOrder,
+        },
+      });
+    });
+  }
+
+  async updateOptionGroup(
+    groupId: string,
+    input: UpdateServiceOptionGroupInput,
+  ): Promise<ServiceOptionGroup> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.serviceOptionGroup.findFirst({ where: { id: groupId } });
+      if (!existing) throw new NotFoundException(`Option-Group ${groupId} not found`);
+      return tx.serviceOptionGroup.update({ where: { id: groupId }, data: { ...input } });
+    });
+  }
+
+  async deleteOptionGroup(groupId: string): Promise<void> {
+    const ctx = requireTenantContext();
+    await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      await tx.serviceOptionGroup.delete({ where: { id: groupId } });
+    });
+  }
+
+  async createOption(input: CreateServiceOptionInput): Promise<ServiceOption> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const group = await tx.serviceOptionGroup.findFirst({ where: { id: input.groupId } });
+      if (!group) throw new NotFoundException(`Option-Group ${input.groupId} not found`);
+      return tx.serviceOption.create({
+        data: {
+          tenantId: ctx.tenantId,
+          groupId: input.groupId,
+          label: input.label,
+          priceDelta: input.priceDelta,
+          durationDeltaMin: input.durationDeltaMin,
+          processingDeltaMin: input.processingDeltaMin,
+          isDefault: input.isDefault,
+          sortOrder: input.sortOrder,
+        },
+      });
+    });
+  }
+
+  async updateOption(
+    optionId: string,
+    input: UpdateServiceOptionInput,
+  ): Promise<ServiceOption> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.serviceOption.findFirst({ where: { id: optionId } });
+      if (!existing) throw new NotFoundException(`Option ${optionId} not found`);
+      return tx.serviceOption.update({ where: { id: optionId }, data: { ...input } });
+    });
+  }
+
+  async deleteOption(optionId: string): Promise<void> {
+    const ctx = requireTenantContext();
+    await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      await tx.serviceOption.delete({ where: { id: optionId } });
+    });
+  }
+
+  // ─── Add-Ons ──────────────────────────────────────────────────
+
+  async listAddOns(serviceId: string): Promise<ServiceAddOn[]> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      return tx.serviceAddOn.findMany({
+        where: { serviceId },
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      });
+    });
+  }
+
+  async createAddOn(serviceId: string, input: CreateServiceAddOnInput): Promise<ServiceAddOn> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const svc = await tx.service.findFirst({ where: { id: serviceId, deletedAt: null } });
+      if (!svc) throw new NotFoundException(`Service ${serviceId} not found`);
+      return tx.serviceAddOn.create({
+        data: {
+          tenantId: ctx.tenantId,
+          serviceId,
+          name: input.name,
+          priceDelta: input.priceDelta,
+          durationDeltaMin: input.durationDeltaMin,
+          sortOrder: input.sortOrder,
+        },
+      });
+    });
+  }
+
+  async updateAddOn(addOnId: string, input: UpdateServiceAddOnInput): Promise<ServiceAddOn> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.serviceAddOn.findFirst({ where: { id: addOnId } });
+      if (!existing) throw new NotFoundException(`Add-On ${addOnId} not found`);
+      return tx.serviceAddOn.update({ where: { id: addOnId }, data: { ...input } });
+    });
+  }
+
+  async deleteAddOn(addOnId: string): Promise<void> {
+    const ctx = requireTenantContext();
+    await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      await tx.serviceAddOn.delete({ where: { id: addOnId } });
     });
   }
 }
