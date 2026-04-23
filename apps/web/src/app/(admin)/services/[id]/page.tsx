@@ -76,13 +76,20 @@ export default async function EditServicePage({
       >
         ← Services
       </Link>
-      <header className="mb-6 mt-4">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Service bearbeiten
-        </p>
-        <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
-          {service.name}
-        </h1>
+      <header className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+            Service bearbeiten
+          </p>
+          <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
+            {service.name}
+          </h1>
+        </div>
+        <Link href={`/services/${id}/preview`}>
+          <Button type="button" variant="ghost">
+            👁 Kunden-Preview
+          </Button>
+        </Link>
       </header>
 
       <Card className="mb-4">

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Badge, Button, Card, CardBody, EmptyState, PriceDisplay } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
-import { applyNailsPreset, deleteService } from './actions';
+import { applyNailsPreset, applyPedicurePreset, deleteService } from './actions';
 
 interface ServiceRow {
   id: string;
@@ -88,6 +88,11 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
           <form action={applyNailsPreset}>
             <Button type="submit" variant="ghost" size="sm">
               ✨ Nails-Preset
+            </Button>
+          </form>
+          <form action={applyPedicurePreset}>
+            <Button type="submit" variant="ghost" size="sm">
+              ✨ Pedi-Preset
             </Button>
           </form>
           <Link href="/services/new">

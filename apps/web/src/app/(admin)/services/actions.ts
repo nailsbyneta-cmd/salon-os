@@ -322,6 +322,122 @@ const NAILS_PRESET: {
   ],
 };
 
+const PEDICURE_PRESET: {
+  serviceName: string;
+  basePrice: number;
+  baseDuration: number;
+  groups: GroupSpec[];
+  addOns: Array<{ name: string; price: number; dur: number }>;
+} = {
+  serviceName: 'Pediküre',
+  basePrice: 60,
+  baseDuration: 45,
+  groups: [
+    {
+      name: 'Typ',
+      options: [
+        { label: 'Klassisch', price: 0, dur: 0 },
+        { label: 'SPA (Peeling + Maske)', price: 15, dur: 15 },
+        { label: 'Medizinisch (Hornhaut-Behandlung)', price: 20, dur: 15 },
+      ],
+    },
+    {
+      name: 'Nagel-Finish',
+      options: [
+        { label: 'Nur Pflege', price: 0, dur: 0 },
+        { label: 'Nagellack', price: 10, dur: 10 },
+        { label: 'Shellac', price: 20, dur: 20 },
+      ],
+    },
+  ],
+  addOns: [
+    { name: 'French', price: 10, dur: 10 },
+    { name: 'Paraffin-Packung', price: 15, dur: 10 },
+    { name: 'Extra-Massage (+15 Min)', price: 15, dur: 15 },
+    { name: 'Nagel-Art (pro Zeh)', price: 5, dur: 5 },
+  ],
+};
+
+async function applyPreset(preset: typeof NAILS_PRESET, categoryName: string): Promise<string> {
+  const ctx = getCurrentTenant();
+  const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
+
+  const catRes = await apiFetch<{ categories: Array<{ id: string; name: string }> }>(
+    '/v1/service-categories',
+    auth,
+  );
+  const wanted = categoryName.toLowerCase();
+  let cat = catRes.categories.find((c) => c.name.toLowerCase() === wanted);
+  if (!cat) {
+    cat = await apiFetch<{ id: string; name: string }>('/v1/service-categories', {
+      ...auth,
+      method: 'POST',
+      body: { name: categoryName, order: 0 },
+    });
+  }
+
+  const svc = await apiFetch<{ id: string }>('/v1/services', {
+    ...auth,
+    method: 'POST',
+    body: {
+      categoryId: cat.id,
+      name: preset.serviceName,
+      slug: `${preset.serviceName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`,
+      description: `Basis-Service — Varianten über Optionen.`,
+      durationMinutes: preset.baseDuration,
+      basePrice: preset.basePrice,
+      bookable: true,
+    },
+  });
+
+  for (let gi = 0; gi < preset.groups.length; gi++) {
+    const g = preset.groups[gi]!;
+    const group = await apiFetch<{ id: string }>(`/v1/services/${svc.id}/option-groups`, {
+      ...auth,
+      method: 'POST',
+      body: { name: g.name, required: true, multi: false, sortOrder: gi },
+    });
+    for (let oi = 0; oi < g.options.length; oi++) {
+      const o = g.options[oi]!;
+      await apiFetch('/v1/service-options', {
+        ...auth,
+        method: 'POST',
+        body: {
+          groupId: group.id,
+          label: o.label,
+          priceDelta: o.price,
+          durationDeltaMin: o.dur,
+          processingDeltaMin: 0,
+          isDefault: oi === 0,
+          sortOrder: oi,
+        },
+      });
+    }
+  }
+
+  for (let ai = 0; ai < preset.addOns.length; ai++) {
+    const a = preset.addOns[ai]!;
+    await apiFetch(`/v1/services/${svc.id}/add-ons`, {
+      ...auth,
+      method: 'POST',
+      body: {
+        name: a.name,
+        priceDelta: a.price,
+        durationDeltaMin: a.dur,
+        sortOrder: ai,
+      },
+    });
+  }
+
+  return svc.id;
+}
+
+export async function applyPedicurePreset(): Promise<void> {
+  const svcId = await applyPreset(PEDICURE_PRESET, 'Pediküre');
+  revalidatePath('/services');
+  redirect(`/services/${svcId}`);
+}
+
 export async function applyNailsPreset(): Promise<void> {
   const ctx = getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
