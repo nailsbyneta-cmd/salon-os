@@ -23,6 +23,11 @@ export class ClientsService {
   async list(query?: string, limit = 50): Promise<Client[]> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      // Phone-Filter NUR wenn der Query echte Ziffern enthält.
+      // normalizePhone('lorenc') → '' und contains:'' matched jeden
+      // Datensatz mit phoneE164 — klassische Such-Korruption.
+      const normalizedPhone = query ? normalizePhone(query) : '';
+      const hasPhoneDigits = /\d/.test(normalizedPhone);
       return tx.client.findMany({
         where: {
           deletedAt: null,
@@ -32,7 +37,7 @@ export class ClientsService {
                   { firstName: { contains: query, mode: 'insensitive' } },
                   { lastName: { contains: query, mode: 'insensitive' } },
                   { email: { contains: query, mode: 'insensitive' } },
-                  { phoneE164: { contains: normalizePhone(query) } },
+                  ...(hasPhoneDigits ? [{ phoneE164: { contains: normalizedPhone } }] : []),
                 ],
               }
             : {}),

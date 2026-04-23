@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { Avatar, Badge, Button, Card, CardBody, EmptyState, Input, cn } from '@salon-os/ui';
+import { Avatar, Badge, Button, Card, CardBody, EmptyState, cn } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
+import { ClientSearchInline } from '@/components/client-search-inline';
 import { getCurrentTenant } from '@/lib/tenant';
 
 interface ClientRow {
@@ -92,7 +93,7 @@ export default async function ClientsPage({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <form className="flex gap-2" method="get">
-            <Input name="q" defaultValue={q ?? ''} placeholder="Suchen…" className="w-56" />
+            <ClientSearchInline initialQ={q ?? ''} />
             <Button type="submit" variant="secondary">
               Suchen
             </Button>
