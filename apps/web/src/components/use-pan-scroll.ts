@@ -54,14 +54,9 @@ export function usePanScroll<T extends HTMLElement>(ref: React.RefObject<T | nul
       startX = e.clientX;
       startScrollLeft = el.scrollLeft;
       pointerId = e.pointerId;
-      // Früh capturen: pointerleave auf Sticky-Children würde sonst in
-      // der armed-Phase den Pan töten, bevor die 6px-Schwelle erreicht
-      // ist. Capture leitet alle Moves an el weiter.
-      try {
-        el.setPointerCapture(e.pointerId);
-      } catch {
-        /* some pointers refuse capture; weiterarbeiten */
-      }
+      // KEIN setPointerCapture hier — das würde Click-Events vom
+      // eigentlichen Ziel-Button wegziehen (Slot-Create, Zoom, Link).
+      // Capture erst beim echten Pan-Start (armed→panning).
     };
 
     const onPointerMove = (e: PointerEvent): void => {
@@ -70,6 +65,11 @@ export function usePanScroll<T extends HTMLElement>(ref: React.RefObject<T | nul
       if (phase === 'armed') {
         if (Math.abs(dx) < THRESHOLD) return;
         phase = 'panning';
+        try {
+          el.setPointerCapture(e.pointerId);
+        } catch {
+          /* some pointers refuse capture; pan funktioniert trotzdem */
+        }
         el.style.cursor = 'grabbing';
         el.style.userSelect = 'none';
       }
@@ -111,16 +111,28 @@ export function usePanScroll<T extends HTMLElement>(ref: React.RefObject<T | nul
       }
     };
 
+    // pointerleave auf armed-Phase: User zieht Maus aus Container ohne
+    // 6px-Schwelle zu erreichen → armed zurücksetzen. Beim echten
+    // Panning haben wir Capture, dann bleibt der Move-Flow erhalten.
+    const onPointerLeave = (e: PointerEvent): void => {
+      if (phase === 'armed' && e.pointerId === pointerId) {
+        phase = 'idle';
+        pointerId = null;
+      }
+    };
+
     el.addEventListener('pointerdown', onPointerDown);
     el.addEventListener('pointermove', onPointerMove);
     el.addEventListener('pointerup', stop);
     el.addEventListener('pointercancel', stop);
+    el.addEventListener('pointerleave', onPointerLeave);
 
     return () => {
       el.removeEventListener('pointerdown', onPointerDown);
       el.removeEventListener('pointermove', onPointerMove);
       el.removeEventListener('pointerup', stop);
       el.removeEventListener('pointercancel', stop);
+      el.removeEventListener('pointerleave', onPointerLeave);
     };
   }, [ref]);
 }
