@@ -50,8 +50,21 @@ function fmtRange(start: string, end: string): string {
     : `${fmtDate(s)} ${fmtTime(s)} → ${fmtDate(e)} ${fmtTime(e)}`;
 }
 
+function daysWaiting(createdAt: string): number {
+  const ms = Date.now() - new Date(createdAt).getTime();
+  return Math.max(0, Math.floor(ms / 86_400_000));
+}
+
 export default async function WaitlistPage(): Promise<React.JSX.Element> {
-  const entries = await load();
+  const rawEntries = await load();
+  // Sortieren: erst nach earliestAt (nächste-Priorität), dann nach Alter
+  // (ältere vorn bei gleichem Zeitfenster) — so sieht Neta oben wer am
+  // dringendsten wartet.
+  const entries = [...rawEntries].sort((a, b) => {
+    const t = new Date(a.earliestAt).getTime() - new Date(b.earliestAt).getTime();
+    if (t !== 0) return t;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
 
   return (
     <div className="w-full p-4 md:p-8">
@@ -112,6 +125,16 @@ export default async function WaitlistPage(): Promise<React.JSX.Element> {
                             bei {e.staff.firstName} {e.staff.lastName[0]}.
                           </Badge>
                         ) : null}
+                        {(() => {
+                          const d = daysWaiting(e.createdAt);
+                          if (d === 0) return null;
+                          const tone = d >= 14 ? 'warning' : 'neutral';
+                          return (
+                            <Badge tone={tone}>
+                              wartet {d} {d === 1 ? 'Tag' : 'Tagen'}
+                            </Badge>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div className="text-right text-xs">
