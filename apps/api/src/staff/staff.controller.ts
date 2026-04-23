@@ -83,4 +83,40 @@ export class StaffController {
   ): Promise<Staff> {
     return this.svc.setWeeklySchedule(id, body);
   }
+
+  /** Ferien/Abwesenheiten für eine Stylistin. */
+  @Get(':id/time-off')
+  async listTimeOff(
+    @Param('id', new ZodValidationPipe(uuidSchema)) staffId: string,
+  ): Promise<{ entries: unknown[] }> {
+    const entries = await this.svc.listTimeOff(staffId);
+    return { entries };
+  }
+
+  @Post(':id/time-off')
+  @HttpCode(HttpStatus.CREATED)
+  async createTimeOff(
+    @Param('id', new ZodValidationPipe(uuidSchema)) staffId: string,
+    @Body(
+      new ZodValidationPipe(
+        z.object({
+          startAt: z.string().datetime({ offset: true }),
+          endAt: z.string().datetime({ offset: true }),
+          reason: z.string().max(500).optional(),
+        }),
+      ),
+    )
+    body: { startAt: string; endAt: string; reason?: string },
+  ): Promise<unknown> {
+    return this.svc.createTimeOff(staffId, body);
+  }
+
+  @Delete(':staffId/time-off/:timeOffId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteTimeOff(
+    @Param('staffId', new ZodValidationPipe(uuidSchema)) staffId: string,
+    @Param('timeOffId', new ZodValidationPipe(uuidSchema)) timeOffId: string,
+  ): Promise<void> {
+    await this.svc.deleteTimeOff(staffId, timeOffId);
+  }
 }

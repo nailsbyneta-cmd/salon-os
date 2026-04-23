@@ -76,6 +76,41 @@ export async function saveWeeklySchedule(
   revalidatePath(`/staff/${staffId}/shifts`);
 }
 
+export interface TimeOffEntry {
+  id: string;
+  startAt: string;
+  endAt: string;
+  reason: string | null;
+  status: string;
+}
+
+export async function createTimeOff(
+  staffId: string,
+  input: { startAt: string; endAt: string; reason?: string },
+): Promise<TimeOffEntry> {
+  const ctx = getCurrentTenant();
+  const created = await apiFetch<TimeOffEntry>(`/v1/staff/${staffId}/time-off`, {
+    method: 'POST',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: input,
+  });
+  revalidatePath(`/staff/${staffId}/shifts`);
+  return created;
+}
+
+export async function deleteTimeOff(staffId: string, timeOffId: string): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/staff/${staffId}/time-off/${timeOffId}`, {
+    method: 'DELETE',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+  });
+  revalidatePath(`/staff/${staffId}/shifts`);
+}
+
 export async function generateShifts(staffId: string, days: number): Promise<void> {
   const ctx = getCurrentTenant();
   const locationId = await firstLocation();

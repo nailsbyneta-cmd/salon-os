@@ -260,4 +260,68 @@ export class StaffService {
       return updated;
     });
   }
+
+  async listTimeOff(staffId: string): Promise<unknown[]> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      return tx.timeOff.findMany({
+        where: { staffId, tenantId: ctx.tenantId },
+        orderBy: { startAt: 'asc' },
+      });
+    });
+  }
+
+  async createTimeOff(
+    staffId: string,
+    input: { startAt: string; endAt: string; reason?: string },
+  ): Promise<unknown> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const staff = await tx.staff.findFirst({
+        where: { id: staffId, tenantId: ctx.tenantId, deletedAt: null },
+      });
+      if (!staff) throw new NotFoundException(`Staff ${staffId} not found`);
+      const startAt = new Date(input.startAt);
+      const endAt = new Date(input.endAt);
+      if (endAt <= startAt) {
+        throw new NotFoundException('endAt must be after startAt');
+      }
+      const created = await tx.timeOff.create({
+        data: {
+          tenantId: ctx.tenantId,
+          staffId,
+          startAt,
+          endAt,
+          reason: input.reason ?? null,
+          // Auto-approve für MVP — Approval-Workflow kommt später via
+          // Manager-Review-Queue.
+          status: 'APPROVED',
+        },
+      });
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'TimeOff',
+        entityId: created.id,
+        action: 'create',
+        diff: { staffId, startAt, endAt, reason: input.reason ?? null },
+      });
+      return created;
+    });
+  }
+
+  async deleteTimeOff(staffId: string, timeOffId: string): Promise<void> {
+    const ctx = requireTenantContext();
+    await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.timeOff.findFirst({
+        where: { id: timeOffId, staffId, tenantId: ctx.tenantId },
+      });
+      if (!existing) throw new NotFoundException(`TimeOff ${timeOffId} not found`);
+      await tx.timeOff.delete({ where: { id: timeOffId } });
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'TimeOff',
+        entityId: timeOffId,
+        action: 'delete',
+        diff: { staffId, startAt: existing.startAt, endAt: existing.endAt },
+      });
+    });
+  }
 }

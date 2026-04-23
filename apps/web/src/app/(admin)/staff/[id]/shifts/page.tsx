@@ -6,6 +6,7 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { WeeklyScheduleEditor } from '@/components/weekly-schedule-editor';
 import { createShift, deleteShift, generateShifts } from './actions';
+import { TimeOffSection, type TimeOffEntry } from './time-off-section';
 
 type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 type Interval = { open: string; close: string };
@@ -60,6 +61,7 @@ interface Shift {
 async function load(staffId: string): Promise<{
   staff: StaffRow | null;
   shifts: Shift[];
+  timeOff: TimeOffEntry[];
 }> {
   const ctx = getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
@@ -70,16 +72,17 @@ async function load(staffId: string): Promise<{
   to.setDate(to.getDate() + 60);
 
   try {
-    const [staff, shifts] = await Promise.all([
+    const [staff, shifts, timeOff] = await Promise.all([
       apiFetch<StaffRow>(`/v1/staff/${staffId}`, auth),
       apiFetch<{ shifts: Shift[] }>(
         `/v1/shifts?from=${from.toISOString()}&to=${to.toISOString()}&staffId=${staffId}`,
         auth,
       ),
+      apiFetch<{ entries: TimeOffEntry[] }>(`/v1/staff/${staffId}/time-off`, auth),
     ]);
-    return { staff, shifts: shifts.shifts };
+    return { staff, shifts: shifts.shifts, timeOff: timeOff.entries };
   } catch (err) {
-    if (err instanceof ApiError) return { staff: null, shifts: [] };
+    if (err instanceof ApiError) return { staff: null, shifts: [], timeOff: [] };
     throw err;
   }
 }
@@ -90,7 +93,7 @@ export default async function StaffShiftsPage({
   params: Promise<{ id: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
-  const { staff, shifts } = await load(id);
+  const { staff, shifts, timeOff } = await load(id);
   if (!staff) notFound();
 
   const add = createShift.bind(null, id);
@@ -127,6 +130,8 @@ export default async function StaffShiftsPage({
       </header>
 
       <WeeklyScheduleEditor staffId={id} initial={normalizeSchedule(staff.weeklySchedule)} />
+
+      <TimeOffSection staffId={id} initialEntries={timeOff} />
 
       <Card className="mb-4 border-l-4 border-l-accent bg-accent/5">
         <CardBody className="space-y-3">
