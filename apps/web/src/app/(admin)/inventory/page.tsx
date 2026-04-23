@@ -35,9 +35,23 @@ async function load(): Promise<Product[]> {
 }
 
 export default async function InventoryPage(): Promise<React.JSX.Element> {
-  const products = await load();
-  const lowStock = products.filter((p) => p.stockLevel <= p.reorderAt);
-  const stockValue = products.reduce((s, p) => s + (p.costCents / 100) * p.stockLevel, 0);
+  const rawProducts = await load();
+  const lowStock = rawProducts.filter((p) => p.stockLevel <= p.reorderAt);
+  const stockValue = rawProducts.reduce((s, p) => s + (p.costCents / 100) * p.stockLevel, 0);
+  // Low-stock oben (nach Grad der Knappheit, ausgelaufen zuerst), Rest
+  // alphabetisch. So sieht Neta die dringenden Nachbestellungen ohne
+  // scrollen.
+  const products = [...rawProducts].sort((a, b) => {
+    const aLow = a.stockLevel <= a.reorderAt;
+    const bLow = b.stockLevel <= b.reorderAt;
+    if (aLow !== bLow) return aLow ? -1 : 1;
+    if (aLow && bLow) {
+      // Beide low: absolut niedrigerer Bestand zuerst
+      const d = a.stockLevel - b.stockLevel;
+      if (d !== 0) return d;
+    }
+    return a.name.localeCompare(b.name, 'de-CH');
+  });
 
   return (
     <div className="w-full p-4 md:p-8">
