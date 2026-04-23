@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Badge, Button, Card, CardBody, EmptyState, PriceDisplay } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
-import { deleteService } from './actions';
+import { applyNailsPreset, deleteService } from './actions';
 
 interface ServiceRow {
   id: string;
@@ -84,11 +84,18 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
             {services.length} Services in {categories.length} Kategorien
           </p>
         </div>
-        <Link href="/services/new">
-          <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
-            Neuer Service
-          </Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <form action={applyNailsPreset}>
+            <Button type="submit" variant="ghost" size="sm">
+              ✨ Nails-Preset
+            </Button>
+          </form>
+          <Link href="/services/new">
+            <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
+              Neuer Service
+            </Button>
+          </Link>
+        </div>
       </header>
 
       {services.length === 0 ? (
