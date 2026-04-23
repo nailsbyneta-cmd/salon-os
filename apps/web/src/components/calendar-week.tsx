@@ -45,11 +45,13 @@ interface WeekStaff {
   color: string | null;
 }
 
-const HOURS = Array.from({ length: 11 }, (_, i) => i + 8);
+// Gleicher Anzeigebereich wie Tag-View: 07:00-20:00.
+const CAL_START_HOUR = 7;
+const HOURS = Array.from({ length: 13 }, (_, i) => i + CAL_START_HOUR);
 const SLOT_MINUTES = 15;
 const SLOTS_PER_HOUR = 60 / SLOT_MINUTES;
-const CAL_START_MIN = 8 * 60;
-const CAL_END_MIN = (8 + HOURS.length) * 60;
+const CAL_START_MIN = CAL_START_HOUR * 60;
+const CAL_END_MIN = (CAL_START_HOUR + HOURS.length) * 60;
 const DESKTOP = { pxPerMin: 48 / 60, colMinWidth: 70, timeColWidth: 64 };
 const MOBILE = { pxPerMin: 72 / 60, colMinWidth: 60, timeColWidth: 40 };
 const CAL_VERTICAL_OFFSET = 220;
@@ -165,12 +167,12 @@ export function CalendarWeek({
         minute: '2-digit',
       }).format(now),
     );
-    const minutesFromCalStart = zurichHour * 60 + zurichMin - CAL_START_MIN;
-    if (minutesFromCalStart < 0 || minutesFromCalStart > HOURS.length * 60) return;
+    const rawMinutes = zurichHour * 60 + zurichMin - CAL_START_MIN;
+    const clamped = Math.max(0, Math.min(HOURS.length * 60, rawMinutes));
     const el = scrollRef.current;
     if (!el) return;
     const containerTopInPage = el.getBoundingClientRect().top + window.scrollY;
-    const targetY = containerTopInPage + minutesFromCalStart * pxPerMin - window.innerHeight / 3;
+    const targetY = containerTopInPage + clamped * pxPerMin - window.innerHeight / 3;
     window.scrollTo({ top: Math.max(0, targetY), behavior: 'instant' as ScrollBehavior });
     scrolledToNowRef.current = true;
   }, [mounted, pxPerMin, weekStart]);

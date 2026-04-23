@@ -54,11 +54,15 @@ export interface DndStaff {
   color: string | null;
 }
 
-const HOURS = Array.from({ length: 11 }, (_, i) => i + 8);
+// Anzeigebereich 07:00-20:00 (13 Stunden). 07:00 als Start damit früh-
+// Morgen-Termine + auto-scroll-zu-jetzt bei Salon-Öffnung vor 08:00
+// funktionieren; 20:00 als Ende für späte Abendkundinnen.
+const CAL_START_HOUR = 7;
+const HOURS = Array.from({ length: 13 }, (_, i) => i + CAL_START_HOUR);
 const SLOT_MINUTES = 15;
 const SLOTS_PER_HOUR = 60 / SLOT_MINUTES;
-const CAL_START_MIN = 8 * 60;
-const CAL_END_MIN = (8 + HOURS.length) * 60;
+const CAL_START_MIN = CAL_START_HOUR * 60;
+const CAL_END_MIN = (CAL_START_HOUR + HOURS.length) * 60;
 // Responsive base. colMinWidth: untere Grenze in minmax() — verhindert
 // unleserlich schmale Spalten und erlaubt Stretching via 1fr. Bei 5+
 // Staff auf Laptop (1024×) würde 180 horizontalen Scroll auslösen, 110
@@ -170,12 +174,14 @@ export function CalendarDnd({
         minute: '2-digit',
       }).format(now),
     );
-    const minutesFromCalStart = zurichHour * 60 + zurichMin - CAL_START_MIN;
-    if (minutesFromCalStart < 0 || minutesFromCalStart > HOURS.length * 60) return;
+    const rawMinutes = zurichHour * 60 + zurichMin - CAL_START_MIN;
+    // Vor 07:00 → Top zeigen, nach 20:00 → Bottom. Dazwischen: echte
+    // Jetzt-Position. Clamp statt früh-return.
+    const clamped = Math.max(0, Math.min(HOURS.length * 60, rawMinutes));
     const el = scrollRef.current;
     if (!el) return;
     const containerTopInPage = el.getBoundingClientRect().top + window.scrollY;
-    const targetY = containerTopInPage + minutesFromCalStart * pxPerMin - window.innerHeight / 3;
+    const targetY = containerTopInPage + clamped * pxPerMin - window.innerHeight / 3;
     window.scrollTo({ top: Math.max(0, targetY), behavior: 'instant' as ScrollBehavior });
     scrolledToNowRef.current = true;
   }, [day, mounted, pxPerMin]);
