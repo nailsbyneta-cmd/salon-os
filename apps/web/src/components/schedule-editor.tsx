@@ -100,9 +100,18 @@ export function ScheduleEditor({
           <div>
             <p className="text-sm font-semibold text-text-primary">{title}</p>
             <p className="mt-0.5 text-xs text-text-secondary">{subtitle}</p>
+            <p className="mt-1 text-[11px] text-text-muted">
+              Tipp: Mittagspause = zwei Intervalle (z.B. 09:00–12:00 und 13:30–18:00). Klick auf{' '}
+              <span className="font-medium">+ Intervall</span> beim Tag.
+            </p>
           </div>
-          {saved ? <span className="text-xs font-medium text-success">✓ Gespeichert</span> : null}
         </div>
+
+        {saved ? (
+          <div className="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm font-medium text-success">
+            ✓ Arbeitszeiten gespeichert — gilt ab sofort für jeden kommenden Tag.
+          </div>
+        ) : null}
 
         <div className="space-y-2">
           {WEEKDAYS.map(({ key, label }) => (

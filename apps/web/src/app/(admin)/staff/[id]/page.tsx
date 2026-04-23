@@ -13,6 +13,7 @@ import {
 } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { todayInZone, toLocalIso } from '@salon-os/utils';
+import { ColorPickerField } from '@/components/color-picker-field';
 import { getCurrentTenant } from '@/lib/tenant';
 import { updateStaff } from '../actions';
 
@@ -237,24 +238,29 @@ export default async function StaffDetailPage({
         </Link>
       </header>
 
-      {weekStats.apptCount > 0
-        ? (() => {
-            const { mondayIso, sundayIso } = mondayOfCurrentZurichWeek();
-            const dateRange = fmtDateRange(mondayIso, sundayIso);
-            const n = Math.max(weekStats.daysCovered, 1);
-            const avgBookedMin = Math.round(weekStats.bookedMinutes / n);
-            const avgCompletedMin = Math.round(weekStats.completedMinutes / n);
-            const avgRevenue = Math.round(weekStats.revenueChf / n);
-            return (
-              <Card className="mb-6" elevation="flat">
-                <CardBody>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-                    Diese Woche{' '}
-                    <span className="text-[11px] font-normal normal-case text-text-muted">
-                      · {dateRange}
-                    </span>
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      {(() => {
+        const { mondayIso, sundayIso } = mondayOfCurrentZurichWeek();
+        const dateRange = fmtDateRange(mondayIso, sundayIso);
+        const n = Math.max(weekStats.daysCovered, 1);
+        const avgBookedMin = Math.round(weekStats.bookedMinutes / n);
+        const avgCompletedMin = Math.round(weekStats.completedMinutes / n);
+        const avgRevenue = Math.round(weekStats.revenueChf / n);
+        return (
+          <Card className="mb-6" elevation="flat">
+            <CardBody>
+              <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                Diese Woche{' '}
+                <span className="text-[11px] font-normal normal-case text-text-muted">
+                  · {dateRange}
+                </span>
+              </p>
+              {weekStats.apptCount === 0 ? (
+                <p className="mt-3 text-sm text-text-muted">
+                  Diese Woche noch keine Termine bei {s.firstName}.
+                </p>
+              ) : (
+                <>
+                  <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-5">
                     <div>
                       <div className="text-[10px] uppercase tracking-wider text-text-muted">
                         Termine
@@ -303,12 +309,22 @@ export default async function StaffDetailPage({
                         CHF/Tag
                       </div>
                     </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                        Arbeitstage
+                      </div>
+                      <div className="mt-0.5 text-2xl font-display font-semibold tabular-nums">
+                        {weekStats.daysCovered}
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-text-muted">mit Termin</div>
+                    </div>
                   </div>
-                </CardBody>
-              </Card>
-            );
-          })()
-        : null}
+                </>
+              )}
+            </CardBody>
+          </Card>
+        );
+      })()}
 
       <Card>
         <CardBody>
@@ -365,9 +381,9 @@ export default async function StaffDetailPage({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
                 label="Kalender-Farbe"
-                hint="HEX wie #e91e63 — Farbstreifen in Kalender-Karten"
+                hint="Klick auf's Farb-Quadrat für Picker, oder HEX direkt reintippen"
               >
-                <Input name="color" defaultValue={s.color ?? ''} placeholder="#e91e63" />
+                <ColorPickerField name="color" defaultValue={s.color ?? ''} />
               </Field>
               <Field label="Foto-URL" hint="Erscheint auf Public-Buchungs-Seite">
                 <Input
