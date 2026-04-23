@@ -87,8 +87,8 @@ export function OptionsEditor({
         <div>
           <p className="text-sm font-semibold text-text-primary">Varianten</p>
           <p className="mt-0.5 text-xs text-text-secondary">
-            Gruppen wie <em>Typ</em>, <em>Länge</em>, <em>Modus</em>. Jede Option hat optional
-            einen Preis- und Dauer-Aufschlag. Kunde wählt pro Gruppe genau eine Option.
+            Gruppen wie <em>Typ</em>, <em>Länge</em>, <em>Modus</em>. Jede Option hat optional einen
+            Preis- und Dauer-Aufschlag. Kunde wählt pro Gruppe genau eine Option.
           </p>
         </div>
 

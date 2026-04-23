@@ -194,10 +194,7 @@ export class ServicesService {
     });
   }
 
-  async updateOption(
-    optionId: string,
-    input: UpdateServiceOptionInput,
-  ): Promise<ServiceOption> {
+  async updateOption(optionId: string, input: UpdateServiceOptionInput): Promise<ServiceOption> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
       const existing = await tx.serviceOption.findFirst({ where: { id: optionId } });

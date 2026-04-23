@@ -171,7 +171,9 @@ export const createServiceOptionSchema = z.object({
   sortOrder: z.number().int().default(0),
 });
 export type CreateServiceOptionInput = z.infer<typeof createServiceOptionSchema>;
-export const updateServiceOptionSchema = createServiceOptionSchema.partial().omit({ groupId: true });
+export const updateServiceOptionSchema = createServiceOptionSchema
+  .partial()
+  .omit({ groupId: true });
 export type UpdateServiceOptionInput = z.infer<typeof updateServiceOptionSchema>;
 
 // ─── Service Add-Ons (Phorest-Stil) ────────────────────────────

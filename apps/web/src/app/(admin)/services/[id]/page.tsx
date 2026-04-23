@@ -139,9 +139,9 @@ export default async function EditServicePage({
                 Processing-Time (Einwirkzeit)
               </summary>
               <p className="mt-1 text-xs text-text-secondary">
-                Für Services wo der Stylist zwischendrin frei ist — z.B. Färben: 20 Min
-                auftragen → 30 Min einwirken (frei) → 20 Min ausspülen. Während der Processing-Time
-                kann der Stylist einen anderen Kurz-Termin nehmen.
+                Für Services wo der Stylist zwischendrin frei ist — z.B. Färben: 20 Min auftragen →
+                30 Min einwirken (frei) → 20 Min ausspülen. Während der Processing-Time kann der
+                Stylist einen anderen Kurz-Termin nehmen.
               </p>
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <Field label="Aktiv davor (Min)">
