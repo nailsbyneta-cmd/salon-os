@@ -19,7 +19,11 @@ interface Client {
   notesInternal: string | null;
   tags: string[];
   totalVisits: number;
-  totalSpent: string;
+  // API liefert das Feld als `lifetimeValue`. `totalSpent` ist der UI-
+  // interne Alias; beide als optional damit fehlende Daten nicht zu
+  // NaN werden.
+  totalSpent?: string | number | null;
+  lifetimeValue?: string | number | null;
   lastVisitAt: string | null;
   createdAt: string;
   noShowRisk: string | null;
@@ -104,7 +108,8 @@ export default async function ClientDetailPage({
 
   const upcoming = appts.filter((a) => new Date(a.startAt) >= new Date());
   const past = appts.filter((a) => new Date(a.startAt) < new Date());
-  const loyalty = computeLoyalty(Number(client.totalSpent));
+  const lifetimeChf = Number(client.lifetimeValue ?? client.totalSpent ?? 0) || 0;
+  const loyalty = computeLoyalty(lifetimeChf);
 
   // Top-3 Service-Präferenzen — nur aus COMPLETED-Terminen zählen, storniert
   // + no-show ignorieren (sind kein ehrliches Signal für 'mag diesen Service').
@@ -301,11 +306,11 @@ export default async function ClientDetailPage({
         </div>
       </header>
 
-      <section className="mb-8 grid grid-cols-3 gap-3 md:gap-4">
+      <section className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         <Stat label="Besuche" value={client.totalVisits} />
         <Stat
           label="Umsatz total"
-          value={`${Number(client.totalSpent).toLocaleString('de-CH', { minimumFractionDigits: 2 })} CHF`}
+          value={`${lifetimeChf.toLocaleString('de-CH', { minimumFractionDigits: 2 })} CHF`}
         />
         <Stat
           label="Letzter Besuch"
@@ -317,6 +322,21 @@ export default async function ClientDetailPage({
                   year: 'numeric',
                 })
               : '—'
+          }
+        />
+        <Stat
+          label="No-Show-Risiko"
+          value={
+            client.noShowRisk !== null && Number.isFinite(Number(client.noShowRisk))
+              ? `${Math.round(Number(client.noShowRisk))}%`
+              : '—'
+          }
+          sub={
+            client.noShowRisk !== null && Number(client.noShowRisk) >= 40
+              ? 'hoch — vorher bestätigen'
+              : client.noShowRisk !== null && Number(client.noShowRisk) >= 25
+                ? 'mittel'
+                : undefined
           }
         />
       </section>
