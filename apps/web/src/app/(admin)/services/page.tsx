@@ -45,6 +45,11 @@ async function loadData(): Promise<{ services: ServiceRow[]; categories: Categor
 
 export default async function ServicesPage(): Promise<React.JSX.Element> {
   const { services, categories } = await loadData();
+  // Kategorien nach expliziter order-Spalte sortieren, damit Gel/Acryl/
+  // Gesicht etc. in der Reihenfolge erscheinen, die Neta in den Settings
+  // festgelegt hat — nicht zufällig nach API-Order.
+  const orderedCategories = [...categories].sort((a, b) => a.order - b.order);
+  const catOrder = new Map(orderedCategories.map((c, i) => [c.id, i]));
   const catById = new Map(categories.map((c) => [c.id, c.name]));
 
   const byCategory = new Map<string, ServiceRow[]>();
@@ -54,6 +59,18 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
     bucket.push(s);
     byCategory.set(key, bucket);
   }
+  // Innerhalb einer Kategorie alphabetisch, Kategorie-Reihen in
+  // order-Spalte-Reihenfolge (unbekannte 'Weitere' ans Ende).
+  for (const [, bucket] of byCategory) {
+    bucket.sort((a, b) => a.name.localeCompare(b.name, 'de-CH'));
+  }
+  const sortedCategoryEntries = Array.from(byCategory.entries()).sort(([aName], [bName]) => {
+    const aId = categories.find((c) => c.name === aName)?.id;
+    const bId = categories.find((c) => c.name === bName)?.id;
+    const ao = aId ? (catOrder.get(aId) ?? 999) : 999;
+    const bo = bId ? (catOrder.get(bId) ?? 999) : 999;
+    return ao - bo;
+  });
 
   return (
     <div className="w-full p-4 md:p-8">
@@ -88,7 +105,7 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
         </Card>
       ) : (
         <div className="space-y-6">
-          {Array.from(byCategory.entries()).map(([catName, items]) => (
+          {sortedCategoryEntries.map(([catName, items]) => (
             <section key={catName}>
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
                 {catName}
