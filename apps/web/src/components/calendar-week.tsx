@@ -139,9 +139,33 @@ export function CalendarWeek({
     setAppts(initialAppts);
   }, [initialAppts]);
 
-  // Auto-Scroll zur aktuellen Uhrzeit beim Öffnen der Woche, wenn
-  // heute in der Woche liegt — gleiche Logik wie Tag-View.
   const scrolledToNowRef = React.useRef(false);
+
+  const days = React.useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(weekStart);
+        d.setDate(weekStart.getDate() + i);
+        return d;
+      }),
+    [weekStart],
+  );
+  const todayStr = new Date().toDateString();
+
+  const activeStaffIds = new Set(initialAppts.map((a) => a.staffId));
+  const visibleStaff = onlyActive ? staff.filter((s) => activeStaffIds.has(s.id)) : staff;
+  const shownStaff = visibleStaff.length === 0 ? staff : visibleStaff;
+  const hiddenCount = staff.length - shownStaff.length;
+
+  const hasStaffColumns = shownStaff.length > 0;
+  const cols = hasStaffColumns ? shownStaff.length : 1;
+  const totalCols = days.length * cols;
+  const gridTemplate = `${cfg.timeColWidth}px repeat(${totalCols}, minmax(${cfg.colWidth}px, 1fr))`;
+  const minWidth = cfg.timeColWidth + totalCols * cfg.colWidth;
+
+  // Auto-Scroll: vertikal zur Jetzt-Zeile + horizontal zur heutigen
+  // Tages-Spalte (zentriert). Nur wenn heute in der sichtbaren Woche
+  // liegt; sonst Grid bleibt beim Montag oben links.
   React.useEffect(() => {
     if (scrolledToNowRef.current) return;
     if (!mounted) return;
@@ -171,33 +195,22 @@ export function CalendarWeek({
     const clamped = Math.max(0, Math.min(HOURS.length * 60, rawMinutes));
     const el = scrollRef.current;
     if (!el) return;
+    // Vertikal: Seite scrollt zur Jetzt-Linie.
     const containerTopInPage = el.getBoundingClientRect().top + window.scrollY;
     const targetY = containerTopInPage + clamped * pxPerMin - window.innerHeight / 3;
     window.scrollTo({ top: Math.max(0, targetY), behavior: 'instant' as ScrollBehavior });
+    // Horizontal: Tages-Spalte zentrieren statt links bei Montag.
+    const todayMs = Date.parse(`${todayZurich}T00:00:00Z`);
+    const weekStartMs = Date.parse(`${weekStartIso}T00:00:00Z`);
+    const dayDiff = Math.round((todayMs - weekStartMs) / 86_400_000);
+    if (dayDiff >= 0 && dayDiff < 7) {
+      const dayStartPx = cfg.timeColWidth + dayDiff * cols * cfg.colWidth;
+      const dayWidth = cols * cfg.colWidth;
+      const viewportLeft = dayStartPx - (el.clientWidth - dayWidth) / 2;
+      el.scrollLeft = Math.max(0, viewportLeft);
+    }
     scrolledToNowRef.current = true;
-  }, [mounted, pxPerMin, weekStart]);
-
-  const days = React.useMemo(
-    () =>
-      Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(weekStart);
-        d.setDate(weekStart.getDate() + i);
-        return d;
-      }),
-    [weekStart],
-  );
-  const todayStr = new Date().toDateString();
-
-  const activeStaffIds = new Set(initialAppts.map((a) => a.staffId));
-  const visibleStaff = onlyActive ? staff.filter((s) => activeStaffIds.has(s.id)) : staff;
-  const shownStaff = visibleStaff.length === 0 ? staff : visibleStaff;
-  const hiddenCount = staff.length - shownStaff.length;
-
-  const hasStaffColumns = shownStaff.length > 0;
-  const cols = hasStaffColumns ? shownStaff.length : 1;
-  const totalCols = days.length * cols;
-  const gridTemplate = `${cfg.timeColWidth}px repeat(${totalCols}, minmax(${cfg.colWidth}px, 1fr))`;
-  const minWidth = cfg.timeColWidth + totalCols * cfg.colWidth;
+  }, [mounted, pxPerMin, weekStart, cfg.timeColWidth, cfg.colWidth, cols]);
 
   const byDay = React.useMemo(() => {
     const m = new Map<string, WeekAppt[]>();
