@@ -133,6 +133,13 @@ export default async function ClientsPage({
         <div className="flex flex-wrap items-center gap-2">
           <ClientSearchInline initialQ={q ?? ''} />
           <Link
+            href="/clients/duplicates"
+            className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-secondary hover:bg-surface-raised"
+            title="Mögliche Duplikate prüfen"
+          >
+            ⚠ Duplikate
+          </Link>
+          <Link
             href="/clients/import"
             className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-secondary hover:bg-surface-raised"
           >
