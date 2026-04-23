@@ -352,6 +352,11 @@ model Staff {
   // Gleiche Shape wie location.openingHours. Wenn gesetzt, hat Vorrang
   // vor location.openingHours bei Shift-Generierung.
   weeklySchedule  Json?
+  // Ausnahme-Tage: { 'YYYY-MM-DD': { closed: true } | { intervals: [{open,close}] } }
+  // Überschreibt weeklySchedule für das jeweilige Datum. Einzeltermine
+  // (Arzt, kürzere Schicht, Zusatz-Samstag). Kein Auto-Cleanup; User
+  // verwaltet Einträge manuell.
+  scheduleExceptions Json?       @default("{}")
   active          Boolean        @default(true)
   createdAt       DateTime       @default(now()) @db.Timestamptz
   updatedAt       DateTime       @updatedAt @db.Timestamptz

@@ -111,6 +111,24 @@ export async function deleteTimeOff(staffId: string, timeOffId: string): Promise
   revalidatePath(`/staff/${staffId}/shifts`);
 }
 
+export async function saveScheduleExceptions(
+  staffId: string,
+  exceptions: Record<
+    string,
+    { closed: true } | { intervals: Array<{ open: string; close: string }> }
+  >,
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/staff/${staffId}/schedule-exceptions`, {
+    method: 'PATCH',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: exceptions,
+  });
+  revalidatePath(`/staff/${staffId}/shifts`);
+}
+
 export async function generateShifts(staffId: string, days: number): Promise<void> {
   const ctx = getCurrentTenant();
   const locationId = await firstLocation();

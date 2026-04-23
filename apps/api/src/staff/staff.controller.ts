@@ -84,6 +84,26 @@ export class StaffController {
     return this.svc.setWeeklySchedule(id, body);
   }
 
+  /** Ausnahme-Tage (ein spezifisches Datum abweichend vom Weekly-Schedule). */
+  @Patch(':id/schedule-exceptions')
+  async setScheduleExceptions(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+    @Body(
+      new ZodValidationPipe(
+        z.record(
+          z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          z.union([
+            z.object({ closed: z.literal(true) }),
+            z.object({ intervals: z.array(intervalSchema).min(1) }),
+          ]),
+        ),
+      ),
+    )
+    body: Record<string, { closed: true } | { intervals: Array<{ open: string; close: string }> }>,
+  ): Promise<Staff> {
+    return this.svc.setScheduleExceptions(id, body);
+  }
+
   /** Ferien/Abwesenheiten für eine Stylistin. */
   @Get(':id/time-off')
   async listTimeOff(

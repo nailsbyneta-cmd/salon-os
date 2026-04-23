@@ -6,7 +6,36 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { WeeklyScheduleEditor } from '@/components/weekly-schedule-editor';
 import { createShift, deleteShift, generateShifts } from './actions';
+import { ExceptionsSection } from './exceptions-section';
 import { TimeOffSection, type TimeOffEntry } from './time-off-section';
+
+type ExceptionMap = Record<
+  string,
+  { closed: true } | { intervals: Array<{ open: string; close: string }> }
+>;
+
+function normalizeExceptions(raw: unknown): ExceptionMap {
+  if (!raw || typeof raw !== 'object') return {};
+  const out: ExceptionMap = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
+    if (!v || typeof v !== 'object') continue;
+    const obj = v as Record<string, unknown>;
+    if (obj.closed === true) {
+      out[k] = { closed: true };
+    } else if (Array.isArray(obj.intervals)) {
+      const arr = obj.intervals.filter(
+        (x): x is { open: string; close: string } =>
+          !!x &&
+          typeof x === 'object' &&
+          typeof (x as { open?: unknown }).open === 'string' &&
+          typeof (x as { close?: unknown }).close === 'string',
+      );
+      if (arr.length > 0) out[k] = { intervals: arr };
+    }
+  }
+  return out;
+}
 
 type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 type Interval = { open: string; close: string };
@@ -50,6 +79,7 @@ interface StaffRow {
   lastName: string;
   color: string | null;
   weeklySchedule: unknown;
+  scheduleExceptions: unknown;
 }
 
 interface Shift {
@@ -130,6 +160,11 @@ export default async function StaffShiftsPage({
       </header>
 
       <WeeklyScheduleEditor staffId={id} initial={normalizeSchedule(staff.weeklySchedule)} />
+
+      <ExceptionsSection
+        staffId={id}
+        initialExceptions={normalizeExceptions(staff.scheduleExceptions)}
+      />
 
       <TimeOffSection staffId={id} initialEntries={timeOff} />
 

@@ -261,6 +261,33 @@ export class StaffService {
     });
   }
 
+  async setScheduleExceptions(
+    staffId: string,
+    exceptions: Record<
+      string,
+      { closed: true } | { intervals: Array<{ open: string; close: string }> }
+    >,
+  ): Promise<Staff> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.staff.findFirst({
+        where: { id: staffId, tenantId: ctx.tenantId, deletedAt: null },
+      });
+      if (!existing) throw new NotFoundException(`Staff ${staffId} not found`);
+      const updated = await tx.staff.update({
+        where: { id: staffId },
+        data: { scheduleExceptions: exceptions as Prisma.InputJsonValue },
+      });
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Staff',
+        entityId: staffId,
+        action: 'update-schedule-exceptions',
+        diff: { keys: Object.keys(exceptions) },
+      });
+      return updated;
+    });
+  }
+
   async listTimeOff(staffId: string): Promise<unknown[]> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
