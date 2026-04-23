@@ -34,9 +34,7 @@ export function ClientSearchInline({ initialQ }: { initialQ: string }): React.JS
       });
     }, 180);
     return () => clearTimeout(timer);
-    // sp + pathname sind stabil; router.replace braucht nur q
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q]);
+  }, [q, pathname, router, sp]);
 
   return (
     <Input
