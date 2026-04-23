@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Avatar, Badge, Button, Card, CardBody, EmptyState } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { mergeClients } from './actions';
 
 interface ClientRow {
   id: string;
@@ -153,13 +154,16 @@ export default async function DuplicatesPage(): Promise<React.JSX.Element> {
               </div>
               <CardBody className="p-0">
                 <ul className="divide-y divide-border">
-                  {g.members
-                    .sort((a, b) => b.totalVisits - a.totalVisits)
-                    .map((c, idx) => {
+                  {(() => {
+                    const sorted = [...g.members].sort((a, b) => b.totalVisits - a.totalVisits);
+                    const primary = sorted[0];
+                    return sorted.map((c, idx) => {
                       const ltv = Number(c.lifetimeValue) || 0;
                       const lastV = c.lastVisitAt
                         ? new Date(c.lastVisitAt).toLocaleDateString('de-CH')
                         : '—';
+                      const isPrimary = idx === 0;
+                      const mergeInto = primary ? mergeClients.bind(null, primary.id, c.id) : null;
                       return (
                         <li
                           key={c.id}
@@ -175,7 +179,7 @@ export default async function DuplicatesPage(): Promise<React.JSX.Element> {
                             className="min-w-0 flex-1 hover:underline"
                           >
                             <div className="font-medium text-text-primary">
-                              {idx === 0 ? <span className="text-accent">★ </span> : null}
+                              {isPrimary ? <span className="text-accent">★ </span> : null}
                               {c.firstName} {c.lastName}
                             </div>
                             <div className="text-xs text-text-muted">
@@ -194,14 +198,30 @@ export default async function DuplicatesPage(): Promise<React.JSX.Element> {
                               {ltv.toFixed(0)} CHF · zuletzt {lastV}
                             </div>
                           </div>
-                          <Link href={`/clients/${c.id}`}>
-                            <Button variant="secondary" size="sm">
-                              Öffnen
-                            </Button>
-                          </Link>
+                          <div className="flex gap-1.5">
+                            <Link href={`/clients/${c.id}`}>
+                              <Button variant="secondary" size="sm">
+                                Öffnen
+                              </Button>
+                            </Link>
+                            {!isPrimary && mergeInto ? (
+                              <form action={mergeInto}>
+                                <Button
+                                  type="submit"
+                                  variant="accent"
+                                  size="sm"
+                                  aria-label={`${c.firstName} ${c.lastName} in Primary mergen`}
+                                  title={`Daten + Termine werden auf ${primary?.firstName} ${primary?.lastName} (★) übertragen, dieser Eintrag gelöscht`}
+                                >
+                                  → Mergen
+                                </Button>
+                              </form>
+                            ) : null}
+                          </div>
                         </li>
                       );
-                    })}
+                    });
+                  })()}
                 </ul>
               </CardBody>
             </Card>

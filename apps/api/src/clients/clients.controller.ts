@@ -86,4 +86,19 @@ export class ClientsController {
   async forget(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<void> {
     await this.svc.requestDeletion(id);
   }
+
+  /** Zusammenführen: Duplikat → Primary. Termine + Waitlist werden
+   * re-assigned, Profil-Felder mit 'primary hat Vorrang'-Logik
+   * gemergt, Duplikat soft-deleted. */
+  @Post(':id/merge')
+  async merge(
+    @Param('id', new ZodValidationPipe(uuidSchema)) primaryId: string,
+    @Body() body: { duplicateId: string },
+  ): Promise<Client> {
+    // Minimaler Body-Validator — keine extra Zod-Schema-Infra nötig
+    if (!body || typeof body.duplicateId !== 'string') {
+      throw new Error('duplicateId required');
+    }
+    return this.svc.merge(primaryId, body.duplicateId);
+  }
 }

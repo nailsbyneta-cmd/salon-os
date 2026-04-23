@@ -268,6 +268,98 @@ export class ClientsService {
     });
   }
 
+  /**
+   * Merge: verschiebt alle Relations (Appointments, Waitlist) vom
+   * Duplikat auf Primary, union-mergt Tags + Allergies, fusst die
+   * meisten Profil-Felder nach 'primary hat Priorität — fehlende aus
+   * duplicate ergänzen', und soft-delet das Duplikat.
+   *
+   * totalVisits/lifetimeValue/lastVisitAt werden NICHT manuell
+   * summiert — die werden aus den re-assigned Appointments live via
+   * Trigger / Refresh berechnet (oder beim nächsten List-Fetch
+   * re-aggregiert). Hier setzen wir sie nur auf null/undefined und
+   * verlassen uns auf downstream.
+   */
+  async merge(primaryId: string, duplicateId: string): Promise<Client> {
+    if (primaryId === duplicateId) {
+      throw new NotFoundException('Primary und Duplikat müssen unterschiedlich sein');
+    }
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const primary = await tx.client.findFirst({
+        where: { id: primaryId, deletedAt: null },
+      });
+      if (!primary) throw new NotFoundException(`Primary ${primaryId} not found`);
+      const dup = await tx.client.findFirst({
+        where: { id: duplicateId, deletedAt: null },
+      });
+      if (!dup) throw new NotFoundException(`Duplicate ${duplicateId} not found`);
+
+      // Relations re-assignen.
+      await tx.appointment.updateMany({
+        where: { clientId: duplicateId, tenantId: ctx.tenantId },
+        data: { clientId: primaryId },
+      });
+      await tx.waitlistEntry.updateMany({
+        where: { clientId: duplicateId, tenantId: ctx.tenantId },
+        data: { clientId: primaryId },
+      });
+
+      // Profil-Felder mergen: primary hat Priorität, Lücken aus dup.
+      const mergedTags = Array.from(new Set([...primary.tags, ...dup.tags]));
+      const mergedAllergies = Array.from(new Set([...primary.allergies, ...dup.allergies]));
+      const merged = await tx.client.update({
+        where: { id: primaryId },
+        data: {
+          email: primary.email ?? dup.email,
+          phone: primary.phone ?? dup.phone,
+          phoneE164: primary.phoneE164 ?? dup.phoneE164,
+          birthday: primary.birthday ?? dup.birthday,
+          pronouns: primary.pronouns ?? dup.pronouns,
+          address: primary.address ?? dup.address ?? undefined,
+          notesInternal:
+            primary.notesInternal && dup.notesInternal
+              ? `${primary.notesInternal}\n\n--- Merged aus ${dup.firstName} ${dup.lastName} ---\n${dup.notesInternal}`
+              : (primary.notesInternal ?? dup.notesInternal),
+          tags: mergedTags,
+          allergies: mergedAllergies,
+          marketingOptIn: primary.marketingOptIn || dup.marketingOptIn,
+          smsOptIn: primary.smsOptIn || dup.smsOptIn,
+          emailOptIn: primary.emailOptIn || dup.emailOptIn,
+        },
+      });
+
+      // Duplikat soft-delete.
+      await tx.client.update({
+        where: { id: duplicateId },
+        data: { deletedAt: new Date() },
+      });
+
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Client',
+        entityId: primaryId,
+        action: 'merge',
+        diff: {
+          mergedFrom: duplicateId,
+          mergedName: `${dup.firstName} ${dup.lastName}`,
+          fieldsFilled: {
+            email: !primary.email && !!dup.email,
+            phone: !primary.phone && !!dup.phone,
+            birthday: !primary.birthday && !!dup.birthday,
+          },
+        },
+      });
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Client',
+        entityId: duplicateId,
+        action: 'soft-delete',
+        diff: { mergedInto: primaryId },
+      });
+
+      return merged;
+    });
+  }
+
   async softDelete(id: string): Promise<void> {
     const ctx = requireTenantContext();
     await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
