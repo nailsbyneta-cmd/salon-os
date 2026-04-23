@@ -199,15 +199,17 @@ export function CalendarWeek({
     const containerTopInPage = el.getBoundingClientRect().top + window.scrollY;
     const targetY = containerTopInPage + clamped * pxPerMin - window.innerHeight / 3;
     window.scrollTo({ top: Math.max(0, targetY), behavior: 'instant' as ScrollBehavior });
-    // Horizontal: Tages-Spalte zentrieren statt links bei Montag.
-    const todayMs = Date.parse(`${todayZurich}T00:00:00Z`);
-    const weekStartMs = Date.parse(`${weekStartIso}T00:00:00Z`);
-    const dayDiff = Math.round((todayMs - weekStartMs) / 86_400_000);
-    if (dayDiff >= 0 && dayDiff < 7) {
-      const dayStartPx = cfg.timeColWidth + dayDiff * cols * cfg.colWidth;
-      const dayWidth = cols * cfg.colWidth;
-      const viewportLeft = dayStartPx - (el.clientWidth - dayWidth) / 2;
-      el.scrollLeft = Math.max(0, viewportLeft);
+    // Horizontal: echtes DOM-Element der heutigen Tages-Spalte finden und
+    // zentriert ins sichtbare Fenster scrollen. getBoundingClientRect
+    // berücksichtigt minmax(1fr), im Gegensatz zu rechnerischen Spalten-
+    // Breiten aus cfg.colWidth.
+    const todayHeader = el.querySelector<HTMLElement>(`[data-day-header="${todayZurich}"]`);
+    if (todayHeader) {
+      const containerRect = el.getBoundingClientRect();
+      const headerRect = todayHeader.getBoundingClientRect();
+      const relativeLeft = headerRect.left - containerRect.left + el.scrollLeft;
+      const centered = relativeLeft - (containerRect.width - headerRect.width) / 2;
+      el.scrollLeft = Math.max(0, centered);
     }
     scrolledToNowRef.current = true;
   }, [mounted, pxPerMin, weekStart, cfg.timeColWidth, cfg.colWidth, cols]);
@@ -417,6 +419,8 @@ export function CalendarWeek({
               <Link
                 key={`dh-${d.toISOString()}`}
                 href={`/calendar?view=day&date=${isoDay(d)}`}
+                data-day-header={isoDay(d)}
+                data-today={isToday || undefined}
                 className="border-b border-border bg-surface p-2 text-center transition-colors hover:bg-surface-raised border-l-2 border-l-border-strong"
                 style={{ gridColumn: `span ${cols}` }}
               >
