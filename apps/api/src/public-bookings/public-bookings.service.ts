@@ -92,6 +92,79 @@ export class PublicBookingsService {
   }
 
   /**
+   * Service-Detail für Online-Booking: liefert Service + Varianten + Add-Ons
+   * + Bundle-Cross-Sell eingebettet. Ein Fetch, Wizard kann direkt
+   * rendern.
+   */
+  async getServiceDetail(
+    slug: string,
+    serviceId: string,
+  ): Promise<{
+    service: Service;
+    optionGroups: Array<{
+      id: string;
+      name: string;
+      required: boolean;
+      multi: boolean;
+      sortOrder: number;
+      options: Array<{
+        id: string;
+        label: string;
+        priceDelta: unknown;
+        durationDeltaMin: number;
+        processingDeltaMin: number;
+        isDefault: boolean;
+        sortOrder: number;
+      }>;
+    }>;
+    addOns: Array<{
+      id: string;
+      name: string;
+      priceDelta: unknown;
+      durationDeltaMin: number;
+      sortOrder: number;
+    }>;
+    bundles: Array<{
+      id: string;
+      label: string;
+      discountAmount: unknown;
+      discountPct: unknown;
+      bundledService: { id: string; name: string; basePrice: unknown; durationMinutes: number };
+    }>;
+  }> {
+    const tenant = await this.resolveTenant(slug);
+    return this.withTenant(tenant.id, null, null, async (tx) => {
+      const service = await tx.service.findFirst({
+        where: { id: serviceId, deletedAt: null, bookable: true },
+      });
+      if (!service) throw new NotFoundException(`Service ${serviceId} not found`);
+
+      const [optionGroups, addOns, bundles] = await Promise.all([
+        tx.serviceOptionGroup.findMany({
+          where: { serviceId },
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+          include: { options: { orderBy: [{ sortOrder: 'asc' }, { label: 'asc' }] } },
+        }),
+        tx.serviceAddOn.findMany({
+          where: { serviceId },
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+        }),
+        tx.serviceBundle.findMany({
+          where: { primaryServiceId: serviceId, active: true },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+          include: {
+            bundledService: {
+              select: { id: true, name: true, basePrice: true, durationMinutes: true },
+            },
+          },
+        }),
+      ]);
+
+      return { service, optionGroups, addOns, bundles };
+    });
+  }
+
+  /**
    * Öffentliches Profil: Tenant-Meta + aktive Standorte mit
    * Öffnungszeiten/Adresse + buchbare Staff mit Name/Bio/Foto.
    * Alle Infos, die eine Salon-Homepage braucht — ohne Umsatz,
@@ -272,7 +345,7 @@ export class PublicBookingsService {
   async availability(
     slug: string,
     serviceId: string,
-    opts: { date: string; locationId: string },
+    opts: { date: string; locationId: string; durationOverrideMin?: number },
   ): Promise<AvailabilitySlot[]> {
     const tenant = await this.resolveTenant(slug);
     return this.withTenant(tenant.id, null, null, async (tx) => {
@@ -308,7 +381,9 @@ export class PublicBookingsService {
         select: { staffId: true, startAt: true, endAt: true },
       });
 
-      const duration = service.durationMinutes + service.bufferAfterMin + service.bufferBeforeMin;
+      // Wizard kann effektive Dauer (inkl. Varianten + Add-Ons + Bundle) übergeben
+      const activeMin = opts.durationOverrideMin ?? service.durationMinutes;
+      const duration = activeMin + service.bufferAfterMin + service.bufferBeforeMin;
       const slotMinutes = 30;
 
       // Echte Öffnungszeiten aus location.openingHours nutzen.

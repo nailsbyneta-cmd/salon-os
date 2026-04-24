@@ -65,17 +65,41 @@ export class PublicBookingsController {
     return { services: await this.svc.listServices(slug) };
   }
 
+  @Get('services/:serviceId')
+  async getServiceDetail(
+    @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
+    @Param('serviceId', new ZodValidationPipe(uuidSchema)) serviceId: string,
+  ): Promise<Awaited<ReturnType<PublicBookingsService['getServiceDetail']>>> {
+    return this.svc.getServiceDetail(slug, serviceId);
+  }
+
   @Get('services/:serviceId/slots')
   async availability(
     @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
     @Param('serviceId', new ZodValidationPipe(uuidSchema)) serviceId: string,
     @Query('date') date: string,
     @Query('locationId', new ZodValidationPipe(uuidSchema)) locationId: string,
+    @Query('durationMinutes') durationMinutes?: string,
   ): Promise<{ slots: AvailabilitySlot[] }> {
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       throw new BadRequestException('date (YYYY-MM-DD) is required');
     }
-    return { slots: await this.svc.availability(slug, serviceId, { date, locationId }) };
+    const durationOverrideMin = durationMinutes ? Number(durationMinutes) : undefined;
+    if (
+      durationOverrideMin !== undefined &&
+      (!Number.isFinite(durationOverrideMin) ||
+        durationOverrideMin < 5 ||
+        durationOverrideMin > 600)
+    ) {
+      throw new BadRequestException('durationMinutes must be between 5 and 600');
+    }
+    return {
+      slots: await this.svc.availability(slug, serviceId, {
+        date,
+        locationId,
+        durationOverrideMin,
+      }),
+    };
   }
 
   @Post('bookings')

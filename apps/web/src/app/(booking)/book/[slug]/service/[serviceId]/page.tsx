@@ -40,10 +40,13 @@ async function loadSlots(
   serviceId: string,
   date: string,
   locationId: string,
+  durationMinutes?: number,
 ): Promise<Slot[] | null> {
   try {
+    const qs = new URLSearchParams({ date, locationId });
+    if (durationMinutes) qs.set('durationMinutes', String(durationMinutes));
     const res = await fetch(
-      `${API_URL}/v1/public/${slug}/services/${serviceId}/slots?date=${date}&locationId=${locationId}`,
+      `${API_URL}/v1/public/${slug}/services/${serviceId}/slots?${qs.toString()}`,
       { cache: 'no-store' },
     );
     if (!res.ok) return null;
@@ -109,18 +112,37 @@ export default async function BookingSlots({
   searchParams,
 }: {
   params: Promise<{ slug: string; serviceId: string }>;
-  searchParams: Promise<{ date?: string; location?: string }>;
+  searchParams: Promise<{
+    date?: string;
+    location?: string;
+    duration?: string;
+    price?: string;
+    options?: string;
+    addons?: string;
+    bundles?: string;
+  }>;
 }): Promise<React.JSX.Element> {
   const { slug, serviceId } = await params;
-  const { date, location } = await searchParams;
+  const sp = await searchParams;
+  const { date, location, duration, price } = sp;
   if (!location) notFound();
 
   const selectedDate = date ?? today();
+  const durationMin = duration ? Number(duration) : undefined;
   const [slots, info] = await Promise.all([
-    loadSlots(slug, serviceId, selectedDate, location),
+    loadSlots(slug, serviceId, selectedDate, location, durationMin),
     loadInfo(slug),
   ]);
   if (slots === null) notFound();
+
+  // Preserve config-params across date navigation
+  const extraParams = new URLSearchParams();
+  if (duration) extraParams.set('duration', duration);
+  if (price) extraParams.set('price', price);
+  if (sp.options) extraParams.set('options', sp.options);
+  if (sp.addons) extraParams.set('addons', sp.addons);
+  if (sp.bundles) extraParams.set('bundles', sp.bundles);
+  const extraSuffix = extraParams.toString() ? `&${extraParams.toString()}` : '';
 
   const openingHours = info?.locations.find((l) => l.id === location)?.openingHours ?? null;
 
@@ -158,6 +180,13 @@ export default async function BookingSlots({
             month: 'long',
           })}
         </h1>
+        {price || durationMin ? (
+          <p className="mt-2 text-sm tabular-nums text-text-secondary">
+            Deine Auswahl: {price ? `CHF ${Number(price).toFixed(2).replace(/\.00$/, '')}` : ''}
+            {price && durationMin ? ' · ' : ''}
+            {durationMin ? `${durationMin} Min` : ''}
+          </p>
+        ) : null}
       </header>
 
       <div className="space-y-3">
@@ -169,7 +198,7 @@ export default async function BookingSlots({
               return (
                 <Link
                   key={d.iso}
-                  href={`/book/${slug}/service/${serviceId}?location=${location}&date=${d.iso}`}
+                  href={`/book/${slug}/service/${serviceId}?location=${location}&date=${d.iso}${extraSuffix}`}
                   aria-disabled={!open}
                   className={cn(
                     'flex min-w-[44px] flex-col items-center rounded-md border px-2 py-2 text-center transition-colors sm:min-w-[68px] sm:px-3',
@@ -217,7 +246,7 @@ export default async function BookingSlots({
             </p>
             {nextOpen ? (
               <Link
-                href={`/book/${slug}/service/${serviceId}?location=${location}&date=${nextOpen}`}
+                href={`/book/${slug}/service/${serviceId}?location=${location}&date=${nextOpen}${extraSuffix}`}
                 className="inline-flex text-sm font-medium text-accent hover:underline"
               >
                 → Nächster freier Tag:{' '}
@@ -241,7 +270,7 @@ export default async function BookingSlots({
                 {list.map((s) => (
                   <Link
                     key={`${s.staffId}-${s.startAt}`}
-                    href={`/book/${slug}/confirm?serviceId=${serviceId}&locationId=${location}&staffId=${s.staffId}&startAt=${encodeURIComponent(s.startAt)}`}
+                    href={`/book/${slug}/confirm?serviceId=${serviceId}&locationId=${location}&staffId=${s.staffId}&startAt=${encodeURIComponent(s.startAt)}${extraSuffix}`}
                     className="group flex flex-col items-center rounded-lg border border-border bg-surface px-3 py-3 text-center shadow-sm transition-all hover:-translate-y-[1px] hover:border-accent hover:bg-accent/5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   >
                     <div className="text-base font-semibold tabular-nums text-text-primary group-hover:text-accent">

@@ -400,7 +400,7 @@ export default async function BookingStart({
             {items.map((s) => (
               <Link
                 key={s.id}
-                href={`/book/${slug}/service/${s.id}?location=${locations[0]?.id ?? ''}`}
+                href={`/book/${slug}/service/${s.id}/configure?location=${locations[0]?.id ?? ''}`}
                 className="group"
               >
                 <Card elevation="hoverable">
