@@ -669,7 +669,7 @@ export default async function BookingStart({
               href={tenant.instagramUrl}
               target="_blank"
               rel="noopener"
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-colors hover:bg-surface-raised"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-sm active:translate-y-0 active:scale-[0.98]"
             >
               📸 Instagram
             </a>
@@ -679,7 +679,7 @@ export default async function BookingStart({
               href={tenant.tiktokUrl}
               target="_blank"
               rel="noopener"
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-colors hover:bg-surface-raised"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-sm active:translate-y-0 active:scale-[0.98]"
             >
               🎵 TikTok
             </a>
@@ -689,7 +689,7 @@ export default async function BookingStart({
               href={tenant.facebookUrl}
               target="_blank"
               rel="noopener"
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-colors hover:bg-surface-raised"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-sm active:translate-y-0 active:scale-[0.98]"
             >
               👤 Facebook
             </a>
@@ -709,7 +709,7 @@ export default async function BookingStart({
               href={tenant.googleBusinessUrl}
               target="_blank"
               rel="noopener"
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-colors hover:bg-surface-raised"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-sm active:translate-y-0 active:scale-[0.98]"
             >
               ⭐ Google Reviews
             </a>

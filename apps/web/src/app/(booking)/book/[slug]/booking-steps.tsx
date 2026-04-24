@@ -29,7 +29,6 @@ export function BookingSteps({ current }: { current: BookingStep }): React.JSX.E
       {ORDER.map((step, idx) => {
         const isDone = idx < currentIdx;
         const isActive = idx === currentIdx;
-        const isUpcoming = idx > currentIdx;
 
         return (
           <div

@@ -47,7 +47,7 @@ export function ShareButton({
   return (
     <button
       type="button"
-      onClick={handleShare}
+      onClick={() => void handleShare()}
       className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-secondary transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:text-text-primary hover:shadow-md active:translate-y-0 active:scale-[0.98]"
     >
       {copied ? '✓ Link kopiert' : supported ? '↗ Weiterempfehlen' : '🔗 Link kopieren'}
