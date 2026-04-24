@@ -626,7 +626,7 @@ export default async function Home(): Promise<React.JSX.Element> {
       {d.topServicesWeek.length > 0 ? (
         <Card className="mb-4" elevation="flat">
           <CardBody>
-            <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
               Top Services · letzte 7 Tage
             </p>
             <ul className="mt-3 flex flex-wrap gap-2" aria-label="Top Services der letzten 7 Tage">

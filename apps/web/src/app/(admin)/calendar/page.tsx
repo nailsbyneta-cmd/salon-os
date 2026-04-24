@@ -246,7 +246,7 @@ export default async function CalendarPage({
 
       {view === 'day' && appts.length > 0 ? (
         <section className="mt-8">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Termin-Details
           </h2>
           <Card>

@@ -396,7 +396,7 @@ export default async function AppointmentDetailPage({
 
       <Card className="mb-6">
         <div className="border-b border-border px-5 py-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Leistungen
           </h2>
         </div>

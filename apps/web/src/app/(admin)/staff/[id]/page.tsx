@@ -248,7 +248,7 @@ export default async function StaffDetailPage({
         return (
           <Card className="mb-6" elevation="flat">
             <CardBody>
-              <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
                 Diese Woche{' '}
                 <span className="text-[11px] font-normal normal-case text-text-muted">
                   · {dateRange}
@@ -405,7 +405,7 @@ export default async function StaffDetailPage({
             </Field>
 
             <fieldset className="rounded-md border border-border p-4">
-              <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+              <legend className="px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
                 Kann diese Services ausführen
               </legend>
               {allServices.length === 0 ? (

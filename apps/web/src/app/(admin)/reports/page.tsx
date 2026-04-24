@@ -401,7 +401,7 @@ export default async function ReportsPage({
               <Card className="mb-8">
                 <CardBody>
                   <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-                    <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                    <h2 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
                       No-Show + Storno-Rate · pro Woche
                     </h2>
                     <p className="text-[11px] text-text-muted">
@@ -478,7 +478,7 @@ export default async function ReportsPage({
       {/* Umsatz pro Tag */}
       <Card className="mb-8">
         <CardBody>
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Umsatz pro Tag
           </h2>
           {daysSorted.length === 0 ? (
@@ -517,7 +517,7 @@ export default async function ReportsPage({
       {/* Per-Staff */}
       <Card className="mb-8">
         <CardBody>
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Pro Mitarbeiterin
           </h2>
           {stats.perStaff.length === 0 ? (
@@ -556,7 +556,7 @@ export default async function ReportsPage({
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
           <CardBody>
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-text-muted">
+            <h2 className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
               Top Services
             </h2>
             {stats.topServices.length === 0 ? (
@@ -581,7 +581,7 @@ export default async function ReportsPage({
 
         <Card>
           <CardBody>
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-text-muted">
+            <h2 className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
               Top Kundinnen
             </h2>
             {stats.topClients.length === 0 ? (
@@ -606,7 +606,7 @@ export default async function ReportsPage({
 
         <Card className="md:col-span-2">
           <CardBody>
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-text-muted">
+            <h2 className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
               Buchungskanäle
             </h2>
             {stats.bookedViaBreakdown.size === 0 ? (

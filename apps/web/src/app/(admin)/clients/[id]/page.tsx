@@ -397,7 +397,7 @@ export default async function ClientDetailPage({
         >
           <CardBody className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
                 Besuchs-Rhythmus
               </p>
               <p className="mt-1 text-sm text-text-primary">
@@ -443,7 +443,7 @@ export default async function ClientDetailPage({
       {topServices.length > 0 ? (
         <Card className="mb-8">
           <CardBody>
-            <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
               Am häufigsten gebucht
             </p>
             <ul className="mt-3 flex flex-wrap gap-2" aria-label="Am häufigsten gebuchte Services">
@@ -463,7 +463,7 @@ export default async function ClientDetailPage({
 
       {upcoming.length > 0 ? (
         <section className="mb-8">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Bevorstehende Termine
           </h2>
           <Card>
@@ -479,7 +479,7 @@ export default async function ClientDetailPage({
       ) : null}
 
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+        <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
           Verlauf
         </h2>
         {past.length === 0 ? (
@@ -515,7 +515,7 @@ export default async function ClientDetailPage({
       ) : null}
 
       <section className="mt-10 rounded-lg border border-border bg-surface/50 p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+        <h2 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
           DSGVO · Datenschutz
         </h2>
         <p className="mt-2 text-sm text-text-secondary">

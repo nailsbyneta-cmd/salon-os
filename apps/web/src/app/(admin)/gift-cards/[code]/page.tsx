@@ -93,7 +93,7 @@ export default async function GiftCardDetailPage({
       {card.message ? (
         <Card className="mb-6">
           <CardBody>
-            <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
               Nachricht
             </p>
             <p className="mt-2 whitespace-pre-line text-sm text-text-primary">{card.message}</p>
@@ -103,7 +103,7 @@ export default async function GiftCardDetailPage({
 
       <Card>
         <CardBody>
-          <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Teilen (Diff #19)
           </p>
           <p className="mt-2 text-sm text-text-secondary">

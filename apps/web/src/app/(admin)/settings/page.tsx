@@ -320,7 +320,7 @@ export default async function SettingsPage({
               </Field>
 
               <div className="border-t border-border pt-4">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+                <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
                   Social Media
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">

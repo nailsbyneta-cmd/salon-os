@@ -44,7 +44,7 @@ export function PosForm({
       className="space-y-5"
     >
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
           Trinkgeld
         </p>
         <div className="grid grid-cols-5 gap-2">
@@ -82,7 +82,7 @@ export function PosForm({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
           Zahlungsart
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
