@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Avatar, Button, Card, CardBody, Field, Input, PriceDisplay, Textarea } from '@salon-os/ui';
+import { BookingSteps } from '../booking-steps';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -133,6 +134,8 @@ export default async function BookingConfirm({
 
   return (
     <main className="space-y-6">
+      <BookingSteps current="confirm" />
+
       <Link
         href={`/book/${slug}`}
         className="inline-flex text-sm text-text-muted transition-colors hover:text-text-primary"
@@ -141,7 +144,7 @@ export default async function BookingConfirm({
       </Link>
 
       <header>
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Bestätigen</p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">Bestätigen</p>
         <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-text-primary">
           Fast geschafft
         </h1>

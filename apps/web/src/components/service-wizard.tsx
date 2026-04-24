@@ -220,7 +220,7 @@ export function ServiceWizard({
                     </span>
                   ) : null}
                 </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 sm:grid-cols-3">
                   {g.options.map((o) => {
                     const active = selectedOpt === o.id;
                     const isPopular = o.id === defaultId;
@@ -237,10 +237,11 @@ export function ServiceWizard({
                         type="button"
                         onClick={() => pickOption(g.id, o.id)}
                         className={[
-                          'relative flex min-h-[4.5rem] flex-col items-start gap-1 rounded-md border p-3 text-left transition-all',
+                          'group relative flex min-h-[4.5rem] flex-col items-start gap-1 rounded-md border p-3 text-left transition-all duration-200',
+                          'hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0',
                           active
-                            ? 'border-accent bg-accent/10 ring-2 ring-accent'
-                            : 'border-border bg-surface hover:border-accent/50 hover:bg-surface-raised/40',
+                            ? 'border-accent bg-accent/10 ring-2 ring-accent shadow-glow'
+                            : 'border-border bg-surface hover:border-accent/50 hover:bg-surface-raised/40 hover:shadow-md',
                         ].join(' ')}
                       >
                         {isPopular ? (
@@ -292,10 +293,11 @@ export function ServiceWizard({
                   type="button"
                   onClick={() => toggleAddOn(a.id)}
                   className={[
-                    'flex items-center justify-between gap-3 rounded-md border p-3 text-left transition-all',
+                    'flex items-center justify-between gap-3 rounded-md border p-3 text-left transition-all duration-200',
+                    'hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0',
                     active
-                      ? 'border-accent bg-accent/5 ring-1 ring-accent'
-                      : 'border-border bg-surface hover:border-accent/50 hover:bg-surface-raised/40',
+                      ? 'border-accent bg-accent/5 ring-1 ring-accent shadow-glow'
+                      : 'border-border bg-surface hover:border-accent/50 hover:bg-surface-raised/40 hover:shadow-md',
                   ].join(' ')}
                 >
                   <div className="flex-1">
@@ -357,10 +359,11 @@ export function ServiceWizard({
                   type="button"
                   onClick={() => toggleBundle(b.id)}
                   className={[
-                    'flex w-full items-center justify-between gap-3 rounded-lg border p-4 text-left transition-all',
+                    'flex w-full items-center justify-between gap-3 rounded-lg border p-4 text-left transition-all duration-200',
+                    'hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0',
                     active
                       ? 'border-accent bg-accent/10 shadow-glow'
-                      : 'border-accent/30 bg-accent/[0.03] hover:border-accent/60 hover:bg-accent/5',
+                      : 'border-accent/30 bg-accent/[0.03] hover:border-accent/60 hover:bg-accent/5 hover:shadow-md',
                   ].join(' ')}
                 >
                   <div className="flex-1">

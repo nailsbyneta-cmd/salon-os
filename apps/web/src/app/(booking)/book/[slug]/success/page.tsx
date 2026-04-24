@@ -1,6 +1,28 @@
 import Link from 'next/link';
 import { Button, Card, CardBody } from '@salon-os/ui';
 
+const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
+
+interface SalonInfo {
+  tenant: {
+    name: string;
+    whatsappE164: string | null;
+    instagramUrl: string | null;
+    googleBusinessUrl: string | null;
+  };
+  locations: Array<{ phone: string | null; email: string | null }>;
+}
+
+async function loadSalon(slug: string): Promise<SalonInfo | null> {
+  try {
+    const res = await fetch(`${API_URL}/v1/public/${slug}/info`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return (await res.json()) as SalonInfo;
+  } catch {
+    return null;
+  }
+}
+
 export default async function BookingSuccess({
   params,
   searchParams,
@@ -10,43 +32,94 @@ export default async function BookingSuccess({
 }): Promise<React.JSX.Element> {
   const { slug } = await params;
   const { id } = await searchParams;
+  const salon = await loadSalon(slug);
+
+  const salonName = salon?.tenant.name ?? 'uns';
+  const phone = salon?.locations[0]?.phone ?? null;
+  const whatsapp = salon?.tenant.whatsappE164 ?? null;
+
   return (
-    <main className="space-y-6">
-      <Card>
-        <CardBody className="space-y-5 py-10 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success/15 text-success">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              className="h-7 w-7"
-              aria-hidden
-            >
-              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="font-display text-3xl font-semibold tracking-tight text-text-primary">
-              Termin gebucht
-            </h1>
-            <p className="mt-2 text-sm text-text-secondary">
-              Du erhältst gleich eine Bestätigung per E-Mail. Bis bald 💛
-            </p>
-          </div>
-          {id ? (
-            <p className="text-xs text-text-muted">
-              Referenz: <span className="font-mono">{id.slice(0, 8)}</span>
-            </p>
-          ) : null}
-          <div className="flex justify-center gap-2 pt-2">
-            <Link href={`/book/${slug}`}>
-              <Button variant="secondary">Zurück zur Übersicht</Button>
-            </Link>
+    <main className="flex min-h-[70vh] flex-col items-center justify-center space-y-8 py-10">
+      {/* Celebration-Mark — Gold-Ring mit Check */}
+      <div className="relative">
+        <div
+          className="animate-[celebrate_600ms_cubic-bezier(0.16,1,0.3,1)] flex h-24 w-24 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-glow"
+          aria-hidden
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            className="h-12 w-12"
+          >
+            <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      </div>
+
+      <div className="text-center">
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">Gebucht</p>
+        <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight text-text-primary md:text-5xl">
+          Wir freuen uns auf dich
+        </h1>
+        <p className="mt-3 max-w-md text-sm text-text-secondary md:text-base">
+          Deine Buchung ist bestätigt. Du erhältst gleich eine E-Mail mit allen Details. Bis bald
+          bei {salonName}.
+        </p>
+        {id ? (
+          <p className="mt-4 text-xs text-text-muted">
+            Referenz: <span className="font-mono tracking-wider">{id.slice(0, 8)}</span>
+          </p>
+        ) : null}
+      </div>
+
+      {/* Contact-Shortcuts */}
+      <Card elevation="flat" className="w-full max-w-md">
+        <CardBody className="space-y-3">
+          <p className="text-center text-xs text-text-muted">Fragen? Wir sind da.</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {whatsapp ? (
+              <a
+                href={`https://wa.me/${whatsapp.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent/5 px-3 py-2.5 text-sm font-medium text-accent transition-all hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+              >
+                💬 WhatsApp
+              </a>
+            ) : null}
+            {phone ? (
+              <a
+                href={`tel:${phone}`}
+                className="flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-3 py-2.5 text-sm font-medium text-text-primary transition-all hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+              >
+                📞 Anrufen
+              </a>
+            ) : null}
           </div>
         </CardBody>
       </Card>
+
+      <div className="flex flex-wrap justify-center gap-3">
+        <Link href={`/book/${slug}`}>
+          <Button variant="ghost">← Zur Übersicht</Button>
+        </Link>
+        {salon?.tenant.instagramUrl ? (
+          <a href={salon.tenant.instagramUrl} target="_blank" rel="noopener noreferrer">
+            <Button variant="ghost">Folge uns auf Instagram</Button>
+          </a>
+        ) : null}
+      </div>
+
+      <style>{`
+        @keyframes celebrate {
+          0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+          60% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+      `}</style>
     </main>
   );
 }

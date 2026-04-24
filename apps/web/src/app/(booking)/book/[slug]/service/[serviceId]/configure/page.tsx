@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Card, CardBody } from '@salon-os/ui';
+import { BookingSteps } from '../../../booking-steps';
 import { ServiceConfigure } from './configure-client';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
@@ -92,18 +93,14 @@ export default async function ConfigureServicePage({
 
   return (
     <main className="space-y-6">
+      <BookingSteps current="configure" />
+
       <Link
         href={`/book/${slug}`}
         className="inline-flex text-sm text-text-muted transition-colors hover:text-text-primary"
       >
         ← Zurück
       </Link>
-
-      <header>
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
-          Deine Auswahl
-        </p>
-      </header>
 
       <Card>
         <CardBody className="p-6">

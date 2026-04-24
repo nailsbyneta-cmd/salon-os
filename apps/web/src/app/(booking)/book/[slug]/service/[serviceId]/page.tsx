@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Button, Card, CardBody, Input, cn } from '@salon-os/ui';
+import { BookingSteps } from '../../booking-steps';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -161,6 +162,8 @@ export default async function BookingSlots({
 
   return (
     <main className="space-y-6">
+      <BookingSteps current="slot" />
+
       <Link
         href={`/book/${slug}`}
         className="inline-flex text-sm text-text-muted transition-colors hover:text-text-primary"
@@ -201,11 +204,11 @@ export default async function BookingSlots({
                   href={`/book/${slug}/service/${serviceId}?location=${location}&date=${d.iso}${extraSuffix}`}
                   aria-disabled={!open}
                   className={cn(
-                    'flex min-w-[44px] flex-col items-center rounded-md border px-2 py-2 text-center transition-colors sm:min-w-[68px] sm:px-3',
+                    'flex min-w-[44px] flex-col items-center rounded-md border px-2 py-2 text-center transition-all duration-200 sm:min-w-[68px] sm:px-3',
                     active
-                      ? 'border-accent bg-accent text-accent-foreground shadow-sm'
+                      ? 'border-accent bg-accent text-accent-foreground shadow-glow'
                       : open
-                        ? 'border-border bg-surface text-text-secondary hover:border-accent hover:text-text-primary'
+                        ? 'border-border bg-surface text-text-secondary hover:-translate-y-0.5 hover:border-accent hover:text-text-primary hover:shadow-md active:translate-y-0 active:scale-[0.97]'
                         : 'border-border bg-surface/50 text-text-muted opacity-60',
                   )}
                 >
@@ -237,24 +240,36 @@ export default async function BookingSlots({
       </div>
 
       {slots.length === 0 ? (
-        <Card>
-          <CardBody className="space-y-3 py-8 text-center">
-            <p className="text-sm text-text-secondary">
-              {selectedDayOpen
-                ? 'An diesem Tag sind keine Termine frei.'
-                : 'An diesem Tag geschlossen.'}
-            </p>
+        <Card elevation="flat" className="bg-accent/5">
+          <CardBody className="space-y-4 py-10 text-center">
+            <div
+              aria-hidden
+              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-2xl"
+            >
+              {selectedDayOpen ? '📅' : '🌙'}
+            </div>
+            <div>
+              <p className="font-display text-lg font-semibold text-text-primary">
+                {selectedDayOpen ? 'Alles ausgebucht' : 'Heute geschlossen'}
+              </p>
+              <p className="mt-1 text-sm text-text-secondary">
+                {selectedDayOpen
+                  ? 'An diesem Tag sind keine Termine mehr frei.'
+                  : 'Wähl einen anderen Tag oder schau morgen vorbei.'}
+              </p>
+            </div>
             {nextOpen ? (
               <Link
                 href={`/book/${slug}/service/${serviceId}?location=${location}&date=${nextOpen}${extraSuffix}`}
-                className="inline-flex text-sm font-medium text-accent hover:underline"
+                className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-glow transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98]"
               >
-                → Nächster freier Tag:{' '}
+                Nächster freier Tag:{' '}
                 {new Date(nextOpen).toLocaleDateString('de-CH', {
                   weekday: 'long',
                   day: '2-digit',
                   month: 'long',
-                })}
+                })}{' '}
+                →
               </Link>
             ) : null}
           </CardBody>
@@ -263,7 +278,7 @@ export default async function BookingSlots({
         <div className="space-y-6">
           {[...grouped.entries()].map(([label, list]) => (
             <section key={label}>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+              <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
                 {label}
               </h2>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -271,9 +286,9 @@ export default async function BookingSlots({
                   <Link
                     key={`${s.staffId}-${s.startAt}`}
                     href={`/book/${slug}/confirm?serviceId=${serviceId}&locationId=${location}&staffId=${s.staffId}&startAt=${encodeURIComponent(s.startAt)}${extraSuffix}`}
-                    className="group flex flex-col items-center rounded-lg border border-border bg-surface px-3 py-3 text-center shadow-sm transition-all hover:-translate-y-[1px] hover:border-accent hover:bg-accent/5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    className="group flex flex-col items-center rounded-lg border border-border bg-surface px-3 py-3 text-center shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-accent/5 hover:shadow-md active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   >
-                    <div className="text-base font-semibold tabular-nums text-text-primary group-hover:text-accent">
+                    <div className="font-display text-base font-semibold tabular-nums text-text-primary group-hover:text-accent">
                       {new Date(s.startAt).toLocaleTimeString('de-CH', {
                         hour: '2-digit',
                         minute: '2-digit',
