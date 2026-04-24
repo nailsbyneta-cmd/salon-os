@@ -28,18 +28,21 @@ export function Stat({
     <div
       className={cn(
         'group rounded-lg bg-surface border border-border p-5',
-        'transition-all duration-medium',
-        href && 'hover:border-border-strong hover:shadow-md cursor-pointer',
+        'transition-all duration-200',
+        href &&
+          'cursor-pointer hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md active:translate-y-0 active:scale-[0.99]',
         className,
       )}
     >
       <div className="flex items-start justify-between">
-        <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-text-muted group-hover:text-accent transition-colors">
           {label}
         </span>
         {icon ? <span className="text-text-muted">{icon}</span> : null}
       </div>
-      <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</div>
+      <div className="mt-2 font-display text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">
+        {value}
+      </div>
       <div className="mt-1 flex items-center gap-2 text-xs text-text-muted">
         {trend ? (
           <span
