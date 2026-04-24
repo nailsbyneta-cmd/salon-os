@@ -3,6 +3,11 @@ import * as React from 'react';
 import { Badge, Button, Card, CardBody, Field, Input, Select } from '@salon-os/ui';
 import { createBundle, deleteBundle } from '../actions';
 
+function fmtPrice(n: number): string {
+  const rounded = Math.round(n * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
+}
+
 export type Bundle = {
   id: string;
   bundledServiceId: string;
@@ -58,7 +63,7 @@ export function BundlesEditor({
     const base = Number(svc.basePrice);
     const disc = Number(discountAmount) || 0;
     const final = Math.max(0, base - disc);
-    setLabel(`+ ${svc.name} dazu — für nur CHF ${final} (statt ${base})`);
+    setLabel(`+ ${svc.name} dazu — für nur CHF ${fmtPrice(final)} (statt ${fmtPrice(base)})`);
   }, [bundledServiceId, discountAmount, allServices]);
 
   const addBundle = (): void => {
@@ -130,7 +135,7 @@ export function BundlesEditor({
                 >
                   <span className="font-medium text-text-primary">+ {b.bundledService.name}</span>
                   <Badge tone="success">
-                    −{disc} CHF → statt {base} nur {final}
+                    −{fmtPrice(disc)} CHF → statt {fmtPrice(base)} nur {fmtPrice(final)}
                   </Badge>
                   <span className="text-xs text-text-muted">„{b.label}"</span>
                   <button
@@ -163,7 +168,7 @@ export function BundlesEditor({
                     <option value="">— wählen —</option>
                     {availableTargets.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.name} (CHF {Number(s.basePrice).toFixed(0)})
+                        {s.name} (CHF {fmtPrice(Number(s.basePrice))})
                       </option>
                     ))}
                   </Select>

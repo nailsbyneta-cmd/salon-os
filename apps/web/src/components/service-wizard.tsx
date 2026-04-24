@@ -2,6 +2,12 @@
 import * as React from 'react';
 import { Badge, Button } from '@salon-os/ui';
 
+/** Formatiert einen Preis — ganze Zahlen ohne Dezimal, sonst 2 Nachkommastellen. */
+function fmtPrice(n: number): string {
+  const rounded = Math.round(n * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
+}
+
 /**
  * Service-Booking-Wizard — reusable für Kunden-Online-Booking UND Staff-Kalender.
  *
@@ -354,7 +360,7 @@ export function ServiceWizard({
                         + {b.bundledService.name}
                       </span>
                       <Badge tone="success">
-                        −{saved.toFixed(0)} {currency}
+                        −{fmtPrice(saved)} {currency}
                       </Badge>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-2 text-xs text-text-secondary">
@@ -362,9 +368,9 @@ export function ServiceWizard({
                     </div>
                     <div className="mt-1 flex flex-wrap gap-2 text-[11px] tabular-nums text-text-muted">
                       <span>
-                        statt {basePrice.toFixed(0)} {currency} nur{' '}
+                        statt {fmtPrice(basePrice)} {currency} nur{' '}
                         <span className="font-semibold text-success">
-                          {finalPrice.toFixed(0)} {currency}
+                          {fmtPrice(finalPrice)} {currency}
                         </span>
                       </span>
                       <span>+{b.bundledService.durationMinutes} Min</span>
@@ -400,7 +406,7 @@ export function ServiceWizard({
           </span>
           <div className="flex items-baseline gap-2">
             <span className="font-display text-xl font-semibold tabular-nums text-text-primary">
-              {totals.price.toFixed(0)} {currency}
+              {fmtPrice(totals.price)} {currency}
             </span>
             <span className="text-xs tabular-nums text-text-muted">· {totals.duration} Min</span>
           </div>
