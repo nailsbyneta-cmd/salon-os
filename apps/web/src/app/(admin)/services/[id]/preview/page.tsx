@@ -38,20 +38,40 @@ interface AddOn {
   sortOrder: number;
 }
 
+interface Bundle {
+  id: string;
+  label: string;
+  discountAmount: string | number | null;
+  discountPct: string | number | null;
+  bundledService: {
+    id: string;
+    name: string;
+    basePrice: string | number;
+    durationMinutes: number;
+  };
+}
+
 async function load(id: string): Promise<{
   service: Service;
   groups: Group[];
   addOns: AddOn[];
+  bundles: Bundle[];
 } | null> {
   const ctx = getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   try {
-    const [svc, groupsRes, addOnsRes] = await Promise.all([
+    const [svc, groupsRes, addOnsRes, bundlesRes] = await Promise.all([
       apiFetch<Service>(`/v1/services/${id}`, auth),
       apiFetch<{ groups: Group[] }>(`/v1/services/${id}/option-groups`, auth),
       apiFetch<{ addOns: AddOn[] }>(`/v1/services/${id}/add-ons`, auth),
+      apiFetch<{ bundles: Bundle[] }>(`/v1/services/${id}/bundles`, auth),
     ]);
-    return { service: svc, groups: groupsRes.groups, addOns: addOnsRes.addOns };
+    return {
+      service: svc,
+      groups: groupsRes.groups,
+      addOns: addOnsRes.addOns,
+      bundles: bundlesRes.bundles,
+    };
   } catch (err) {
     if (err instanceof ApiError) return null;
     throw err;
@@ -66,7 +86,7 @@ export default async function ServicePreviewPage({
   const { id } = await params;
   const data = await load(id);
   if (!data) notFound();
-  const { service, groups, addOns } = data;
+  const { service, groups, addOns, bundles } = data;
 
   return (
     <div className="mx-auto max-w-2xl p-4 md:p-8">
@@ -93,6 +113,7 @@ export default async function ServicePreviewPage({
       <Card>
         <CardBody className="p-6">
           <ServiceWizardPreview
+            serviceId={service.id}
             serviceName={service.name}
             basePrice={Number(service.basePrice)}
             baseDuration={service.durationMinutes}
@@ -106,6 +127,18 @@ export default async function ServicePreviewPage({
             addOns={addOns.map((a) => ({
               ...a,
               priceDelta: Number(a.priceDelta),
+            }))}
+            bundles={bundles.map((b) => ({
+              id: b.id,
+              label: b.label,
+              discountAmount: b.discountAmount == null ? null : Number(b.discountAmount),
+              discountPct: b.discountPct == null ? null : Number(b.discountPct),
+              bundledService: {
+                id: b.bundledService.id,
+                name: b.bundledService.name,
+                basePrice: Number(b.bundledService.basePrice),
+                durationMinutes: b.bundledService.durationMinutes,
+              },
             }))}
           />
         </CardBody>

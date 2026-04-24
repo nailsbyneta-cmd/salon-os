@@ -188,6 +188,32 @@ export type CreateServiceAddOnInput = z.infer<typeof createServiceAddOnSchema>;
 export const updateServiceAddOnSchema = createServiceAddOnSchema.partial();
 export type UpdateServiceAddOnInput = z.infer<typeof updateServiceAddOnSchema>;
 
+// ─── Service Bundles (Cross-Sell-Upsell) ───────────────────────
+
+export const createServiceBundleSchema = z
+  .object({
+    bundledServiceId: uuidSchema,
+    label: z.string().min(1).max(200),
+    discountAmount: z.number().min(0).nullable().optional(),
+    discountPct: z.number().min(0).max(100).nullable().optional(),
+    active: z.boolean().default(true),
+    sortOrder: z.number().int().default(0),
+  })
+  .refine(
+    (v) => v.discountAmount != null || v.discountPct != null,
+    'Entweder discountAmount oder discountPct muss gesetzt sein.',
+  );
+export type CreateServiceBundleInput = z.infer<typeof createServiceBundleSchema>;
+export const updateServiceBundleSchema = z.object({
+  bundledServiceId: uuidSchema.optional(),
+  label: z.string().min(1).max(200).optional(),
+  discountAmount: z.number().min(0).nullable().optional(),
+  discountPct: z.number().min(0).max(100).nullable().optional(),
+  active: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+});
+export type UpdateServiceBundleInput = z.infer<typeof updateServiceBundleSchema>;
+
 // ─── Appointment ───────────────────────────────────────────────
 
 export const createAppointmentSchema = z

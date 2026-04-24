@@ -3,16 +3,19 @@ import type {
   PrismaClient,
   Service,
   ServiceAddOn,
+  ServiceBundle,
   ServiceCategory,
   ServiceOption,
   ServiceOptionGroup,
 } from '@salon-os/db';
 import type {
   CreateServiceAddOnInput,
+  CreateServiceBundleInput,
   CreateServiceInput,
   CreateServiceOptionGroupInput,
   CreateServiceOptionInput,
   UpdateServiceAddOnInput,
+  UpdateServiceBundleInput,
   UpdateServiceInput,
   UpdateServiceOptionGroupInput,
   UpdateServiceOptionInput,
@@ -253,6 +256,77 @@ export class ServicesService {
     const ctx = requireTenantContext();
     await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
       await tx.serviceAddOn.delete({ where: { id: addOnId } });
+    });
+  }
+
+  // ─── Service Bundles (Cross-Sell-Upsell) ────────────────────
+
+  async listBundles(
+    primaryServiceId: string,
+  ): Promise<
+    Array<
+      ServiceBundle & {
+        bundledService: { id: string; name: string; basePrice: unknown; durationMinutes: number };
+      }
+    >
+  > {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      return tx.serviceBundle.findMany({
+        where: { primaryServiceId, active: true },
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        include: {
+          bundledService: {
+            select: { id: true, name: true, basePrice: true, durationMinutes: true },
+          },
+        },
+      });
+    });
+  }
+
+  async createBundle(
+    primaryServiceId: string,
+    input: CreateServiceBundleInput,
+  ): Promise<ServiceBundle> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const primary = await tx.service.findFirst({
+        where: { id: primaryServiceId, deletedAt: null },
+      });
+      if (!primary) throw new NotFoundException(`Primary Service ${primaryServiceId} not found`);
+      const bundled = await tx.service.findFirst({
+        where: { id: input.bundledServiceId, deletedAt: null },
+      });
+      if (!bundled)
+        throw new NotFoundException(`Bundled Service ${input.bundledServiceId} not found`);
+      return tx.serviceBundle.create({
+        data: {
+          tenantId: ctx.tenantId,
+          primaryServiceId,
+          bundledServiceId: input.bundledServiceId,
+          label: input.label,
+          discountAmount: input.discountAmount ?? null,
+          discountPct: input.discountPct ?? null,
+          active: input.active,
+          sortOrder: input.sortOrder,
+        },
+      });
+    });
+  }
+
+  async updateBundle(bundleId: string, input: UpdateServiceBundleInput): Promise<ServiceBundle> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const existing = await tx.serviceBundle.findFirst({ where: { id: bundleId } });
+      if (!existing) throw new NotFoundException(`Bundle ${bundleId} not found`);
+      return tx.serviceBundle.update({ where: { id: bundleId }, data: { ...input } });
+    });
+  }
+
+  async deleteBundle(bundleId: string): Promise<void> {
+    const ctx = requireTenantContext();
+    await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      await tx.serviceBundle.delete({ where: { id: bundleId } });
     });
   }
 }

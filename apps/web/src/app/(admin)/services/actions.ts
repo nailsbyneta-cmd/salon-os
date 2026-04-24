@@ -272,6 +272,64 @@ export async function deleteAddOn(serviceId: string, addOnId: string): Promise<v
   revalidatePath(`/services/${serviceId}`);
 }
 
+// ─── Bundles (Cross-Sell-Upsell) ──────────────────────────────
+
+export async function createBundle(
+  serviceId: string,
+  input: {
+    bundledServiceId: string;
+    label: string;
+    discountAmount?: number | null;
+    discountPct?: number | null;
+    active: boolean;
+    sortOrder: number;
+  },
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/services/${serviceId}/bundles`, {
+    method: 'POST',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: input,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
+export async function updateBundle(
+  serviceId: string,
+  bundleId: string,
+  input: {
+    bundledServiceId?: string;
+    label?: string;
+    discountAmount?: number | null;
+    discountPct?: number | null;
+    active?: boolean;
+    sortOrder?: number;
+  },
+): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/bundles/${bundleId}`, {
+    method: 'PATCH',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: input,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
+export async function deleteBundle(serviceId: string, bundleId: string): Promise<void> {
+  const ctx = getCurrentTenant();
+  await apiFetch(`/v1/bundles/${bundleId}`, {
+    method: 'DELETE',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+  });
+  revalidatePath(`/services/${serviceId}`);
+}
+
 // ─── Presets: Nails + Pediküre ────────────────────────────────
 // Nails = 2 separate Services (Neues Set + Auffüllen), jeweils mit Gruppen
 // Typ (Gel/Acryl) × Länge (Kurz/Mittel/Lang). Kein Design-Add-On weil

@@ -6,6 +6,7 @@ import { getCurrentTenant } from '@/lib/tenant';
 import { updateService } from '../actions';
 import { OptionsEditor, type Group } from './options-editor';
 import { AddOnsEditor, type AddOn } from './addons-editor';
+import { BundlesEditor, type Bundle, type ServiceOpt } from './bundles-editor';
 
 interface Service {
   id: string;
@@ -31,21 +32,27 @@ async function load(id: string): Promise<{
   categories: Category[];
   groups: Group[];
   addOns: AddOn[];
+  bundles: Bundle[];
+  allServices: ServiceOpt[];
 } | null> {
   const ctx = getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   try {
-    const [svc, cat, groupsRes, addOnsRes] = await Promise.all([
+    const [svc, cat, groupsRes, addOnsRes, bundlesRes, allSvcRes] = await Promise.all([
       apiFetch<Service>(`/v1/services/${id}`, auth),
       apiFetch<{ categories: Category[] }>('/v1/service-categories', auth),
       apiFetch<{ groups: Group[] }>(`/v1/services/${id}/option-groups`, auth),
       apiFetch<{ addOns: AddOn[] }>(`/v1/services/${id}/add-ons`, auth),
+      apiFetch<{ bundles: Bundle[] }>(`/v1/services/${id}/bundles`, auth),
+      apiFetch<{ services: ServiceOpt[] }>('/v1/services', auth),
     ]);
     return {
       service: svc,
       categories: cat.categories,
       groups: groupsRes.groups,
       addOns: addOnsRes.addOns,
+      bundles: bundlesRes.bundles,
+      allServices: allSvcRes.services,
     };
   } catch (err) {
     if (err instanceof ApiError) return null;
@@ -61,7 +68,7 @@ export default async function EditServicePage({
   const { id } = await params;
   const data = await load(id);
   if (!data) notFound();
-  const { service, categories, groups, addOns } = data;
+  const { service, categories, groups, addOns, bundles, allServices } = data;
   const action = updateService.bind(null, id);
 
   // Wenn Processing-Time gesetzt ist, ist der aktive Anteil = before + after.
@@ -209,6 +216,7 @@ export default async function EditServicePage({
       </Card>
 
       <OptionsEditor serviceId={id} initialGroups={groups} />
+      <BundlesEditor serviceId={id} initialBundles={bundles} allServices={allServices} />
       <AddOnsEditor serviceId={id} initialAddOns={addOns} />
     </div>
   );

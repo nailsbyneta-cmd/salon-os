@@ -57,6 +57,7 @@ model Tenant {
   serviceOptionGroups ServiceOptionGroup[]
   serviceOptions      ServiceOption[]
   serviceAddOns       ServiceAddOn[]
+  serviceBundlesOut   ServiceBundle[]
   clients          Client[]
   appointments     Appointment[]
   giftCards        GiftCard[]
@@ -453,6 +454,8 @@ model Service {
   waitlistEntries   WaitlistEntry[]
   optionGroups      ServiceOptionGroup[]
   addOns            ServiceAddOn[]
+  bundlesAsPrimary  ServiceBundle[] @relation("bundlePrimary")
+  bundlesAsBundled  ServiceBundle[] @relation("bundleBundled")
 
   @@unique([tenantId, slug])
   @@index([tenantId, categoryId])
@@ -519,6 +522,30 @@ model ServiceAddOn {
 
   @@index([tenantId, serviceId])
   @@map("service_addon")
+}
+
+// Bundle-Upsell: wenn Kunde den primaryService bucht, schlägt der Wizard
+// den bundledService mit Rabatt dazu vor. Beispiel: Nails + Pediküre Basis
+// = -5 CHF. Zwei Services, ein Rabatt, upsell-optimiert.
+model ServiceBundle {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @db.Uuid
+  primaryServiceId  String   @db.Uuid
+  bundledServiceId  String   @db.Uuid
+  label             String   // "+ Pediküre dazu — für nur CHF 34 (statt 39)"
+  discountAmount    Decimal? @db.Decimal(10, 2) // flat Rabatt, alternativ:
+  discountPct       Decimal? @db.Decimal(5, 2)  // prozentualer Rabatt
+  active            Boolean  @default(true)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now()) @db.Timestamptz
+  updatedAt         DateTime @updatedAt @db.Timestamptz
+
+  tenant          Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  primaryService  Service @relation("bundlePrimary", fields: [primaryServiceId], references: [id], onDelete: Cascade)
+  bundledService  Service @relation("bundleBundled", fields: [bundledServiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, primaryServiceId, active])
+  @@map("service_bundle")
 }
 
 enum Gender {

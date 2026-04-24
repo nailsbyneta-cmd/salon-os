@@ -20,6 +20,7 @@ export type {
   ServiceOptionGroup,
   ServiceOption,
   ServiceAddOn,
+  ServiceBundle,
   StaffService,
   Client,
   Appointment,

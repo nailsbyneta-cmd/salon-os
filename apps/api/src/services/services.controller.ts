@@ -12,10 +12,12 @@ import {
 } from '@nestjs/common';
 import {
   createServiceAddOnSchema,
+  createServiceBundleSchema,
   createServiceOptionGroupSchema,
   createServiceOptionSchema,
   createServiceSchema,
   updateServiceAddOnSchema,
+  updateServiceBundleSchema,
   updateServiceOptionGroupSchema,
   updateServiceOptionSchema,
   updateServiceSchema,
@@ -27,6 +29,7 @@ import { ServicesService } from './services.service.js';
 import type {
   Service,
   ServiceAddOn,
+  ServiceBundle,
   ServiceCategory,
   ServiceOption,
   ServiceOptionGroup,
@@ -192,5 +195,44 @@ export class ServicesController {
     @Param('addOnId', new ZodValidationPipe(uuidSchema)) addOnId: string,
   ): Promise<void> {
     await this.svc.deleteAddOn(addOnId);
+  }
+
+  // ─── Bundles ─────────────────────────────────────────────
+  @Get('services/:id/bundles')
+  async listBundles(@Param('id', new ZodValidationPipe(uuidSchema)) id: string): Promise<{
+    bundles: Array<
+      ServiceBundle & {
+        bundledService: { id: string; name: string; basePrice: unknown; durationMinutes: number };
+      }
+    >;
+  }> {
+    return { bundles: await this.svc.listBundles(id) };
+  }
+
+  @Post('services/:id/bundles')
+  @HttpCode(HttpStatus.CREATED)
+  async createBundle(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+    @Body(new ZodValidationPipe(createServiceBundleSchema))
+    input: import('@salon-os/types').CreateServiceBundleInput,
+  ): Promise<ServiceBundle> {
+    return this.svc.createBundle(id, input);
+  }
+
+  @Patch('bundles/:bundleId')
+  async updateBundle(
+    @Param('bundleId', new ZodValidationPipe(uuidSchema)) bundleId: string,
+    @Body(new ZodValidationPipe(updateServiceBundleSchema))
+    input: import('@salon-os/types').UpdateServiceBundleInput,
+  ): Promise<ServiceBundle> {
+    return this.svc.updateBundle(bundleId, input);
+  }
+
+  @Delete('bundles/:bundleId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteBundle(
+    @Param('bundleId', new ZodValidationPipe(uuidSchema)) bundleId: string,
+  ): Promise<void> {
+    await this.svc.deleteBundle(bundleId);
   }
 }
