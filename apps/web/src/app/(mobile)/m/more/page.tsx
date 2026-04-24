@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ThemeToggleRow } from './theme-toggle-row';
 
 const sections = [
   {
@@ -68,6 +69,14 @@ export default function MorePage(): React.JSX.Element {
             </ul>
           </section>
         ))}
+        <section>
+          <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+            App
+          </h2>
+          <ul className="overflow-hidden rounded-lg border border-border bg-surface">
+            <ThemeToggleRow />
+          </ul>
+        </section>
       </div>
     </div>
   );

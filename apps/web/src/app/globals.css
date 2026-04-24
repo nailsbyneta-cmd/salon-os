@@ -18,13 +18,13 @@
     --text-muted: 30 6% 64%;
     --brand: 222 47% 11%;
     --brand-foreground: 0 0% 98%;
-    --brand-accent: 32 48% 65%;
-    --brand-accent-foreground: 222 47% 11%;
+    --brand-accent: 37 47% 61%;
+    --brand-accent-foreground: 0 0% 4%;
     --success: 142 71% 45%;
     --warning: 45 93% 47%;
     --danger: 0 72% 51%;
     --info: 199 89% 48%;
-    --ring: 32 48% 65%;
+    --ring: 37 47% 61%;
     --ring-offset: 0 0% 100%;
     --radius-sm: 6px;
     --radius-md: 10px;
@@ -34,7 +34,7 @@
     --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
     --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.04);
-    --shadow-glow: 0 0 0 4px rgba(212, 165, 116, 0.12);
+    --shadow-glow: 0 0 0 4px rgba(200, 169, 110, 0.14);
   }
 
   [data-theme='dark'] {
@@ -46,15 +46,17 @@
     --text-primary: 0 0% 98%;
     --text-secondary: 0 0% 72%;
     --text-muted: 0 0% 52%;
-    --brand: 32 48% 65%;
+    --brand: 37 47% 61%;
     --brand-foreground: 0 0% 4%;
-    --brand-accent: 32 48% 72%;
+    --brand-accent: 37 47% 65%;
     --brand-accent-foreground: 0 0% 4%;
+    --ring: 37 47% 65%;
     --ring-offset: 0 0% 4%;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
     --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 0 4px rgba(200, 169, 110, 0.22);
   }
 
   html {
@@ -66,11 +68,16 @@
     color: hsl(var(--text-primary));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition:
+      background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+      color 200ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   *:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--ring-offset)), 0 0 0 4px hsl(var(--ring));
+    box-shadow:
+      0 0 0 2px hsl(var(--ring-offset)),
+      0 0 0 4px hsl(var(--ring));
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -109,8 +116,8 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-glow: var(--shadow-glow);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body), 'Montserrat', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-display), 'Playfair Display', Georgia, ui-serif, serif;
   --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
   --animate-fade-in: fade-in 250ms cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shimmer: shimmer 2s infinite linear;
