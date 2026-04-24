@@ -36,6 +36,37 @@ export class SalonSettingsService {
     });
   }
 
+  async updateSettings(input: Record<string, unknown>): Promise<Tenant> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const current = await tx.tenant.findUnique({
+        where: { id: ctx.tenantId },
+        select: { settings: true },
+      });
+      const currentSettings =
+        current?.settings && typeof current.settings === 'object'
+          ? (current.settings as Record<string, unknown>)
+          : {};
+      // Deep merge — groups (booking/notifications/features) werden
+      // zusammengeführt, einzelne Keys innerhalb überschreiben.
+      const merged: Record<string, unknown> = { ...currentSettings };
+      for (const [k, v] of Object.entries(input)) {
+        if (v && typeof v === 'object' && !Array.isArray(v)) {
+          merged[k] = {
+            ...((currentSettings[k] as Record<string, unknown> | undefined) ?? {}),
+            ...(v as Record<string, unknown>),
+          };
+        } else if (v !== undefined) {
+          merged[k] = v;
+        }
+      }
+      return tx.tenant.update({
+        where: { id: ctx.tenantId },
+        data: { settings: merged as never },
+      });
+    });
+  }
+
   async updateBranding(input: BrandingInput): Promise<Tenant> {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {

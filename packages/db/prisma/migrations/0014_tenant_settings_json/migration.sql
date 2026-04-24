@@ -1,0 +1,28 @@
+-- Flexibles Tenant-Settings-JSON. Spart zukünftige Migrationen für
+-- jede neue Customization-Option. Schema:
+-- {
+--   booking: {
+--     onlineBookingEnabled: bool,
+--     cancellationHoursBefore: int,  -- stornieren bis X h vor Termin
+--     requireDeposit: bool,
+--     defaultDepositPct: number,
+--     defaultBufferBeforeMin: int,
+--     defaultBufferAfterMin: int,
+--     maxDaysAhead: int,  -- Kunde kann X Tage im Voraus buchen
+--     minHoursAhead: int  -- minimum Vorlauf
+--   },
+--   notifications: {
+--     reminderHoursBefore: [24, 2],  -- 1 Tag + 2 h
+--     autoConfirmation: bool,
+--     postBookingMessage: string,
+--     cancellationMessage: string
+--   },
+--   features: {
+--     showPricesPublic: bool,
+--     showStaffPublic: bool,
+--     requirePhone: bool,
+--     allowWalkIn: bool
+--   }
+-- }
+
+ALTER TABLE "tenant" ADD COLUMN "settings" JSONB NOT NULL DEFAULT '{}'::jsonb;

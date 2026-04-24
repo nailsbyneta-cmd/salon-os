@@ -44,6 +44,10 @@ model Tenant {
   tiktokUrl        String?
   whatsappE164     String?
   googleBusinessUrl String?
+  // Tenant-Settings als JSON — flexibel für alle Customizations:
+  // Booking-Policy, Notification-Templates, Plan-Limits, Feature-Flags.
+  // Schema: { booking: {...}, notifications: {...}, features: {...} }
+  settings         Json?        @default("{}")
   createdAt    DateTime     @default(now()) @db.Timestamptz
   updatedAt    DateTime     @updatedAt @db.Timestamptz
   deletedAt    DateTime?    @db.Timestamptz

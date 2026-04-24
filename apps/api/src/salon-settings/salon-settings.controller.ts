@@ -17,6 +17,43 @@ import { SalonSettingsService } from './salon-settings.service.js';
 
 const optionalUrl = z.string().trim().max(500).optional().nullable().or(z.literal(''));
 
+const bookingSettingsSchema = z
+  .object({
+    onlineBookingEnabled: z.boolean().optional(),
+    cancellationHoursBefore: z.number().int().min(0).max(168).optional(),
+    requireDeposit: z.boolean().optional(),
+    defaultDepositPct: z.number().min(0).max(100).optional(),
+    defaultBufferBeforeMin: z.number().int().min(0).max(60).optional(),
+    defaultBufferAfterMin: z.number().int().min(0).max(60).optional(),
+    maxDaysAhead: z.number().int().min(1).max(365).optional(),
+    minHoursAhead: z.number().int().min(0).max(72).optional(),
+  })
+  .optional();
+
+const notificationSettingsSchema = z
+  .object({
+    reminderHoursBefore: z.array(z.number().int().min(0).max(168)).max(5).optional(),
+    autoConfirmation: z.boolean().optional(),
+    postBookingMessage: z.string().max(1000).optional().nullable(),
+    cancellationMessage: z.string().max(1000).optional().nullable(),
+  })
+  .optional();
+
+const featureSettingsSchema = z
+  .object({
+    showPricesPublic: z.boolean().optional(),
+    showStaffPublic: z.boolean().optional(),
+    requirePhone: z.boolean().optional(),
+    allowWalkIn: z.boolean().optional(),
+  })
+  .optional();
+
+const settingsSchema = z.object({
+  booking: bookingSettingsSchema,
+  notifications: notificationSettingsSchema,
+  features: featureSettingsSchema,
+});
+
 const brandingSchema = z.object({
   tagline: z.string().max(300).optional().nullable(),
   description: z.string().max(3000).optional().nullable(),
@@ -70,6 +107,14 @@ export class SalonSettingsController {
     input: z.infer<typeof brandingSchema>,
   ): Promise<Tenant> {
     return this.svc.updateBranding(input);
+  }
+
+  @Patch('settings')
+  updateSettings(
+    @Body(new ZodValidationPipe(settingsSchema))
+    input: z.infer<typeof settingsSchema>,
+  ): Promise<Tenant> {
+    return this.svc.updateSettings(input);
   }
 
   // ── FAQ ─────────────────────

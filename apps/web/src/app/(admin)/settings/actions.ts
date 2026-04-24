@@ -204,3 +204,51 @@ export async function deleteGalleryImage(id: string): Promise<void> {
   revalidateAll();
   redirect('/settings#gallery');
 }
+
+// ── Booking-Settings ────────────────────────
+
+export async function updateBookingSettings(form: FormData): Promise<void> {
+  const booking = {
+    onlineBookingEnabled: bool(form, 'onlineBookingEnabled'),
+    cancellationHoursBefore: int(form, 'cancellationHoursBefore') ?? 24,
+    requireDeposit: bool(form, 'requireDeposit'),
+    defaultDepositPct: Number(form.get('defaultDepositPct') ?? 0) || 0,
+    defaultBufferBeforeMin: int(form, 'defaultBufferBeforeMin') ?? 0,
+    defaultBufferAfterMin: int(form, 'defaultBufferAfterMin') ?? 0,
+    maxDaysAhead: int(form, 'maxDaysAhead') ?? 60,
+    minHoursAhead: int(form, 'minHoursAhead') ?? 0,
+  };
+  try {
+    await apiFetch('/v1/salon/settings', {
+      method: 'PATCH',
+      ...ctxHeaders(),
+      body: { booking },
+    });
+  } catch (err) {
+    if (err instanceof ApiError) throw new Error(err.problem?.title ?? err.message);
+    throw err;
+  }
+  revalidateAll();
+  redirect('/settings#booking');
+}
+
+export async function updateFeatureSettings(form: FormData): Promise<void> {
+  const features = {
+    showPricesPublic: bool(form, 'showPricesPublic'),
+    showStaffPublic: bool(form, 'showStaffPublic'),
+    requirePhone: bool(form, 'requirePhone'),
+    allowWalkIn: bool(form, 'allowWalkIn'),
+  };
+  try {
+    await apiFetch('/v1/salon/settings', {
+      method: 'PATCH',
+      ...ctxHeaders(),
+      body: { features },
+    });
+  } catch (err) {
+    if (err instanceof ApiError) throw new Error(err.problem?.title ?? err.message);
+    throw err;
+  }
+  revalidateAll();
+  redirect('/settings#features');
+}

@@ -12,9 +12,30 @@ import {
   deleteReview,
   toggleReviewFeatured,
   updateBranding,
+  updateBookingSettings,
+  updateFeatureSettings,
   updateLocation,
 } from './actions';
 import { BrandColorPicker } from './brand-color-picker';
+
+interface TenantSettings {
+  booking?: {
+    onlineBookingEnabled?: boolean;
+    cancellationHoursBefore?: number;
+    requireDeposit?: boolean;
+    defaultDepositPct?: number;
+    defaultBufferBeforeMin?: number;
+    defaultBufferAfterMin?: number;
+    maxDaysAhead?: number;
+    minHoursAhead?: number;
+  };
+  features?: {
+    showPricesPublic?: boolean;
+    showStaffPublic?: boolean;
+    requirePhone?: boolean;
+    allowWalkIn?: boolean;
+  };
+}
 
 interface Tenant {
   id: string;
@@ -29,6 +50,7 @@ interface Tenant {
   tiktokUrl: string | null;
   whatsappE164: string | null;
   googleBusinessUrl: string | null;
+  settings?: TenantSettings | null;
 }
 
 interface FAQ {
@@ -173,6 +195,8 @@ export default async function SettingsPage({
           { id: 'faq', label: 'FAQ' },
           { id: 'reviews', label: 'Bewertungen' },
           { id: 'gallery', label: 'Gallerie' },
+          { id: 'booking', label: 'Buchung' },
+          { id: 'features', label: 'Features' },
         ].map((t) => (
           <a
             key={t.id}
@@ -581,6 +605,197 @@ export default async function SettingsPage({
             ))}
           </ul>
         )}
+      </section>
+
+      {/* ─── Booking-Settings ─── */}
+      <section id="booking" className="mb-12 scroll-mt-24">
+        <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+          Buchungs-Einstellungen
+        </h2>
+        <Card>
+          <CardBody>
+            <form action={updateBookingSettings} className="space-y-5">
+              <label className="flex items-center gap-3 rounded-md border border-border bg-surface-raised/40 p-3">
+                <input
+                  type="checkbox"
+                  name="onlineBookingEnabled"
+                  defaultChecked={tenant?.settings?.booking?.onlineBookingEnabled ?? true}
+                  className="h-4 w-4"
+                />
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-text-primary">
+                    Online-Buchung aktiviert
+                  </div>
+                  <div className="text-xs text-text-muted">
+                    Kundinnen können über die öffentliche Booking-Seite buchen
+                  </div>
+                </div>
+              </label>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field
+                  label="Stornierung bis X Stunden vor Termin"
+                  hint="Nach dieser Frist kann Kundin nicht mehr selbst stornieren"
+                >
+                  <Input
+                    type="number"
+                    name="cancellationHoursBefore"
+                    min={0}
+                    max={168}
+                    defaultValue={tenant?.settings?.booking?.cancellationHoursBefore ?? 24}
+                  />
+                </Field>
+                <Field
+                  label="Max. Vorausbuchung (Tage)"
+                  hint="Wie weit im Voraus Kundin buchen kann"
+                >
+                  <Input
+                    type="number"
+                    name="maxDaysAhead"
+                    min={1}
+                    max={365}
+                    defaultValue={tenant?.settings?.booking?.maxDaysAhead ?? 60}
+                  />
+                </Field>
+                <Field
+                  label="Mindest-Vorlauf (Stunden)"
+                  hint="Nicht spontaner als X Stunden vorher buchbar"
+                >
+                  <Input
+                    type="number"
+                    name="minHoursAhead"
+                    min={0}
+                    max={72}
+                    defaultValue={tenant?.settings?.booking?.minHoursAhead ?? 0}
+                  />
+                </Field>
+                <Field label="Default Anzahlung in %" hint="0 = keine Anzahlung verlangen">
+                  <Input
+                    type="number"
+                    name="defaultDepositPct"
+                    min={0}
+                    max={100}
+                    step="5"
+                    defaultValue={tenant?.settings?.booking?.defaultDepositPct ?? 0}
+                  />
+                </Field>
+                <Field
+                  label="Puffer vor Termin (Min)"
+                  hint="Zeit die automatisch vor Service reserviert wird"
+                >
+                  <Input
+                    type="number"
+                    name="defaultBufferBeforeMin"
+                    min={0}
+                    max={60}
+                    step="5"
+                    defaultValue={tenant?.settings?.booking?.defaultBufferBeforeMin ?? 0}
+                  />
+                </Field>
+                <Field
+                  label="Puffer nach Termin (Min)"
+                  hint="Für Aufräumen / Übergang zwischen Kundinnen"
+                >
+                  <Input
+                    type="number"
+                    name="defaultBufferAfterMin"
+                    min={0}
+                    max={60}
+                    step="5"
+                    defaultValue={tenant?.settings?.booking?.defaultBufferAfterMin ?? 0}
+                  />
+                </Field>
+              </div>
+
+              <label className="flex items-center gap-3 rounded-md border border-border bg-surface-raised/40 p-3">
+                <input
+                  type="checkbox"
+                  name="requireDeposit"
+                  defaultChecked={tenant?.settings?.booking?.requireDeposit ?? false}
+                  className="h-4 w-4"
+                />
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-text-primary">
+                    Anzahlung bei Online-Buchung verlangen
+                  </div>
+                  <div className="text-xs text-text-muted">
+                    Reduziert No-Shows um durchschnittlich 40%
+                  </div>
+                </div>
+              </label>
+
+              <div className="flex justify-end">
+                <Button type="submit" variant="primary">
+                  Speichern
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+      </section>
+
+      {/* ─── Features / Sichtbarkeit ─── */}
+      <section id="features" className="mb-12 scroll-mt-24">
+        <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+          Features · Sichtbarkeit
+        </h2>
+        <Card>
+          <CardBody>
+            <form action={updateFeatureSettings} className="space-y-3">
+              {[
+                {
+                  name: 'showPricesPublic',
+                  label: 'Preise auf Booking-Seite zeigen',
+                  hint: 'Aus = nur „auf Anfrage"',
+                  default: true,
+                },
+                {
+                  name: 'showStaffPublic',
+                  label: 'Team-Mitglieder öffentlich zeigen',
+                  hint: 'Namen, Fotos, Bio im Online-Booking',
+                  default: true,
+                },
+                {
+                  name: 'requirePhone',
+                  label: 'Telefon-Nummer Pflichtfeld',
+                  hint: 'Anstatt optional beim Online-Booking',
+                  default: false,
+                },
+                {
+                  name: 'allowWalkIn',
+                  label: 'Walk-In erlaubt',
+                  hint: 'Kundinnen können ohne Termin kommen',
+                  default: false,
+                },
+              ].map((f) => (
+                <label
+                  key={f.name}
+                  className="flex items-center gap-3 rounded-md border border-border bg-surface-raised/40 p-3"
+                >
+                  <input
+                    type="checkbox"
+                    name={f.name}
+                    defaultChecked={
+                      (tenant?.settings?.features?.[
+                        f.name as keyof NonNullable<TenantSettings['features']>
+                      ] as boolean | undefined) ?? f.default
+                    }
+                    className="h-4 w-4"
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-text-primary">{f.label}</div>
+                    <div className="text-xs text-text-muted">{f.hint}</div>
+                  </div>
+                </label>
+              ))}
+              <div className="flex justify-end pt-2">
+                <Button type="submit" variant="primary">
+                  Speichern
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
       </section>
     </div>
   );
