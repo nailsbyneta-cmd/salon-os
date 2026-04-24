@@ -86,6 +86,11 @@ export default async function BookingConfirm({
     staffId?: string;
     startAt?: string;
     error?: string;
+    price?: string;
+    duration?: string;
+    options?: string;
+    addons?: string;
+    bundles?: string;
   }>;
 }): Promise<React.JSX.Element> {
   const { slug } = await params;
@@ -93,6 +98,9 @@ export default async function BookingConfirm({
   if (!sp.serviceId || !sp.locationId || !sp.staffId || !sp.startAt) {
     redirect(`/book/${slug}`);
   }
+
+  const configuredPrice = sp.price ? Number(sp.price) : null;
+  const configuredDuration = sp.duration ? Number(sp.duration) : null;
 
   const { service, staff } = await loadContext(slug, sp.serviceId, sp.staffId);
 
@@ -181,9 +189,15 @@ export default async function BookingConfirm({
                   Leistung
                 </div>
                 <div className="mt-0.5 font-medium text-text-primary">{service.name}</div>
-                <div className="mt-0.5 text-xs text-text-muted">{service.durationMinutes} Min</div>
+                <div className="mt-0.5 text-xs text-text-muted">
+                  {configuredDuration ?? service.durationMinutes} Min
+                  {sp.bundles ? <span className="ml-1 text-accent">· inkl. Kombi</span> : null}
+                </div>
               </div>
-              <PriceDisplay amount={service.basePrice} size="lg" />
+              <PriceDisplay
+                amount={String(configuredPrice ?? Number(service.basePrice))}
+                size="lg"
+              />
             </div>
           ) : null}
 

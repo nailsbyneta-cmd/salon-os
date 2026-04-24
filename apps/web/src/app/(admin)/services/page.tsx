@@ -119,7 +119,7 @@ export default async function ServicesPage(): Promise<React.JSX.Element> {
         <div className="space-y-6">
           {sortedCategoryEntries.map(([catName, items]) => (
             <section key={catName}>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+              <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
                 {catName}
               </h2>
               <Card>

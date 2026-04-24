@@ -66,8 +66,17 @@ export default async function MobileCalendar(): Promise<React.JSX.Element> {
 
       <div className="space-y-5 px-5 pb-5">
         {days.length === 0 ? (
-          <div className="mt-4 rounded-lg border border-border bg-surface p-6 text-center text-sm text-text-muted">
-            Keine Termine in den nächsten 14 Tagen.
+          <div className="mt-4 rounded-lg border border-border bg-accent/5 p-8 text-center">
+            <div
+              aria-hidden
+              className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-2xl"
+            >
+              📅
+            </div>
+            <p className="font-display text-lg font-semibold text-text-primary">
+              Keine Termine geplant
+            </p>
+            <p className="mt-1 text-sm text-text-secondary">Die nächsten 14 Tage sind frei.</p>
           </div>
         ) : (
           days.map(([dateKey, list]) => {
@@ -75,18 +84,29 @@ export default async function MobileCalendar(): Promise<React.JSX.Element> {
             const isToday = new Date().toDateString() === d.toDateString();
             return (
               <section key={dateKey}>
-                <div className="sticky top-0 z-10 -mx-5 mb-2 border-b border-border bg-background/80 px-5 py-2 backdrop-blur">
-                  <h2 className="text-[11px] font-semibold uppercase tracking-wider">
+                <div className="sticky top-0 z-10 -mx-5 mb-2 border-b border-border bg-background/85 px-5 py-2.5 backdrop-blur">
+                  <h2
+                    className={[
+                      'font-display text-sm font-semibold tracking-tight',
+                      isToday ? 'text-accent' : 'text-text-secondary',
+                    ].join(' ')}
+                  >
                     {isToday ? (
-                      <span className="text-accent">Heute</span>
+                      <>
+                        <span className="mr-2 text-[10px] uppercase tracking-[0.2em]">Heute</span>
+                        <span className="font-normal text-text-muted">
+                          {d.toLocaleDateString('de-CH', {
+                            day: '2-digit',
+                            month: 'long',
+                          })}
+                        </span>
+                      </>
                     ) : (
-                      <span className="text-text-muted">
-                        {d.toLocaleDateString('de-CH', {
-                          weekday: 'short',
-                          day: '2-digit',
-                          month: 'short',
-                        })}
-                      </span>
+                      d.toLocaleDateString('de-CH', {
+                        weekday: 'long',
+                        day: '2-digit',
+                        month: 'long',
+                      })
                     )}
                   </h2>
                 </div>
@@ -100,16 +120,17 @@ export default async function MobileCalendar(): Promise<React.JSX.Element> {
                       <li key={a.id}>
                         <Link
                           href={`/calendar/${a.id}`}
-                          className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 active:scale-[0.99] transition-transform"
+                          className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
                         >
                           <div className="w-14 shrink-0 text-center">
-                            <div className="text-sm font-bold tabular-nums">
+                            <div className="font-display text-base font-semibold tabular-nums text-text-primary">
                               {new Date(a.startAt).toLocaleTimeString('de-CH', {
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}
                             </div>
-                            <div className="text-[9px] text-text-muted tabular-nums">
+                            <div className="text-[10px] tabular-nums text-text-muted">
+                              bis{' '}
                               {new Date(a.endAt).toLocaleTimeString('de-CH', {
                                 hour: '2-digit',
                                 minute: '2-digit',
@@ -117,14 +138,14 @@ export default async function MobileCalendar(): Promise<React.JSX.Element> {
                             </div>
                           </div>
                           <div
-                            className="h-10 w-1 rounded-full shrink-0"
+                            className="h-12 w-1 shrink-0 rounded-full"
                             style={{
                               backgroundColor: a.staff.color ?? 'hsl(var(--border-strong))',
                             }}
                           />
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate font-medium">{name}</div>
-                            <div className="truncate text-xs text-text-muted">{service}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate font-medium text-text-primary">{name}</div>
+                            <div className="truncate text-xs text-text-secondary">{service}</div>
                           </div>
                           <Badge tone={statusTone[a.status] ?? 'neutral'} />
                         </Link>

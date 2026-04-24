@@ -56,15 +56,24 @@ export default async function MobileClients({
 
       <ul className="divide-y divide-border">
         {clients.length === 0 ? (
-          <li className="px-5 py-10 text-center text-sm text-text-muted">
-            {q ? `Keine Treffer für „${q}"` : 'Keine Kundinnen.'}
+          <li className="px-5 py-16 text-center">
+            <div
+              aria-hidden
+              className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-2xl"
+            >
+              {q ? '🔍' : '👥'}
+            </div>
+            <p className="font-display text-base font-semibold text-text-primary">
+              {q ? `Keine Treffer für „${q}"` : 'Noch keine Kundinnen'}
+            </p>
+            {q ? <p className="mt-1 text-xs text-text-muted">Tipp: kürzerer Suchbegriff</p> : null}
           </li>
         ) : null}
         {clients.map((c) => (
           <li key={c.id}>
             <Link
               href={`/clients/${c.id}`}
-              className="flex items-center gap-3 px-5 py-3 active:bg-surface-raised transition-colors"
+              className="flex items-center gap-3 px-5 py-3 transition-all duration-200 hover:bg-surface-raised/60 active:scale-[0.99] active:bg-surface-raised"
             >
               <Avatar
                 name={`${c.firstName} ${c.lastName}`}
@@ -72,14 +81,16 @@ export default async function MobileClients({
                 color="hsl(var(--brand-accent))"
                 vip={c.totalVisits >= 10}
               />
-              <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium text-text-primary">
                   {c.firstName} {c.lastName}
                 </div>
-                <div className="text-xs text-text-muted truncate">{c.phone ?? c.email ?? '—'}</div>
+                <div className="truncate text-xs text-text-muted">{c.phone ?? c.email ?? '—'}</div>
               </div>
               <div className="text-right text-[10px] text-text-muted">
-                <div className="font-semibold tabular-nums text-text-primary">{c.totalVisits}×</div>
+                <div className="font-display text-sm font-semibold tabular-nums text-text-primary">
+                  {c.totalVisits}×
+                </div>
                 {c.lastVisitAt ? (
                   <div>
                     {new Date(c.lastVisitAt).toLocaleDateString('de-CH', {
