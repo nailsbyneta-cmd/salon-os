@@ -232,6 +232,34 @@ export async function updateBookingSettings(form: FormData): Promise<void> {
   redirect('/settings#booking');
 }
 
+export async function updateNotificationSettings(form: FormData): Promise<void> {
+  const reminderHoursCsv = form.get('reminderHoursBefore')?.toString() ?? '';
+  const reminderHoursBefore = reminderHoursCsv
+    .split(',')
+    .map((s) => Number.parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n) && n >= 0 && n <= 168)
+    .slice(0, 5);
+
+  const notifications = {
+    reminderHoursBefore,
+    autoConfirmation: bool(form, 'autoConfirmation'),
+    postBookingMessage: str(form, 'postBookingMessage'),
+    cancellationMessage: str(form, 'cancellationMessage'),
+  };
+  try {
+    await apiFetch('/v1/salon/settings', {
+      method: 'PATCH',
+      ...ctxHeaders(),
+      body: { notifications },
+    });
+  } catch (err) {
+    if (err instanceof ApiError) throw new Error(err.problem?.title ?? err.message);
+    throw err;
+  }
+  revalidateAll();
+  redirect('/settings#notifications');
+}
+
 export async function updateFeatureSettings(form: FormData): Promise<void> {
   const features = {
     showPricesPublic: bool(form, 'showPricesPublic'),

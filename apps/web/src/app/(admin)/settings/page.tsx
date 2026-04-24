@@ -14,6 +14,7 @@ import {
   updateBranding,
   updateBookingSettings,
   updateFeatureSettings,
+  updateNotificationSettings,
   updateLocation,
 } from './actions';
 import { BrandColorPicker } from './brand-color-picker';
@@ -28,6 +29,12 @@ interface TenantSettings {
     defaultBufferAfterMin?: number;
     maxDaysAhead?: number;
     minHoursAhead?: number;
+  };
+  notifications?: {
+    reminderHoursBefore?: number[];
+    autoConfirmation?: boolean;
+    postBookingMessage?: string | null;
+    cancellationMessage?: string | null;
   };
   features?: {
     showPricesPublic?: boolean;
@@ -196,6 +203,7 @@ export default async function SettingsPage({
           { id: 'reviews', label: 'Bewertungen' },
           { id: 'gallery', label: 'Gallerie' },
           { id: 'booking', label: 'Buchung' },
+          { id: 'notifications', label: 'Benachrichtigungen' },
           { id: 'features', label: 'Features' },
         ].map((t) => (
           <a
@@ -723,6 +731,78 @@ export default async function SettingsPage({
                   </div>
                 </div>
               </label>
+
+              <div className="flex justify-end">
+                <Button type="submit" variant="primary">
+                  Speichern
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+      </section>
+
+      {/* ─── Notifications ─── */}
+      <section id="notifications" className="mb-12 scroll-mt-24">
+        <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+          Benachrichtigungen · Reminder-Templates
+        </h2>
+        <Card>
+          <CardBody>
+            <form action={updateNotificationSettings} className="space-y-5">
+              <Field
+                label="Reminder-Zeiten (Stunden vor Termin)"
+                hint="Komma-getrennt, max 5 Reminder. Beispiel: 24, 2 = 1 Tag + 2 h vorher"
+              >
+                <Input
+                  name="reminderHoursBefore"
+                  defaultValue={(tenant?.settings?.notifications?.reminderHoursBefore ?? [24, 2]).join(
+                    ', ',
+                  )}
+                  placeholder="24, 2"
+                />
+              </Field>
+
+              <label className="flex items-center gap-3 rounded-md border border-border bg-surface-raised/40 p-3">
+                <input
+                  type="checkbox"
+                  name="autoConfirmation"
+                  defaultChecked={tenant?.settings?.notifications?.autoConfirmation ?? true}
+                  className="h-4 w-4"
+                />
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-text-primary">
+                    Auto-Bestätigung direkt senden
+                  </div>
+                  <div className="text-xs text-text-muted">
+                    E-Mail sofort nach Buchung statt Manuelle-Bestätigung
+                  </div>
+                </div>
+              </label>
+
+              <Field
+                label="Bestätigungs-Nachricht (nach Buchung)"
+                hint="Erscheint in der Bestätigungs-E-Mail. Platzhalter: {name}, {service}, {date}, {staff}"
+              >
+                <Textarea
+                  name="postBookingMessage"
+                  rows={3}
+                  defaultValue={tenant?.settings?.notifications?.postBookingMessage ?? ''}
+                  placeholder="Liebe {name}, wir freuen uns auf deinen Termin am {date} — bis bald!"
+                />
+              </Field>
+
+              <Field
+                label="Stornierungs-Nachricht"
+                hint="E-Mail die bei Stornierung gesendet wird"
+              >
+                <Textarea
+                  name="cancellationMessage"
+                  rows={3}
+                  defaultValue={tenant?.settings?.notifications?.cancellationMessage ?? ''}
+                  placeholder="Hallo {name}, dein Termin am {date} ist storniert. Kein Problem — wir freuen uns auf's nächste Mal."
+                />
+              </Field>
 
               <div className="flex justify-end">
                 <Button type="submit" variant="primary">
