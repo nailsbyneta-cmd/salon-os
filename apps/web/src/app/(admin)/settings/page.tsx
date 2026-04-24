@@ -856,9 +856,9 @@ export default async function SettingsPage({
                     type="checkbox"
                     name={f.name}
                     defaultChecked={
-                      (tenant?.settings?.features?.[
+                      tenant?.settings?.features?.[
                         f.name as keyof NonNullable<TenantSettings['features']>
-                      ] as boolean | undefined) ?? f.default
+                      ] ?? f.default
                     }
                     className="h-4 w-4"
                   />
