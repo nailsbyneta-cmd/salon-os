@@ -261,9 +261,7 @@ export class ServicesService {
 
   // ─── Service Bundles (Cross-Sell-Upsell) ────────────────────
 
-  async listBundles(
-    primaryServiceId: string,
-  ): Promise<
+  async listBundles(primaryServiceId: string): Promise<
     Array<
       ServiceBundle & {
         bundledService: { id: string; name: string; basePrice: unknown; durationMinutes: number };
