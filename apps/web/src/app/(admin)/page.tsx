@@ -313,18 +313,19 @@ export default async function Home(): Promise<React.JSX.Element> {
   const d = await loadDashboard();
   const now = new Date();
   const greeting = greetingByHour(now.getHours());
-  // Tenant-Name für Greeting (statt hardcoded "Neta")
+  // Tenant-Name für Greeting (statt hardcoded "Neta") + Features aus Settings
   let tenantShortName = 'dir';
+  let allowWalkIn = true;
   try {
-    const { loadTenantBranding } = await import('@/lib/tenant-brand');
-    const { name } = await loadTenantBranding();
+    const { loadTenantSettings } = await import('@/lib/tenant-brand');
+    const { name, settings } = await loadTenantSettings();
     if (name) {
-      // "Beautycenter by Neta" → "Neta", "Hair by Mike" → "Mike", sonst erstes Wort
       const m = name.match(/(?:by|@|·|—)\s*(\S+)/i);
       tenantShortName = m?.[1] ?? name.split(' ')[0] ?? name;
     }
+    allowWalkIn = settings?.features?.allowWalkIn !== false;
   } catch {
-    /* default bleibt "dir" */
+    /* defaults bleiben */
   }
 
   const activeAppts = d.todayAppts.filter(
@@ -434,9 +435,11 @@ export default async function Home(): Promise<React.JSX.Element> {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/calendar/new?walkin=1">
-            <Button variant="secondary">Walk-in</Button>
-          </Link>
+          {allowWalkIn ? (
+            <Link href="/calendar/new?walkin=1">
+              <Button variant="secondary">Walk-in</Button>
+            </Link>
+          ) : null}
           <Link href="/calendar/new">
             <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
               Neuer Termin

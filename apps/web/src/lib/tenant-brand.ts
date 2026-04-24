@@ -9,9 +9,35 @@
 import { apiFetch, ApiError } from './api';
 import { getCurrentTenant } from './tenant';
 
+export interface TenantSettings {
+  booking?: {
+    onlineBookingEnabled?: boolean;
+    cancellationHoursBefore?: number;
+    requireDeposit?: boolean;
+    defaultDepositPct?: number;
+    defaultBufferBeforeMin?: number;
+    defaultBufferAfterMin?: number;
+    maxDaysAhead?: number;
+    minHoursAhead?: number;
+  };
+  notifications?: {
+    reminderHoursBefore?: number[];
+    autoConfirmation?: boolean;
+    postBookingMessage?: string | null;
+    cancellationMessage?: string | null;
+  };
+  features?: {
+    showPricesPublic?: boolean;
+    showStaffPublic?: boolean;
+    requirePhone?: boolean;
+    allowWalkIn?: boolean;
+  };
+}
+
 interface TenantInfo {
   name: string;
   brandColor: string | null;
+  settings: TenantSettings | null;
 }
 
 export async function loadTenantBranding(): Promise<{
@@ -28,6 +54,25 @@ export async function loadTenantBranding(): Promise<{
     return { name: res.name, brandColor: res.brandColor };
   } catch (err) {
     if (err instanceof ApiError) return { name: null, brandColor: null };
+    throw err;
+  }
+}
+
+export async function loadTenantSettings(): Promise<{
+  name: string | null;
+  brandColor: string | null;
+  settings: TenantSettings | null;
+}> {
+  const ctx = getCurrentTenant();
+  try {
+    const res = await apiFetch<TenantInfo>('/v1/salon/tenant', {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+    });
+    return { name: res.name, brandColor: res.brandColor, settings: res.settings };
+  } catch (err) {
+    if (err instanceof ApiError) return { name: null, brandColor: null, settings: null };
     throw err;
   }
 }
