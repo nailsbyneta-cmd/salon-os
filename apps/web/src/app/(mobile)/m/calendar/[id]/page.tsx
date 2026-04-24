@@ -246,6 +246,20 @@ export default async function MobileAppointmentDetail({
                 CHF {total.toFixed(0)}
               </span>
             </div>
+            {appt.depositAmount != null && Number(appt.depositAmount) > 0 ? (
+              <div className="mt-1 flex items-center justify-between text-xs">
+                <span className="text-text-muted">Anzahlung</span>
+                <span
+                  className={[
+                    'tabular-nums font-medium',
+                    appt.depositPaid ? 'text-success' : 'text-warning',
+                  ].join(' ')}
+                >
+                  CHF {Number(appt.depositAmount).toFixed(0)}
+                  {appt.depositPaid ? ' ✓ bezahlt' : ' · offen'}
+                </span>
+              </div>
+            ) : null}
           </CardBody>
         </Card>
 
@@ -275,8 +289,18 @@ export default async function MobileAppointmentDetail({
           </Card>
         ) : null}
 
+        {/* POS-Shortcut wenn Termin fertig oder läuft */}
+        {(appt.status === 'COMPLETED' || appt.status === 'IN_SERVICE') && appt.client ? (
+          <Link
+            href={`/pos/${appt.id}`}
+            className="flex items-center justify-center gap-2 rounded-lg bg-accent py-3 text-base font-semibold text-accent-foreground shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-[0.98]"
+          >
+            💳 Zur Kasse
+          </Link>
+        ) : null}
+
         {/* Links zur Vollversion */}
-        <div className="flex justify-center gap-2 pt-2">
+        <div className="flex flex-wrap justify-center gap-2 pt-2">
           <Link href={`/calendar/${appt.id}`}>
             <Button variant="ghost" size="sm">
               ⚙ Vollständig bearbeiten
