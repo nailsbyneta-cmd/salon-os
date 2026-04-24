@@ -20,18 +20,23 @@ const tabs: Tab[] = [
 export function MobileShell({ children }: { children: React.ReactNode }): React.JSX.Element {
   const pathname = usePathname() ?? '/m';
 
-  // FAB versteckt auf /calendar/new weil man dort schon drin ist
-  const showFab = !pathname.startsWith('/calendar/new');
+  // FAB kontextabhängig: auf /m/clients Kunde anlegen, sonst Termin anlegen.
+  // Versteckt auf Form-Seiten damit kein Duplicate-Button.
+  const onClientsTab = pathname === '/m/clients';
+  const fab = onClientsTab
+    ? { href: '/clients/new', label: 'Neue Kundin' }
+    : { href: '/calendar/new', label: 'Neuer Termin' };
+  const showFab = !pathname.startsWith('/calendar/new') && !pathname.startsWith('/clients/new');
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text-primary">
       <main className="flex-1 pb-24">{children}</main>
 
-      {/* Floating Action Button — Quick Add Appointment */}
+      {/* Floating Action Button — kontextuelle Quick-Action */}
       {showFab ? (
         <Link
-          href="/calendar/new"
-          aria-label="Neuer Termin"
+          href={fab.href}
+          aria-label={fab.label}
           className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-[0.95]"
         >
           <svg
