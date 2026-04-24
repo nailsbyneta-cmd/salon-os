@@ -11,10 +11,10 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }): Promise<React.JSX.Element> {
-  const { brandColor } = await loadTenantBranding();
+  const { name, brandColor } = await loadTenantBranding();
   return (
     <div data-product-theme style={brandStyle(brandColor)}>
-      <AdminShell>{children}</AdminShell>
+      <AdminShell tenantName={name ?? 'SALON OS'}>{children}</AdminShell>
     </div>
   );
 }

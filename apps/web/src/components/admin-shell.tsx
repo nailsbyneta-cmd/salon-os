@@ -28,7 +28,13 @@ const nav: NavItem[] = [
   { href: '/settings', label: 'Einstellungen', icon: <IconGear /> },
 ];
 
-export function AdminShell({ children }: { children: React.ReactNode }): React.JSX.Element {
+export function AdminShell({
+  children,
+  tenantName = 'SALON OS',
+}: {
+  children: React.ReactNode;
+  tenantName?: string;
+}): React.JSX.Element {
   const pathname = usePathname();
   const router = useRouter();
   const { toggle, resolved } = useTheme();
@@ -156,9 +162,11 @@ export function AdminShell({ children }: { children: React.ReactNode }): React.J
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-accent to-brand text-brand-foreground text-xs font-bold">
             S
           </div>
-          <div>
-            <div className="text-sm font-semibold tracking-tight">SALON OS</div>
-            <div className="text-[9px] uppercase tracking-wider text-text-muted">Beautycenter</div>
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold tracking-tight">SALON OS</div>
+            <div className="truncate text-[9px] uppercase tracking-wider text-text-muted">
+              {tenantName}
+            </div>
           </div>
         </Link>
         <button
@@ -210,10 +218,10 @@ export function AdminShell({ children }: { children: React.ReactNode }): React.J
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-accent to-brand text-brand-foreground text-sm font-bold">
             S
           </div>
-          <div>
-            <div className="text-sm font-semibold tracking-tight">SALON OS</div>
-            <div className="text-[10px] uppercase tracking-wider text-text-muted">
-              Beautycenter by Neta
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold tracking-tight">SALON OS</div>
+            <div className="truncate text-[10px] uppercase tracking-wider text-text-muted">
+              {tenantName}
             </div>
           </div>
         </div>

@@ -10,10 +10,14 @@ import { apiFetch, ApiError } from './api';
 import { getCurrentTenant } from './tenant';
 
 interface TenantInfo {
+  name: string;
   brandColor: string | null;
 }
 
-export async function loadTenantBranding(): Promise<{ brandColor: string | null }> {
+export async function loadTenantBranding(): Promise<{
+  name: string | null;
+  brandColor: string | null;
+}> {
   const ctx = getCurrentTenant();
   try {
     const res = await apiFetch<TenantInfo>('/v1/salon/tenant', {
@@ -21,9 +25,9 @@ export async function loadTenantBranding(): Promise<{ brandColor: string | null 
       userId: ctx.userId,
       role: ctx.role,
     });
-    return { brandColor: res.brandColor };
+    return { name: res.name, brandColor: res.brandColor };
   } catch (err) {
-    if (err instanceof ApiError) return { brandColor: null };
+    if (err instanceof ApiError) return { name: null, brandColor: null };
     throw err;
   }
 }
