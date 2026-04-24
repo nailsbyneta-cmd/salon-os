@@ -403,7 +403,7 @@ export default async function Home(): Promise<React.JSX.Element> {
     <div className="w-full p-4 md:p-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3 md:mb-8">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
             Dashboard
           </p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">

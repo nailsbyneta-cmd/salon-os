@@ -85,7 +85,7 @@ export default async function EditServicePage({
       </Link>
       <header className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
             Service bearbeiten
           </p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">

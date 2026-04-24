@@ -120,7 +120,7 @@ export default async function StaffShiftsPage({
       <header className="mb-8 mt-4 flex items-center gap-4">
         <Avatar name={`${staff.firstName} ${staff.lastName}`} color={staff.color} size="lg" />
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
             Arbeitszeiten
           </p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">

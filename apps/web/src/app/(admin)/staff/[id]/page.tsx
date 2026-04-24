@@ -220,7 +220,7 @@ export default async function StaffDetailPage({
       <header className="mb-6 mt-4 flex flex-wrap items-center gap-4">
         <Avatar name={displayName} color={s.color} size="xl" />
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Profil</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">Profil</p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             {displayName}
           </h1>

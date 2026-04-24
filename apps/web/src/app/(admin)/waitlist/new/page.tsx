@@ -77,7 +77,7 @@ export default async function NewWaitlistPage(): Promise<React.JSX.Element> {
         ← Warteliste
       </Link>
       <header className="mb-6 mt-4">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Warteliste</p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">Warteliste</p>
         <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
           Neuer Eintrag
         </h1>

@@ -210,7 +210,7 @@ export default async function AppointmentDetailPage({
 
       <header className="mb-8 mt-4 flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">Termin</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">Termin</p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
             {a.client ? (
               <Link

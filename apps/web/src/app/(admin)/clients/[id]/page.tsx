@@ -193,7 +193,7 @@ export default async function ClientDetailPage({
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+              <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
                 Kundin
               </p>
               <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">

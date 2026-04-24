@@ -9,7 +9,7 @@ export default function ClientsImportPage(): React.JSX.Element {
         <Link href="/clients" className="text-xs text-text-muted hover:text-text-primary">
           ← Kundinnen
         </Link>
-        <p className="mt-2 text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+        <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
           Migration
         </p>
         <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
