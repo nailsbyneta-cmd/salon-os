@@ -72,7 +72,7 @@ export default async function MobileClients({
         {clients.map((c) => (
           <li key={c.id}>
             <Link
-              href={`/clients/${c.id}`}
+              href={`/m/clients/${c.id}`}
               className="flex items-center gap-3 px-5 py-3 transition-all duration-200 hover:bg-surface-raised/60 active:scale-[0.99] active:bg-surface-raised"
             >
               <Avatar

@@ -146,7 +146,7 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
             {birthdays.slice(0, 6).map((b) => (
               <li key={b.id}>
                 <Link
-                  href={`/clients/${b.id}`}
+                  href={`/m/clients/${b.id}`}
                   className="inline-flex min-h-[44px] items-center rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-text-primary transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-sm active:translate-y-0 active:scale-[0.98]"
                   aria-label={`${b.firstName} ${b.lastName} — heute Geburtstag`}
                 >
@@ -225,7 +225,7 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
               return (
                 <li key={a.id}>
                   <Link
-                    href={`/calendar/${a.id}`}
+                    href={`/m/calendar/${a.id}`}
                     className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
                     aria-label={a11y ? `${name} — ${a11y}` : undefined}
                   >
