@@ -177,10 +177,17 @@ export default async function MobileToday(): Promise<React.JSX.Element> {
       ) : null}
 
       {upcoming.length === 0 ? (
-        <div className="mx-5 mt-6 rounded-lg border border-border bg-surface p-6 text-center">
-          <div className="text-4xl">☕</div>
-          <p className="mt-2 text-sm font-medium">Keine weiteren Termine</p>
-          <p className="mt-1 text-xs text-text-muted">
+        <div className="mx-5 mt-6 rounded-lg border border-border bg-accent/5 p-8 text-center">
+          <div
+            aria-hidden
+            className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-accent/15 text-3xl"
+          >
+            ☕
+          </div>
+          <p className="font-display text-lg font-semibold text-text-primary">
+            Keine weiteren Termine
+          </p>
+          <p className="mt-1 text-sm text-text-secondary">
             Zeit für eine Pause — oder Walk-in willkommen.
           </p>
         </div>

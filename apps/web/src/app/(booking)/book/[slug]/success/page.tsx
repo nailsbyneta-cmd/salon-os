@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Button, Card, CardBody } from '@salon-os/ui';
+import { ShareButton } from './share-button';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -106,6 +107,7 @@ export default async function BookingSuccess({
         <Link href={`/book/${slug}`}>
           <Button variant="ghost">← Zur Übersicht</Button>
         </Link>
+        <ShareButton slug={slug} salonName={salonName} />
         {salon?.tenant.instagramUrl ? (
           <a href={salon.tenant.instagramUrl} target="_blank" rel="noopener noreferrer">
             <Button variant="ghost">Folge uns auf Instagram</Button>
