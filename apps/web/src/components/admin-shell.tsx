@@ -276,15 +276,21 @@ export function AdminShell({ children }: { children: React.ReactNode }): React.J
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors',
+                  'relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-all duration-200',
                   active
-                    ? 'bg-surface-raised text-text-primary font-medium'
+                    ? 'bg-accent/10 font-medium text-text-primary shadow-sm'
                     : 'text-text-secondary hover:bg-surface-raised hover:text-text-primary',
                 )}
                 aria-label={
                   badgeCount > 0 ? `${item.label} — ${badgeCount} ${badgeMeta.context}` : undefined
                 }
               >
+                {active ? (
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-r bg-accent"
+                  />
+                ) : null}
                 <span className={cn('text-text-muted', active && 'text-accent')}>{item.icon}</span>
                 <span className="flex-1">{item.label}</span>
                 {/* Reserved-space placeholder verhindert CLS wenn counts

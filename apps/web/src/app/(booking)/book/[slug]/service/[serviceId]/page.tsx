@@ -281,7 +281,7 @@ export default async function BookingSlots({
               <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
                 {label}
               </h2>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 min-[380px]:grid-cols-3 sm:grid-cols-4">
                 {list.map((s) => (
                   <Link
                     key={`${s.staffId}-${s.startAt}`}
