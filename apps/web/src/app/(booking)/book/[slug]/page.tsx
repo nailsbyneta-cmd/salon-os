@@ -335,7 +335,7 @@ export default async function BookingStart({
             className="mx-auto mb-4 h-16 w-16 rounded-full object-cover shadow-lg"
           />
         ) : null}
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
           Online buchen
         </p>
         <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight md:text-5xl">
@@ -352,6 +352,37 @@ export default async function BookingStart({
           Wähle deine Behandlung, Datum &amp; Uhrzeit — alles in unter 60 Sek.
         </p>
       </header>
+
+      {/* Trust-Strip — Social Proof direkt unter Hero */}
+      {reviews.length > 0 ? (
+        <section
+          aria-label="Vertrauenssignale"
+          className="flex items-center justify-center gap-4 rounded-lg border border-border bg-surface/50 px-4 py-3 text-xs tabular-nums text-text-secondary sm:gap-6 sm:text-sm"
+        >
+          <div className="flex items-center gap-1.5">
+            <span aria-hidden className="text-accent">
+              ★
+            </span>
+            <span className="font-display text-base font-semibold text-text-primary">
+              {(reviews.reduce((s, r) => s + r.rating, 0) / Math.max(reviews.length, 1)).toFixed(1)}
+            </span>
+            <span className="text-[11px] text-text-muted">/ 5</span>
+          </div>
+          <div className="h-4 w-px bg-border" aria-hidden />
+          <div className="flex items-center gap-1">
+            <span className="font-display text-base font-semibold text-text-primary">
+              {reviews.length}
+            </span>
+            <span className="text-[11px] text-text-muted">Bewertungen</span>
+          </div>
+          <div className="h-4 w-px bg-border" aria-hidden />
+          <div className="flex items-center gap-1 text-[11px] text-accent">
+            <span aria-hidden>✓</span>
+            <span className="hidden sm:inline">Sichere Online-Buchung</span>
+            <span className="sm:hidden">Sicher</span>
+          </div>
+        </section>
+      ) : null}
 
       {tenant.description ? (
         <section>

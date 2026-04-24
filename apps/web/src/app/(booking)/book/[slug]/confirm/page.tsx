@@ -318,11 +318,15 @@ export default async function BookingConfirm({
             <Field label="Bemerkung (optional)">
               <Textarea name="notes" rows={3} />
             </Field>
-            <Button type="submit" variant="primary" className="w-full">
+            <Button type="submit" variant="accent" size="lg" className="w-full">
               Termin verbindlich buchen
             </Button>
             <p className="text-center text-[11px] text-text-muted">
-              Mit der Buchung stimmst Du unseren AGB und der Datenschutzerklärung zu.
+              Mit der Buchung stimmst du unseren{' '}
+              <Link href={`/book/${slug}/datenschutz`} className="underline hover:text-accent">
+                Datenschutz-Bestimmungen
+              </Link>{' '}
+              und AGB zu.
             </p>
           </form>
         </CardBody>
