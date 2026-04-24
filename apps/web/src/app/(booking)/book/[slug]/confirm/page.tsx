@@ -20,6 +20,17 @@ interface StaffPublic {
   color: string | null;
 }
 
+interface ServiceDetail {
+  service: Service;
+  optionGroups: Array<{
+    id: string;
+    name: string;
+    options: Array<{ id: string; label: string }>;
+  }>;
+  addOns: Array<{ id: string; name: string }>;
+  bundles: Array<{ id: string; label: string; bundledService: { name: string } }>;
+}
+
 async function loadContext(
   slug: string,
   serviceId: string,
@@ -27,22 +38,28 @@ async function loadContext(
 ): Promise<{
   service: Service | null;
   staff: StaffPublic | null;
+  detail: ServiceDetail | null;
 }> {
   try {
-    const [svcRes, infoRes] = await Promise.all([
+    const [svcRes, infoRes, detailRes] = await Promise.all([
       fetch(`${API_URL}/v1/public/${slug}/services`, { cache: 'no-store' }),
       fetch(`${API_URL}/v1/public/${slug}/info`, { cache: 'no-store' }),
+      fetch(`${API_URL}/v1/public/${slug}/services/${serviceId}`, { cache: 'no-store' }),
     ]);
     const services: Service[] = svcRes.ok
       ? ((await svcRes.json()) as { services: Service[] }).services
       : [];
     const info = infoRes.ok ? ((await infoRes.json()) as { staff: StaffPublic[] }) : { staff: [] };
+    const detail: ServiceDetail | null = detailRes.ok
+      ? ((await detailRes.json()) as ServiceDetail)
+      : null;
     return {
       service: services.find((s) => s.id === serviceId) ?? null,
       staff: info.staff.find((s) => s.id === staffId) ?? null,
+      detail,
     };
   } catch {
-    return { service: null, staff: null };
+    return { service: null, staff: null, detail: null };
   }
 }
 
@@ -102,7 +119,32 @@ export default async function BookingConfirm({
   const configuredPrice = sp.price ? Number(sp.price) : null;
   const configuredDuration = sp.duration ? Number(sp.duration) : null;
 
-  const { service, staff } = await loadContext(slug, sp.serviceId, sp.staffId);
+  const { service, staff, detail } = await loadContext(slug, sp.serviceId, sp.staffId);
+
+  // Resolve IDs → Labels via detail
+  const selectedOptionLabels: string[] = [];
+  if (sp.options && detail) {
+    const optionIds = sp.options.split(',');
+    for (const g of detail.optionGroups) {
+      for (const o of g.options) {
+        if (optionIds.includes(o.id)) selectedOptionLabels.push(o.label);
+      }
+    }
+  }
+  const selectedAddOnNames: string[] = [];
+  if (sp.addons && detail) {
+    const ids = sp.addons.split(',');
+    for (const a of detail.addOns) {
+      if (ids.includes(a.id)) selectedAddOnNames.push(a.name);
+    }
+  }
+  const selectedBundleNames: string[] = [];
+  if (sp.bundles && detail) {
+    const ids = sp.bundles.split(',');
+    for (const b of detail.bundles) {
+      if (ids.includes(b.id)) selectedBundleNames.push(b.bundledService.name);
+    }
+  }
 
   async function onSubmit(formData: FormData): Promise<void> {
     'use server';
@@ -189,15 +231,43 @@ export default async function BookingConfirm({
                   Leistung
                 </div>
                 <div className="mt-0.5 font-medium text-text-primary">{service.name}</div>
-                <div className="mt-0.5 text-xs text-text-muted">
+                {selectedOptionLabels.length > 0 ? (
+                  <div className="mt-1 flex flex-wrap gap-1 text-xs text-text-secondary">
+                    {selectedOptionLabels.map((l, i) => (
+                      <span
+                        key={i}
+                        className="rounded-sm bg-accent/10 px-1.5 py-0.5 text-[11px] text-accent"
+                      >
+                        {l}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {selectedAddOnNames.length > 0 ? (
+                  <div className="mt-1 text-xs text-text-secondary">
+                    + {selectedAddOnNames.join(', ')}
+                  </div>
+                ) : null}
+                <div className="mt-1 text-xs text-text-muted">
                   {configuredDuration ?? service.durationMinutes} Min
-                  {sp.bundles ? <span className="ml-1 text-accent">· inkl. Kombi</span> : null}
                 </div>
               </div>
               <PriceDisplay
                 amount={String(configuredPrice ?? Number(service.basePrice))}
                 size="lg"
               />
+            </div>
+          ) : null}
+
+          {selectedBundleNames.length > 0 ? (
+            <div className="border-t border-border pt-3">
+              <div className="text-[10px] font-medium uppercase tracking-wider text-accent">
+                + Kombi
+              </div>
+              <div className="mt-0.5 font-medium text-text-primary">
+                {selectedBundleNames.join(', ')}
+              </div>
+              <div className="mt-0.5 text-xs text-success">Rabatt bereits im Preis</div>
             </div>
           ) : null}
 

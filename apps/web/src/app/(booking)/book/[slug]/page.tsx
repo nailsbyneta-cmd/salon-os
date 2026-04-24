@@ -355,7 +355,7 @@ export default async function BookingStart({
 
       {tenant.description ? (
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Über uns
           </h2>
           <Card>
@@ -370,7 +370,7 @@ export default async function BookingStart({
 
       {locations.length > 1 ? (
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Standort wählen
           </h2>
           <div className="grid gap-2">
@@ -393,7 +393,7 @@ export default async function BookingStart({
       {/* Services */}
       {Array.from(byCategory.entries()).map(([catName, items]) => (
         <section key={catName}>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             {catName}
           </h2>
           <div className="grid gap-2">
@@ -401,20 +401,23 @@ export default async function BookingStart({
               <Link
                 key={s.id}
                 href={`/book/${slug}/service/${s.id}/configure?location=${locations[0]?.id ?? ''}`}
-                className="group"
+                className="group block rounded-lg border border-border bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-md active:translate-y-0 active:scale-[0.99]"
               >
-                <Card elevation="hoverable">
-                  <CardBody className="flex items-center justify-between gap-4 py-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-text-primary">{s.name}</div>
-                      {s.description ? (
-                        <div className="mt-0.5 text-sm text-text-secondary">{s.description}</div>
-                      ) : null}
-                      <div className="mt-1.5 text-xs text-text-muted">{s.durationMinutes} Min</div>
+                <CardBody className="flex items-center justify-between gap-4 py-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-display text-lg font-semibold tracking-tight text-text-primary group-hover:text-accent">
+                      {s.name}
                     </div>
-                    <PriceDisplay amount={s.basePrice} size="lg" />
-                  </CardBody>
-                </Card>
+                    {s.description ? (
+                      <div className="mt-0.5 text-sm text-text-secondary">{s.description}</div>
+                    ) : null}
+                    <div className="mt-1.5 flex items-center gap-2 text-xs text-text-muted">
+                      <span>{s.durationMinutes} Min</span>
+                      <span className="text-accent">· ab</span>
+                    </div>
+                  </div>
+                  <PriceDisplay amount={s.basePrice} size="lg" />
+                </CardBody>
               </Link>
             ))}
           </div>
@@ -424,30 +427,33 @@ export default async function BookingStart({
       {/* Team */}
       {staff.length > 0 ? (
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Unser Team
           </h2>
           <div className="grid gap-2 sm:grid-cols-2">
             {staff.map((s) => (
-              <Card key={s.id} elevation="flat">
-                <CardBody className="flex items-start gap-3 py-4">
+              <div
+                key={s.id}
+                className="rounded-lg border border-border bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md"
+              >
+                <div className="flex items-start gap-3 p-4">
                   <Avatar
                     name={`${s.firstName} ${s.lastName}`}
                     color={s.color ?? 'hsl(var(--brand-accent))'}
                     size="md"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-text-primary">
+                    <div className="font-display text-base font-semibold tracking-tight text-text-primary">
                       {s.displayName ?? `${s.firstName} ${s.lastName}`}
                     </div>
                     {s.bio ? (
                       <p className="mt-1 text-xs text-text-secondary line-clamp-3">{s.bio}</p>
                     ) : (
-                      <p className="mt-1 text-xs text-text-muted italic">Freut sich auf dich.</p>
+                      <p className="mt-1 text-xs italic text-text-muted">Freut sich auf dich.</p>
                     )}
                   </div>
-                </CardBody>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </section>
@@ -456,7 +462,7 @@ export default async function BookingStart({
       {/* Standort + Öffnungszeiten + Kontakt */}
       {primaryLocation ? (
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Salon &amp; Kontakt
           </h2>
           <Card>
@@ -542,7 +548,7 @@ export default async function BookingStart({
       {/* Gallery */}
       {gallery.length > 0 ? (
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Gallerie
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -561,7 +567,7 @@ export default async function BookingStart({
       {/* Reviews */}
       {reviews.length > 0 ? (
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Das sagen unsere Kundinnen
           </h2>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -596,7 +602,7 @@ export default async function BookingStart({
       {/* FAQ */}
       {faqs.length > 0 ? (
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Häufige Fragen
           </h2>
           <div className="space-y-2">

@@ -110,7 +110,10 @@ export default async function WaitlistPage(): Promise<React.JSX.Element> {
                     : null;
                 const hasPhone = telHref != null && waDigits != null && waDigits.length >= 7;
                 return (
-                  <li key={e.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
+                  <li
+                    key={e.id}
+                    className="flex flex-wrap items-center gap-4 px-5 py-4 transition-colors hover:bg-surface-raised/40"
+                  >
                     <Avatar name={name} size="md" color="hsl(var(--brand-accent))" />
                     <div className="min-w-[220px] flex-1">
                       <div className="font-medium text-text-primary">{name}</div>

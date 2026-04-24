@@ -80,10 +80,10 @@ export default async function SelfServicePage({
   return (
     <main className="space-y-8">
       <header className="text-center">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
           Dein Termin
         </p>
-        <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight">
+        <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight md:text-4xl">
           {appt.tenant.name}
         </h1>
         <p className="mt-2 text-sm text-text-secondary">{appt.location.name}</p>
@@ -128,7 +128,7 @@ export default async function SelfServicePage({
             <a
               href={`${API_URL}/v1/public/appointments/${appt.id}.ics?t=${encodeURIComponent(t)}`}
               download="termin.ics"
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium text-text-primary transition-colors hover:bg-surface-raised"
+              className="inline-flex h-11 items-center gap-2 rounded-md border border-accent/40 bg-accent/5 px-5 text-sm font-medium text-accent transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
             >
               📅 Zum Kalender hinzufügen
             </a>
