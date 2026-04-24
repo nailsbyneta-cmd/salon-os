@@ -193,7 +193,10 @@ export function ServiceWizard({
     <div className="space-y-6">
       {showHeader ? (
         <header>
-          <h2 className="font-display text-2xl font-semibold tracking-tight">{serviceName}</h2>
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
+            Deine Auswahl
+          </p>
+          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight">{serviceName}</h2>
           <p className="mt-1 text-sm text-text-secondary">
             Wähle deine Variante — Preis rechnet sich live mit.
           </p>
@@ -207,9 +210,15 @@ export function ServiceWizard({
             const defaultId = g.options.find((o) => o.isDefault)?.id ?? g.options[0]?.id;
             return (
               <section key={g.id}>
-                <div className="mb-2 flex items-baseline justify-between">
-                  <h3 className="text-sm font-semibold text-text-primary">{g.name}</h3>
-                  {!g.required ? <span className="text-xs text-text-muted">Optional</span> : null}
+                <div className="mb-3 flex items-baseline justify-between">
+                  <h3 className="font-display text-lg font-semibold tracking-tight text-text-primary">
+                    {g.name}
+                  </h3>
+                  {!g.required ? (
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
+                      Optional
+                    </span>
+                  ) : null}
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {g.options.map((o) => {
@@ -234,8 +243,8 @@ export function ServiceWizard({
                             : 'border-border bg-surface hover:border-accent/50 hover:bg-surface-raised/40',
                         ].join(' ')}
                       >
-                        {isPopular && !active ? (
-                          <span className="absolute right-2 top-2 text-[10px] font-semibold uppercase tracking-wider text-success">
+                        {isPopular ? (
+                          <span className="absolute right-2 top-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-accent">
                             ★ Beliebt
                           </span>
                         ) : null}
@@ -323,12 +332,12 @@ export function ServiceWizard({
 
       {bundles.length > 0 ? (
         <section>
-          <div className="mb-2">
-            <h3 className="text-sm font-semibold text-text-primary">
-              💡 Passt dazu{' '}
-              <span className="text-xs font-normal text-text-muted">
-                (nur jetzt zum Spezial-Preis)
-              </span>
+          <div className="mb-3">
+            <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
+              Passt dazu
+            </p>
+            <h3 className="mt-1 font-display text-lg font-semibold tracking-tight text-text-primary">
+              Nimm es gleich dazu — spar beim Kombi
             </h3>
           </div>
           <div className="space-y-2">
@@ -348,19 +357,19 @@ export function ServiceWizard({
                   type="button"
                   onClick={() => toggleBundle(b.id)}
                   className={[
-                    'flex w-full items-center justify-between gap-3 rounded-md border-2 border-dashed p-4 text-left transition-all',
+                    'flex w-full items-center justify-between gap-3 rounded-lg border p-4 text-left transition-all',
                     active
-                      ? 'border-success bg-success/10 ring-1 ring-success'
-                      : 'border-accent/40 bg-accent/5 hover:border-accent hover:bg-accent/10',
+                      ? 'border-accent bg-accent/10 shadow-glow'
+                      : 'border-accent/30 bg-accent/[0.03] hover:border-accent/60 hover:bg-accent/5',
                   ].join(' ')}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-text-primary">
+                      <span className="font-display text-base font-semibold tracking-tight text-text-primary">
                         + {b.bundledService.name}
                       </span>
-                      <Badge tone="success">
-                        −{fmtPrice(saved)} {currency}
+                      <Badge tone="accent">
+                        − {fmtPrice(saved)} {currency}
                       </Badge>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-2 text-xs text-text-secondary">
@@ -369,7 +378,7 @@ export function ServiceWizard({
                     <div className="mt-1 flex flex-wrap gap-2 text-[11px] tabular-nums text-text-muted">
                       <span>
                         statt {fmtPrice(basePrice)} {currency} nur{' '}
-                        <span className="font-semibold text-success">
+                        <span className="font-semibold text-accent">
                           {fmtPrice(finalPrice)} {currency}
                         </span>
                       </span>
@@ -378,10 +387,10 @@ export function ServiceWizard({
                   </div>
                   <div
                     className={[
-                      'flex h-7 w-7 items-center justify-center rounded-full border-2 text-sm font-bold',
+                      'flex h-8 w-8 items-center justify-center rounded-full border text-sm font-bold transition-all',
                       active
-                        ? 'border-success bg-success text-white'
-                        : 'border-accent bg-surface text-accent',
+                        ? 'border-accent bg-accent text-accent-foreground shadow-glow'
+                        : 'border-accent/50 bg-transparent text-accent',
                     ].join(' ')}
                     aria-hidden
                   >
@@ -394,18 +403,16 @@ export function ServiceWizard({
         </section>
       ) : null}
 
-      <div className="sticky bottom-0 -mx-1 flex items-center justify-between gap-3 rounded-md border border-border bg-surface/95 px-4 py-3 shadow-sm backdrop-blur">
-        <div className="flex flex-col">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
+      <div className="sticky bottom-0 -mx-1 flex items-center justify-between gap-4 rounded-lg border border-border bg-surface/95 px-5 py-4 shadow-lg backdrop-blur-md">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-medium uppercase tracking-[0.25em] text-accent">
             Gesamt
             {selectedBundles.length > 0 ? (
-              <span className="ml-2 font-semibold text-success">
-                inkl. {selectedBundles.length} Bundle-Rabatt
-              </span>
+              <span className="ml-2 tracking-normal text-text-secondary">· inkl. Bundle</span>
             ) : null}
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="font-display text-xl font-semibold tabular-nums text-text-primary">
+            <span className="font-display text-2xl font-semibold tabular-nums text-text-primary md:text-3xl">
               {fmtPrice(totals.price)} {currency}
             </span>
             <span className="text-xs tabular-nums text-text-muted">· {totals.duration} Min</span>
@@ -413,7 +420,8 @@ export function ServiceWizard({
         </div>
         <Button
           type="button"
-          variant="primary"
+          variant="accent"
+          size="lg"
           onClick={handleConfirm}
           disabled={!!missingGroup}
           title={missingGroup ? `Bitte ${missingGroup.name} wählen` : undefined}

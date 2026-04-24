@@ -51,8 +51,15 @@ export const salonPreset: Partial<Config> = {
         glow: 'var(--shadow-glow)',
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['"Inter Display"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: [
+          'var(--font-body)',
+          'Montserrat',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'sans-serif',
+        ],
+        display: ['var(--font-display)', '"Playfair Display"', 'Georgia', 'ui-serif', 'serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'Menlo', 'monospace'],
       },
       fontSize: {
