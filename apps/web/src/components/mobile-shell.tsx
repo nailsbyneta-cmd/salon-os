@@ -20,9 +20,35 @@ const tabs: Tab[] = [
 export function MobileShell({ children }: { children: React.ReactNode }): React.JSX.Element {
   const pathname = usePathname() ?? '/m';
 
+  // FAB versteckt auf /calendar/new weil man dort schon drin ist
+  const showFab = !pathname.startsWith('/calendar/new');
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-text-primary">
       <main className="flex-1 pb-24">{children}</main>
+
+      {/* Floating Action Button — Quick Add Appointment */}
+      {showFab ? (
+        <Link
+          href="/calendar/new"
+          aria-label="Neuer Termin"
+          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-[0.95]"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </Link>
+      ) : null}
 
       {/* Bottom Tab Bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-surface/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
