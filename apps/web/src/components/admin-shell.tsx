@@ -3,6 +3,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn, CommandPalette, type CommandItem, useTheme, Kbd, Avatar } from '@salon-os/ui';
+import { ShortcutsHelp } from './shortcuts-help';
 import { searchCommand } from '@/app/search-action';
 import { getPendingCounts, type PendingCounts } from '@/app/pending-counts-action';
 import { Celebrate } from '@/components/celebrate';
@@ -333,6 +334,7 @@ export function AdminShell({ children }: { children: React.ReactNode }): React.J
         onOpenChange={setPaletteOpen}
         asyncItems={asyncLoader}
       />
+      <ShortcutsHelp />
       <React.Suspense fallback={null}>
         <Celebrate />
       </React.Suspense>

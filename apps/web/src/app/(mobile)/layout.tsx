@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { MobileShell } from '@/components/mobile-shell';
+import { brandStyle, loadTenantBranding } from '@/lib/tenant-brand';
 
 export const metadata: Metadata = {
   title: 'SALON OS Staff',
@@ -22,10 +23,15 @@ export const viewport: Viewport = {
  * Mobile Staff-Layout. Bottom-Tab-Navigation, optimiert für
  * Single-Thumb-Reach (Diff #22). Rendert unter /m/*.
  */
-export default function MobileLayout({
+export default async function MobileLayout({
   children,
 }: {
   children: React.ReactNode;
-}): React.JSX.Element {
-  return <MobileShell>{children}</MobileShell>;
+}): Promise<React.JSX.Element> {
+  const { brandColor } = await loadTenantBranding();
+  return (
+    <div data-product-theme style={brandStyle(brandColor)}>
+      <MobileShell>{children}</MobileShell>
+    </div>
+  );
 }

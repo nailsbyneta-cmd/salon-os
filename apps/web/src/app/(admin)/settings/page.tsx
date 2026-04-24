@@ -14,6 +14,7 @@ import {
   updateBranding,
   updateLocation,
 } from './actions';
+import { BrandColorPicker } from './brand-color-picker';
 
 interface Tenant {
   id: string;
@@ -311,13 +312,7 @@ export default async function SettingsPage({
                 </Field>
               </div>
 
-              <Field label="Markenfarbe (optional)" hint="HEX oder CSS-Farbwert">
-                <Input
-                  name="brandColor"
-                  defaultValue={tenant?.brandColor ?? ''}
-                  placeholder="#A38F6B"
-                />
-              </Field>
+              <BrandColorPicker initial={tenant?.brandColor ?? ''} />
 
               <div className="border-t border-border pt-4">
                 <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
