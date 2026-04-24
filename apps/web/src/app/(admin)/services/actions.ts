@@ -272,126 +272,104 @@ export async function deleteAddOn(serviceId: string, addOnId: string): Promise<v
   revalidatePath(`/services/${serviceId}`);
 }
 
-// ─── Preset: Nails ────────────────────────────────────────────
-// Erzeugt in einem Rutsch einen "Nägel"-Service mit 3 Options-Gruppen
-// (Typ/Modus/Länge) + realistischen CH-Salon-Preisen + 4 Add-Ons.
-// Preise kannst du danach im Service-Editor anpassen.
+// ─── Presets: Nails + Pediküre ────────────────────────────────
+// Nails = 2 separate Services (Neues Set + Auffüllen), jeweils mit Gruppen
+// Typ (Gel/Acryl) × Länge (Kurz/Mittel/Lang). Kein Design-Add-On weil
+// Design/French bei Beautycenter by Neta immer inklusive ist.
+// Pediküre = 3 flache Services (Basis / Spa / Premium), keine Varianten.
 
-type GroupSpec = { name: string; options: Array<{ label: string; price: number; dur: number }> };
+type OptionSpec = { label: string; price: number; dur: number };
+type GroupSpec = { name: string; options: OptionSpec[] };
 
-const NAILS_PRESET: {
-  serviceName: string;
+type ServiceSpec = {
+  name: string;
+  description: string;
   basePrice: number;
   baseDuration: number;
   groups: GroupSpec[];
-  addOns: Array<{ name: string; price: number; dur: number }>;
-} = {
-  serviceName: 'Nägel',
-  basePrice: 70,
-  baseDuration: 60,
-  groups: [
-    {
-      name: 'Typ',
-      options: [
-        { label: 'Gel', price: 0, dur: 0 },
-        { label: 'Acryl', price: 10, dur: 15 },
-      ],
-    },
-    {
-      name: 'Modus',
-      options: [
-        { label: 'Neu', price: 20, dur: 20 },
-        { label: 'Auffüllen', price: 0, dur: 0 },
-        { label: 'Ablösen', price: -10, dur: -20 },
-      ],
-    },
-    {
-      name: 'Länge',
-      options: [
-        { label: 'Kurz', price: 0, dur: 0 },
-        { label: 'Mittel', price: 10, dur: 10 },
-        { label: 'Lang', price: 20, dur: 20 },
-      ],
-    },
-  ],
-  addOns: [
-    { name: 'French', price: 10, dur: 10 },
-    { name: 'Nail-Art pro Nagel', price: 5, dur: 5 },
-    { name: 'Paraffin-Packung', price: 15, dur: 10 },
-    { name: 'Nagel-Reparatur', price: 5, dur: 5 },
-  ],
 };
 
-const PEDICURE_PRESET: {
-  serviceName: string;
-  basePrice: number;
-  baseDuration: number;
-  groups: GroupSpec[];
-  addOns: Array<{ name: string; price: number; dur: number }>;
-} = {
-  serviceName: 'Pediküre',
-  basePrice: 60,
-  baseDuration: 45,
-  groups: [
-    {
-      name: 'Typ',
-      options: [
-        { label: 'Klassisch', price: 0, dur: 0 },
-        { label: 'SPA (Peeling + Maske)', price: 15, dur: 15 },
-        { label: 'Medizinisch (Hornhaut-Behandlung)', price: 20, dur: 15 },
-      ],
-    },
-    {
-      name: 'Nagel-Finish',
-      options: [
-        { label: 'Nur Pflege', price: 0, dur: 0 },
-        { label: 'Nagellack', price: 10, dur: 10 },
-        { label: 'Shellac', price: 20, dur: 20 },
-      ],
-    },
-  ],
-  addOns: [
-    { name: 'French', price: 10, dur: 10 },
-    { name: 'Paraffin-Packung', price: 15, dur: 10 },
-    { name: 'Extra-Massage (+15 Min)', price: 15, dur: 15 },
-    { name: 'Nagel-Art (pro Zeh)', price: 5, dur: 5 },
-  ],
-};
+const NAIL_GROUPS: GroupSpec[] = [
+  {
+    name: 'Typ',
+    options: [
+      { label: 'Gel', price: 0, dur: 0 },
+      { label: 'Acryl', price: 10, dur: 15 },
+    ],
+  },
+  {
+    name: 'Länge',
+    options: [
+      { label: 'Kurz', price: 0, dur: 0 },
+      { label: 'Mittel', price: 10, dur: 10 },
+      { label: 'Lang', price: 20, dur: 20 },
+    ],
+  },
+];
 
-async function applyPreset(preset: typeof NAILS_PRESET, categoryName: string): Promise<string> {
+const NAILS_PRESETS: ServiceSpec[] = [
+  {
+    name: 'Nails — Neues Set',
+    description:
+      'Komplettes Neuset — Gel oder Acryl in deiner Wunschlänge. Design immer inklusive.',
+    basePrice: 80,
+    baseDuration: 60,
+    groups: NAIL_GROUPS,
+  },
+  {
+    name: 'Nails — Auffüllen',
+    description: 'Auffüllen bestehender Modellage. Design immer inklusive.',
+    basePrice: 70,
+    baseDuration: 60,
+    groups: NAIL_GROUPS,
+  },
+];
+
+const PEDICURE_PRESETS: ServiceSpec[] = [
+  {
+    name: 'Pediküre — Basis',
+    description: 'Quick & Clean — Nagelpflege, Feilen, Lackieren. Alles inklusive.',
+    basePrice: 39,
+    baseDuration: 30,
+    groups: [],
+  },
+  {
+    name: 'Pediküre — Spa',
+    description: 'Spa-Variante mit Wasserbad, Hornhaut-Behandlung, Massage. Alles inklusive.',
+    basePrice: 49,
+    baseDuration: 60,
+    groups: [],
+  },
+  {
+    name: 'Pediküre — Premium',
+    description:
+      'Premium inkl. Paraffinbad, Massage, komplette Verwöhn-Behandlung. Alles inklusive.',
+    basePrice: 75,
+    baseDuration: 60,
+    groups: [],
+  },
+];
+
+async function createServiceWithSpec(categoryId: string, spec: ServiceSpec): Promise<string> {
   const ctx = getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
-
-  const catRes = await apiFetch<{ categories: Array<{ id: string; name: string }> }>(
-    '/v1/service-categories',
-    auth,
-  );
-  const wanted = categoryName.toLowerCase();
-  let cat = catRes.categories.find((c) => c.name.toLowerCase() === wanted);
-  if (!cat) {
-    cat = await apiFetch<{ id: string; name: string }>('/v1/service-categories', {
-      ...auth,
-      method: 'POST',
-      body: { name: categoryName, order: 0 },
-    });
-  }
 
   const svc = await apiFetch<{ id: string }>('/v1/services', {
     ...auth,
     method: 'POST',
     body: {
-      categoryId: cat.id,
-      name: preset.serviceName,
-      slug: `${preset.serviceName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`,
-      description: `Basis-Service — Varianten über Optionen.`,
-      durationMinutes: preset.baseDuration,
-      basePrice: preset.basePrice,
+      categoryId,
+      name: spec.name,
+      slug: `${slugify(spec.name)}-${Date.now()}`,
+      description: spec.description,
+      durationMinutes: spec.baseDuration,
+      basePrice: spec.basePrice,
       bookable: true,
     },
   });
 
-  for (let gi = 0; gi < preset.groups.length; gi++) {
-    const g = preset.groups[gi]!;
+  for (let gi = 0; gi < spec.groups.length; gi++) {
+    const g = spec.groups[gi]!;
     const group = await apiFetch<{ id: string }>(`/v1/services/${svc.id}/option-groups`, {
       ...auth,
       method: 'POST',
@@ -413,105 +391,43 @@ async function applyPreset(preset: typeof NAILS_PRESET, categoryName: string): P
         },
       });
     }
-  }
-
-  for (let ai = 0; ai < preset.addOns.length; ai++) {
-    const a = preset.addOns[ai]!;
-    await apiFetch(`/v1/services/${svc.id}/add-ons`, {
-      ...auth,
-      method: 'POST',
-      body: {
-        name: a.name,
-        priceDelta: a.price,
-        durationDeltaMin: a.dur,
-        sortOrder: ai,
-      },
-    });
   }
 
   return svc.id;
 }
 
-export async function applyPedicurePreset(): Promise<void> {
-  const svcId = await applyPreset(PEDICURE_PRESET, 'Pediküre');
-  revalidatePath('/services');
-  redirect(`/services/${svcId}`);
-}
-
-export async function applyNailsPreset(): Promise<void> {
+async function getOrCreateCategory(name: string): Promise<string> {
   const ctx = getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
-
-  // 1) Kategorie "Nägel" suchen oder anlegen
   const catRes = await apiFetch<{ categories: Array<{ id: string; name: string }> }>(
     '/v1/service-categories',
     auth,
   );
-  let nagelCat = catRes.categories.find((c) => /n[äa]gel/i.test(c.name));
-  if (!nagelCat) {
-    nagelCat = await apiFetch<{ id: string; name: string }>('/v1/service-categories', {
-      ...auth,
-      method: 'POST',
-      body: { name: 'Nägel', order: 0 },
-    });
-  }
-
-  // 2) Service "Nägel" anlegen (Basis-Preis + Basis-Dauer)
-  const svc = await apiFetch<{ id: string }>('/v1/services', {
+  const wanted = name.toLowerCase();
+  const existing = catRes.categories.find((c) => c.name.toLowerCase() === wanted);
+  if (existing) return existing.id;
+  const created = await apiFetch<{ id: string }>('/v1/service-categories', {
     ...auth,
     method: 'POST',
-    body: {
-      categoryId: nagelCat.id,
-      name: NAILS_PRESET.serviceName,
-      slug: `naegel-${Date.now()}`,
-      description: 'Basis-Modellage — Typ/Modus/Länge via Varianten.',
-      durationMinutes: NAILS_PRESET.baseDuration,
-      basePrice: NAILS_PRESET.basePrice,
-      bookable: true,
-    },
+    body: { name, order: 0 },
   });
+  return created.id;
+}
 
-  // 3) Options-Gruppen + Optionen anlegen
-  for (let gi = 0; gi < NAILS_PRESET.groups.length; gi++) {
-    const g = NAILS_PRESET.groups[gi]!;
-    const group = await apiFetch<{ id: string }>(`/v1/services/${svc.id}/option-groups`, {
-      ...auth,
-      method: 'POST',
-      body: { name: g.name, required: true, multi: false, sortOrder: gi },
-    });
-    for (let oi = 0; oi < g.options.length; oi++) {
-      const o = g.options[oi]!;
-      await apiFetch('/v1/service-options', {
-        ...auth,
-        method: 'POST',
-        body: {
-          groupId: group.id,
-          label: o.label,
-          priceDelta: o.price,
-          durationDeltaMin: o.dur,
-          processingDeltaMin: 0,
-          isDefault: oi === 0,
-          sortOrder: oi,
-        },
-      });
-    }
+export async function applyNailsPreset(): Promise<void> {
+  const catId = await getOrCreateCategory('Nägel');
+  for (const spec of NAILS_PRESETS) {
+    await createServiceWithSpec(catId, spec);
   }
-
-  // 4) Add-Ons anlegen
-  for (let ai = 0; ai < NAILS_PRESET.addOns.length; ai++) {
-    const a = NAILS_PRESET.addOns[ai]!;
-    await apiFetch(`/v1/services/${svc.id}/add-ons`, {
-      ...auth,
-      method: 'POST',
-      body: {
-        name: a.name,
-        priceDelta: a.price,
-        durationDeltaMin: a.dur,
-        sortOrder: ai,
-      },
-    });
-  }
-
   revalidatePath('/services');
-  redirect(`/services/${svc.id}`);
+  redirect('/services');
+}
+
+export async function applyPedicurePreset(): Promise<void> {
+  const catId = await getOrCreateCategory('Pediküre');
+  for (const spec of PEDICURE_PRESETS) {
+    await createServiceWithSpec(catId, spec);
+  }
+  revalidatePath('/services');
+  redirect('/services');
 }
