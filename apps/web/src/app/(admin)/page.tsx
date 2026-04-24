@@ -313,6 +313,19 @@ export default async function Home(): Promise<React.JSX.Element> {
   const d = await loadDashboard();
   const now = new Date();
   const greeting = greetingByHour(now.getHours());
+  // Tenant-Name für Greeting (statt hardcoded "Neta")
+  let tenantShortName = 'dir';
+  try {
+    const { loadTenantBranding } = await import('@/lib/tenant-brand');
+    const { name } = await loadTenantBranding();
+    if (name) {
+      // "Beautycenter by Neta" → "Neta", "Hair by Mike" → "Mike", sonst erstes Wort
+      const m = name.match(/(?:by|@|·|—)\s*(\S+)/i);
+      tenantShortName = m?.[1] ?? name.split(' ')[0] ?? name;
+    }
+  } catch {
+    /* default bleibt "dir" */
+  }
 
   const activeAppts = d.todayAppts.filter(
     (a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW',
@@ -407,7 +420,7 @@ export default async function Home(): Promise<React.JSX.Element> {
             Dashboard
           </p>
           <h1 className="mt-2 font-display text-2xl font-semibold md:text-3xl tracking-tight">
-            {greeting}, Neta 👋
+            {greeting}, {tenantShortName} 👋
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
             {now.toLocaleDateString('de-CH', {
