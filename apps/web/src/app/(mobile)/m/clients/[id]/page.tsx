@@ -28,8 +28,9 @@ interface Appt {
   startAt: string;
   endAt: string;
   status: string;
+  staffId?: string;
   staff: { firstName: string; lastName: string };
-  items: Array<{ service: { name: string } }>;
+  items: Array<{ serviceId?: string; service: { name: string } }>;
   seriesId?: string | null;
 }
 
@@ -148,6 +149,35 @@ export default async function MobileClientDetail({
   ]);
   if (!client) notFound();
 
+  // Last completed appointment für Quick-Rebook-CTA
+  const lastCompleted = appointments
+    .filter((a) => a.status === 'COMPLETED')
+    .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())[0];
+  const quickRebookUrl = lastCompleted
+    ? (() => {
+        // Default: gleicher Wochentag, 4 Wochen nach letztem Termin
+        const last = new Date(lastCompleted.startAt);
+        const next = new Date(last);
+        next.setDate(next.getDate() + 28);
+        const d = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(
+          next.getDate(),
+        ).padStart(2, '0')}`;
+        const t = `${String(last.getHours()).padStart(2, '0')}:${String(last.getMinutes()).padStart(
+          2,
+          '0',
+        )}`;
+        const params = new URLSearchParams({
+          clientId: client.id,
+          date: d,
+          time: t,
+        });
+        if (lastCompleted.staffId) params.set('staffId', lastCompleted.staffId);
+        const sid = lastCompleted.items[0]?.serviceId;
+        if (sid) params.set('serviceId', sid);
+        return `/calendar/new?${params.toString()}`;
+      })()
+    : null;
+
   const fullName = `${client.firstName} ${client.lastName}`;
   const lifetime = Number(client.lifetimeValue ?? client.totalSpent ?? 0) || 0;
   const isVip = lifetime >= 2000;
@@ -264,6 +294,34 @@ export default async function MobileClientDetail({
               </a>
             </>
           ) : null}
+        </section>
+      ) : null}
+
+      {/* Quick-Rebook CTA: nur wenn letzter Termin abgeschlossen */}
+      {quickRebookUrl && lastCompleted ? (
+        <section className="mx-5 mb-4">
+          <Link
+            href={quickRebookUrl}
+            className="flex items-center justify-between gap-3 rounded-lg border border-accent/40 bg-accent/5 px-4 py-3 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-3">
+              <span aria-hidden className="text-2xl">
+                ↻
+              </span>
+              <div>
+                <div className="font-medium text-text-primary">Wie letztes Mal buchen</div>
+                <div className="text-xs text-text-muted">
+                  {lastCompleted.items.map((i) => i.service.name).join(', ')} · vor{' '}
+                  {Math.floor(
+                    (Date.now() - new Date(lastCompleted.startAt).getTime()) /
+                      (1000 * 60 * 60 * 24),
+                  )}{' '}
+                  Tagen
+                </div>
+              </div>
+            </div>
+            <span className="text-accent">→</span>
+          </Link>
         </section>
       ) : null}
 
