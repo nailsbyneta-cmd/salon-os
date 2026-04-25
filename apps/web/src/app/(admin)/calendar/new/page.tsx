@@ -207,6 +207,43 @@ export default async function NewAppointmentPage({
               </p>
             </fieldset>
 
+            <details className="rounded-md border border-accent/30 bg-accent/5 p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-text-primary">
+                <span className="mr-2">🔁</span>
+                Termin wiederholen (Stamm-Kundin)
+              </summary>
+              <p className="mt-2 text-xs text-text-secondary">
+                Bei Aktivierung wird der Termin als Serie angelegt — die nächsten 3 Termine werden
+                sofort vorgebucht, weitere automatisch nachgeschoben.
+              </p>
+              <div className="mt-3 space-y-3">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" name="recurring" className="h-4 w-4 accent-accent" />
+                  <span className="text-sm">Als wiederkehrenden Termin anlegen</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Wiederholen alle">
+                    <Select name="intervalWeeks" defaultValue="4">
+                      <option value="2">2 Wochen</option>
+                      <option value="3">3 Wochen</option>
+                      <option value="4">4 Wochen</option>
+                      <option value="6">6 Wochen</option>
+                      <option value="8">8 Wochen</option>
+                    </Select>
+                  </Field>
+                  <Field label="Anzahl Termine (leer = unendlich)">
+                    <Input
+                      type="number"
+                      name="occurrences"
+                      min={2}
+                      max={52}
+                      placeholder="z.B. 12"
+                    />
+                  </Field>
+                </div>
+              </div>
+            </details>
+
             <div className="flex items-center justify-end gap-2 pt-2">
               <Link href={`/calendar?date=${day}`}>
                 <Button type="button" variant="ghost">

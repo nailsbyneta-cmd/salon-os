@@ -62,6 +62,7 @@ model Tenant {
   serviceOptions      ServiceOption[]
   serviceAddOns       ServiceAddOn[]
   serviceBundlesOut   ServiceBundle[]
+  appointmentSeries   AppointmentSeries[]
   clients          Client[]
   appointments     Appointment[]
   giftCards        GiftCard[]
@@ -253,6 +254,7 @@ model Location {
   staffAssignments    StaffLocation[]
   serviceVariants     ServiceVariant[]
   appointments        Appointment[]
+  appointmentSeries   AppointmentSeries[]
   shifts              Shift[]
   waitlistEntries     WaitlistEntry[]
 
@@ -378,6 +380,7 @@ model Staff {
   timeOff             TimeOff[]
   appointments        Appointment[]
   appointmentItems    AppointmentItem[]
+  appointmentSeries   AppointmentSeries[]
   waitlistEntries     WaitlistEntry[]
 
   @@index([tenantId])
@@ -460,6 +463,7 @@ model Service {
   addOns            ServiceAddOn[]
   bundlesAsPrimary  ServiceBundle[] @relation("bundlePrimary")
   bundlesAsBundled  ServiceBundle[] @relation("bundleBundled")
+  appointmentSeries AppointmentSeries[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, categoryId])
@@ -624,6 +628,7 @@ model Client {
 
   tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   appointments    Appointment[]
+  appointmentSeries AppointmentSeries[]
   giftCards       GiftCard[]
   waitlistEntries WaitlistEntry[]
   family          Client[]        @relation("Family")
@@ -665,6 +670,9 @@ model Appointment {
   completedAt       DateTime?         @db.Timestamptz
   sourceCampaignId  String?           @db.Uuid
   language          String?
+  // Wenn Termin Teil einer Serie ist (Recurring/Stamm-Kundin):
+  seriesId          String?           @db.Uuid
+  occurrenceIndex   Int?              // 1-based Position in der Serie
   createdAt         DateTime          @default(now()) @db.Timestamptz
   updatedAt         DateTime          @updatedAt @db.Timestamptz
 
@@ -674,12 +682,54 @@ model Appointment {
   staff    Staff    @relation(fields: [staffId], references: [id], onDelete: Restrict)
   room     Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
   items    AppointmentItem[]
+  series   AppointmentSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, startAt])
   @@index([tenantId, staffId, startAt])
   @@index([tenantId, clientId, startAt])
   @@index([tenantId, status])
+  @@index([seriesId])
   @@map("appointment")
+}
+
+// Recurring Appointments — "Stamm-Kundin alle 4 Wochen Auffüllen".
+// Generator legt initial 3 Termine an, Cron-Job rollt nach.
+// Edit-Modi: this-only / this-and-following / all (Google-Calendar-Pattern).
+model AppointmentSeries {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  clientId        String   @db.Uuid
+  staffId         String   @db.Uuid
+  serviceId       String   @db.Uuid
+  locationId      String   @db.Uuid
+  // Frequenz: alle N Wochen (2/3/4/6/8 typisch)
+  intervalWeeks   Int
+  // Erste Occurrence (UTC)
+  firstStartAt    DateTime @db.Timestamptz
+  // Dauer in Minuten (gefroren bei Series-Creation, immune gegen
+  // Service-Preis-Änderungen)
+  durationMinutes Int
+  // Ende: null = unendlich, sonst date oder occurrences
+  endsAt          DateTime? @db.Timestamptz
+  occurrences     Int?      // wenn gesetzt: nach N Occurrences stoppen
+  // Generierungs-Status
+  active          Boolean  @default(true)
+  lastGeneratedAt DateTime? @db.Timestamptz   // wann zuletzt vorgebucht
+  generatedUntil  DateTime? @db.Timestamptz   // bis wohin Termine existieren
+  notes           String?
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  staff        Staff        @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  service      Service      @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  location     Location     @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  appointments Appointment[]
+
+  @@index([tenantId, clientId, active])
+  @@index([tenantId, active, lastGeneratedAt])
+  @@map("appointment_series")
 }
 
 enum AppointmentStatus {

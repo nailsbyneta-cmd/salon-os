@@ -60,21 +60,8 @@ trap "rm -f $TMP" EXIT
 # ASCII Unit-Separator (0x1F) als Feld-Trenner — kommt in Text nicht vor
 SEP=$(printf '\x1f')
 
-# WICHTIG: message.text ist auf modernem macOS/iOS oft NULL — der Body steckt in
-# message.attributedBody als binäres NSAttributedString-typedstream-Blob. Ein
-# naives COALESCE(text, attributedBody) liefert die Binärdaten roh als „Text"
-# zurück und produziert das `streamtyped...NSAttributedString`-Müll-Echo.
-# Lösung: Wenn text NULL ist, hex-encoden und in der Loop via Python-Helper
-# decode-attributed-body.py extrahieren.
-DECODER="$(dirname "$0")/decode-attributed-body.py"
-
 if ! sqlite3 -separator "$SEP" "$DB" > "$TMP" 2>/dev/null <<EOF
-SELECT message.ROWID,
-       CASE
-         WHEN message.text IS NOT NULL AND length(message.text) > 0
-           THEN replace(message.text, X'0A', ' ')
-         ELSE 'BLOB:' || hex(message.attributedBody)
-       END
+SELECT message.ROWID, replace(COALESCE(message.text, attributedBody), X'0A', ' ')
 FROM message
 JOIN handle ON message.handle_id = handle.ROWID
 WHERE handle.id = '$IMESSAGE_TO'
@@ -96,23 +83,6 @@ while IFS="$SEP" read -r rowid text; do
   if [[ -z "$rowid" ]]; then continue; fi
   if [[ ! "$rowid" =~ ^[0-9]+$ ]]; then continue; fi
   if [[ -z "$text" ]]; then continue; fi
-
-  # attributedBody-Blob via Python-Helper decoden
-  if [[ "$text" == BLOB:* ]]; then
-    HEX="${text#BLOB:}"
-    if [[ -x "$DECODER" ]] || [[ -r "$DECODER" ]]; then
-      decoded=$(python3 "$DECODER" "$HEX" 2>/dev/null || true)
-    else
-      decoded=""
-      log "Decoder fehlt: $DECODER"
-    fi
-    if [[ -z "$decoded" ]]; then
-      log "Konnte attributedBody (ROWID=$rowid) nicht decodieren — überspringe"
-      HIGHEST="$rowid"  # trotzdem ROWID hochzählen, sonst Endlos-Schleife
-      continue
-    fi
-    text="$decoded"
-  fi
 
   # An ANSWERS.md anhängen
   {

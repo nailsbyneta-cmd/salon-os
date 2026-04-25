@@ -79,6 +79,40 @@ export async function createAppointment(form: FormData): Promise<void> {
 
   const clientId = await ensureClient(form);
 
+  // Recurring-Branch: wenn Toggle gesetzt + clientId existiert
+  const recurring = form.get('recurring') === 'on';
+  if (recurring && clientId) {
+    const intervalWeeks = Number(form.get('intervalWeeks') ?? 4) || 4;
+    const occurrencesRaw = form.get('occurrences')?.toString().trim();
+    const occurrences = occurrencesRaw ? Number(occurrencesRaw) : null;
+    try {
+      await apiFetch('/v1/appointment-series', {
+        method: 'POST',
+        tenantId: ctx.tenantId,
+        userId: ctx.userId,
+        role: ctx.role,
+        body: {
+          clientId,
+          staffId,
+          serviceId,
+          locationId: location.id,
+          intervalWeeks,
+          firstStartAt: startAtIso,
+          durationMinutes: service.durationMinutes,
+          ...(occurrences ? { occurrences } : {}),
+          initialOccurrences: 3,
+        },
+      });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const msg = err.problem?.detail ?? err.problem?.title ?? err.message;
+        throw new Error(`Serie konnte nicht angelegt werden: ${msg}`);
+      }
+      throw err;
+    }
+    redirect(`/calendar?date=${date}&celebrate=series`);
+  }
+
   try {
     await apiFetch('/v1/appointments', {
       method: 'POST',

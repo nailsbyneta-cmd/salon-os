@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { AppointmentsModule } from './appointments/appointments.module.js';
+import { AppointmentSeriesModule } from './appointment-series/appointment-series.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { ClientsModule } from './clients/clients.module.js';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter.js';
@@ -31,6 +32,7 @@ import { WaitlistModule } from './waitlist/waitlist.module.js';
     ClientsModule,
     ServicesModule,
     AppointmentsModule,
+    AppointmentSeriesModule,
     PublicBookingsModule,
     ShiftsModule,
     RemindersModule,

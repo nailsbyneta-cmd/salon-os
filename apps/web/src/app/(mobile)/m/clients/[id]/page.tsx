@@ -29,6 +29,31 @@ interface Appt {
   status: string;
   staff: { firstName: string; lastName: string };
   items: Array<{ service: { name: string } }>;
+  seriesId?: string | null;
+}
+
+interface Series {
+  id: string;
+  intervalWeeks: number;
+  firstStartAt: string;
+  occurrences: number | null;
+  endsAt: string | null;
+  service: { name: string };
+  staff: { firstName: string; lastName: string };
+}
+
+async function loadSeries(clientId: string): Promise<Series[]> {
+  const ctx = getCurrentTenant();
+  try {
+    const res = await apiFetch<{ series: Series[] }>(
+      `/v1/appointment-series?clientId=${clientId}`,
+      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
+    );
+    return res.series;
+  } catch (err) {
+    if (err instanceof ApiError) return [];
+    throw err;
+  }
 }
 
 async function loadClient(id: string): Promise<Client | null> {
@@ -85,7 +110,11 @@ export default async function MobileClientDetail({
   params: Promise<{ id: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
-  const [client, appointments] = await Promise.all([loadClient(id), loadAppointments(id)]);
+  const [client, appointments, series] = await Promise.all([
+    loadClient(id),
+    loadAppointments(id),
+    loadSeries(id),
+  ]);
   if (!client) notFound();
 
   const fullName = `${client.firstName} ${client.lastName}`;
@@ -220,6 +249,29 @@ export default async function MobileClientDetail({
               </p>
             </CardBody>
           </Card>
+        ) : null}
+
+        {/* Recurring-Serien */}
+        {series.length > 0 ? (
+          <section>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+              🔁 Wiederkehrende Termine
+            </p>
+            <ul className="space-y-2">
+              {series.map((s) => (
+                <li
+                  key={s.id}
+                  className="rounded-lg border border-accent/30 bg-accent/5 p-3 text-sm"
+                >
+                  <div className="font-medium text-text-primary">{s.service.name}</div>
+                  <div className="mt-0.5 text-xs text-text-muted">
+                    Alle {s.intervalWeeks} Wochen · bei {s.staff.firstName}
+                    {s.occurrences ? ` · ${s.occurrences}× total` : ' · unbegrenzt'}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
         ) : null}
 
         {/* Upcoming */}
