@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Avatar, Badge, Card, CardBody, PriceDisplay } from '@salon-os/ui';
 import { CookieConsent } from '@/components/cookie-consent';
+import { ServiceCardToggle } from './service-card-toggle';
+import { CartPill } from './cart-pill';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -429,14 +431,18 @@ export default async function BookingStart({
           </h2>
           <div className="grid gap-2">
             {items.map((s) => (
-              <Link
+              <ServiceCardToggle
                 key={s.id}
-                href={`/book/${slug}/service/${s.id}/configure?location=${locations[0]?.id ?? ''}`}
-                className="group block rounded-lg border border-border bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-md active:translate-y-0 active:scale-[0.99]"
+                slug={slug}
+                serviceId={s.id}
+                serviceName={s.name}
+                basePrice={s.basePrice}
+                durationMinutes={s.durationMinutes}
+                configureHref={`/book/${slug}/service/${s.id}/configure?location=${locations[0]?.id ?? ''}`}
               >
-                <CardBody className="flex items-center justify-between gap-4 py-4">
+                <CardBody className="flex items-center justify-between gap-4 py-4 pr-14">
                   <div className="min-w-0 flex-1">
-                    <div className="font-display text-lg font-semibold tracking-tight text-text-primary group-hover:text-accent">
+                    <div className="font-display text-lg font-semibold tracking-tight text-text-primary">
                       {s.name}
                     </div>
                     {s.description ? (
@@ -449,7 +455,7 @@ export default async function BookingStart({
                   </div>
                   <PriceDisplay amount={s.basePrice} size="lg" />
                 </CardBody>
-              </Link>
+              </ServiceCardToggle>
             ))}
           </div>
         </section>
@@ -733,6 +739,7 @@ export default async function BookingStart({
       </footer>
 
       <CookieConsent privacyHref={`/book/${slug}/datenschutz`} />
+      <CartPill slug={slug} />
     </main>
   );
 }

@@ -1,4 +1,10 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Appointment, Location, PrismaClient, Service } from '@salon-os/db';
 import { normalizePhone } from '@salon-os/utils';
 import { WITH_TENANT } from '../db/db.module.js';
@@ -420,6 +426,107 @@ export class PublicBookingsService {
     });
   }
 
+  /**
+   * Multi-Service-Schedule: nimmt mehrere Services + Datum, findet
+   * verkettete Slots (auch cross-staff). Algorithmus:
+   *  1. Pro Service: alle einzeln-verfügbaren (staff,start,end)-Tripel
+   *  2. Cartesian Product mit Ordering-Constraint:
+   *     services[i].end <= services[i+1].start (max 30 min Gap erlaubt)
+   *  3. Score: minimale Total-Dauer + Gap-Penalty + Same-Staff-Bonus
+   *  4. Top 10 zurückliefern
+   *
+   * Nicht "perfect scheduler" — heuristisch, aber liefert reale
+   * Cross-Staff-Optionen die Mitbewerber (Phorest/Fresha) nicht haben.
+   */
+  async multiSlots(
+    slug: string,
+    items: Array<{ serviceId: string; durationMinutes?: number }>,
+    opts: { date: string; locationId: string },
+  ): Promise<{
+    options: Array<{
+      score: number;
+      gapMinutes: number;
+      sameStaff: boolean;
+      stops: AvailabilitySlot[];
+    }>;
+  }> {
+    const MAX_GAP_MIN = 30;
+    const MAX_OPTIONS = 10;
+    const MAX_PER_SERVICE = 30;
+
+    if (items.length === 0) return { options: [] };
+    if (items.length > 5) {
+      throw new BadRequestException('Max 5 Services pro Multi-Booking');
+    }
+
+    // 1) Verfügbare Slots pro Service einzeln laden
+    const perService = await Promise.all(
+      items.map((i) =>
+        this.availability(slug, i.serviceId, {
+          date: opts.date,
+          locationId: opts.locationId,
+          durationOverrideMin: i.durationMinutes,
+        }),
+      ),
+    );
+
+    // Wenn ein Service nichts hat → keine valid combination
+    if (perService.some((s) => s.length === 0)) return { options: [] };
+
+    // 2) Iterative DFS — sequentielle Ketten bauen
+    const trim = perService.map((slots) => slots.slice(0, MAX_PER_SERVICE));
+    const results: Array<{
+      score: number;
+      gapMinutes: number;
+      sameStaff: boolean;
+      stops: AvailabilitySlot[];
+    }> = [];
+
+    const visit = (idx: number, chain: AvailabilitySlot[]): void => {
+      if (results.length >= MAX_OPTIONS * 4) return; // Cap inner exploration
+      if (idx === trim.length) {
+        const totalGap = chain.slice(1).reduce((sum, slot, i) => {
+          const prevEnd = new Date(chain[i]!.endAt).getTime();
+          const thisStart = new Date(slot.startAt).getTime();
+          return sum + Math.max(0, (thisStart - prevEnd) / 60_000);
+        }, 0);
+        const sameStaff = chain.every((s) => s.staffId === chain[0]!.staffId);
+        // Niedriger Score = besser. Total-Dauer + Gap-Penalty + Cross-Staff-Cost
+        const totalMin =
+          (new Date(chain[chain.length - 1]!.endAt).getTime() -
+            new Date(chain[0]!.startAt).getTime()) /
+          60_000;
+        const score = totalMin + totalGap * 1.5 + (sameStaff ? 0 : 5);
+        results.push({ score, gapMinutes: totalGap, sameStaff, stops: chain });
+        return;
+      }
+      const candidates = trim[idx]!;
+      const lastEnd = chain.length > 0 ? new Date(chain[chain.length - 1]!.endAt).getTime() : 0;
+      for (const cand of candidates) {
+        const candStart = new Date(cand.startAt).getTime();
+        if (chain.length > 0) {
+          const gap = (candStart - lastEnd) / 60_000;
+          if (gap < 0 || gap > MAX_GAP_MIN) continue;
+        }
+        chain.push(cand);
+        visit(idx + 1, chain);
+        chain.pop();
+      }
+    };
+    visit(0, []);
+
+    // Dedupe identische Ketten (gleiche Staff+Times) und Top-N nach Score
+    const seen = new Set<string>();
+    const deduped = results.filter((r) => {
+      const key = r.stops.map((s) => `${s.staffId}@${s.startAt}`).join('|');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    deduped.sort((a, b) => a.score - b.score);
+    return { options: deduped.slice(0, MAX_OPTIONS) };
+  }
+
   async createBooking(slug: string, input: PublicBookingInput): Promise<Appointment> {
     const tenant = await this.resolveTenant(slug);
     try {
@@ -527,6 +634,123 @@ export class PublicBookingsService {
           title: 'Slot no longer available',
           detail: 'This time slot was just booked by someone else. Please choose another.',
           errors: [{ path: 'startAt', code: 'slot_taken' }],
+        });
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Bulk-Booking: erstellt mehrere Termine in einer Transaction für eine
+   * Kundin. Wenn ein Stop konfliktet, wird die ganze Buchung zurückgerollt
+   * → "alles oder nichts" Garantie für Multi-Service-Cart.
+   */
+  async createBookingBulk(
+    slug: string,
+    input: {
+      locationId: string;
+      stops: Array<{ serviceId: string; staffId: string; startAt: string }>;
+      client: { firstName: string; lastName: string; email: string; phone?: string };
+      notes?: string;
+    },
+  ): Promise<Appointment[]> {
+    const tenant = await this.resolveTenant(slug);
+    try {
+      const created = await this.withTenant(tenant.id, null, null, async (tx) => {
+        // Services für alle Stops batch-laden
+        const serviceIds = [...new Set(input.stops.map((s) => s.serviceId))];
+        const services = await tx.service.findMany({
+          where: { id: { in: serviceIds }, deletedAt: null, bookable: true },
+        });
+        if (services.length !== serviceIds.length) {
+          throw new NotFoundException('One or more services not found');
+        }
+        const svcById = new Map(services.map((s) => [s.id, s]));
+
+        // Client dedupe wie bei single createBooking
+        const existingClient = await tx.client.findFirst({
+          where: {
+            OR: [
+              { email: input.client.email },
+              ...(input.client.phone ? [{ phone: input.client.phone }] : []),
+            ],
+            deletedAt: null,
+          },
+        });
+        const client =
+          existingClient ??
+          (await tx.client.create({
+            data: {
+              tenantId: tenant.id,
+              firstName: input.client.firstName,
+              lastName: input.client.lastName,
+              email: input.client.email,
+              phone: input.client.phone ?? null,
+              phoneE164: input.client.phone ? normalizePhone(input.client.phone) : null,
+              language: 'de-CH',
+              source: 'public_booking',
+            },
+          }));
+
+        const appointments: Appointment[] = [];
+        for (const stop of input.stops) {
+          const svc = svcById.get(stop.serviceId)!;
+          const startAt = new Date(stop.startAt);
+          const endAt = new Date(
+            startAt.getTime() +
+              (svc.durationMinutes + svc.bufferBeforeMin + svc.bufferAfterMin) * 60_000,
+          );
+          const appt = await tx.appointment.create({
+            data: {
+              tenantId: tenant.id,
+              locationId: input.locationId,
+              clientId: client.id,
+              staffId: stop.staffId,
+              status: 'BOOKED',
+              startAt,
+              endAt,
+              bookedVia: 'ONLINE_BRANDED',
+              notes: input.notes ?? null,
+              language: 'de-CH',
+              items: {
+                create: [
+                  {
+                    serviceId: svc.id,
+                    staffId: stop.staffId,
+                    price: svc.basePrice,
+                    duration: svc.durationMinutes,
+                    taxClass: svc.taxClass,
+                  },
+                ],
+              },
+            },
+            include: { items: true },
+          });
+          appointments.push(appt);
+        }
+        return appointments;
+      });
+
+      // Reminders für alle Termine raus
+      for (const a of created) {
+        this.reminders
+          .sendConfirmationNow({ appointmentId: a.id, tenantId: tenant.id })
+          .catch(() => undefined);
+        this.reminders
+          .scheduleEmailReminder({
+            appointmentId: a.id,
+            tenantId: tenant.id,
+            startAt: a.startAt,
+          })
+          .catch(() => undefined);
+      }
+      return created;
+    } catch (err) {
+      if (isConflictError(err)) {
+        throw new ConflictException({
+          type: 'https://salon-os.com/errors/appointment/conflict',
+          title: 'Einer der Slots ist nicht mehr verfügbar',
+          detail: 'Bitte such dir eine andere Kombi — die ganze Buchung wurde zurückgerollt.',
         });
       }
       throw err;

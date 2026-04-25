@@ -102,6 +102,35 @@ export class PublicBookingsController {
     };
   }
 
+  @Post('multi-slots')
+  async multiSlots(
+    @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
+    @Body(
+      new ZodValidationPipe(
+        z.object({
+          date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          locationId: uuidSchema,
+          items: z
+            .array(
+              z.object({
+                serviceId: uuidSchema,
+                durationMinutes: z.number().int().min(5).max(600).optional(),
+              }),
+            )
+            .min(2)
+            .max(5),
+        }),
+      ),
+    )
+    body: {
+      date: string;
+      locationId: string;
+      items: Array<{ serviceId: string; durationMinutes?: number }>;
+    },
+  ): Promise<Awaited<ReturnType<PublicBookingsService['multiSlots']>>> {
+    return this.svc.multiSlots(slug, body.items, { date: body.date, locationId: body.locationId });
+  }
+
   @Post('bookings')
   @HttpCode(HttpStatus.CREATED)
   async create(
@@ -109,5 +138,43 @@ export class PublicBookingsController {
     @Body(new ZodValidationPipe(publicBookingSchema)) input: PublicBookingInput,
   ): Promise<Appointment> {
     return this.svc.createBooking(slug, input);
+  }
+
+  @Post('bookings/bulk')
+  @HttpCode(HttpStatus.CREATED)
+  async createBulk(
+    @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
+    @Body(
+      new ZodValidationPipe(
+        z.object({
+          locationId: uuidSchema,
+          stops: z
+            .array(
+              z.object({
+                serviceId: uuidSchema,
+                staffId: uuidSchema,
+                startAt: z.string().datetime({ offset: true }),
+              }),
+            )
+            .min(2)
+            .max(5),
+          client: z.object({
+            firstName: z.string().min(1).max(100),
+            lastName: z.string().min(1).max(100),
+            email: z.string().email(),
+            phone: z.string().max(30).optional(),
+          }),
+          notes: z.string().max(2000).optional(),
+        }),
+      ),
+    )
+    body: {
+      locationId: string;
+      stops: Array<{ serviceId: string; staffId: string; startAt: string }>;
+      client: { firstName: string; lastName: string; email: string; phone?: string };
+      notes?: string;
+    },
+  ): Promise<{ appointments: Appointment[] }> {
+    return { appointments: await this.svc.createBookingBulk(slug, body) };
   }
 }
