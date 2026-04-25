@@ -57,3 +57,7 @@ infra/docker/data/
 # Misc
 tmp/
 .cache/
+
+# Stray scripts (live elsewhere on the machine, not part of this repo)
+imessage-listener*
+decode-attributed-body.py
