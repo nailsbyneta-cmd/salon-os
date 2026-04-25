@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Avatar, Badge, Button, Card, CardBody } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
+import { SuggestionCard } from './suggestion-card';
 
 interface Client {
   id: string;
@@ -52,6 +53,35 @@ async function loadSeries(clientId: string): Promise<Series[]> {
     return res.series;
   } catch (err) {
     if (err instanceof ApiError) return [];
+    throw err;
+  }
+}
+
+interface SuggestedPattern {
+  serviceId: string;
+  staffId: string;
+  intervalWeeks: number;
+  weekday: number;
+  hourOfDay: number;
+  minuteOfHour: number;
+  durationMinutes: number;
+  matchCount: number;
+  confidence: number;
+  nextSuggestedAt: string;
+  service: { name: string };
+  staff: { firstName: string; lastName: string };
+}
+
+async function loadSuggestion(clientId: string): Promise<SuggestedPattern | null> {
+  const ctx = getCurrentTenant();
+  try {
+    const res = await apiFetch<{ pattern: SuggestedPattern | null }>(
+      `/v1/appointment-series/suggest?clientId=${clientId}`,
+      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
+    );
+    return res.pattern;
+  } catch (err) {
+    if (err instanceof ApiError) return null;
     throw err;
   }
 }
@@ -110,10 +140,11 @@ export default async function MobileClientDetail({
   params: Promise<{ id: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
-  const [client, appointments, series] = await Promise.all([
+  const [client, appointments, series, suggestion] = await Promise.all([
     loadClient(id),
     loadAppointments(id),
     loadSeries(id),
+    loadSuggestion(id),
   ]);
   if (!client) notFound();
 
@@ -237,6 +268,9 @@ export default async function MobileClientDetail({
       ) : null}
 
       <div className="space-y-4 px-5">
+        {/* AI-Pattern-Suggestion */}
+        {suggestion ? <SuggestionCard clientId={client.id} pattern={suggestion} /> : null}
+
         {/* Notizen */}
         {client.notesInternal ? (
           <Card>

@@ -76,6 +76,18 @@ export class AppointmentSeriesController {
     return { series: await this.svc.listForClient(clientId) };
   }
 
+  /**
+   * AI-Pattern-Suggestion: returns null wenn kein Muster erkannt oder
+   * bereits Serie existiert. Frontend zeigt "💡 Serie vorschlagen"-Card
+   * wenn Pattern zurückkommt.
+   */
+  @Get('suggest')
+  async suggest(
+    @Query('clientId', new ZodValidationPipe(uuidSchema)) clientId: string,
+  ): Promise<Awaited<ReturnType<AppointmentSeriesService['suggestPatternForClient']>>> {
+    return this.svc.suggestPatternForClient(clientId);
+  }
+
   @Get(':id')
   async get(
     @Param('id', new ZodValidationPipe(uuidSchema)) id: string,

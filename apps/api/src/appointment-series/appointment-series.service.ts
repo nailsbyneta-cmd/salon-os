@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Appointment, AppointmentSeries, PrismaClient } from '@salon-os/db';
 import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
+import { detectPattern, type DetectedPattern } from './pattern-detection.js';
 
 type WithTenantFn = <T>(
   tenantId: string,
@@ -114,6 +115,78 @@ export class AppointmentSeriesService {
       seriesProcessed: candidates.length,
       occurrencesCreated,
     };
+  }
+
+  /**
+   * AI-Pattern-Detection: scant die letzten 12 Monate Termine einer Kundin
+   * und erkennt ob ein wiederkehrendes Muster existiert. Skip wenn:
+   * - bereits eine aktive Serie für diese Kombi existiert
+   * - Pattern matched die existierende Serie (kein neuer Vorschlag)
+   *
+   * Surface-Pattern für UI: client-detail zeigt "💡 Serie vorschlagen"
+   * Card mit 1-Click-Create.
+   */
+  async suggestPatternForClient(clientId: string): Promise<{
+    pattern:
+      | (DetectedPattern & {
+          service: { name: string };
+          staff: { firstName: string; lastName: string };
+        })
+      | null;
+  }> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+      const past = await tx.appointment.findMany({
+        where: {
+          clientId,
+          status: { in: ['COMPLETED', 'CHECKED_IN', 'IN_SERVICE'] },
+          startAt: { gte: yearAgo },
+        },
+        orderBy: { startAt: 'asc' },
+        include: { items: { take: 1 } },
+        take: 100,
+      });
+      if (past.length < 3) return { pattern: null };
+
+      const inputs = past
+        .filter((a) => a.items.length > 0)
+        .map((a) => ({
+          startAt: a.startAt,
+          durationMinutes: a.items[0]!.duration,
+          staffId: a.staffId,
+          serviceId: a.items[0]!.serviceId,
+        }));
+
+      const detected = detectPattern(inputs);
+      if (!detected || !detected.recent) return { pattern: null };
+
+      // Skip wenn bereits aktive Serie für (client, service, staff) existiert
+      const existing = await tx.appointmentSeries.findFirst({
+        where: {
+          clientId,
+          serviceId: detected.serviceId,
+          staffId: detected.staffId,
+          active: true,
+        },
+      });
+      if (existing) return { pattern: null };
+
+      // Service + Staff Daten laden für UI
+      const [service, staff] = await Promise.all([
+        tx.service.findFirst({
+          where: { id: detected.serviceId },
+          select: { name: true },
+        }),
+        tx.staff.findFirst({
+          where: { id: detected.staffId },
+          select: { firstName: true, lastName: true },
+        }),
+      ]);
+      if (!service || !staff) return { pattern: null };
+
+      return { pattern: { ...detected, service, staff } };
+    });
   }
 
   async listForClient(clientId: string): Promise<
