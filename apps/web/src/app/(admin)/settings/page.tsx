@@ -756,9 +756,9 @@ export default async function SettingsPage({
               >
                 <Input
                   name="reminderHoursBefore"
-                  defaultValue={(tenant?.settings?.notifications?.reminderHoursBefore ?? [24, 2]).join(
-                    ', ',
-                  )}
+                  defaultValue={(
+                    tenant?.settings?.notifications?.reminderHoursBefore ?? [24, 2]
+                  ).join(', ')}
                   placeholder="24, 2"
                 />
               </Field>
@@ -792,10 +792,7 @@ export default async function SettingsPage({
                 />
               </Field>
 
-              <Field
-                label="Stornierungs-Nachricht"
-                hint="E-Mail die bei Stornierung gesendet wird"
-              >
+              <Field label="Stornierungs-Nachricht" hint="E-Mail die bei Stornierung gesendet wird">
                 <Textarea
                   name="cancellationMessage"
                   rows={3}
