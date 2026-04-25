@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Appointment, AppointmentSeries, PrismaClient } from '@salon-os/db';
 import { WITH_TENANT } from '../db/db.module.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
@@ -41,7 +41,80 @@ export interface UpdateSeriesInput {
  */
 @Injectable()
 export class AppointmentSeriesService {
+  private readonly logger = new Logger(AppointmentSeriesService.name);
+
   constructor(@Inject(WITH_TENANT) private readonly withTenant: WithTenantFn) {}
+
+  /**
+   * Cron-Rollover: findet alle aktiven Serien wo generatedUntil < (jetzt + 8 Wochen)
+   * und generiert die nächsten 3 Termine. Idempotent — Konflikt-Check pro Occurrence
+   * skippt bereits existierende Slots.
+   *
+   * Cross-Tenant: nutzt direkten PrismaClient ohne RLS-Wrapper. Caller MUSS
+   * sicherstellen dass nur System-Cron diesen Endpoint trifft.
+   */
+  async rolloverAllActiveSeries(prisma: PrismaClient): Promise<{
+    seriesProcessed: number;
+    occurrencesCreated: number;
+  }> {
+    const eightWeeksFromNow = new Date(Date.now() + 8 * 7 * 24 * 60 * 60 * 1000);
+
+    const candidates = await prisma.appointmentSeries.findMany({
+      where: {
+        active: true,
+        OR: [{ generatedUntil: null }, { generatedUntil: { lt: eightWeeksFromNow } }],
+      },
+      take: 500, // Safety-cap pro Run
+    });
+
+    let occurrencesCreated = 0;
+    for (const series of candidates) {
+      try {
+        // Höchster Occurrence-Index der bereits existiert für diese Serie
+        const maxOcc = await prisma.appointment.aggregate({
+          where: { seriesId: series.id },
+          _max: { occurrenceIndex: true },
+        });
+        const nextIndex = (maxOcc._max.occurrenceIndex ?? 0) + 1;
+
+        // Endkriterien
+        if (series.occurrences && nextIndex > series.occurrences) {
+          await prisma.appointmentSeries.update({
+            where: { id: series.id },
+            data: { active: false },
+          });
+          continue;
+        }
+
+        const created = await this.generateOccurrences(prisma, series, {
+          upToCount: 3,
+          startFromIndex: nextIndex,
+        });
+        occurrencesCreated += created.length;
+
+        if (created.length > 0) {
+          const lastEnd = created[created.length - 1]!.endAt;
+          await prisma.appointmentSeries.update({
+            where: { id: series.id },
+            data: {
+              lastGeneratedAt: new Date(),
+              generatedUntil: lastEnd,
+            },
+          });
+        }
+      } catch (err) {
+        this.logger.error(
+          `rollover failed for series ${series.id}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        // Single-series failure soll nicht den ganzen Run abbrechen
+      }
+    }
+
+    return {
+      seriesProcessed: candidates.length,
+      occurrencesCreated,
+    };
+  }
 
   async listForClient(clientId: string): Promise<
     Array<
