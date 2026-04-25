@@ -51,6 +51,54 @@ async function load(id: string): Promise<Appt | null> {
   }
 }
 
+interface WaitlistMatch {
+  id: string;
+  notes: string | null;
+  client: {
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    phoneE164?: string | null;
+  };
+  service: { name: string };
+  staff: { firstName: string; lastName: string } | null;
+}
+
+async function loadWaitlistMatches(
+  appt: Appt,
+): Promise<{ entries: WaitlistMatch[]; total: number; tenantName: string | null }> {
+  const ctx = getCurrentTenant();
+  // Slot-Range: 4h vor Start bis 4h nach End — Match-Window
+  const slotStart = new Date(appt.startAt);
+  slotStart.setHours(slotStart.getHours() - 4);
+  const slotEnd = new Date(appt.endAt);
+  slotEnd.setHours(slotEnd.getHours() + 4);
+  const serviceIds = appt.items.map((i) => i.serviceId).join(',');
+  if (!serviceIds) return { entries: [], total: 0, tenantName: null };
+  try {
+    const qs = new URLSearchParams({
+      serviceIds,
+      from: slotStart.toISOString(),
+      to: slotEnd.toISOString(),
+    });
+    const [matches, tenantInfo] = await Promise.all([
+      apiFetch<{ entries: WaitlistMatch[]; total: number }>(
+        `/v1/waitlist/matches?${qs.toString()}`,
+        { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
+      ),
+      apiFetch<{ name: string }>('/v1/salon/tenant', {
+        tenantId: ctx.tenantId,
+        userId: ctx.userId,
+        role: ctx.role,
+      }).catch(() => ({ name: '' })),
+    ]);
+    return { ...matches, tenantName: tenantInfo.name || null };
+  } catch (err) {
+    if (err instanceof ApiError) return { entries: [], total: 0, tenantName: null };
+    throw err;
+  }
+}
+
 const statusTone: Record<string, 'neutral' | 'success' | 'info' | 'warning' | 'danger' | 'accent'> =
   {
     BOOKED: 'info',
@@ -91,6 +139,10 @@ export default async function MobileAppointmentDetail({
   const end = new Date(appt.endAt);
   const isTerminal =
     appt.status === 'CANCELLED' || appt.status === 'NO_SHOW' || appt.status === 'COMPLETED';
+  const isFreed = appt.status === 'CANCELLED' || appt.status === 'NO_SHOW';
+  const matchesData = isFreed
+    ? await loadWaitlistMatches(appt)
+    : { entries: [], total: 0, tenantName: null };
   const total = appt.items.reduce((sum, i) => sum + Number(i.price), 0);
   const telHref = appt.client?.phoneE164 ?? appt.client?.phone ?? null;
   const waDigits = appt.client?.phoneE164
@@ -192,6 +244,73 @@ export default async function MobileAppointmentDetail({
       ) : null}
 
       <div className="space-y-4 px-5">
+        {/* Waitlist-Match-Card wenn Termin freigeworden */}
+        {isFreed && matchesData.entries.length > 0 ? (
+          <Card elevation="flat" className="border-l-4 border-l-accent bg-accent/5">
+            <CardBody>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+                🎯 Passende Warteliste · {matchesData.entries.length}{' '}
+                {matchesData.entries.length === 1 ? 'Kundin' : 'Kundinnen'}
+              </p>
+              <p className="mt-1 text-xs text-text-secondary">
+                Slot frei — diese Kundinnen wollen genau diesen Service. Ein WhatsApp-Tipp reicht.
+              </p>
+              <ul className="mt-3 space-y-2">
+                {matchesData.entries.slice(0, 5).map((m) => {
+                  const name = `${m.client.firstName} ${m.client.lastName}`;
+                  const waDigits = m.client.phoneE164
+                    ? m.client.phoneE164.replace(/^\+/, '')
+                    : m.client.phone
+                      ? m.client.phone.replace(/[^+\d]/g, '').replace(/^\+/, '')
+                      : null;
+                  const waUsable = waDigits != null && waDigits.length >= 7;
+                  const when = new Date(appt.startAt).toLocaleString('de-CH', {
+                    weekday: 'short',
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'Europe/Zurich',
+                  });
+                  const tenantName = matchesData.tenantName ?? '';
+                  const waMsg = tenantName
+                    ? `Hallo ${m.client.firstName}, hier ist das Team vom ${tenantName} — gerade ist ein Slot frei: ${when} für ${m.service.name}. Hättest du Zeit? ✨`
+                    : `Hallo ${m.client.firstName}, gerade ist ein Slot frei: ${when} für ${m.service.name}. Hättest du Zeit? ✨`;
+                  return (
+                    <li
+                      key={m.id}
+                      className="flex items-center gap-2 rounded-md bg-surface px-3 py-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium text-text-primary">{name}</div>
+                        <div className="truncate text-xs text-text-muted">{m.service.name}</div>
+                      </div>
+                      {waUsable ? (
+                        <a
+                          href={`https://wa.me/${waDigits}?text=${encodeURIComponent(waMsg)}`}
+                          target="_blank"
+                          rel="noopener"
+                          className="inline-flex h-9 items-center gap-1 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success transition-all duration-200 active:scale-[0.97]"
+                        >
+                          💬 WA
+                        </a>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+              {matchesData.total > 5 ? (
+                <p className="mt-2 text-xs text-text-muted">
+                  +{matchesData.total - 5} weitere auf der{' '}
+                  <Link href="/waitlist" className="underline">
+                    Warteliste
+                  </Link>
+                </p>
+              ) : null}
+            </CardBody>
+          </Card>
+        ) : null}
+
         {/* Staff + Location */}
         <Card>
           <CardBody className="space-y-3">
