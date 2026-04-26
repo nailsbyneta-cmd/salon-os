@@ -110,9 +110,9 @@ async function seedMinimal(prisma: PrismaClient): Promise<void> {
       name: 'Test Salon',
       slug: 'test-salon',
       countryCode: 'CH',
-      defaultCurrency: 'CHF',
-      defaultTimezone: 'Europe/Zurich',
-      defaultLanguage: 'de-CH',
+      currency: 'CHF',
+      timezone: 'Europe/Zurich',
+      locale: 'de-CH',
     },
     update: {},
   });
@@ -146,7 +146,6 @@ async function seedMinimal(prisma: PrismaClient): Promise<void> {
     create: {
       id: SEED_USER_ID,
       email: 'owner@test-salon.ch',
-      passwordHash: null,
       status: 'ACTIVE',
     },
     update: {},

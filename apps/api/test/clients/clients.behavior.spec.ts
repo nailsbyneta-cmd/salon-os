@@ -98,9 +98,9 @@ describe('ClientsService (behavior)', () => {
           name: 'Other',
           slug: 'other',
           countryCode: 'CH',
-          defaultCurrency: 'CHF',
-          defaultTimezone: 'Europe/Zurich',
-          defaultLanguage: 'de-CH',
+          currency: 'CHF',
+          timezone: 'Europe/Zurich',
+          locale: 'de-CH',
         },
       });
       await prisma.client.create({

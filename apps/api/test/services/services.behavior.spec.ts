@@ -76,9 +76,9 @@ describe('ServicesService (behavior)', () => {
           name: 'Other',
           slug: 'other',
           countryCode: 'CH',
-          defaultCurrency: 'CHF',
-          defaultTimezone: 'Europe/Zurich',
-          defaultLanguage: 'de-CH',
+          currency: 'CHF',
+          timezone: 'Europe/Zurich',
+          locale: 'de-CH',
         },
       });
       const otherCategoryId = '00000000-0000-0000-0000-0000000000fe';
