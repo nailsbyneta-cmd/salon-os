@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp \"/Users/lorencukgjini/Library/Application Support/Claude/local-agent-mode-sessions/ba2dfc7f-287e-4bbb-85bf-68137a2f452a/93ee7166-ec83-4e58-865e-7677734968c3/local_d3fe608b-b5e7-47a2-ac9a-5aa8455142e4/outputs/imessage-listener.sh\" ~/salon-os/)",
+      "Bash(cp \"/Users/lorencukgjini/Library/Application Support/Claude/local-agent-mode-sessions/ba2dfc7f-287e-4bbb-85bf-68137a2f452a/93ee7166-ec83-4e58-865e-7677734978c3/local_d3fe608b-b5e7-47a2-ac9a-5aa8455142e4/outputs/imessage-listener.sh\" ~/salon-os/)",
+      "Bash(chmod +x ~/salon-os/imessage-listener.sh)",
+      "Bash(cp \"/Users/lorencukgjini/Library/Application Support/Claude/local-agent-mode-sessions/ba2dfc7f-287e-4bbb-85bf-68137a2f452a/93ee7166-ec83-4e58-865e-7677734978c3/local_d3fe608b-b5e7-47a2-ac9a-5aa8455142e4/outputs/com.lorenc.salon-os.imessage-listener.plist\" ~/Library/LaunchAgents/)",
+      "Read(//Users/lorencukgjini/Library/LaunchAgents/**)",
+      "Bash(mkdir -p ~/.salon-os-monitor)",
+      "Bash(echo 'IMESSAGE_TO=\"+41791000909\"')",
+      "Bash(chmod 600 ~/.salon-os-monitor/config)",
+      "Read(//Users/lorencukgjini/.salon-os-monitor/**)",
+      "Bash(launchctl unload *)",
+      "Bash(launchctl load *)",
+      "Bash(launchctl list *)",
+      "Bash(open /bin)",
+      "Bash(bash ~/salon-os/imessage-listener.sh)",
+      "Bash(kill 71641 71711 71712)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm dev *)",
+      "Bash(echo \"Started web dev, pid=$!\" sleep 10 echo \"---LOG---\" cat /tmp/web-dev.log)",
+      "Bash(curl -sv http://localhost:3000/)",
+      "Bash(pnpm build *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"exit=$?\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /tmp/web-out.html -w \"HTTP=%{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(grep -E \"dotenv-cli|^dotenv$\")",
+      "Bash(node --help)",
+      "Bash(pnpm --filter @salon-os/db db:seed)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000__TRACKED_VAR__)",
+      "Bash(curl -s http://localhost:3000/book/beautycenter-by-neta -o /tmp/book.html)",
+      "Bash(ps -p 72580,74407 -o pid,command)",
+      "Bash(curl -s -o /dev/null -w \"HTTP=%{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /tmp/out.html -w '%{http_code}' http://localhost:3000__TRACKED_VAR__)",
+      "Bash(curl -sv http://localhost:3000/pos)",
+      "Bash(curl -s http://localhost:3000/ -o /tmp/home.html)",
+      "Bash(sed 's/<[^>]*>//g; /^$/d' /tmp/home.html)",
+      "Bash(tg \"✅ Salon OS läuft lokal — http://localhost:3000 rendert Dashboard sauber, API auf :4000, DB seeded \\(Beautycenter by Neta + 11 Services + 1 Staff\\). Du kannst durchklicken: /, /calendar, /clients, /staff, /services, /reports, /settings, /audit, /gift-cards, /inventory, /waitlist, /book/beautycenter-by-neta — alle 200. Fixes: dist gelöscht \\(stale incremental tsbuildinfo blockierte nest build\\), seed.ts auf tsx --env-file=../../.env umgestellt.\")"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "firecrawl",
+    "code-review-graph"
+  ]
+}

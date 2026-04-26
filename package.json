@@ -13,6 +13,10 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "test": "turbo test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
     "typecheck": "turbo typecheck",
     "clean": "turbo clean && rm -rf node_modules .turbo",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
@@ -23,6 +27,7 @@
     "db:reset": "docker compose -f infra/docker/docker-compose.yml down -v && pnpm db:up"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.2",
     "@types/node": "^22.10.2",
     "prettier": "^3.4.2",
     "turbo": "^2.3.3",

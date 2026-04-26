@@ -3,26 +3,50 @@ import { cn } from './cn.js';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   invalid?: boolean;
+  error?: string;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
-  { className, invalid, ...props },
+  { className, invalid, error, ...props },
   ref,
 ) {
+  const hasError = invalid || !!error;
   return (
-    <input
-      ref={ref}
-      aria-invalid={invalid || undefined}
-      className={cn(
-        'flex h-10 w-full rounded-sm border bg-surface px-3 py-2 text-base text-text-primary md:text-sm',
-        'placeholder:text-text-muted',
-        'transition-colors duration-fast',
-        invalid ? 'border-danger' : 'border-border hover:border-border-strong focus:border-accent',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
-        className,
-      )}
-      {...props}
-    />
+    <div className="relative">
+      <input
+        ref={ref}
+        aria-invalid={hasError || undefined}
+        className={cn(
+          'flex h-10 w-full rounded-sm border bg-surface px-3 py-2 text-base text-text-primary md:text-sm',
+          'placeholder:text-text-muted',
+          'transition-colors duration-fast',
+          hasError ? 'border-danger pr-10' : 'border-border hover:border-border-strong focus:border-accent',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          className,
+        )}
+        {...props}
+      />
+      {hasError ? (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-danger pointer-events-none">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path
+              d="M12 7v5M12 17h.01"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              fill="none"
+            />
+          </svg>
+        </div>
+      ) : null}
+    </div>
   );
 });
 
@@ -82,14 +106,20 @@ export interface FieldProps {
 export function Field({ label, hint, error, required, children }: FieldProps): React.JSX.Element {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-text-secondary">
-        {label}
-        {required ? <span className="ml-1 text-danger">*</span> : null}
-      </span>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-text-secondary">
+          {label}
+          {required ? <span className="ml-1 text-danger">*</span> : null}
+        </span>
+        {error ? (
+          <span className="text-[10px] font-medium text-danger inline-flex items-center gap-1">
+            <span aria-hidden="true">!</span>
+            {error}
+          </span>
+        ) : null}
+      </div>
       {children}
-      {error ? (
-        <span className="text-xs text-danger">{error}</span>
-      ) : hint ? (
+      {!error && hint ? (
         <span className="text-xs text-text-muted">{hint}</span>
       ) : null}
     </label>

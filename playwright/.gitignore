@@ -1,0 +1,18 @@
+# Playwright reports
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Test screenshots & traces
+test-results/
+
+# Environment files
+.env.test.local
+.env.test
+
+# Node modules (if ever checked in)
+node_modules/
+
+# System files
+.DS_Store
+*.log
