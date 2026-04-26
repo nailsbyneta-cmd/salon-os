@@ -35,6 +35,7 @@ export type {
   SalonFAQ,
   SalonReview,
   SalonGalleryImage,
+  OutboxEvent,
 } from '@prisma/client';
 
 export {
@@ -47,6 +48,7 @@ export {
   AppointmentStatus,
   BookingChannel,
   TimeOffStatus,
+  OutboxStatus,
 } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };

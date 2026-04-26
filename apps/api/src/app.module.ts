@@ -11,6 +11,7 @@ import { DbModule } from './db/db.module.js';
 import { HealthController } from './health/health.controller.js';
 import { GiftCardsModule } from './gift-cards/gift-cards.module.js';
 import { LocationsModule } from './locations/locations.module.js';
+import { OutboxModule } from './outbox/outbox.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { ProductsModule } from './products/products.module.js';
 import { PublicBookingsModule } from './public-bookings/public-bookings.module.js';
@@ -41,6 +42,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
     PublicBookingsModule,
     ShiftsModule,
     RemindersModule,
+    OutboxModule,
     PaymentsModule,
     GiftCardsModule,
     WaitlistModule,
