@@ -30,28 +30,19 @@ describe('WhatsappService', () => {
     });
 
     it('should return null for non-booking messages', () => {
-      const result = service.parseBookingIntent(
-        'Wann seid ihr offen?',
-        '+41791003366',
-      );
+      const result = service.parseBookingIntent('Wann seid ihr offen?', '+41791003366');
       expect(result).toBeNull();
     });
   });
 
   describe('answerEnquiry', () => {
     it('should answer hours enquiry', async () => {
-      const result = await service.answerEnquiry(
-        'Wann seid ihr offen?',
-        'tenant-123',
-      );
+      const result = await service.answerEnquiry('Wann seid ihr offen?', 'tenant-123');
       expect(result).toContain('10:00-18:00');
     });
 
     it('should answer price enquiry', async () => {
-      const result = await service.answerEnquiry(
-        'Was kostet Balayage?',
-        'tenant-123',
-      );
+      const result = await service.answerEnquiry('Was kostet Balayage?', 'tenant-123');
       expect(result).toBeDefined();
     });
   });

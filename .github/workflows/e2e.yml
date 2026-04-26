@@ -43,7 +43,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.12.0"
+          node-version: '22.12.0'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -69,8 +69,8 @@ jobs:
 
       - name: Setup test database
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/salon_os_test"
-          DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/salon_os_test"
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/salon_os_test'
+          DIRECT_URL: 'postgresql://postgres:postgres@localhost:5432/salon_os_test'
         run: |
           cd packages/db
           pnpm prisma migrate deploy
@@ -80,9 +80,9 @@ jobs:
 
       - name: Run E2E tests
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/salon_os_test"
-          DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/salon_os_test"
-          REDIS_URL: "redis://localhost:6379"
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/salon_os_test'
+          DIRECT_URL: 'postgresql://postgres:postgres@localhost:5432/salon_os_test'
+          REDIS_URL: 'redis://localhost:6379'
         run: pnpm test:e2e
 
       - name: Upload Playwright Report

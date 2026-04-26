@@ -117,7 +117,12 @@ describe('ServicesService', () => {
   describe('create()', () => {
     it('creates service with tenantId', async () => {
       prisma.service.create.mockResolvedValue({ ...BASE_SERVICE, tenantId: 'tenant1' });
-      await service.create({ ...BASE_SERVICE, taxClass: undefined, gender: undefined, color: undefined });
+      await service.create({
+        ...BASE_SERVICE,
+        taxClass: undefined,
+        gender: undefined,
+        color: undefined,
+      });
       const call = prisma.service.create.mock.calls[0]![0] as { data: { tenantId: string } };
       expect(call.data.tenantId).toBe('tenant1');
     });

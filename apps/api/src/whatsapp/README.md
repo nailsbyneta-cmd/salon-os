@@ -57,6 +57,7 @@ Meta App Dashboard → WhatsApp → Message Templates
 Pre-approved Templates (für Compliance mit Meta Policies):
 
 #### Template 1: Booking Confirmation
+
 ```
 Name: booking_confirmation
 Language: de (Deutsch)
@@ -84,6 +85,7 @@ Buttons: [ICAL Download], [Directions]
 ```
 
 #### Template 2: Service Reminder
+
 ```
 Name: service_reminder
 Language: de
@@ -119,6 +121,7 @@ curl "https://api.salon-os.com/v1/whatsapp/webhook?hub.mode=subscribe&hub.verify
 Webhook Verification (called by Meta).
 
 Query:
+
 - `hub.mode`: "subscribe"
 - `hub.verify_token`: Token aus Env-Var
 - `hub.challenge`: Challenge-String
@@ -130,27 +133,34 @@ Response: Plain text challenge (wenn Token korrekt)
 Empfängt eingehende Nachrichten (called by Meta).
 
 Request:
+
 ```json
 {
   "object": "whatsapp_business_account",
-  "entry": [{
-    "id": "123456789",
-    "changes": [{
-      "value": {
-        "messaging_product": "whatsapp",
-        "messages": [{
-          "from": "+41791003366",
-          "id": "wamsg_xyz",
-          "timestamp": "1234567890",
-          "type": "text",
-          "text": {
-            "body": "Ich möchte Montag 10 Uhr Balayage"
-          }
-        }]
-      },
-      "field": "messages"
-    }]
-  }]
+  "entry": [
+    {
+      "id": "123456789",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "messages": [
+              {
+                "from": "+41791003366",
+                "id": "wamsg_xyz",
+                "timestamp": "1234567890",
+                "type": "text",
+                "text": {
+                  "body": "Ich möchte Montag 10 Uhr Balayage"
+                }
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
 }
 ```
 
@@ -163,6 +173,7 @@ Sendet Bestätigungs-Nachricht.
 Auth: Tenant-Owner
 
 Request:
+
 ```json
 {
   "phone": "+41791003366",
@@ -175,6 +186,7 @@ Request:
 ```
 
 Response:
+
 ```json
 {
   "messageId": "wamsg_xyz",
@@ -220,16 +232,19 @@ Nachricht: "{message}"
 ## Sicherheit + Compliance
 
 ### GDPR
+
 - Phone numbers werden nur gespeichert wenn explizit zugestimmt
 - Data Deletion: Kunde kann sagen "DELETE my data" → alle Konversationen gelöscht
 - Opt-out: "UNSUBSCRIBE" → automatisch vom Marketing-Pool entfernt
 
 ### Meta Policies
+
 - Messages werden nur via pre-approved Templates gesendet (nicht freier Text)
 - Templates müssen von Meta genehmigt werden
 - Sender Phone wird angezeigt (keine Spoofing)
 
 ### Idempotency
+
 - Jede Message hat `message.id` → Duplikate erkennen
 - Bookings dürfen nicht doppelt erstellt werden
 
@@ -242,7 +257,7 @@ Meta WhatsApp Pricing (2026):
   - Utility Templates (Transaktional): $0.0075
   - Marketing Templates: $0.0075
   - Service Templates: $0.01
-  
+
 Annahmen:
 - 500 Salons
 - 50 Bookings/Monat = 25k Bookings

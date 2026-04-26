@@ -2,6 +2,25 @@
 
 Du baust **SALON OS**, eine globale All-in-One-Plattform für Beauty- und Wellness-Salons, die Phorest, Fresha, Treatwell, Booksy, Mangomint, Vagaro, GlossGenius, Boulevard, Zenoti und Timely in einem Produkt vereint und übertrifft.
 
+## Cowork-Bridge (Async-Coordination mit Cowork-Mode)
+
+**Bei jedem Session-Start:** Lies `~/Documents/Beautycenter-Brain/cc-cowork-bridge.md` und beachte alle ungelesenen `COWORK:` Messages — das sind Anweisungen oder Status-Updates von Cowork-Mode (der Mac-Desktop-Claude, der DB/Postgres/Watcher/Cloudflare/Telegram administriert).
+
+**Wenn du eine Aufgabe abschliesst** (Commit gepusht, PR aufgemacht, Tests green/red, neuer Migration-Status): logge das in die Bridge mit:
+
+```bash
+bash ~/Documents/cowork-bridge/cc-helpers.sh cc-tell "<status>"
+```
+
+Cowork sieht's beim nächsten 5-min-Tick und reagiert (Telegram-Push, Auto-Health-Check der API/DB, etc.).
+
+**Verfügbare Helpers:**
+
+- `cc-tell <msg>` — Schreib an Cowork (löst Telegram-Push aus)
+- `bridge-tail [n]` — Letzte n Zeilen der Bridge lesen
+
+**Wichtig:** Cowork überwacht via `salon-status` LaunchAgent ob API/Web/Postgres laufen, kann sie restarten und hat Telegram-Bot. Wenn du eine DB-Migration startest oder Service-Restart brauchst, bitte Cowork via `cc-tell` darum.
+
 ## Leitprinzipien
 
 1. **Lies immer zuerst `SPEC.md` und die relevanten Dateien in `specs/` bevor du Code schreibst.** Die Specs sind die Wahrheit.

@@ -5,7 +5,7 @@
  * Golden Path #5: Audit & DSGVO Compliance
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 import {
   createTestTenant,
   createSampleService,
@@ -14,7 +14,7 @@ import {
   getTestLocation,
   cleanupTestTenant,
   prisma,
-} from "../fixtures/test-tenant";
+} from '../fixtures/test-tenant';
 
 let testTenant: any;
 let testClient: any;
@@ -22,18 +22,18 @@ let testAppointment: any;
 
 test.beforeAll(async () => {
   // Create test tenant
-  const tenant = await createTestTenant({ name: "Audit & DSGVO Test" });
+  const tenant = await createTestTenant({ name: 'Audit & DSGVO Test' });
   testTenant = tenant;
 
   // Setup
   const location = await getTestLocation(tenant.id);
-  if (!location) throw new Error("Failed to get location");
+  if (!location) throw new Error('Failed to get location');
 
   const staff = await createSampleStaff(tenant.id, location.id);
   const service = await createSampleService(tenant.id);
   const client = await createSampleClient(tenant.id, {
-    firstName: "DSGVO",
-    lastName: "TestClient",
+    firstName: 'DSGVO',
+    lastName: 'TestClient',
   });
   testClient = client;
 
@@ -46,8 +46,8 @@ test.beforeAll(async () => {
       staffId: staff.id,
       startTime: new Date(Date.now() + 86400000),
       endTime: new Date(Date.now() + 86400000 + 3600000),
-      status: "CONFIRMED",
-      notes: "Test for audit log",
+      status: 'CONFIRMED',
+      notes: 'Test for audit log',
     },
   });
 
@@ -60,10 +60,10 @@ test.afterAll(async () => {
   }
 });
 
-test("should display audit log for operations", async ({ page }) => {
+test('should display audit log for operations', async ({ page }) => {
   // Navigate to audit log page
   // TODO: Set admin auth context
-  await page.goto("/audit", { waitUntil: "networkidle" });
+  await page.goto('/audit', { waitUntil: 'networkidle' });
 
   // Verify audit page loads
   const heading = page
@@ -71,9 +71,11 @@ test("should display audit log for operations", async ({ page }) => {
     .filter({ hasText: /audit|log|history/i })
     .first();
 
-  await expect(heading).toBeVisible({ timeout: 5000 }).catch(() => {
-    console.log("Audit page heading not found");
-  });
+  await expect(heading)
+    .toBeVisible({ timeout: 5000 })
+    .catch(() => {
+      console.log('Audit page heading not found');
+    });
 
   // Look for audit log entries
   const auditTable = page.locator("[data-testid='audit-log'], table, [role='table']").first();
@@ -90,16 +92,19 @@ test("should display audit log for operations", async ({ page }) => {
     });
 
     // May or may not have entries depending on audit setup
-    await appointmentEntry.first().isVisible({ timeout: 5000 }).catch(() => {
-      console.log("Appointment audit entry not found - may need to check actual data");
-    });
+    await appointmentEntry
+      .first()
+      .isVisible({ timeout: 5000 })
+      .catch(() => {
+        console.log('Appointment audit entry not found - may need to check actual data');
+      });
   } else {
-    console.log("Audit table not visible");
+    console.log('Audit table not visible');
   }
 });
 
-test("should filter audit log by action type", async ({ page }) => {
-  await page.goto("/audit");
+test('should filter audit log by action type', async ({ page }) => {
+  await page.goto('/audit');
 
   // Look for filter dropdown or buttons
   const filterBtn = page
@@ -124,9 +129,7 @@ test("should filter audit log by action type", async ({ page }) => {
       // Verify results are filtered
       await page.waitForTimeout(1000);
 
-      const auditTable = page
-        .locator("[data-testid='audit-log'], table")
-        .first();
+      const auditTable = page.locator("[data-testid='audit-log'], table").first();
 
       const rows = auditTable.locator("tr, [role='row']");
       const rowCount = await rows.count();
@@ -134,14 +137,14 @@ test("should filter audit log by action type", async ({ page }) => {
       expect(rowCount).toBeGreaterThan(0);
     }
   } else {
-    console.log("Filter button not found");
+    console.log('Filter button not found');
   }
 });
 
-test("should export DSGVO data for client", async ({ page }) => {
+test('should export DSGVO data for client', async ({ page }) => {
   // Navigate to audit or client page
   // Option 1: Via client profile
-  await page.goto(`/clients/${testClient.id}`, { waitUntil: "networkidle" });
+  await page.goto(`/clients/${testClient.id}`, { waitUntil: 'networkidle' });
 
   // Look for DSGVO/Export button
   const exportBtn = page
@@ -153,7 +156,7 @@ test("should export DSGVO data for client", async ({ page }) => {
 
   if (await exportBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
     // Listen for download
-    const downloadPromise = page.waitForEvent("download");
+    const downloadPromise = page.waitForEvent('download');
 
     await exportBtn.click();
 
@@ -164,11 +167,11 @@ test("should export DSGVO data for client", async ({ page }) => {
 
     console.log(`✓ DSGVO export download started: ${download.suggestedFilename()}`);
   } else {
-    console.log("Export/DSGVO button not found on client profile");
+    console.log('Export/DSGVO button not found on client profile');
   }
 });
 
-test("should verify DSGVO export contains client data", async ({ page }) => {
+test('should verify DSGVO export contains client data', async ({ page }) => {
   // Export via API endpoint if available
   // GET /v1/admin/{tenantId}/clients/{clientId}/export
 
@@ -182,50 +185,48 @@ test("should verify DSGVO export contains client data", async ({ page }) => {
     });
 
     expect(clientData).toBeDefined();
-    expect(clientData?.firstName).toBe("DSGVO");
-    expect(clientData?.lastName).toBe("TestClient");
+    expect(clientData?.firstName).toBe('DSGVO');
+    expect(clientData?.lastName).toBe('TestClient');
     expect(clientData?.appointments.length).toBeGreaterThan(0);
 
     console.log(`✓ Client export data verified: ${clientData?.email}`);
   }
 });
 
-test("should show audit details for specific entry", async ({ page }) => {
-  await page.goto("/audit");
+test('should show audit details for specific entry', async ({ page }) => {
+  await page.goto('/audit');
 
   // Click on first audit entry to see details
   // TODO: verify selector for expandable row or detail modal
-  const auditRow = page
-    .locator("[data-testid='audit-row'], tr, [role='row']")
-    .first();
+  const auditRow = page.locator("[data-testid='audit-row'], tr, [role='row']").first();
 
   if (await auditRow.isVisible({ timeout: 5000 }).catch(() => false)) {
     await auditRow.click();
 
     // Expect detail modal or expanded content
-    const detail = page
-      .locator("[data-testid='audit-detail'], [role='dialog'], .detail")
-      .first();
+    const detail = page.locator("[data-testid='audit-detail'], [role='dialog'], .detail").first();
 
     if (await detail.isVisible({ timeout: 5000 }).catch(() => false)) {
       // Verify details are shown (timestamp, action, user, resource, before/after)
       const timestamp = detail
-        .locator("span, div, p")
+        .locator('span, div, p')
         .filter({ hasText: /\d{4}-\d{2}-\d{2}/ })
         .first();
 
-      await expect(timestamp).toBeVisible({ timeout: 5000 }).catch(() => {
-        console.log("Timestamp not visible in audit detail");
-      });
+      await expect(timestamp)
+        .toBeVisible({ timeout: 5000 })
+        .catch(() => {
+          console.log('Timestamp not visible in audit detail');
+        });
     } else {
-      console.log("Audit detail not shown");
+      console.log('Audit detail not shown');
     }
   } else {
-    console.log("Audit row not clickable");
+    console.log('Audit row not clickable');
   }
 });
 
-test("should allow deletion request via DSGVO", async ({ page }) => {
+test('should allow deletion request via DSGVO', async ({ page }) => {
   // Navigate to client
   await page.goto(`/clients/${testClient.id}`);
 
@@ -246,19 +247,21 @@ test("should allow deletion request via DSGVO", async ({ page }) => {
     if (await confirmDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
       // Verify warning text
       const warning = confirmDialog
-        .locator("p, div, span")
+        .locator('p, div, span')
         .filter({
           hasText: /permanent|irreversible|deleted|cannot/i,
         })
         .first();
 
-      await expect(warning).toBeVisible({ timeout: 5000 }).catch(() => {
-        console.log("Warning text not shown in delete dialog");
-      });
+      await expect(warning)
+        .toBeVisible({ timeout: 5000 })
+        .catch(() => {
+          console.log('Warning text not shown in delete dialog');
+        });
 
       // Click "Really Delete" button
       const reallyDeleteBtn = confirmDialog
-        .locator("button")
+        .locator('button')
         .filter({
           hasText: /delete|wirklich|ja|confirm/i,
         })
@@ -267,15 +270,15 @@ test("should allow deletion request via DSGVO", async ({ page }) => {
       if (await reallyDeleteBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
         // Do NOT click in test - just verify it exists
         // await reallyDeleteBtn.click();
-        console.log("✓ Delete confirmation button found");
+        console.log('✓ Delete confirmation button found');
       }
     }
   } else {
-    console.log("Delete/DSGVO button not found");
+    console.log('Delete/DSGVO button not found');
   }
 });
 
-test("should log access events in audit", async ({ page }) => {
+test('should log access events in audit', async ({ page }) => {
   // Access client profile
   await page.goto(`/clients/${testClient.id}`);
 
@@ -287,7 +290,7 @@ test("should log access events in audit", async ({ page }) => {
         tenantId: testTenant.id,
         resourceId: testClient.id,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       take: 10,
     });
 

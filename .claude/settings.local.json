@@ -39,8 +39,5 @@
       "Bash(tg \"✅ Salon OS läuft lokal — http://localhost:3000 rendert Dashboard sauber, API auf :4000, DB seeded \\(Beautycenter by Neta + 11 Services + 1 Staff\\). Du kannst durchklicken: /, /calendar, /clients, /staff, /services, /reports, /settings, /audit, /gift-cards, /inventory, /waitlist, /book/beautycenter-by-neta — alle 200. Fixes: dist gelöscht \\(stale incremental tsbuildinfo blockierte nest build\\), seed.ts auf tsx --env-file=../../.env umgestellt.\")"
     ]
   },
-  "enabledMcpjsonServers": [
-    "firecrawl",
-    "code-review-graph"
-  ]
+  "enabledMcpjsonServers": ["firecrawl", "code-review-graph"]
 }

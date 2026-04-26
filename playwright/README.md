@@ -51,6 +51,7 @@ pnpm test:e2e -g "should complete public booking flow"
 ## Test Coverage (Golden Paths)
 
 ### 1. Public Booking (`01-public-booking.spec.ts`)
+
 - Navigate to `/book/[salon-slug]`
 - Select service
 - Pick time slot
@@ -59,11 +60,13 @@ pnpm test:e2e -g "should complete public booking flow"
 - See success confirmation
 
 **Tests:**
+
 - ✓ Complete booking flow
 - ✓ Validation errors for incomplete form
 - ✓ Handling unavailable slots
 
 ### 2. Admin Calendar (`02-admin-calendar.spec.ts`)
+
 - Admin login (WorkOS or magic link)
 - Navigate to `/calendar`
 - View staff schedule
@@ -73,12 +76,14 @@ pnpm test:e2e -g "should complete public booking flow"
 - View appointment details
 
 **Tests:**
+
 - ✓ Admin authentication redirect
 - ✓ Calendar display with staff schedule
 - ✓ Click-to-book appointment creation
 - ✓ Appointment detail view
 
 ### 3. POS Checkout (`03-pos-checkout.spec.ts`)
+
 - Navigate to completed appointment
 - Open POS interface
 - View service total
@@ -88,6 +93,7 @@ pnpm test:e2e -g "should complete public booking flow"
 - Show receipt
 
 **Tests:**
+
 - ✓ POS for completed appointment
 - ✓ Service total display
 - ✓ Tip calculation
@@ -96,6 +102,7 @@ pnpm test:e2e -g "should complete public booking flow"
 - ✓ Manual entry (no-show handling)
 
 ### 4. CSV Import (`04-csv-import.spec.ts`)
+
 - Navigate to `/settings` or `/clients/import`
 - Upload CSV file (clients)
 - Preview data
@@ -103,6 +110,7 @@ pnpm test:e2e -g "should complete public booking flow"
 - Verify clients in database
 
 **Tests:**
+
 - ✓ CSV import page navigation
 - ✓ File upload + preview
 - ✓ Import confirmation
@@ -111,6 +119,7 @@ pnpm test:e2e -g "should complete public booking flow"
 - ✓ Invalid CSV format handling
 
 ### 5. Audit & DSGVO (`05-audit-dsgvo.spec.ts`)
+
 - Navigate to `/audit`
 - View audit log
 - Filter by action type
@@ -119,6 +128,7 @@ pnpm test:e2e -g "should complete public booking flow"
 - Request data deletion
 
 **Tests:**
+
 - ✓ Audit log display
 - ✓ Filter audit by action
 - ✓ DSGVO export download
@@ -152,6 +162,7 @@ playwright.config.ts                  # Config (baseURL, browsers, webServer hoo
 ### Fixtures
 
 **`test-tenant.ts`** — Database setup helpers:
+
 - `createTestTenant()` — Create isolated test tenant
 - `createSampleStaff()` — Create test stylist
 - `createSampleService()` — Create test service
@@ -159,6 +170,7 @@ playwright.config.ts                  # Config (baseURL, browsers, webServer hoo
 - `cleanupTestTenant()` — Soft-delete tenant
 
 **`api-mocks.ts`** — External API mocking:
+
 - `mockStripePayment()` — Intercept Stripe calls
 - `mockPostmarkEmail()` — Mock email sends
 - `mockTwilioSms()` — Mock SMS sends
@@ -168,24 +180,26 @@ playwright.config.ts                  # Config (baseURL, browsers, webServer hoo
 
 Some selectors are marked as TODO because they depend on final component implementation:
 
-| Test | Element | Current Selector | TODO |
-|------|---------|------------------|------|
-| 01 | Service card | `[data-testid='service-card']` | Verify after first run |
-| 01 | Time slot | `[data-testid='time-slot']` | Look for time pill pattern |
-| 02 | Calendar | `[data-testid='calendar-header']` | Check layout (day/week/month) |
-| 03 | POS button | Filter by `/pos\|checkout\|payment/i` | Route pattern may vary |
-| 04 | File input | `input[type="file"]` | Standard HTML input |
-| 05 | Audit table | `[data-testid='audit-log']` | May be paginated |
+| Test | Element      | Current Selector                      | TODO                          |
+| ---- | ------------ | ------------------------------------- | ----------------------------- |
+| 01   | Service card | `[data-testid='service-card']`        | Verify after first run        |
+| 01   | Time slot    | `[data-testid='time-slot']`           | Look for time pill pattern    |
+| 02   | Calendar     | `[data-testid='calendar-header']`     | Check layout (day/week/month) |
+| 03   | POS button   | Filter by `/pos\|checkout\|payment/i` | Route pattern may vary        |
+| 04   | File input   | `input[type="file"]`                  | Standard HTML input           |
+| 05   | Audit table  | `[data-testid='audit-log']`           | May be paginated              |
 
 ### Authentication Strategy
 
 Tests assume:
+
 1. **Public booking** — No auth required (`/book/[slug]`)
 2. **Admin paths** — Redirects to login if not authenticated
    - Currently: Expect auth error or login redirect
    - TODO: Implement WorkOS magic link mock or set `auth-token` cookie
 
 For admin tests to fully pass, you need one of:
+
 - Mock WorkOS login endpoint
 - Set auth cookie before test
 - Use magic link login flow
@@ -209,6 +223,7 @@ PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=false
 ## CI/CD Integration
 
 The GitHub Actions workflow (`.github/workflows/e2e.yml`):
+
 - Runs on every push to `main` / `develop`
 - Runs on every pull request
 - Starts Postgres + Redis services
@@ -219,6 +234,7 @@ The GitHub Actions workflow (`.github/workflows/e2e.yml`):
 - Comments on PR with result
 
 **To run locally as in CI:**
+
 ```bash
 # Full CI simulation
 docker compose -f infra/docker/docker-compose.yml up -d
@@ -229,6 +245,7 @@ DATABASE_URL=postgresql://... pnpm test:e2e
 ## Troubleshooting
 
 ### Test hangs at "waiting for dev server"
+
 ```bash
 # Manual dev server in another terminal
 pnpm dev
@@ -238,12 +255,14 @@ PLAYWRIGHT_REUSE_SERVER=true pnpm test:e2e
 ```
 
 ### Element not found / selector fails
+
 1. Run in UI mode: `pnpm test:e2e:ui`
 2. Inspect the element in Playwright Inspector
 3. Update selector in test file
 4. Mark resolved TODO as verified
 
 ### Database errors
+
 ```bash
 # Reset test DB
 pnpm db:reset
@@ -251,12 +270,15 @@ cd packages/db && pnpm prisma migrate deploy
 ```
 
 ### Playwright browsers missing
+
 ```bash
 pnpm exec playwright install --with-deps
 ```
 
 ### Auth failures on admin tests
+
 Check that your login flow is available:
+
 - Is WorkOS configured?
 - Is magic link endpoint working?
 - Do you have test credentials?
@@ -284,14 +306,15 @@ To add a new golden path test:
 7. Run locally: `pnpm test:e2e playwright/tests/0X-*.spec.ts`
 
 Template:
+
 ```typescript
-import { test, expect } from "@playwright/test";
-import { createTestTenant, cleanupTestTenant } from "../fixtures/test-tenant";
+import { test, expect } from '@playwright/test';
+import { createTestTenant, cleanupTestTenant } from '../fixtures/test-tenant';
 
 let testTenant: any;
 
 test.beforeAll(async () => {
-  const tenant = await createTestTenant({ name: "Feature Test" });
+  const tenant = await createTestTenant({ name: 'Feature Test' });
   testTenant = tenant;
 });
 
@@ -299,8 +322,8 @@ test.afterAll(async () => {
   if (testTenant?.id) await cleanupTestTenant(testTenant.id);
 });
 
-test("should do something", async ({ page }) => {
-  await page.goto("/some-path");
+test('should do something', async ({ page }) => {
+  await page.goto('/some-path');
   const element = page.locator("[data-testid='element']");
   await expect(element).toBeVisible();
 });
@@ -309,6 +332,7 @@ test("should do something", async ({ page }) => {
 ## Reporting
 
 HTML report generated in `playwright-report/`:
+
 - Open `index.html` in browser
 - View each test with videos + screenshots
 - CI uploads as artifact

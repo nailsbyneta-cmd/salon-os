@@ -67,7 +67,9 @@ export class WhatsappService {
     if (!detectedService) return null;
 
     // Einfache Datum/Zeit-Extraktion
-    const dateMatch = lowerMsg.match(/\b(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|morgen|nächste woche|heute)\b/i);
+    const dateMatch = lowerMsg.match(
+      /\b(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|morgen|nächste woche|heute)\b/i,
+    );
     const timeMatch = lowerMsg.match(/(\d{1,2}):?(\d{2})?\s*(uhr|h)?/);
 
     return {

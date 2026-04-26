@@ -5,7 +5,7 @@
  * Golden Path #3: POS Checkout (Payment)
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 import {
   createTestTenant,
   createSampleService,
@@ -14,20 +14,20 @@ import {
   getTestLocation,
   cleanupTestTenant,
   prisma,
-} from "../fixtures/test-tenant";
-import { STRIPE_TEST_CARD } from "../fixtures/api-mocks";
+} from '../fixtures/test-tenant';
+import { STRIPE_TEST_CARD } from '../fixtures/api-mocks';
 
 let testTenant: any;
 let testAppointment: any;
 
 test.beforeAll(async () => {
   // Create test tenant
-  const tenant = await createTestTenant({ name: "POS Checkout Test" });
+  const tenant = await createTestTenant({ name: 'POS Checkout Test' });
   testTenant = tenant;
 
   // Setup location, staff, service, client
   const location = await getTestLocation(tenant.id);
-  if (!location) throw new Error("Failed to get location");
+  if (!location) throw new Error('Failed to get location');
 
   const staff = await createSampleStaff(tenant.id, location.id);
   const service = await createSampleService(tenant.id, { price: 7500 }); // CHF 75
@@ -45,13 +45,13 @@ test.beforeAll(async () => {
       staffId: staff.id,
       startTime: appointmentTime,
       endTime: new Date(appointmentTime.getTime() + 3600000),
-      status: "COMPLETED", // Important: must be completed for POS
-      notes: "Test appointment for POS",
+      status: 'COMPLETED', // Important: must be completed for POS
+      notes: 'Test appointment for POS',
     },
   });
 
   console.log(
-    `Test POS appointment created: ${testAppointment.id} (Status: ${testAppointment.status})`
+    `Test POS appointment created: ${testAppointment.id} (Status: ${testAppointment.status})`,
   );
 });
 
@@ -61,7 +61,7 @@ test.afterAll(async () => {
   }
 });
 
-test("should open POS for completed appointment", async ({ page }) => {
+test('should open POS for completed appointment', async ({ page }) => {
   // Navigate to appointment (assuming auth is set up)
   // TODO: Set admin auth context
   await page.goto(`/calendar/${testAppointment.id}`);
@@ -77,19 +77,17 @@ test("should open POS for completed appointment", async ({ page }) => {
 
     // Expect to navigate to /pos/[appointmentId]
     // TODO: verify route pattern after first run
-    await page
-      .waitForURL(/\/pos\/.+/i, { timeout: 10000 })
-      .catch(() => {
-        console.log("POS route not detected");
-      });
+    await page.waitForURL(/\/pos\/.+/i, { timeout: 10000 }).catch(() => {
+      console.log('POS route not detected');
+    });
   } else {
-    console.log("POS button not found on appointment detail");
+    console.log('POS button not found on appointment detail');
     // Try direct navigation as fallback
     await page.goto(`/pos/${testAppointment.id}`);
   }
 });
 
-test("should display service total in POS", async ({ page }) => {
+test('should display service total in POS', async ({ page }) => {
   await page.goto(`/pos/${testAppointment.id}`);
 
   // Look for price display (CHF 75.00)
@@ -102,11 +100,11 @@ test("should display service total in POS", async ({ page }) => {
     const priceText = await priceDisplay.textContent();
     expect(priceText).toMatch(/75|7500/); // CHF 75 in cents or decimal
   } else {
-    console.log("Price display not found");
+    console.log('Price display not found');
   }
 });
 
-test("should allow adding tip and calculating total", async ({ page }) => {
+test('should allow adding tip and calculating total', async ({ page }) => {
   await page.goto(`/pos/${testAppointment.id}`);
 
   // Look for tip input or tip buttons
@@ -122,7 +120,7 @@ test("should allow adding tip and calculating total", async ({ page }) => {
     .first();
 
   if (await tipInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await tipInput.fill("10");
+    await tipInput.fill('10');
   } else if (await tipBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
     await tipBtn.click();
   }
@@ -133,12 +131,14 @@ test("should allow adding tip and calculating total", async ({ page }) => {
     .filter({ hasText: /total|insgesamt|sum/i })
     .last();
 
-  await expect(totalDisplay).toBeVisible({ timeout: 5000 }).catch(() => {
-    console.log("Total calculation not visible");
-  });
+  await expect(totalDisplay)
+    .toBeVisible({ timeout: 5000 })
+    .catch(() => {
+      console.log('Total calculation not visible');
+    });
 });
 
-test("should handle Stripe payment with test card", async ({ page }) => {
+test('should handle Stripe payment with test card', async ({ page }) => {
   await page.goto(`/pos/${testAppointment.id}`);
 
   // Look for payment method selector
@@ -158,10 +158,16 @@ test("should handle Stripe payment with test card", async ({ page }) => {
 
   if (await cardInput.isVisible({ timeout: 5000 }).catch(() => false)) {
     // Fill card details
-    await cardInput.fill(STRIPE_TEST_CARD.number.replace(/ /g, ""));
+    await cardInput.fill(STRIPE_TEST_CARD.number.replace(/ /g, ''));
 
-    const expiryInput = page.locator("input").filter({ hasText: /expiry|mm\/yy/i }).first();
-    const cvcInput = page.locator("input").filter({ hasText: /cvc|cvv/i }).first();
+    const expiryInput = page
+      .locator('input')
+      .filter({ hasText: /expiry|mm\/yy/i })
+      .first();
+    const cvcInput = page
+      .locator('input')
+      .filter({ hasText: /cvc|cvv/i })
+      .first();
 
     if (await expiryInput.isVisible({ timeout: 5000 }).catch(() => false)) {
       await expiryInput.fill(STRIPE_TEST_CARD.expiry);
@@ -183,11 +189,11 @@ test("should handle Stripe payment with test card", async ({ page }) => {
     // Wait for payment processing
     await page.waitForTimeout(2000);
   } else {
-    console.log("Payment button not found");
+    console.log('Payment button not found');
   }
 });
 
-test("should show receipt after payment", async ({ page }) => {
+test('should show receipt after payment', async ({ page }) => {
   await page.goto(`/pos/${testAppointment.id}`);
 
   // Skip to checkout/receipt (in real test, complete payment first)
@@ -204,9 +210,11 @@ test("should show receipt after payment", async ({ page }) => {
       .filter({ hasText: /nail|service|item/i })
       .first();
 
-    await expect(itemRow).toBeVisible({ timeout: 5000 }).catch(() => {
-      console.log("Receipt item row not found");
-    });
+    await expect(itemRow)
+      .toBeVisible({ timeout: 5000 })
+      .catch(() => {
+        console.log('Receipt item row not found');
+      });
 
     // Look for total
     const totalRow = receipt
@@ -214,9 +222,11 @@ test("should show receipt after payment", async ({ page }) => {
       .filter({ hasText: /total|insgesamt/i })
       .first();
 
-    await expect(totalRow).toBeVisible({ timeout: 5000 }).catch(() => {
-      console.log("Total row not found on receipt");
-    });
+    await expect(totalRow)
+      .toBeVisible({ timeout: 5000 })
+      .catch(() => {
+        console.log('Total row not found on receipt');
+      });
 
     // Look for print/email button
     const printBtn = page
@@ -228,11 +238,11 @@ test("should show receipt after payment", async ({ page }) => {
       await expect(printBtn).toBeVisible();
     }
   } else {
-    console.log("Receipt not visible - may not be in final state");
+    console.log('Receipt not visible - may not be in final state');
   }
 });
 
-test("should handle no-show and manual entry", async ({ page }) => {
+test('should handle no-show and manual entry', async ({ page }) => {
   // Test alternative flow: POS without appointment (manual entry)
   // This tests cash-only transactions
 
@@ -255,7 +265,7 @@ test("should handle no-show and manual entry", async ({ page }) => {
 
     if (await itemInput.isVisible({ timeout: 5000 }).catch(() => false)) {
       await itemInput.click();
-      await itemInput.type("Nail", { delay: 50 });
+      await itemInput.type('Nail', { delay: 50 });
 
       const option = page
         .locator("[role='option']")
@@ -263,10 +273,10 @@ test("should handle no-show and manual entry", async ({ page }) => {
         .first();
 
       await option.click({ timeout: 5000 }).catch(() => {
-        console.log("Item option not found");
+        console.log('Item option not found');
       });
     }
   } else {
-    console.log("Manual entry/new sale option not found");
+    console.log('Manual entry/new sale option not found');
   }
 });

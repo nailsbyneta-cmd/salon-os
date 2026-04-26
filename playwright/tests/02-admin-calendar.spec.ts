@@ -5,7 +5,7 @@
  * Golden Path #2: Admin Calendar
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 import {
   createTestTenant,
   createSampleService,
@@ -14,7 +14,7 @@ import {
   getTestLocation,
   cleanupTestTenant,
   prisma,
-} from "../fixtures/test-tenant";
+} from '../fixtures/test-tenant';
 
 let testTenant: any;
 let testStaff: any;
@@ -23,12 +23,12 @@ let testClient: any;
 
 test.beforeAll(async () => {
   // Create test tenant
-  const tenant = await createTestTenant({ name: "Admin Calendar Test" });
+  const tenant = await createTestTenant({ name: 'Admin Calendar Test' });
   testTenant = tenant;
 
   // Create location, staff, service, client
   const location = await getTestLocation(tenant.id);
-  if (!location) throw new Error("Failed to get location");
+  if (!location) throw new Error('Failed to get location');
 
   testStaff = await createSampleStaff(tenant.id, location.id);
   testService = await createSampleService(tenant.id);
@@ -48,7 +48,7 @@ test.afterAll(async () => {
  * Since WorkOS SDK requires auth, we'll simulate auth state
  * TODO: Set up WorkOS mock or use Next.js middleware override for tests
  */
-test("should navigate admin to calendar page", async ({ page, context }) => {
+test('should navigate admin to calendar page', async ({ page, context }) => {
   // TODO: Mock WorkOS login or set session cookie
   // For now, we simulate authenticated state by:
   // 1. Setting auth cookie from env (if test setup provides one)
@@ -62,7 +62,7 @@ test("should navigate admin to calendar page", async ({ page, context }) => {
   // }]);
 
   // For now, navigate to admin (will redirect to login if no auth)
-  await page.goto("/calendar", { waitUntil: "networkidle" });
+  await page.goto('/calendar', { waitUntil: 'networkidle' });
 
   // If redirected to login, we expect auth page
   // TODO: verify login redirect - check for WorkOS form or magic link input
@@ -71,21 +71,21 @@ test("should navigate admin to calendar page", async ({ page, context }) => {
 
   // Check if we're on login or calendar
   const url = page.url();
-  if (url.includes("/login") || url.includes("/auth")) {
-    console.log("Redirected to login - auth setup needed for full test");
+  if (url.includes('/login') || url.includes('/auth')) {
+    console.log('Redirected to login - auth setup needed for full test');
     // Could implement magic link login here
     // await page.fill('input[name="email"]', testTenant.adminEmail);
     // await page.click('button[type="submit"]');
   } else {
-    console.log("User authenticated - on calendar page");
+    console.log('User authenticated - on calendar page');
   }
 });
 
-test("should display calendar with staff schedule", async ({ page }) => {
+test('should display calendar with staff schedule', async ({ page }) => {
   // This test assumes we're authenticated (see setup in beforeAll)
   // TODO: Implement proper auth flow
 
-  await page.goto("/calendar");
+  await page.goto('/calendar');
 
   // Look for calendar view elements
   // TODO: verify selector - look for calendar header, day grid, or event slots
@@ -104,13 +104,13 @@ test("should display calendar with staff schedule", async ({ page }) => {
     .first();
 
   await staffName.isVisible({ timeout: 5000 }).catch(() => {
-    console.log("Staff column not found - may need day/week view navigation");
+    console.log('Staff column not found - may need day/week view navigation');
   });
 });
 
-test("should allow click-to-book appointment", async ({ page }) => {
+test('should allow click-to-book appointment', async ({ page }) => {
   // Navigate to calendar
-  await page.goto("/calendar");
+  await page.goto('/calendar');
 
   // Look for empty time slot (to-do: click on a grid cell)
   // TODO: verify selector - look for time grid cells or "+ New Appointment" buttons
@@ -125,9 +125,11 @@ test("should allow click-to-book appointment", async ({ page }) => {
     // Expect booking modal to open
     // TODO: verify selector - look for modal/dialog with form
     const modal = page.locator("[role='dialog'], .modal, [data-testid='booking-modal']").first();
-    await expect(modal).toBeVisible({ timeout: 5000 }).catch(() => {
-      console.log("Booking modal not found");
-    });
+    await expect(modal)
+      .toBeVisible({ timeout: 5000 })
+      .catch(() => {
+        console.log('Booking modal not found');
+      });
 
     // Fill appointment details
     const clientSelect = page
@@ -137,16 +139,16 @@ test("should allow click-to-book appointment", async ({ page }) => {
 
     if (await clientSelect.isVisible({ timeout: 5000 }).catch(() => false)) {
       await clientSelect.click();
-      await clientSelect.type(testClient.firstName || "Test", { delay: 50 });
+      await clientSelect.type(testClient.firstName || 'Test', { delay: 50 });
 
       // Wait for autocomplete option
       const clientOption = page
         .locator("[role='option']")
-        .filter({ hasText: new RegExp(testClient.firstName || "Test", "i") })
+        .filter({ hasText: new RegExp(testClient.firstName || 'Test', 'i') })
         .first();
 
       await clientOption.click({ timeout: 5000 }).catch(() => {
-        console.log("Client autocomplete option not found");
+        console.log('Client autocomplete option not found');
       });
     }
 
@@ -163,7 +165,7 @@ test("should allow click-to-book appointment", async ({ page }) => {
         .filter({ hasText: /nail|gel|service/i })
         .first();
       await serviceOption.click({ timeout: 5000 }).catch(() => {
-        console.log("Service option not found");
+        console.log('Service option not found');
       });
     }
 
@@ -182,16 +184,18 @@ test("should allow click-to-book appointment", async ({ page }) => {
         .filter({ hasText: /created|booked|success|erfolg/i })
         .first();
 
-      await expect(successMsg).toBeVisible({ timeout: 5000 }).catch(() => {
-        console.log("Success message not found");
-      });
+      await expect(successMsg)
+        .toBeVisible({ timeout: 5000 })
+        .catch(() => {
+          console.log('Success message not found');
+        });
     }
   } else {
-    console.log("No clickable time slot found for appointment creation");
+    console.log('No clickable time slot found for appointment creation');
   }
 });
 
-test("should show appointment details", async ({ page }) => {
+test('should show appointment details', async ({ page }) => {
   // Create an appointment first (via API)
   if (testStaff?.id && testService?.id && testClient?.id) {
     const appointment = await prisma.appointment.create({
@@ -202,19 +206,21 @@ test("should show appointment details", async ({ page }) => {
         staffId: testStaff.id,
         startTime: new Date(Date.now() + 86400000), // Tomorrow
         endTime: new Date(Date.now() + 86400000 + 3600000), // +1 hour
-        status: "CONFIRMED",
-        notes: "Test appointment",
+        status: 'CONFIRMED',
+        notes: 'Test appointment',
       },
     });
 
     // Navigate to appointment detail
     // TODO: verify route pattern
-    await page.goto(`/calendar/${appointment.id}`, { waitUntil: "networkidle" });
+    await page.goto(`/calendar/${appointment.id}`, { waitUntil: 'networkidle' });
 
     // Verify appointment details are shown
     const clientName = page.locator("[data-testid='client-name'], p, span").first();
-    await expect(clientName).toBeVisible({ timeout: 5000 }).catch(() => {
-      console.log("Appointment detail not found");
-    });
+    await expect(clientName)
+      .toBeVisible({ timeout: 5000 })
+      .catch(() => {
+        console.log('Appointment detail not found');
+      });
   }
 });

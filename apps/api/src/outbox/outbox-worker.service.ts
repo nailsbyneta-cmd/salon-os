@@ -136,7 +136,9 @@ export class OutboxWorkerService {
       case 'marketing.winback':
       case 'marketing.birthday':
         // Marketing-Templates kommen separat — für jetzt: log + done damit Outbox sauber bleibt.
-        this.logger.log(`marketing event ${ev.type} skipped (no template) appt=${payload.appointmentId}`);
+        this.logger.log(
+          `marketing event ${ev.type} skipped (no template) appt=${payload.appointmentId}`,
+        );
         return 'done';
       default:
         this.logger.warn(`unknown outbox event type: ${ev.type}`);

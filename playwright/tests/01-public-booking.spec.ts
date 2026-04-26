@@ -5,33 +5,33 @@
  * Golden Path #1: Public Booking
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 import {
   createTestTenant,
   createSampleService,
   createSampleStaff,
   getTestLocation,
   cleanupTestTenant,
-} from "../fixtures/test-tenant";
+} from '../fixtures/test-tenant';
 
 let testTenantId: string;
 let testSlug: string;
 
 test.beforeAll(async () => {
   // Create fresh test tenant
-  const tenant = await createTestTenant({ name: "Public Booking Test" });
+  const tenant = await createTestTenant({ name: 'Public Booking Test' });
   testTenantId = tenant.id;
   testSlug = tenant.slug;
 
   // Create sample staff & service
   const location = await getTestLocation(tenant.id);
-  if (!location) throw new Error("Failed to create test location");
+  if (!location) throw new Error('Failed to create test location');
 
   const staff = await createSampleStaff(tenant.id, location.id, {
-    name: "Test Stylist",
+    name: 'Test Stylist',
   });
   const service = await createSampleService(tenant.id, {
-    name: "Gel Nails",
+    name: 'Gel Nails',
     price: 7500,
     duration: 60,
   });
@@ -46,7 +46,7 @@ test.afterAll(async () => {
   }
 });
 
-test("should complete public booking flow", async ({ page }) => {
+test('should complete public booking flow', async ({ page }) => {
   // Step 1: Navigate to public booking page
   await page.goto(`/book/${testSlug}`);
 
@@ -69,16 +69,14 @@ test("should complete public booking flow", async ({ page }) => {
       .first()
       .click()
       .catch(() => {
-        console.log("Service selection element not found - may need manual selector");
+        console.log('Service selection element not found - may need manual selector');
       });
   }
 
   // Step 3: Expect to navigate to service page or slot picker
-  await page
-    .waitForURL(/\/book\/.+\/(service|slot)/i, { timeout: 10000 })
-    .catch(() => {
-      console.log("Service navigation not detected - may still be on home");
-    });
+  await page.waitForURL(/\/book\/.+\/(service|slot)/i, { timeout: 10000 }).catch(() => {
+    console.log('Service navigation not detected - may still be on home');
+  });
 
   // Step 4: Find and click time slot
   // TODO: verify selector - look for time pill/button (e.g., "09:00", "10:00")
@@ -90,7 +88,7 @@ test("should complete public booking flow", async ({ page }) => {
   if (await timeSlot.isVisible({ timeout: 5000 }).catch(() => false)) {
     await timeSlot.click();
   } else {
-    console.log("Time slot element not found - checking for date picker first");
+    console.log('Time slot element not found - checking for date picker first');
     // Try clicking a date first
     const dateBtn = page
       .locator("[data-testid='date-pill'], button")
@@ -103,26 +101,20 @@ test("should complete public booking flow", async ({ page }) => {
 
   // Step 5: Fill booking form
   // Look for form fields: name, email, phone (optionally)
-  const nameInput = page
-    .locator("input[type='text'], input[name*='name' i]")
-    .first();
-  const emailInput = page
-    .locator("input[type='email'], input[name*='email' i]")
-    .first();
-  const phoneInput = page
-    .locator("input[type='tel'], input[name*='phone' i]")
-    .first();
+  const nameInput = page.locator("input[type='text'], input[name*='name' i]").first();
+  const emailInput = page.locator("input[type='email'], input[name*='email' i]").first();
+  const phoneInput = page.locator("input[type='tel'], input[name*='phone' i]").first();
 
   if (await nameInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await nameInput.fill("Test Booking Client");
+    await nameInput.fill('Test Booking Client');
   }
 
   if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await emailInput.fill("test-booking@salon-os.dev");
+    await emailInput.fill('test-booking@salon-os.dev');
   }
 
   if (await phoneInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await phoneInput.fill("+41791234567");
+    await phoneInput.fill('+41791234567');
   }
 
   // Step 6: Submit booking
@@ -137,13 +129,11 @@ test("should complete public booking flow", async ({ page }) => {
   }
 
   // Step 7: Verify success page
-  await page
-    .waitForURL(/\/book\/.+\/success/i, { timeout: 10000 })
-    .catch(async () => {
-      console.log("Success navigation not detected");
-      // Take screenshot for debugging
-      await page.screenshot({ path: "/tmp/booking-failed.png" });
-    });
+  await page.waitForURL(/\/book\/.+\/success/i, { timeout: 10000 }).catch(async () => {
+    console.log('Success navigation not detected');
+    // Take screenshot for debugging
+    await page.screenshot({ path: '/tmp/booking-failed.png' });
+  });
 
   // Look for success message
   const successMsg = page
@@ -154,13 +144,11 @@ test("should complete public booking flow", async ({ page }) => {
   if (await successMsg.isVisible({ timeout: 5000 }).catch(() => false)) {
     await expect(successMsg).toBeVisible();
   } else {
-    console.log(
-      "Success message not found - booking may have succeeded but message unclear"
-    );
+    console.log('Success message not found - booking may have succeeded but message unclear');
   }
 });
 
-test("should show validation errors for incomplete form", async ({ page }) => {
+test('should show validation errors for incomplete form', async ({ page }) => {
   await page.goto(`/book/${testSlug}`);
 
   // Try to submit without filling form
@@ -174,13 +162,15 @@ test("should show validation errors for incomplete form", async ({ page }) => {
 
     // Expect validation errors
     const errorMsg = page.locator("[data-testid='error'], .error, [role='alert']").first();
-    await expect(errorMsg).toBeVisible({ timeout: 5000 }).catch(() => {
-      console.log("Validation error not displayed - may be inline");
-    });
+    await expect(errorMsg)
+      .toBeVisible({ timeout: 5000 })
+      .catch(() => {
+        console.log('Validation error not displayed - may be inline');
+      });
   }
 });
 
-test("should handle unavailable slots gracefully", async ({ page }) => {
+test('should handle unavailable slots gracefully', async ({ page }) => {
   await page.goto(`/book/${testSlug}`);
 
   // Navigate to slot picker
@@ -190,7 +180,7 @@ test("should handle unavailable slots gracefully", async ({ page }) => {
     .first()
     .click()
     .catch(() => {
-      console.log("Could not navigate to service");
+      console.log('Could not navigate to service');
     });
 
   // Check if "no slots available" message is shown on closed days

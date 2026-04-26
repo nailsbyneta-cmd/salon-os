@@ -13,13 +13,14 @@
 
 ## Provider Comparison
 
-| Provider | Kosten | Latency | Sprachen | Booking-Automation | Empfehlung |
-|----------|--------|---------|----------|-------------------|------------|
-| **Vapi.ai** | $0.50-1.00/min | <500ms | 40+ | Native LLM | ⭐ MVP Choice |
-| **ElevenLabs** | $0.10-0.30/min | 200-500ms | 20+ | Manual (nur TTS) | Budget Alternative |
-| **Retell** | $0.30-0.60/min | <300ms | 15+ | LLM-basiert | Enterprise |
+| Provider       | Kosten         | Latency   | Sprachen | Booking-Automation | Empfehlung         |
+| -------------- | -------------- | --------- | -------- | ------------------ | ------------------ |
+| **Vapi.ai**    | $0.50-1.00/min | <500ms    | 40+      | Native LLM         | ⭐ MVP Choice      |
+| **ElevenLabs** | $0.10-0.30/min | 200-500ms | 20+      | Manual (nur TTS)   | Budget Alternative |
+| **Retell**     | $0.30-0.60/min | <300ms    | 15+      | LLM-basiert        | Enterprise         |
 
 **Empfehlung für MVP: Vapi.ai**
+
 - Completeste All-in-One Lösung (STT + TTS + LLM)
 - Schnelle Integration (REST API + Webhooks)
 - Gutes Preis/Leistungs-Verhältnis
@@ -71,6 +72,7 @@ Twilio Webhook für eingehende Anrufe.
 **Auth:** Signature-Validierung (Twilio)
 
 Request (von Twilio):
+
 ```json
 {
   "CallSid": "CA1234567890abcdef",
@@ -80,6 +82,7 @@ Request (von Twilio):
 ```
 
 Response:
+
 ```json
 {
   "status": "initiated",
@@ -95,6 +98,7 @@ Vapi.ai Webhook für Call-Events.
 **Auth:** Signature-Validierung (Vapi)
 
 Request (von Vapi):
+
 ```json
 {
   "message": {
@@ -107,6 +111,7 @@ Request (von Vapi):
 ```
 
 Response:
+
 ```json
 {
   "received": true
@@ -155,6 +160,7 @@ Ton: Warm, professionell, Schweizer Hochdeutsch (ss statt ß), Du-Form.
 **Aktuell:** Stub mit grundlegender Struktur.
 
 **TODO (MVP-ready):**
+
 1. [ ] Vapi.ai API Integration
 2. [ ] Twilio Signature Validation
 3. [ ] Salon-Kontext Injection (Services, Staff, Hours)
@@ -167,6 +173,7 @@ Ton: Warm, professionell, Schweizer Hochdeutsch (ss statt ß), Du-Form.
 10. [ ] Tests (Mock Vapi Responses)
 
 **Future:**
+
 - Multi-Sprachen Support (Englisch, Französisch, Italienisch)
 - Sentiment Analysis (erkenne verärgerte Kunden)
 - Rückruf-Queue wenn alle Stylists beschäftigt

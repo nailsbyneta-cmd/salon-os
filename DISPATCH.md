@@ -907,3 +907,8 @@ Letzter Commit vor 7 h. Hängt Claude Code? Check STATUS.md.
 ## 2026-04-26 10:18 — ⬅️ Antwort von Lorenc erhalten
 
 • 🟡 SALON OS — Stillstand? Letzter Commit vor 66 h. Hängt Claude Code? Check STATUS.md.
+
+## 2026-04-26 10:48 — ⬅️ Antwort von Lorenc erhalten
+
+• 🟢 SALON OS — Fragen warten 4 Fragen von Claude Code. Check QUESTIONS.md und antworte in ANSWERS.md.
+• 🟡 SALON OS — Stillstand? Letzter Commit vor 67 h. Hängt Claude Code? Check STATUS.md.

@@ -20,7 +20,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
           'flex h-10 w-full rounded-sm border bg-surface px-3 py-2 text-base text-text-primary md:text-sm',
           'placeholder:text-text-muted',
           'transition-colors duration-fast',
-          hasError ? 'border-danger pr-10' : 'border-border hover:border-border-strong focus:border-accent',
+          hasError
+            ? 'border-danger pr-10'
+            : 'border-border hover:border-border-strong focus:border-accent',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           className,
         )}
@@ -28,13 +30,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
       />
       {hasError ? (
         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-danger pointer-events-none">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden
-          >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
             <circle cx="12" cy="12" r="10" />
             <path
               d="M12 7v5M12 17h.01"
@@ -119,9 +115,7 @@ export function Field({ label, hint, error, required, children }: FieldProps): R
         ) : null}
       </div>
       {children}
-      {!error && hint ? (
-        <span className="text-xs text-text-muted">{hint}</span>
-      ) : null}
+      {!error && hint ? <span className="text-xs text-text-muted">{hint}</span> : null}
     </label>
   );
 }

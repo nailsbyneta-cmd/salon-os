@@ -31,6 +31,7 @@ Cowork (Claude in der Sandbox) hat das Setup angefangen aber kommt nicht weiter 
 In `git status` siehst Du diese Files (alle uncommitted, ready für Review):
 
 **Outbox-Pattern (vom Outbox-Agent):**
+
 - `apps/api/src/common/common.module.ts` (neu)
 - `apps/api/src/common/outbox.service.ts` (neu)
 - `apps/api/src/common/outbox.service.spec.ts` (neu)
@@ -42,6 +43,7 @@ In `git status` siehst Du diese Files (alle uncommitted, ready für Review):
 - `OUTBOX_IMPLEMENTATION.md` (Doku)
 
 **Playwright E2E (vom Playwright-Agent):**
+
 - `playwright.config.ts` (neu)
 - `playwright/tests/01-public-booking.spec.ts` bis `05-audit-dsgvo.spec.ts` (neu, 5 Specs)
 - `playwright/fixtures/test-tenant.ts` + `api-mocks.ts` (neu)
@@ -50,12 +52,14 @@ In `git status` siehst Du diese Files (alle uncommitted, ready für Review):
 - `package.json` (modifiziert — playwright scripts + dependency)
 
 **3 Killer-Feature-Module (Stubs):**
+
 - `apps/api/src/branding/` — White-Label Branding (Stub ohne DB, README für später)
 - `apps/api/src/voice-ai/` — Voice-AI Receptionist (Vapi Stub mit Twilio-Webhook)
 - `apps/api/src/whatsapp/` — WhatsApp-Booking (Meta Cloud API Stub)
 - Cowork hat diese Files mit TS-Fixes bereits gepatched (PrismaService → reine Stub, Null-Checks für message)
 
 **UX Quick-Wins:**
+
 - `apps/web/src/components/mobile-shell.tsx` (Touch-Target 32→44px iOS-Standard)
 - `packages/ui/src/input.tsx` (Inline-Error-Icon support)
 - `apps/web/src/hooks/use-debounced-value.ts` (neu, für Command-Palette)

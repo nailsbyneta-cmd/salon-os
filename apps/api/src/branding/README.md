@@ -18,6 +18,7 @@ Holt Branding-Konfiguration für einen Salon.
 **Öffentlich** (kein Auth erforderlich).
 
 Response:
+
 ```json
 {
   "tenantSlug": "beautycenter-by-neta",
@@ -39,6 +40,7 @@ Erstellt oder aktualisiert Branding.
 **Auth erforderlich:** Tenant-Admin
 
 Request:
+
 ```json
 {
   "logoUrl": "https://new-logo.png",
@@ -51,7 +53,8 @@ Request:
 
 **Aktuell:** Stub mit Demo-Daten (hardcoded für beautycenter-by-neta).
 
-**TODO:** 
+**TODO:**
+
 1. Prisma Schema Migration hinzufügen (siehe `branding.dto.ts`)
 2. DB-Queries in `branding.service.ts` implementieren
 3. Auth-Guards in `branding.controller.ts` aktivieren
@@ -74,20 +77,20 @@ export function App() {
       const data = await response.json();
       setBranding(data);
     };
-    
+
     fetchBranding();
   }, []);
 
   if (!branding) return null;
 
   return (
-    <View style={{ 
+    <View style={{
       backgroundColor: branding.primaryColor,
-      fontFamily: branding.fontFamily 
+      fontFamily: branding.fontFamily
     }}>
-      <Image 
-        source={{ uri: branding.logoUrl }} 
-        style={{ width: 100, height: 100 }} 
+      <Image
+        source={{ uri: branding.logoUrl }}
+        style={{ width: 100, height: 100 }}
       />
       <Text>{branding.appName}</Text>
     </View>
