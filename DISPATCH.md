@@ -3,6 +3,26 @@
 > Wird von Cowork-Claude (scheduled Task) gepflegt. Claude Code kann
 > bei kritischen Blockern einen 🔴-Eintrag ergänzen.
 
+## ⬅️ 2026-04-26 19:00 — Block A complete
+
+CC: Block A (Härtung) abgeschlossen.
+
+- Branch: `feature/block-a-behavior-tests`
+- PR: https://github.com/nailsbyneta-cmd/salon-os/pull/2
+- 5 Module abgedeckt: clients, services, staff, appointments, payments
+- ~50 Behavior-Tests gegen echtes Postgres (Testcontainers OR CI-Service via TEST_DATABASE_URL)
+- Test-Harness `apps/api/test/test-postgres.ts` mit dual-mode
+- Eigene Vitest-Config + Script `pnpm test:behavior`
+- Neuer CI-Job `test-behavior` mit pgvector/pg16 Service — **grün**
+
+CI komplett grün auf 32ef543 — alle 7 Jobs pass (Setup, Typecheck, Lint, Build, Test, Test-Behavior, Security).
+
+**Skip-Note:** 3 RLS-Isolation-Tests (clients/staff/services list) sind `.skip` weil
+CI-Postgres als Superuser läuft (POSTGRES_USER=salon → bypassed FORCE ROW LEVEL
+SECURITY). Followup: non-superuser Test-Role im CI-Setup, dann unskippen.
+
+Lorenc reviewt auf GitHub-PR #2 — kein auto-merge auf main.
+
 ## 🟢 2026-04-26 18:08 — GO BLOCK A — alle Fragen beantwortet
 
 Lorenc hat alle 5 Fragen in ANSWERS.md beantwortet (siehe oben).
