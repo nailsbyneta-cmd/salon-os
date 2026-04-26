@@ -45,13 +45,23 @@ let activeContainer: StartedPostgreSqlContainer | null = null;
 let activePrisma: PrismaClient | null = null;
 
 export async function startTestPostgres(): Promise<TestPostgresHandle> {
-  const container = await new PostgreSqlContainer('postgres:16-alpine')
-    .withDatabase('salon_os_test')
-    .withUsername('test')
-    .withPassword('test')
-    .start();
-  activeContainer = container;
-  const url = container.getConnectionUri();
+  // Wenn TEST_DATABASE_URL gesetzt ist, gegen die existierende DB testen
+  // (CI-Postgres-Service oder lokaler Test-DB-Setup). Sonst Testcontainer
+  // pro Test-File hochfahren.
+  const reuseUrl = process.env['TEST_DATABASE_URL'];
+  let container: StartedPostgreSqlContainer | null = null;
+  let url: string;
+  if (reuseUrl) {
+    url = reuseUrl;
+  } else {
+    container = await new PostgreSqlContainer('postgres:16-alpine')
+      .withDatabase('salon_os_test')
+      .withUsername('test')
+      .withPassword('test')
+      .start();
+    activeContainer = container;
+    url = container.getConnectionUri();
+  }
   process.env['DATABASE_URL'] = url;
 
   // Run prisma migrate deploy against the fresh container.
@@ -82,8 +92,10 @@ export async function startTestPostgres(): Promise<TestPostgresHandle> {
     },
     stop: async () => {
       await prisma.$disconnect();
-      await container.stop();
-      if (activeContainer === container) activeContainer = null;
+      if (container) {
+        await container.stop();
+        if (activeContainer === container) activeContainer = null;
+      }
       if (activePrisma === prisma) activePrisma = null;
     },
     truncateAll: () => truncateAll(prisma),

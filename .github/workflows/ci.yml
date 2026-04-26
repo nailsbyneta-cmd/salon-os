@@ -119,6 +119,44 @@ jobs:
           DATABASE_URL: postgresql://salon:salon@localhost:5432/salon_os_test?schema=public
           REDIS_URL: redis://localhost:6379
 
+  # ─── Behavior Tests (Block A — echte Postgres-Persistenz) ──
+  test-behavior:
+    name: Test (Behavior, api)
+    runs-on: ubuntu-latest
+    needs: setup
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: salon
+          POSTGRES_PASSWORD: salon
+          POSTGRES_DB: salon_os_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U salon"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.15.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm --filter @salon-os/db db:generate
+      - name: Run prisma migrations against CI postgres
+        env:
+          DATABASE_URL: postgresql://salon:salon@localhost:5432/salon_os_test
+        run: pnpm --filter @salon-os/db exec prisma migrate deploy
+      - name: Run behavior tests
+        working-directory: apps/api
+        env:
+          # TEST_DATABASE_URL aktiviert reuse-Modus im test-postgres.ts —
+          # kein Testcontainer-Pull, direkt gegen die CI-Postgres-Service.
+          TEST_DATABASE_URL: postgresql://salon:salon@localhost:5432/salon_os_test
+        run: pnpm test:behavior
+
   # ─── Security-Scan (Trivy für Dependencies + Filesystem) ────
   security:
     name: Security scan
