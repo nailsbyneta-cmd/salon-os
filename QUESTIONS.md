@@ -1,6 +1,6 @@
 # Open Questions
 
-## Q-001: Test-Strategie — Snapshot-Tests oder reine Behavior-Tests?
+## ✅ Q-001: Test-Strategie — Snapshot-Tests oder reine Behavior-Tests?
 
 Bei Block A (Härtung) baue ich Unit-Tests für alle API-Module. Zwei
 Ansätze:
@@ -11,7 +11,7 @@ Ansätze:
   zur Fragilität ein. Testcontainers-Postgres für Integration.
   **Blockiert:** nein (Default verwendet, wenn keine Antwort bis Block-A-Start)
 
-## Q-002: Staff-Expo-App oder Capacitor-Wrapper um PWA?
+## ✅ Q-002: Staff-Expo-App oder Capacitor-Wrapper um PWA?
 
 Diff #22 verlangt „Single-Thumb-Staff-App". Zwei Wege:
 
@@ -23,7 +23,7 @@ Diff #22 verlangt „Single-Thumb-Staff-App". Zwei Wege:
   nativ anfühlt. Share-Layer via Tamagui oder Solito.
   **Blockiert:** Block D kann mit A starten, wenn keine Antwort bis dann.
 
-## Q-003: Loyalty — €-Verhältnis final?
+## ✅ Q-003: Loyalty — €-Verhältnis final?
 
 Aktuell deriviert Loyalty-Tier aus Lifetime-Spend. Für Punkte:
 Wie viele Punkte pro Euro? Fresha = 1, Mangomint = 10, Treatwell = 1.
@@ -31,7 +31,7 @@ Wie viele Punkte pro Euro? Fresha = 1, Mangomint = 10, Treatwell = 1.
 („100 Pkt = 10 €"). Großzügig + transparent.
 **Blockiert:** nein (aktuell nur Tier derived, keine Punkte in UI)
 
-## Q-004: WorkOS — brauchen wir Enterprise-SSO (SAML) im MVP?
+## ✅ Q-004: WorkOS — brauchen wir Enterprise-SSO (SAML) im MVP?
 
 WorkOS kann Magic-Link (alle Pläne) oder SSO (Enterprise). Für Salon-MVP
 reicht Magic-Link. Für zukünftige Ketten-Kunden brauchen wir SSO.
@@ -39,7 +39,7 @@ reicht Magic-Link. Für zukünftige Ketten-Kunden brauchen wir SSO.
 Flag vorbereiten für Enterprise-Tier.
 **Blockiert:** nein
 
-## Q-005: Tip-Split — wer konfiguriert die Regeln?
+## ✅ Q-005: Tip-Split — wer konfiguriert die Regeln?
 
 Diff #28 sagt „prozentual an Assistent/Shampoo". Wer stellt das pro
 Salon ein?
@@ -53,4 +53,4 @@ Salon ein?
 
 ## ✅ Beantwortet
 
-_Noch nichts._
+Alle 5 Fragen am 2026-04-26 von Lorenc beantwortet (siehe ANSWERS.md).
