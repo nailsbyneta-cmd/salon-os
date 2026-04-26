@@ -148,6 +148,7 @@ jobs:
       - name: Run prisma migrations against CI postgres
         env:
           DATABASE_URL: postgresql://salon:salon@localhost:5432/salon_os_test
+          DIRECT_URL: postgresql://salon:salon@localhost:5432/salon_os_test
         run: pnpm --filter @salon-os/db exec prisma migrate deploy
       - name: Run behavior tests
         working-directory: apps/api
@@ -155,6 +156,8 @@ jobs:
           # TEST_DATABASE_URL aktiviert reuse-Modus im test-postgres.ts —
           # kein Testcontainer-Pull, direkt gegen die CI-Postgres-Service.
           TEST_DATABASE_URL: postgresql://salon:salon@localhost:5432/salon_os_test
+          DATABASE_URL: postgresql://salon:salon@localhost:5432/salon_os_test
+          DIRECT_URL: postgresql://salon:salon@localhost:5432/salon_os_test
         run: pnpm test:behavior
 
   # ─── Security-Scan (Trivy für Dependencies + Filesystem) ────

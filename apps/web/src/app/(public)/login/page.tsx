@@ -10,7 +10,7 @@ export default function LoginPage(): React.JSX.Element {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     setError('');
     setLoading(true);
