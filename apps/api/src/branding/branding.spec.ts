@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BrandingController } from './branding.controller.js';
 import { BrandingService } from './branding.service.js';
@@ -14,7 +14,7 @@ describe('BrandingController', () => {
         {
           provide: BrandingService,
           useValue: {
-            getBrandingByTenantSlug: jest.fn().mockResolvedValue({
+            getBrandingByTenantSlug: vi.fn().mockResolvedValue({
               tenantSlug: 'test-salon',
               logoUrl: 'https://example.com/logo.svg',
               primaryColor: '#000000',

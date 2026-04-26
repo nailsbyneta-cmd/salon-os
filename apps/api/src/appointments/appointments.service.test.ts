@@ -65,14 +65,16 @@ describe('AppointmentsService', () => {
   describe('cancel()', () => {
     it('throws NotFoundException when appointment not found', async () => {
       prisma.appointment.findFirst.mockResolvedValue(null);
-      await expect(service.cancel('appt1', { noShow: false })).rejects.toThrow(NotFoundException);
+      await expect(service.cancel('appt1', { noShow: false, notifyClient: true })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('is idempotent: CANCELLED → CANCELLED skips update', async () => {
       const appt = { id: 'appt1', status: 'CANCELLED', clientId: null };
       prisma.appointment.findFirst.mockResolvedValue(appt);
       prisma.appointment.findFirstOrThrow.mockResolvedValue(appt);
-      const result = await service.cancel('appt1', { noShow: false });
+      const result = await service.cancel('appt1', { noShow: false, notifyClient: true });
       expect(result).toEqual(appt);
       expect(prisma.appointment.update).not.toHaveBeenCalled();
     });
@@ -81,7 +83,7 @@ describe('AppointmentsService', () => {
       const appt = { id: 'appt1', status: 'NO_SHOW', clientId: null };
       prisma.appointment.findFirst.mockResolvedValue(appt);
       prisma.appointment.findFirstOrThrow.mockResolvedValue(appt);
-      await service.cancel('appt1', { noShow: true });
+      await service.cancel('appt1', { noShow: true, notifyClient: true });
       expect(prisma.appointment.update).not.toHaveBeenCalled();
     });
 
@@ -91,7 +93,9 @@ describe('AppointmentsService', () => {
         status: 'COMPLETED',
         clientId: null,
       });
-      await expect(service.cancel('appt1', { noShow: false })).rejects.toThrow(ConflictException);
+      await expect(service.cancel('appt1', { noShow: false, notifyClient: true })).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('blocks backward transition from CANCELLED to NO_SHOW', async () => {
@@ -100,7 +104,9 @@ describe('AppointmentsService', () => {
         status: 'CANCELLED',
         clientId: null,
       });
-      await expect(service.cancel('appt1', { noShow: true })).rejects.toThrow(ConflictException);
+      await expect(service.cancel('appt1', { noShow: true, notifyClient: true })).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('sets status to NO_SHOW when noShow=true', async () => {
@@ -112,7 +118,7 @@ describe('AppointmentsService', () => {
         { status: 'NO_SHOW', startAt: new Date() },
         { status: 'NO_SHOW', startAt: new Date() },
       ]);
-      await service.cancel('appt1', { noShow: true });
+      await service.cancel('appt1', { noShow: true, notifyClient: true });
       expect(prisma.appointment.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ status: 'NO_SHOW', noShow: true }),
@@ -127,7 +133,7 @@ describe('AppointmentsService', () => {
         clientId: null,
       });
       prisma.appointment.update.mockResolvedValue({ id: 'appt1', status: 'CANCELLED', items: [] });
-      await service.cancel('appt1', { noShow: false });
+      await service.cancel('appt1', { noShow: false, notifyClient: true });
       expect(reminders.cancelReminder).toHaveBeenCalledWith('appt1');
     });
 
@@ -140,7 +146,7 @@ describe('AppointmentsService', () => {
         { status: 'NO_SHOW', startAt: new Date() },
         { status: 'COMPLETED', startAt: new Date() },
       ]);
-      await service.cancel('appt1', { noShow: true });
+      await service.cancel('appt1', { noShow: true, notifyClient: true });
       expect(prisma.client.update).toHaveBeenCalled();
     });
   });
@@ -203,7 +209,7 @@ describe('AppointmentsService', () => {
           staffId: 'staff1',
           startAt: new Date().toISOString(),
           endAt: new Date().toISOString(),
-          bookedVia: 'admin',
+          bookedVia: 'STAFF_INTERNAL',
           items: [],
         }),
       ).rejects.toThrow(ConflictException);
@@ -231,7 +237,7 @@ describe('AppointmentsService', () => {
           staffId: 'staff1',
           startAt: new Date().toISOString(),
           endAt: new Date().toISOString(),
-          bookedVia: 'admin',
+          bookedVia: 'STAFF_INTERNAL',
           items: [],
         }),
       ).rejects.toThrow('connection refused');
@@ -248,7 +254,7 @@ describe('AppointmentsService', () => {
       prisma.appointment.findFirst.mockResolvedValue(existing);
       prisma.appointment.update.mockResolvedValue({ ...existing, status: 'NO_SHOW', items: [] });
       prisma.appointment.findMany.mockResolvedValue(recentAppointments);
-      await service.cancel('appt1', { noShow: true });
+      await service.cancel('appt1', { noShow: true, notifyClient: true });
       const updateCall = prisma.client.update.mock.calls.find(
         (c) => c[0]?.where?.id === 'c1' && c[0]?.data?.noShowRisk !== undefined,
       );

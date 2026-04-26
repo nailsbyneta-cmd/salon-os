@@ -34,6 +34,7 @@ function makeWithTenant(prisma: ReturnType<typeof makePrisma>) {
 
 const BASE_SERVICE = {
   id: 'svc1',
+  categoryId: '00000000-0000-0000-0000-000000000001',
   name: 'Shellac',
   slug: 'shellac',
   durationMinutes: 60,
@@ -44,6 +45,9 @@ const BASE_SERVICE = {
   requiresConsult: false,
   requiresPatchTest: false,
   order: 0,
+  processingTimeMin: 0,
+  activeTimeBefore: 0,
+  activeTimeAfter: 0,
 };
 
 describe('ServicesService', () => {
@@ -113,7 +117,7 @@ describe('ServicesService', () => {
   describe('create()', () => {
     it('creates service with tenantId', async () => {
       prisma.service.create.mockResolvedValue({ ...BASE_SERVICE, tenantId: 'tenant1' });
-      await service.create({ ...BASE_SERVICE, taxClass: null, gender: null, color: null });
+      await service.create({ ...BASE_SERVICE, taxClass: undefined, gender: undefined, color: undefined });
       const call = prisma.service.create.mock.calls[0]![0] as { data: { tenantId: string } };
       expect(call.data.tenantId).toBe('tenant1');
     });

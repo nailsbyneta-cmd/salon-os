@@ -51,7 +51,7 @@ describe('AppointmentsService — Outbox Integration', () => {
       clientId: 'client-1',
       startAt: '2026-05-01T14:00:00Z',
       endAt: '2026-05-01T15:00:00Z',
-      bookedVia: 'SELF_SERVICE' as const,
+      bookedVia: 'ONLINE_BRANDED' as const,
       items: [
         {
           serviceId: 'svc-1',
