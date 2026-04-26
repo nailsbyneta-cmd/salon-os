@@ -143,6 +143,36 @@ Bis morgen.
   return { subject, html, text };
 }
 
+export function winbackEmail(
+  client: ClientForEmail,
+  tenant: TenantForEmail,
+  bookingUrl: string,
+): { subject: string; html: string; text: string } {
+  const greeting = client.firstName ? `Hallo ${client.firstName},` : 'Hallo,';
+  const subject = `Wir vermissen Dich bei ${tenant.name}`;
+  const text = `${greeting}
+
+es ist eine Weile her, dass Du bei uns warst — wir würden uns freuen,
+Dich wieder zu sehen.
+
+Termin direkt online buchen: ${bookingUrl}
+
+— ${tenant.name}`;
+  const html = shell(
+    'Wir vermissen Dich',
+    `<p>${escape(greeting)}</p>
+     <p>es ist eine Weile her, dass Du bei <strong>${escape(tenant.name)}</strong> warst — wir würden uns freuen, Dich wieder zu sehen.</p>
+     <p style="text-align:center;padding:24px 0;">
+       <a href="${escape(bookingUrl)}" style="display:inline-block;background:#2a2522;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;">
+         Termin buchen
+       </a>
+     </p>
+     <p style="font-size:13px;color:#7a6f68;">Falls der Button nicht klappt: ${escape(bookingUrl)}</p>`,
+    tenant,
+  );
+  return { subject, html, text };
+}
+
 export function cancelEmail(
   appt: ApptForEmail,
   client: ClientForEmail,

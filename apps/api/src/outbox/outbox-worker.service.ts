@@ -6,6 +6,7 @@ import {
   cancelEmail,
   confirmationEmail,
   reminder24hEmail,
+  winbackEmail,
   type ApptForEmail,
   type ClientForEmail,
   type TenantForEmail,
@@ -132,8 +133,10 @@ export class OutboxWorkerService {
       case 'reminder.cancel':
         await this.handleReminder(ev, payload, 'cancel');
         return 'done';
-      case 'marketing.rebook':
       case 'marketing.winback':
+        await this.handleWinback(ev, payload);
+        return 'done';
+      case 'marketing.rebook':
       case 'marketing.birthday':
         // Marketing-Templates kommen separat — für jetzt: log + done damit Outbox sauber bleibt.
         this.logger.log(
@@ -177,6 +180,52 @@ export class OutboxWorkerService {
       html: tpl.html,
       text: tpl.text,
       tag: `${ev.type}|${ev.tenantId ?? 'unknown'}`,
+    });
+    if (!res.ok) {
+      throw new Error(res.error ?? 'email_send_failed');
+    }
+  }
+
+  private async handleWinback(ev: OutboxEvent, payload: ReminderPayload): Promise<void> {
+    if (!payload.clientId) {
+      throw new Error('clientId missing in winback payload');
+    }
+    const row = await this.prisma.client.findUnique({
+      where: { id: payload.clientId },
+      select: {
+        firstName: true,
+        email: true,
+        emailOptIn: true,
+        marketingOptIn: true,
+        deletedAt: true,
+        tenant: { select: { name: true, slug: true } },
+      },
+    });
+    if (!row || !row.tenant || row.deletedAt) {
+      this.logger.warn(`winback: client ${payload.clientId} not found / deleted — drop`);
+      return;
+    }
+    if (!row.email) {
+      this.logger.warn(`winback: client ${payload.clientId} has no email — drop`);
+      return;
+    }
+    if (!row.emailOptIn || !row.marketingOptIn) {
+      this.logger.warn(`winback: client ${payload.clientId} opted-out — drop`);
+      return;
+    }
+    const publicUrl = process.env['PUBLIC_BOOKING_URL_BASE'] ?? 'https://salon-os.app/book';
+    const bookingUrl = `${publicUrl}/${row.tenant.slug}`;
+    const tpl = winbackEmail(
+      { firstName: row.firstName, email: row.email },
+      row.tenant,
+      bookingUrl,
+    );
+    const res = await this.email.send({
+      to: row.email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      tag: `marketing.winback|${ev.tenantId ?? 'unknown'}`,
     });
     if (!res.ok) {
       throw new Error(res.error ?? 'email_send_failed');
