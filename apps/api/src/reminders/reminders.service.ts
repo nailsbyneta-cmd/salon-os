@@ -2,6 +2,7 @@ import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import type { PrismaClient } from '@salon-os/db';
 import { QUEUE_REMINDERS, type ReminderJob } from '@salon-os/utils';
+import { OutboxService } from '../common/outbox.service.js';
 
 /**
  * Producer-Seite. Zwei Modi:
@@ -13,7 +14,7 @@ export class RemindersService implements OnModuleDestroy {
   private readonly logger = new Logger(RemindersService.name);
   private readonly queue: Queue<ReminderJob> | null;
 
-  constructor() {
+  constructor(private readonly outbox: OutboxService) {
     const redisUrl = process.env['REDIS_URL'];
     if (!redisUrl) {
       this.logger.warn('REDIS_URL nicht gesetzt — Reminders werden nicht enqueued.');
@@ -31,21 +32,16 @@ export class RemindersService implements OnModuleDestroy {
     tx: PrismaClient,
     args: { appointmentId: string; tenantId: string },
   ): Promise<void> {
-    await tx.outboxEvent.create({
-      data: { tenantId: args.tenantId, type: 'reminder.confirmation', payload: args as never },
-    });
+    await this.outbox.writeWithinTx(tx, 'reminder.confirmation', args);
   }
 
   async enqueueReminderViaOutbox(
     tx: PrismaClient,
     args: { appointmentId: string; tenantId: string; startAt: Date; leadTimeMs?: number },
   ): Promise<void> {
-    await tx.outboxEvent.create({
-      data: {
-        tenantId: args.tenantId,
-        type: 'reminder.24h',
-        payload: { ...args, startAt: args.startAt.toISOString() } as never,
-      },
+    await this.outbox.writeWithinTx(tx, 'reminder.24h', {
+      ...args,
+      startAt: args.startAt.toISOString(),
     });
   }
 
@@ -53,9 +49,7 @@ export class RemindersService implements OnModuleDestroy {
     tx: PrismaClient,
     args: { appointmentId: string; tenantId: string },
   ): Promise<void> {
-    await tx.outboxEvent.create({
-      data: { tenantId: args.tenantId, type: 'reminder.cancel', payload: args as never },
-    });
+    await this.outbox.writeWithinTx(tx, 'reminder.cancel', args);
   }
 
   // ─── Legacy direct-enqueue (fire-and-forget fallback) ────────────────────

@@ -65,13 +65,13 @@ export function MobileShell({ children }: { children: React.ReactNode }): React.
                 key={tab.href}
                 href={tab.href}
                 className={cn(
-                  'flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors',
+                  'flex flex-col items-center justify-center gap-1 py-3 text-[10px] font-medium transition-colors min-h-[44px]',
                   active ? 'text-accent' : 'text-text-muted',
                 )}
               >
                 <span
                   className={cn(
-                    'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                    'flex h-8 w-8 items-center justify-center rounded-md transition-colors',
                     active ? 'bg-accent/15' : '',
                   )}
                 >

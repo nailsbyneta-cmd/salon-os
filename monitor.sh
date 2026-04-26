@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+# Disabled by Cowork 2026-04-25 — too noisy iMessages.
+# Restore: copy from .bak file
+exit 0
+
 # SALON OS — Local Monitor
 # Läuft alle 30 Minuten (via LaunchAgent), prüft Projekt-Status und pingt Lorenc bei Bedarf.
 #

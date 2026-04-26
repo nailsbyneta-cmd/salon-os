@@ -172,24 +172,18 @@ export class AppointmentsService {
             bookedVia: appt.bookedVia,
           },
         });
+        // Schreibe Reminders atomisch in die Outbox — werden vom Worker gepolltt.
+        await this.reminders.enqueueConfirmationViaOutbox(tx, {
+          appointmentId: appt.id,
+          tenantId: ctx.tenantId,
+        });
+        await this.reminders.enqueueReminderViaOutbox(tx, {
+          appointmentId: appt.id,
+          tenantId: ctx.tenantId,
+          startAt: appt.startAt,
+        });
         return appt;
       });
-
-      // Confirmation sofort + 24h-Reminder. Fehler dürfen den Buchungsflow
-      // nicht killen.
-      this.reminders
-        .sendConfirmationNow({
-          appointmentId: created.id,
-          tenantId: ctx.tenantId,
-        })
-        .catch(() => undefined);
-      this.reminders
-        .scheduleEmailReminder({
-          appointmentId: created.id,
-          tenantId: ctx.tenantId,
-          startAt: created.startAt,
-        })
-        .catch(() => undefined);
 
       return created;
     } catch (err) {
