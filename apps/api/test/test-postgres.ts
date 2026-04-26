@@ -171,7 +171,6 @@ async function seedMinimal(prisma: PrismaClient): Promise<void> {
       id: SEED_CATEGORY_ID,
       tenantId: SEED_TENANT_ID,
       name: 'Nails',
-      slug: 'nails',
       order: 0,
     },
     update: {},

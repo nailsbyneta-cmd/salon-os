@@ -83,7 +83,7 @@ describe('ServicesService (behavior)', () => {
       });
       const otherCategoryId = '00000000-0000-0000-0000-0000000000fe';
       await prisma.serviceCategory.create({
-        data: { id: otherCategoryId, tenantId: otherTenantId, name: 'Other-Cat', slug: 'oc' },
+        data: { id: otherCategoryId, tenantId: otherTenantId, name: 'Other-Cat' },
       });
       await prisma.service.create({
         data: {
