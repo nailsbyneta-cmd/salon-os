@@ -56,7 +56,7 @@ describe('StaffService (behavior)', () => {
 
     it('marks first locationId as primary, others as non-primary', async () => {
       // 2. Location anlegen
-      const loc2Id = '00000000-0000-0000-0000-0000000000a2';
+      const loc2Id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
       await prisma.location.create({
         data: {
           id: loc2Id,
@@ -104,8 +104,8 @@ describe('StaffService (behavior)', () => {
       );
 
       // Sekundärer Tenant + Staff direkt
-      const otherTenantId = '00000000-0000-0000-0000-0000000000ff';
-      const otherUserId = '00000000-0000-0000-0000-0000000000fa';
+      const otherTenantId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+      const otherUserId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
       await prisma.tenant.create({
         data: {
           id: otherTenantId,
@@ -154,7 +154,7 @@ describe('StaffService (behavior)', () => {
     });
 
     it('filters by locationId via locationAssignments', async () => {
-      const loc2Id = '00000000-0000-0000-0000-0000000000a3';
+      const loc2Id = '12345678-1234-4567-8123-123456789abc';
       await prisma.location.create({
         data: {
           id: loc2Id,
@@ -188,7 +188,7 @@ describe('StaffService (behavior)', () => {
       await expect(
         h.asTenant(h.seed.tenantId, h.seed.staffUserId, 'OWNER', () =>
           service.update(
-            '00000000-0000-0000-0000-0000000000ee',
+            'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
             updateStaffSchema.parse({ firstName: 'X' }),
           ),
         ),

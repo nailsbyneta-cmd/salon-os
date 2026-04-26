@@ -69,7 +69,7 @@ describe('ServicesService (behavior)', () => {
       );
 
       // Sekundärer Tenant + Service direkt via Prisma
-      const otherTenantId = '00000000-0000-0000-0000-0000000000ff';
+      const otherTenantId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
       await prisma.tenant.create({
         data: {
           id: otherTenantId,
@@ -81,7 +81,7 @@ describe('ServicesService (behavior)', () => {
           locale: 'de-CH',
         },
       });
-      const otherCategoryId = '00000000-0000-0000-0000-0000000000fe';
+      const otherCategoryId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
       await prisma.serviceCategory.create({
         data: { id: otherCategoryId, tenantId: otherTenantId, name: 'Other-Cat' },
       });
@@ -142,7 +142,7 @@ describe('ServicesService (behavior)', () => {
       await expect(
         h.asTenant(h.seed.tenantId, h.seed.staffUserId, 'OWNER', () =>
           service.update(
-            '00000000-0000-0000-0000-0000000000ee',
+            'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
             updateServiceSchema.parse({ name: 'X' }),
           ),
         ),

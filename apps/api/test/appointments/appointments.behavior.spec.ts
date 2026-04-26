@@ -174,7 +174,7 @@ describe('AppointmentsService (behavior)', () => {
       await expect(
         h.asTenant(h.seed.tenantId, h.seed.staffUserId, 'OWNER', () =>
           service.cancel(
-            '00000000-0000-0000-0000-0000000000ee',
+            'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
             cancelAppointmentSchema.parse({ noShow: false }),
           ),
         ),
