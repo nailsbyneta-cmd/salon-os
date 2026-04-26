@@ -145,6 +145,8 @@ jobs:
         with: { node-version-file: .nvmrc, cache: pnpm }
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm --filter @salon-os/db db:generate
+      - name: Build api dependencies (types/utils/auth/db/config)
+        run: pnpm turbo build --filter='@salon-os/api^...'
       - name: Run prisma migrations against CI postgres
         env:
           DATABASE_URL: postgresql://salon:salon@localhost:5432/salon_os_test
