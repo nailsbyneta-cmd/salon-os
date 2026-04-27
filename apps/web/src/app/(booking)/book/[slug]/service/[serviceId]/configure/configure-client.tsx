@@ -62,7 +62,9 @@ export function ServiceConfigure({
     if (sel.optionIds.length > 0) params.set('options', sel.optionIds.join(','));
     if (sel.addOnIds.length > 0) params.set('addons', sel.addOnIds.join(','));
     if (sel.bundleIds.length > 0) params.set('bundles', sel.bundleIds.join(','));
-    router.push(`/book/${slug}/service/${serviceId}?${params.toString()}`);
+    // Phorest-Pattern: Staff-Picker zwischen Service-Auswahl und Slot-Picker.
+    // Bei nur 1 Mitarbeiterin überspringt die Staff-Page automatisch.
+    router.push(`/book/${slug}/service/${serviceId}/staff?${params.toString()}`);
   };
 
   return (

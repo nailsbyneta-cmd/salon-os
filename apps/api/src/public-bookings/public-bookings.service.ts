@@ -98,6 +98,49 @@ export class PublicBookingsService {
   }
 
   /**
+   * Public-Endpoint für Mitarbeiter-Picker im Booking-Flow.
+   * Liefert NUR Staff die diesen Service an dieser Location anbieten —
+   * Phorest-Pattern "Wer betreut Dich?" zwischen Service-Auswahl und Slot-Picker.
+   */
+  async listEligibleStaff(
+    slug: string,
+    serviceId: string,
+    locationId: string,
+  ): Promise<
+    Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      displayName: string | null;
+      bio: string | null;
+      photoUrl: string | null;
+      color: string | null;
+    }>
+  > {
+    const tenant = await this.resolveTenant(slug);
+    return this.withTenant(tenant.id, null, null, async (tx) => {
+      return tx.staff.findMany({
+        where: {
+          active: true,
+          deletedAt: null,
+          services: { some: { serviceId } },
+          locationAssignments: { some: { locationId } },
+        },
+        orderBy: { firstName: 'asc' },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          displayName: true,
+          bio: true,
+          photoUrl: true,
+          color: true,
+        },
+      });
+    });
+  }
+
+  /**
    * Public-Kategorien für die Booking-Page-Folder-Gruppierung. Ohne diese
    * fielen alle Folder auf "Services" zurück (Audit-Befund).
    */

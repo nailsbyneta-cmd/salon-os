@@ -121,11 +121,12 @@ export default async function BookingSlots({
     options?: string;
     addons?: string;
     bundles?: string;
+    staffId?: string;
   }>;
 }): Promise<React.JSX.Element> {
   const { slug, serviceId } = await params;
   const sp = await searchParams;
-  const { date, duration, price } = sp;
+  const { date, duration, price, staffId } = sp;
 
   // Falls kein location im Query: hol die erste verfügbare aus /info.
   // Vermeidet 404 wenn User von /configure ohne location-Query kommt.
@@ -135,13 +136,18 @@ export default async function BookingSlots({
 
   const selectedDate = date ?? today();
   const durationMin = duration ? Number(duration) : undefined;
-  const slots = await loadSlots(slug, serviceId, selectedDate, location, durationMin);
-  if (slots === null) notFound();
+  const allSlots = await loadSlots(slug, serviceId, selectedDate, location, durationMin);
+  if (allSlots === null) notFound();
+
+  // Staff-Filter: wenn staffId gesetzt → nur Slots dieser Mitarbeiterin zeigen.
+  // Sonst alle (Phorest-Pattern: "Egal" → alle Slots gezeigt).
+  const slots = staffId ? allSlots.filter((s) => s.staffId === staffId) : allSlots;
 
   // Preserve config-params across date navigation
   const extraParams = new URLSearchParams();
   if (duration) extraParams.set('duration', duration);
   if (price) extraParams.set('price', price);
+  if (staffId) extraParams.set('staffId', staffId);
   if (sp.options) extraParams.set('options', sp.options);
   if (sp.addons) extraParams.set('addons', sp.addons);
   if (sp.bundles) extraParams.set('bundles', sp.bundles);

@@ -72,6 +72,15 @@ export class PublicBookingsController {
     return { categories: await this.svc.listServiceCategories(slug) };
   }
 
+  @Get('services/:serviceId/staff')
+  async listEligibleStaff(
+    @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
+    @Param('serviceId', new ZodValidationPipe(uuidSchema)) serviceId: string,
+    @Query('locationId', new ZodValidationPipe(uuidSchema)) locationId: string,
+  ): Promise<{ staff: Awaited<ReturnType<PublicBookingsService['listEligibleStaff']>> }> {
+    return { staff: await this.svc.listEligibleStaff(slug, serviceId, locationId) };
+  }
+
   @Get('services/:serviceId')
   async getServiceDetail(
     @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
