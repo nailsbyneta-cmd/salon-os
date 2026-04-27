@@ -98,6 +98,23 @@ export class PublicBookingsService {
   }
 
   /**
+   * Public-Kategorien für die Booking-Page-Folder-Gruppierung. Ohne diese
+   * fielen alle Folder auf "Services" zurück (Audit-Befund).
+   */
+  async listServiceCategories(
+    slug: string,
+  ): Promise<Array<{ id: string; name: string; order: number }>> {
+    const tenant = await this.resolveTenant(slug);
+    return this.withTenant(tenant.id, null, null, async (tx) => {
+      const cats = await tx.serviceCategory.findMany({
+        orderBy: [{ order: 'asc' }, { name: 'asc' }],
+        select: { id: true, name: true, order: true },
+      });
+      return cats;
+    });
+  }
+
+  /**
    * Service-Detail für Online-Booking: liefert Service + Varianten + Add-Ons
    * + Bundle-Cross-Sell eingebettet. Ein Fetch, Wizard kann direkt
    * rendern.
@@ -390,7 +407,10 @@ export class PublicBookingsService {
       // Wizard kann effektive Dauer (inkl. Varianten + Add-Ons + Bundle) übergeben
       const activeMin = opts.durationOverrideMin ?? service.durationMinutes;
       const duration = activeMin + service.bufferAfterMin + service.bufferBeforeMin;
-      const slotMinutes = 30;
+      // Slot-Granularität = Service-Dauer (auf 15-Min-Grid gerundet, min 15).
+      // Verhindert "Lücken" wie 08:00, 08:30, 09:00 für 60-Min-Service —
+      // stattdessen 08:00, 09:00, 10:00. Lorenc-Vorgabe.
+      const slotMinutes = Math.max(15, Math.round(duration / 15) * 15);
 
       // Echte Öffnungszeiten aus location.openingHours nutzen.
       // Format: { mon: [{open:"09:00",close:"19:00"}], ... }

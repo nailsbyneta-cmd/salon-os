@@ -65,6 +65,13 @@ export class PublicBookingsController {
     return { services: await this.svc.listServices(slug) };
   }
 
+  @Get('service-categories')
+  async listServiceCategories(
+    @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
+  ): Promise<{ categories: Array<{ id: string; name: string; order: number }> }> {
+    return { categories: await this.svc.listServiceCategories(slug) };
+  }
+
   @Get('services/:serviceId')
   async getServiceDetail(
     @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
