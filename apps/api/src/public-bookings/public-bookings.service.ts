@@ -497,7 +497,11 @@ export class PublicBookingsService {
             new Date(chain[0]!.startAt).getTime()) /
           60_000;
         const score = totalMin + totalGap * 1.5 + (sameStaff ? 0 : 5);
-        results.push({ score, gapMinutes: totalGap, sameStaff, stops: chain });
+        // CRITICAL: chain wird beim Backtracking mutiert (push/pop). Ohne Copy
+        // teilen alle Results die SELBE Array-Referenz und werden auf [] geleert
+        // wenn DFS terminiert — Bug der seit Wochen Multi-Service-Slots auf 0
+        // gehalten hat.
+        results.push({ score, gapMinutes: totalGap, sameStaff, stops: [...chain] });
         return;
       }
       const candidates = trim[idx]!;
