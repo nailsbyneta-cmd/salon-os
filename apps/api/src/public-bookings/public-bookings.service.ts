@@ -407,10 +407,10 @@ export class PublicBookingsService {
       // Wizard kann effektive Dauer (inkl. Varianten + Add-Ons + Bundle) übergeben
       const activeMin = opts.durationOverrideMin ?? service.durationMinutes;
       const duration = activeMin + service.bufferAfterMin + service.bufferBeforeMin;
-      // Slot-Granularität = Service-Dauer (auf 15-Min-Grid gerundet, min 15).
-      // Verhindert "Lücken" wie 08:00, 08:30, 09:00 für 60-Min-Service —
-      // stattdessen 08:00, 09:00, 10:00. Lorenc-Vorgabe.
-      const slotMinutes = Math.max(15, Math.round(duration / 15) * 15);
+      // Slot-Granularität = Service-Dauer (min 15). NICHT auf 15-Min-Grid
+      // runden — sonst sieht ein 39-Min-Service Slots im 45-Min-Abstand und
+      // verliert mögliche Buchungen (Audit-Befund Pass 7).
+      const slotMinutes = Math.max(15, duration);
 
       // Echte Öffnungszeiten aus location.openingHours nutzen.
       // Format: { mon: [{open:"09:00",close:"19:00"}], ... }

@@ -477,7 +477,9 @@ export default async function BookingStart({
                         {s.name}
                       </div>
                       {s.description ? (
-                        <div className="mt-0.5 text-sm text-text-secondary">{s.description}</div>
+                        <div className="mt-0.5 line-clamp-2 text-sm text-text-secondary">
+                          {s.description}
+                        </div>
                       ) : null}
                       <div className="mt-1.5 flex items-center gap-2 text-xs text-text-muted">
                         <span>{s.durationMinutes} Min</span>
