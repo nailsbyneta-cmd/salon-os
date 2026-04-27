@@ -1,0 +1,39 @@
+name: Cron — Outbox Worker
+
+# Triggert alle 5 Minuten den Outbox-Worker auf Prod. Drainiert PENDING
+# events (Bestätigungen, 24h-Reminders, Marketing-Winback) und sendet
+# via Postmark wenn POSTMARK_TOKEN gesetzt ist.
+#
+# Alternative wäre Railway-Cron-Service (kostet zusätzlich) oder
+# vercel-cron (passt nicht zu Railway). GitHub Actions Cron ist gratis
+# und läuft auch wenn der Mac aus ist.
+
+on:
+  schedule:
+    # */5 = alle 5 Minuten. GitHub Cron-Jitter kann ±15 Min betragen,
+    # für Buchungs-Bestätigungen total OK (Mail kommt < 20 Min raus).
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  drain-outbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Hit Outbox Cron Endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: ${{ vars.API_URL || 'https://salon-os-production-2346.up.railway.app' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::CRON_SECRET not set — skipping. Add as repo secret to enable."
+            exit 0
+          fi
+          RESP=$(curl -sS -X POST "$API_URL/v1/public/cron/outbox/process" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -w "\nHTTP=%{http_code}")
+          echo "$RESP"
+          # Failure-Mode: 401 (wrong secret) oder 5xx → Workflow rot
+          if echo "$RESP" | grep -q "HTTP=4\|HTTP=5"; then
+            exit 1
+          fi

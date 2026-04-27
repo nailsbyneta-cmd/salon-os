@@ -1,0 +1,33 @@
+name: Cron — Marketing Reactivation
+
+# Läuft 1x täglich um 09:00 UTC (= 11:00 CH-Sommer / 10:00 CH-Winter):
+# Findet Kundinnen die seit 90+ Tagen nicht da waren + emailOptIn +
+# nicht in den letzten 60 Tagen schon angeschrieben → enqueued
+# marketing.winback events. Outbox-Worker sendet sie dann (5-Min-Cron).
+
+on:
+  schedule:
+    - cron: '0 9 * * *' # täglich 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  reactivation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Run Reactivation
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: ${{ vars.API_URL || 'https://salon-os-production-2346.up.railway.app' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::CRON_SECRET not set — skipping."
+            exit 0
+          fi
+          RESP=$(curl -sS -X POST "$API_URL/v1/public/cron/marketing/reactivation" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -w "\nHTTP=%{http_code}")
+          echo "$RESP"
+          if echo "$RESP" | grep -q "HTTP=4\|HTTP=5"; then
+            exit 1
+          fi

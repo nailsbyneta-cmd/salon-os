@@ -1,0 +1,32 @@
+name: Cron — Appointment Series Rollover
+
+# Läuft 1x täglich: rollt aktive Recurring-Termine aus (Stamm-Kundinnen-
+# Pattern). Look-ahead 8 Wochen, idempotent — beträgt nur die Termine
+# die noch nicht in der DB sind.
+
+on:
+  schedule:
+    - cron: '15 6 * * *' # täglich 06:15 UTC (vor Booking-Hours)
+  workflow_dispatch:
+
+jobs:
+  rollover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger Rollover
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: ${{ vars.API_URL || 'https://salon-os-production-2346.up.railway.app' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::CRON_SECRET not set — skipping."
+            exit 0
+          fi
+          RESP=$(curl -sS -X POST "$API_URL/v1/appointment-series/cron/rollover" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -w "\nHTTP=%{http_code}")
+          echo "$RESP"
+          if echo "$RESP" | grep -q "HTTP=4\|HTTP=5"; then
+            exit 1
+          fi

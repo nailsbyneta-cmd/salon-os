@@ -41,7 +41,10 @@ export class TenantMiddleware implements NestMiddleware {
     if (
       path.startsWith('/health') ||
       path.startsWith('/v1/public/') ||
-      path.startsWith('/public/')
+      path.startsWith('/public/') ||
+      // Cron-Endpoints sind über x-cron-secret im Controller geguardet —
+      // brauchen kein Tenant-Context (laufen cross-tenant per PRISMA bypass).
+      path.includes('/cron/')
     ) {
       next();
       return;
