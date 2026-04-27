@@ -441,9 +441,11 @@ export default async function BookingStart({
         {grouped.map(({ catId, catName, items }) => (
           <details
             key={catId}
-            // Phorest-Pattern: alle Folders default geschlossen — Kundin
-            // klickt was sie tatsächlich braucht. Verhindert dass Pediküre
-            // den Screen dominiert (Audit Pass 8).
+            // Phorest-Pattern: alle Folders default geschlossen + Single-
+            // Accordion via name="" (HTML5 exclusive-group, Chrome/FF/Safari
+            // support seit 2024). Klick auf einen Folder schliesst andere
+            // automatisch. Audit Pass 8+9.
+            name="booking-folders"
             open={false}
             className="group rounded-lg border border-border bg-surface open:bg-surface-elevated"
           >
