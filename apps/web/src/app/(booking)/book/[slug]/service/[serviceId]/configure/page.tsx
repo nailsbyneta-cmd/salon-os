@@ -78,6 +78,22 @@ async function loadDetail(
   }
 }
 
+/**
+ * Fallback wenn ?location= im Query fehlt (z.B. weil Listing kein Location
+ * mitgegeben hat oder User die URL direkt aufruft). Ohne locationId crasht
+ * der Slot-Step downstream mit 404.
+ */
+async function loadFirstLocationId(slug: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_URL}/v1/public/${slug}/info`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { locations?: Array<{ id: string }> };
+    return data.locations?.[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function ConfigureServicePage({
   params,
   searchParams,
@@ -90,6 +106,11 @@ export default async function ConfigureServicePage({
   const data = await loadDetail(slug, serviceId);
   if (!data) notFound();
   const { service, optionGroups, addOns, bundles } = data;
+
+  // Fallback: wenn kein location im Query, hole die erste verfügbare Location.
+  // Verhindert dass der Slot-Step downstream wegen fehlendem ?location= 404t.
+  const effectiveLocation =
+    location && location.length > 0 ? location : await loadFirstLocationId(slug);
 
   return (
     <main className="space-y-6">
@@ -111,7 +132,7 @@ export default async function ConfigureServicePage({
             description={service.description}
             basePrice={Number(service.basePrice)}
             baseDuration={service.durationMinutes}
-            locationId={location ?? null}
+            locationId={effectiveLocation}
             optionGroups={optionGroups.map((g) => ({
               ...g,
               options: g.options.map((o) => ({ ...o, priceDelta: Number(o.priceDelta) })),

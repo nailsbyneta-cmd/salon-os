@@ -125,15 +125,17 @@ export default async function BookingSlots({
 }): Promise<React.JSX.Element> {
   const { slug, serviceId } = await params;
   const sp = await searchParams;
-  const { date, location, duration, price } = sp;
+  const { date, duration, price } = sp;
+
+  // Falls kein location im Query: hol die erste verfügbare aus /info.
+  // Vermeidet 404 wenn User von /configure ohne location-Query kommt.
+  const info = await loadInfo(slug);
+  const location = sp.location && sp.location.length > 0 ? sp.location : info?.locations[0]?.id;
   if (!location) notFound();
 
   const selectedDate = date ?? today();
   const durationMin = duration ? Number(duration) : undefined;
-  const [slots, info] = await Promise.all([
-    loadSlots(slug, serviceId, selectedDate, location, durationMin),
-    loadInfo(slug),
-  ]);
+  const slots = await loadSlots(slug, serviceId, selectedDate, location, durationMin);
   if (slots === null) notFound();
 
   // Preserve config-params across date navigation
