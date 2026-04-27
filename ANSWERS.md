@@ -540,3 +540,9 @@ Letzter Commit vor 7 h. Hängt Claude Code? Check STATUS.md.
 
 ## 2026-04-26 17:48 — via iMessage
 🟡 SALON OS — Stillstand? Letzter Commit vor 74 h. Hängt Claude Code? Check STATUS.md.
+
+## 2026-04-26 18:48 — via iMessage
+🟢 SALON OS — Fragen warten 4 Fragen von Claude Code. Check QUESTIONS.md und antworte in ANSWERS.md.
+
+## 2026-04-26 18:48 — via iMessage
+🟡 SALON OS — Stillstand? Letzter Commit vor 75 h. Hängt Claude Code? Check STATUS.md.
