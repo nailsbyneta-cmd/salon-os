@@ -489,3 +489,136 @@ export async function applyPedicurePreset(): Promise<void> {
   revalidatePath('/services');
   redirect('/services');
 }
+
+// ─── Single-Service Templates für /services/new Picker ────────────
+// Klick auf Karte → erstellt eine Behandlung mit sinnvollen Defaults +
+// Standard-Varianten. User kann danach auf der Detail-Seite anpassen.
+
+const HAIR_VARIANTS: GroupSpec[] = [
+  {
+    name: 'Länge',
+    options: [
+      { label: 'Kurz', price: 0, dur: 0 },
+      { label: 'Mittel', price: 10, dur: 15 },
+      { label: 'Lang', price: 20, dur: 30 },
+    ],
+  },
+];
+
+const COLOR_VARIANTS: GroupSpec[] = [
+  {
+    name: 'Bereich',
+    options: [
+      { label: 'Wurzel-Ansatz', price: 0, dur: 0 },
+      { label: 'Komplett', price: 60, dur: 60 },
+      { label: 'Strähnen / Highlights', price: 80, dur: 60 },
+    ],
+  },
+];
+
+const TEMPLATE_SPECS: Record<string, { category: string; spec: ServiceSpec }> = {
+  'nails-neueset': {
+    category: 'Nägel',
+    spec: {
+      name: 'Nails — Neues Set',
+      description: 'Komplettes Neuset — Gel oder Acryl in deiner Wunschlänge.',
+      basePrice: 80,
+      baseDuration: 60,
+      groups: NAIL_GROUPS,
+    },
+  },
+  'nails-auffüllen': {
+    category: 'Nägel',
+    spec: {
+      name: 'Nails — Auffüllen',
+      description: 'Auffüllen bestehender Modellage.',
+      basePrice: 70,
+      baseDuration: 60,
+      groups: NAIL_GROUPS,
+    },
+  },
+  'pedi-basis': {
+    category: 'Pediküre',
+    spec: {
+      name: 'Pediküre — Basis',
+      description: 'Nagelpflege, Feilen, Lackieren.',
+      basePrice: 39,
+      baseDuration: 30,
+      groups: [],
+    },
+  },
+  'pedi-spa': {
+    category: 'Pediküre',
+    spec: {
+      name: 'Pediküre — Spa',
+      description: 'Wasserbad, Hornhaut-Behandlung, Massage, Lack.',
+      basePrice: 59,
+      baseDuration: 60,
+      groups: [],
+    },
+  },
+  haarschnitt: {
+    category: 'Haare',
+    spec: {
+      name: 'Haarschnitt',
+      description: 'Schneiden, Waschen, Föhnen.',
+      basePrice: 65,
+      baseDuration: 60,
+      groups: HAIR_VARIANTS,
+    },
+  },
+  färben: {
+    category: 'Haare',
+    spec: {
+      name: 'Färben',
+      description: 'Färben mit Wunsch-Ton.',
+      basePrice: 120,
+      baseDuration: 90,
+      groups: COLOR_VARIANTS,
+    },
+  },
+  balayage: {
+    category: 'Haare',
+    spec: {
+      name: 'Balayage',
+      description: 'Hand-gemalte Sun-Kissed Highlights.',
+      basePrice: 180,
+      baseDuration: 150,
+      groups: [],
+    },
+  },
+  lashes: {
+    category: 'Wimpern',
+    spec: {
+      name: 'Wimpernverlängerung',
+      description: 'Volumen-Set, individuell pro Wimper.',
+      basePrice: 120,
+      baseDuration: 90,
+      groups: [
+        {
+          name: 'Set',
+          options: [
+            { label: 'Classic', price: 0, dur: 0 },
+            { label: 'Volume', price: 30, dur: 30 },
+            { label: 'Mega Volume', price: 60, dur: 60 },
+          ],
+        },
+      ],
+    },
+  },
+};
+
+/**
+ * Wird von der "Neue Behandlung"-Picker-Seite aufgerufen — erstellt Service
+ * inkl. Default-Varianten + Kategorie und leitet auf die Detail-Seite weiter,
+ * wo Lorenc Preise/Dauer anpassen kann.
+ */
+export async function createFromTemplate(formData: FormData): Promise<void> {
+  const key = String(formData.get('template') ?? '');
+  const tpl = TEMPLATE_SPECS[key];
+  if (!tpl) return;
+  const catId = await getOrCreateCategory(tpl.category);
+  const id = await createServiceWithSpec(catId, tpl.spec);
+  revalidatePath('/services');
+  redirect(`/services/${id}`);
+}

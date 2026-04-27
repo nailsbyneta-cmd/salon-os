@@ -234,71 +234,97 @@ function GroupRow({
         </button>
       </div>
 
-      {group.options.length > 0 ? (
-        <ul className="mb-3 space-y-1">
-          {group.options.map((o) => (
-            <OptionRow
-              key={o.id}
-              serviceId={serviceId}
-              option={o}
-              basePrice={basePrice}
-              baseDuration={baseDuration}
-              onRemove={() => removeOption(o.id, o.label)}
-              disabled={pending}
-            />
-          ))}
-        </ul>
-      ) : (
-        <p className="mb-3 text-xs text-text-muted">Noch keine Optionen in dieser Gruppe.</p>
-      )}
-
-      <div className="rounded-md border border-border bg-surface-raised/40 p-2">
-        <div className="flex flex-wrap items-end gap-2">
-          <Field label="Option" hint="z.B. Gel, Kurz">
-            <Input
-              value={newOptionLabel}
-              onChange={(e) => setNewOptionLabel(e.target.value)}
-              placeholder="Gel"
-              disabled={pending}
-              className="w-32"
-            />
-          </Field>
-          <Field label="Endpreis CHF" hint={`Basis: ${basePrice}`}>
-            <Input
-              type="number"
-              step="1"
-              value={newOptionPrice}
-              onChange={(e) => setNewOptionPrice(e.target.value)}
-              disabled={pending}
-              className="w-24"
-            />
-          </Field>
-          <Field label="Dauer Min" hint={`Basis: ${baseDuration}`}>
-            <Input
-              type="number"
-              step="5"
-              value={newOptionDuration}
-              onChange={(e) => setNewOptionDuration(e.target.value)}
-              disabled={pending}
-              className="w-24"
-            />
-          </Field>
-          <Field label="Processing Δ" hint="Min ±">
-            <Input
-              type="number"
-              step="5"
-              value={newOptionProcessing}
-              onChange={(e) => setNewOptionProcessing(e.target.value)}
-              disabled={pending}
-              className="w-28"
-            />
-          </Field>
-          <Button type="button" variant="ghost" onClick={addOption} disabled={pending}>
-            + Option
-          </Button>
-        </div>
-        {error ? <p className="mt-1 text-xs font-medium text-danger">{error}</p> : null}
+      {/* Tabellen-Editor — Phorest/Excel-Stil. Kopfzeile + Datenzeilen + leere
+          Zeile am Ende für neue Option. Enter im letzten Feld committet. */}
+      <div className="overflow-x-auto rounded-md border border-border">
+        <table className="w-full text-sm">
+          <thead className="bg-surface-elevated text-xs uppercase tracking-[0.15em] text-text-muted">
+            <tr>
+              <th className="px-3 py-2 text-left font-semibold">Option</th>
+              <th className="px-3 py-2 text-right font-semibold">Preis (CHF)</th>
+              <th className="px-3 py-2 text-right font-semibold">Dauer (Min)</th>
+              <th className="w-12 px-2 py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {group.options.map((o) => (
+              <OptionRow
+                key={o.id}
+                serviceId={serviceId}
+                option={o}
+                basePrice={basePrice}
+                baseDuration={baseDuration}
+                onRemove={() => removeOption(o.id, o.label)}
+                disabled={pending}
+              />
+            ))}
+            <tr className="border-t border-border bg-surface-raised/40">
+              <td className="px-3 py-2">
+                <Input
+                  value={newOptionLabel}
+                  onChange={(e) => setNewOptionLabel(e.target.value)}
+                  placeholder="z.B. Kurz, Gel, Damen…"
+                  disabled={pending}
+                  className="w-full"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addOption();
+                    }
+                  }}
+                />
+              </td>
+              <td className="px-3 py-2">
+                <Input
+                  type="number"
+                  step="1"
+                  value={newOptionPrice}
+                  onChange={(e) => setNewOptionPrice(e.target.value)}
+                  disabled={pending}
+                  className="w-24 text-right tabular-nums"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addOption();
+                    }
+                  }}
+                />
+              </td>
+              <td className="px-3 py-2">
+                <Input
+                  type="number"
+                  step="5"
+                  value={newOptionDuration}
+                  onChange={(e) => setNewOptionDuration(e.target.value)}
+                  disabled={pending}
+                  className="w-24 text-right tabular-nums"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addOption();
+                    }
+                  }}
+                />
+              </td>
+              <td className="px-2 py-2 text-center">
+                <button
+                  type="button"
+                  onClick={addOption}
+                  disabled={pending || !newOptionLabel.trim()}
+                  aria-label="Option hinzufügen"
+                  className="text-lg text-accent transition-colors hover:text-accent-foreground disabled:cursor-not-allowed disabled:text-text-muted"
+                >
+                  +
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+      {error ? <p className="mt-2 text-xs font-medium text-danger">{error}</p> : null}
+      <p className="mt-2 text-[11px] text-text-muted">
+        Tipp: Name eingeben, Preis &amp; Dauer setzen, Enter zum Speichern.
+      </p>
     </div>
   );
 }
@@ -325,7 +351,6 @@ function OptionRow({
   const endDuration = option.durationDeltaMin + baseDuration;
   const [price, setPrice] = React.useState(String(endPrice));
   const [duration, setDuration] = React.useState(String(endDuration));
-  const [processing, setProcessing] = React.useState(String(option.processingDeltaMin));
   const [pending, startTransition] = React.useTransition();
 
   const save = (): void => {
@@ -336,7 +361,7 @@ function OptionRow({
         label: label.trim(),
         priceDelta: Number.isFinite(newEndPrice) ? newEndPrice - basePrice : 0,
         durationDeltaMin: Number.isFinite(newEndDuration) ? newEndDuration - baseDuration : 0,
-        processingDeltaMin: Number(processing) || 0,
+        processingDeltaMin: option.processingDeltaMin,
       });
       setEditing(false);
     });
@@ -347,68 +372,103 @@ function OptionRow({
   const durationLabel = `${endDuration} Min`;
 
   if (editing) {
+    const onKey = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        save();
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setEditing(false);
+      }
+    };
     return (
-      <li className="flex flex-wrap items-end gap-2 rounded-md bg-surface-raised/60 px-2 py-1.5">
-        <Input value={label} onChange={(e) => setLabel(e.target.value)} className="w-28" />
-        <Input
-          type="number"
-          step="0.01"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="w-20"
-        />
-        <Input
-          type="number"
-          step="5"
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          className="w-20"
-        />
-        <Input
-          type="number"
-          step="5"
-          value={processing}
-          onChange={(e) => setProcessing(e.target.value)}
-          className="w-20"
-        />
-        <Button type="button" variant="primary" onClick={save} disabled={pending}>
-          OK
-        </Button>
-        <button
-          type="button"
-          onClick={() => setEditing(false)}
-          className="text-xs text-text-muted hover:underline"
-        >
-          Abbrechen
-        </button>
-      </li>
+      <tr className="border-t border-border bg-surface-raised/60">
+        <td className="px-3 py-2">
+          <Input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            onKeyDown={onKey}
+            autoFocus
+            className="w-full"
+          />
+        </td>
+        <td className="px-3 py-2">
+          <Input
+            type="number"
+            step="1"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            onKeyDown={onKey}
+            className="w-24 text-right tabular-nums"
+          />
+        </td>
+        <td className="px-3 py-2">
+          <Input
+            type="number"
+            step="5"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            onKeyDown={onKey}
+            className="w-24 text-right tabular-nums"
+          />
+        </td>
+        <td className="px-2 py-2 text-center">
+          <button
+            type="button"
+            onClick={save}
+            disabled={pending}
+            aria-label="Speichern"
+            className="text-lg text-accent transition-colors hover:text-accent-foreground"
+          >
+            ✓
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            disabled={pending}
+            aria-label="Abbrechen"
+            className="ml-1 text-text-muted hover:text-text-primary"
+          >
+            ✕
+          </button>
+        </td>
+      </tr>
     );
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-md bg-surface-raised/40 px-2 py-1.5 text-sm">
-      <span className="font-medium text-text-primary">{option.label}</span>
-      <Badge tone="neutral">{priceLabel}</Badge>
-      <Badge tone="neutral">{durationLabel}</Badge>
-      {option.processingDeltaMin !== 0 ? (
-        <Badge tone="neutral">Processing {fmt(option.processingDeltaMin)} Min</Badge>
-      ) : null}
-      <button
-        type="button"
-        onClick={() => setEditing(true)}
-        disabled={disabled}
-        className="ml-auto text-xs text-text-muted hover:underline"
-      >
-        Bearbeiten
-      </button>
-      <button
-        type="button"
-        onClick={onRemove}
-        disabled={disabled}
-        className="text-xs text-danger hover:underline"
-      >
-        Entfernen
-      </button>
-    </li>
+    <tr
+      className="cursor-pointer border-t border-border transition-colors hover:bg-surface-raised/40"
+      onClick={() => !disabled && setEditing(true)}
+    >
+      <td className="px-3 py-2 font-medium text-text-primary">
+        {option.label}
+        {option.isDefault ? (
+          <span className="ml-2 text-[10px] uppercase tracking-wider text-accent">★ Default</span>
+        ) : null}
+        {option.processingDeltaMin !== 0 ? (
+          <span className="ml-2 text-[11px] text-text-muted">
+            Einwirkzeit {fmt(option.processingDeltaMin)} Min
+          </span>
+        ) : null}
+      </td>
+      <td className="px-3 py-2 text-right tabular-nums text-text-secondary">{priceLabel}</td>
+      <td className="px-3 py-2 text-right tabular-nums text-text-secondary">{durationLabel}</td>
+      <td className="px-2 py-2 text-center">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          disabled={disabled}
+          aria-label="Option entfernen"
+          className="text-text-muted hover:text-danger"
+        >
+          ×
+        </button>
+      </td>
+    </tr>
   );
 }
