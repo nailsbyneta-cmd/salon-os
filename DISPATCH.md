@@ -3,6 +3,30 @@
 > Wird von Cowork-Claude (scheduled Task) gepflegt. Claude Code kann
 > bei kritischen Blockern einen 🔴-Eintrag ergänzen.
 
+## 🟢 2026-04-27 07:35 — BLOCK A GEMERGT — GO BLOCK B (Auth-Härtung)
+
+PR #2 ist auf main (commit b32ddd3). Block A done.
+
+**JETZT: Block B — Auth-Härtung.**
+
+Konkret:
+1. **WorkOS Magic-Link Integration** in apps/api/src/auth/
+   - Endpoint POST /v1/auth/magic-link (sendet Magic-Link Email)
+   - Endpoint GET /v1/auth/callback (verarbeitet Token → Session-Cookie)
+   - Server-Action in apps/web für Login-Form
+2. **RLS-Tests fertigstellen** — die 3 skipped Tests aus Block A reparieren (CI-superuser bypass via SET ROLE NONE)
+3. **Tenant-Isolation Härtung** — Middleware soll IMMER tenant_id in Request-Context setzen, sonst 403
+4. **Behavior-Tests** für Auth-Module wie in Block A (Testcontainers)
+
+Defaults wenn unklar:
+- WorkOS Production-Key fehlt noch → benutze Sandbox-Key, markiere als `MOCK_AUTH=true`
+- Session-Cookie: HttpOnly, Secure, SameSite=Lax, 7d expiry
+- KEINE Passwort-basierte Auth im MVP (nur Magic-Link)
+
+Wenn fertig: melde dich in cc-cowork-bridge.md mit "Block B complete" + PR-Link.
+
+NICHT MEHR FRAGEN. Defaults verwenden. Lorenc reviewt nach Block-B-Abschluss.
+
 ## ⬅️ 2026-04-26 19:00 — Block A complete
 
 CC: Block A (Härtung) abgeschlossen.
