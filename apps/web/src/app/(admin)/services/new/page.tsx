@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Button, Card, CardBody, Field, Input, Select, Textarea } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
-import { createService, createCategory, createFromTemplate } from '../actions';
+import { createService, createCategory } from '../actions';
+import { TemplateCard } from './template-card';
 
 interface CategoryRow {
   id: string;
@@ -122,24 +123,14 @@ export default async function NewServicePage(): Promise<React.JSX.Element> {
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {TEMPLATES.map((t) => (
-            <form key={t.key} action={createFromTemplate}>
-              <input type="hidden" name="template" value={t.key} />
-              <button
-                type="submit"
-                className="group flex h-full w-full flex-col items-start gap-2 rounded-xl border border-border bg-surface p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/60 hover:bg-surface-elevated hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:translate-y-0"
-              >
-                <span aria-hidden className="text-3xl">
-                  {t.emoji}
-                </span>
-                <span className="font-display text-base font-semibold tracking-tight text-text-primary group-hover:text-accent">
-                  {t.title}
-                </span>
-                <span className="text-xs text-text-secondary">{t.subtitle}</span>
-                <span className="mt-auto text-[11px] font-medium tabular-nums text-text-muted">
-                  {t.badge}
-                </span>
-              </button>
-            </form>
+            <TemplateCard
+              key={t.key}
+              templateKey={t.key}
+              emoji={t.emoji}
+              title={t.title}
+              subtitle={t.subtitle}
+              badge={t.badge}
+            />
           ))}
         </div>
       </section>

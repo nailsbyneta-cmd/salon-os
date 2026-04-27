@@ -157,6 +157,12 @@ function GroupRow({
   const [newOptionDuration, setNewOptionDuration] = React.useState(String(baseDuration));
   const [newOptionProcessing, setNewOptionProcessing] = React.useState('0');
   const [error, setError] = React.useState<string | null>(null);
+  // Optimistic-Pending: Optionen die im UI schon stehen aber noch nicht
+  // server-bestätigt sind. Verhindert dass die Stylistin Enter zweimal drückt
+  // weil "nichts passiert ist".
+  const [optimistic, setOptimistic] = React.useState<
+    Array<{ tmpId: string; label: string; endPrice: number; endDuration: number }>
+  >([]);
 
   const addOption = (): void => {
     setError(null);
@@ -165,25 +171,41 @@ function GroupRow({
       setError('Label ist Pflicht.');
       return;
     }
+    if (pending) return; // Doppelklick / Doppel-Enter schlucken
+    const endPrice = Number(newOptionPrice);
+    const endDuration = Number(newOptionDuration);
+    const tmpId = `tmp-${Date.now()}`;
+    // Sofort ins UI rendern — User sieht Feedback noch im selben Tick.
+    setOptimistic((prev) => [
+      ...prev,
+      {
+        tmpId,
+        label,
+        endPrice: Number.isFinite(endPrice) ? endPrice : basePrice,
+        endDuration: Number.isFinite(endDuration) ? endDuration : baseDuration,
+      },
+    ]);
+    setNewOptionLabel('');
+    setNewOptionPrice(String(basePrice));
+    setNewOptionDuration(String(baseDuration));
+    setNewOptionProcessing('0');
     startTransition(async () => {
       try {
-        // Convert User-Input (Endpreis/Enddauer) zurück in Delta für die API.
-        const endPrice = Number(newOptionPrice);
-        const endDuration = Number(newOptionDuration);
         await createOption(serviceId, {
           groupId: group.id,
           label,
           priceDelta: Number.isFinite(endPrice) ? endPrice - basePrice : 0,
           durationDeltaMin: Number.isFinite(endDuration) ? endDuration - baseDuration : 0,
           processingDeltaMin: Number(newOptionProcessing) || 0,
-          isDefault: group.options.length === 0,
-          sortOrder: group.options.length,
+          isDefault: group.options.length + optimistic.length === 0,
+          sortOrder: group.options.length + optimistic.length,
         });
-        setNewOptionLabel('');
-        setNewOptionPrice(String(basePrice));
-        setNewOptionDuration(String(baseDuration));
-        setNewOptionProcessing('0');
+        // Optimistic-Eintrag wird durch den server-revalidierten Re-Render
+        // ersetzt — sobald der echte Eintrag in group.options auftaucht
+        // verschwindet der tmp.
+        setOptimistic((prev) => prev.filter((o) => o.tmpId !== tmpId));
       } catch (err) {
+        setOptimistic((prev) => prev.filter((o) => o.tmpId !== tmpId));
         setError(err instanceof Error ? err.message : 'Fehler');
       }
     });
@@ -257,6 +279,21 @@ function GroupRow({
                 onRemove={() => removeOption(o.id, o.label)}
                 disabled={pending}
               />
+            ))}
+            {optimistic.map((o) => (
+              <tr key={o.tmpId} className="border-t border-border bg-accent/5">
+                <td className="px-3 py-2 text-text-primary">
+                  {o.label}
+                  <span className="ml-2 text-[11px] italic text-text-muted">speichert…</span>
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums text-text-secondary">
+                  CHF {o.endPrice}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums text-text-secondary">
+                  {o.endDuration} Min
+                </td>
+                <td className="px-2 py-2 text-center text-text-muted">⏳</td>
+              </tr>
             ))}
             <tr className="border-t border-border bg-surface-raised/40">
               <td className="px-3 py-2">
