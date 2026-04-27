@@ -143,15 +143,25 @@ export default async function BookingSlots({
   // Sonst alle (Phorest-Pattern: "Egal" → alle Slots gezeigt).
   const slots = staffId ? allSlots.filter((s) => s.staffId === staffId) : allSlots;
 
-  // Preserve config-params across date navigation
-  const extraParams = new URLSearchParams();
-  if (duration) extraParams.set('duration', duration);
-  if (price) extraParams.set('price', price);
-  if (staffId) extraParams.set('staffId', staffId);
-  if (sp.options) extraParams.set('options', sp.options);
-  if (sp.addons) extraParams.set('addons', sp.addons);
-  if (sp.bundles) extraParams.set('bundles', sp.bundles);
-  const extraSuffix = extraParams.toString() ? `&${extraParams.toString()}` : '';
+  // Date-Navigation Suffix: erhält staffId-Filter beim Tagwechsel.
+  const dateNavParams = new URLSearchParams();
+  if (duration) dateNavParams.set('duration', duration);
+  if (price) dateNavParams.set('price', price);
+  if (staffId) dateNavParams.set('staffId', staffId);
+  if (sp.options) dateNavParams.set('options', sp.options);
+  if (sp.addons) dateNavParams.set('addons', sp.addons);
+  if (sp.bundles) dateNavParams.set('bundles', sp.bundles);
+  const dateNavSuffix = dateNavParams.toString() ? `&${dateNavParams.toString()}` : '';
+
+  // Slot-Click Suffix: KEIN staffId — der Slot bringt seine eigene mit.
+  // Sonst entstand `?staffId=A&staffId=B` Duplikat → Validation-Fehler beim Submit.
+  const confirmParams = new URLSearchParams();
+  if (duration) confirmParams.set('duration', duration);
+  if (price) confirmParams.set('price', price);
+  if (sp.options) confirmParams.set('options', sp.options);
+  if (sp.addons) confirmParams.set('addons', sp.addons);
+  if (sp.bundles) confirmParams.set('bundles', sp.bundles);
+  const confirmSuffix = confirmParams.toString() ? `&${confirmParams.toString()}` : '';
 
   const openingHours = info?.locations.find((l) => l.id === location)?.openingHours ?? null;
 
@@ -209,7 +219,7 @@ export default async function BookingSlots({
               return (
                 <Link
                   key={d.iso}
-                  href={`/book/${slug}/service/${serviceId}?location=${location}&date=${d.iso}${extraSuffix}`}
+                  href={`/book/${slug}/service/${serviceId}?location=${location}&date=${d.iso}${dateNavSuffix}`}
                   aria-disabled={!open}
                   className={cn(
                     'flex min-w-[44px] flex-col items-center rounded-md border px-2 py-2 text-center transition-all duration-200 sm:min-w-[68px] sm:px-3',
@@ -268,7 +278,7 @@ export default async function BookingSlots({
             </div>
             {nextOpen ? (
               <Link
-                href={`/book/${slug}/service/${serviceId}?location=${location}&date=${nextOpen}${extraSuffix}`}
+                href={`/book/${slug}/service/${serviceId}?location=${location}&date=${nextOpen}${dateNavSuffix}`}
                 className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-glow transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98]"
               >
                 Nächster freier Tag:{' '}
@@ -293,7 +303,7 @@ export default async function BookingSlots({
                 {list.map((s) => (
                   <Link
                     key={`${s.staffId}-${s.startAt}`}
-                    href={`/book/${slug}/confirm?serviceId=${serviceId}&locationId=${location}&staffId=${s.staffId}&startAt=${encodeURIComponent(s.startAt)}${extraSuffix}`}
+                    href={`/book/${slug}/confirm?serviceId=${serviceId}&locationId=${location}&staffId=${s.staffId}&startAt=${encodeURIComponent(s.startAt)}${confirmSuffix}`}
                     className="group flex flex-col items-center rounded-lg border border-border bg-surface px-3 py-3 text-center shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-accent/5 hover:shadow-md active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   >
                     <div className="font-display text-base font-semibold tabular-nums text-text-primary group-hover:text-accent">

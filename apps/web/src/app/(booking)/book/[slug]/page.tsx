@@ -438,10 +438,13 @@ export default async function BookingStart({
           Erste Kategorie ist default offen, der Rest geschlossen — schnellerer
           Scan auf Mobile, keine endlose Service-Wand. */}
       <section aria-label="Behandlungen wählen" className="space-y-2">
-        {grouped.map(({ catId, catName, items }, idx) => (
+        {grouped.map(({ catId, catName, items }) => (
           <details
             key={catId}
-            open={idx === 0}
+            // Phorest-Pattern: alle Folders default geschlossen — Kundin
+            // klickt was sie tatsächlich braucht. Verhindert dass Pediküre
+            // den Screen dominiert (Audit Pass 8).
+            open={false}
             className="group rounded-lg border border-border bg-surface open:bg-surface-elevated"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 transition-colors hover:bg-surface-elevated [&::-webkit-details-marker]:hidden">

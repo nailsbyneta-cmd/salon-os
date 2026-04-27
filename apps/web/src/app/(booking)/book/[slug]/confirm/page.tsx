@@ -119,6 +119,12 @@ export default async function BookingConfirm({
     options?: string;
     addons?: string;
     bundles?: string;
+    /** Form-Values nach Error-Redirect — damit User nicht alles neu eintippen muss. */
+    f_firstName?: string;
+    f_lastName?: string;
+    f_email?: string;
+    f_phone?: string;
+    f_notes?: string;
   }>;
 }): Promise<React.JSX.Element> {
   const { slug } = await params;
@@ -178,15 +184,26 @@ export default async function BookingConfirm({
     if (res.ok) {
       redirect(`/book/${slug}/success?id=${res.appointmentId}`);
     } else {
-      redirect(
-        `/book/${slug}/confirm?${new URLSearchParams({
-          serviceId: sp.serviceId!,
-          locationId: sp.locationId!,
-          staffId: sp.staffId!,
-          startAt: sp.startAt!,
-          error: res.error,
-        })}`,
-      );
+      // Bei Error: ALLE Original-Params + Form-Values bewahren damit User
+      // nicht alles neu eintippen muss (Audit Pass 8).
+      const errParams = new URLSearchParams({
+        serviceId: sp.serviceId!,
+        locationId: sp.locationId!,
+        staffId: sp.staffId!,
+        startAt: sp.startAt!,
+        error: res.error,
+      });
+      if (sp.price) errParams.set('price', sp.price);
+      if (sp.duration) errParams.set('duration', sp.duration);
+      if (sp.options) errParams.set('options', sp.options);
+      if (sp.addons) errParams.set('addons', sp.addons);
+      if (sp.bundles) errParams.set('bundles', sp.bundles);
+      if (firstName) errParams.set('f_firstName', firstName);
+      if (lastName) errParams.set('f_lastName', lastName);
+      if (email) errParams.set('f_email', email);
+      if (phone) errParams.set('f_phone', phone);
+      if (notes) errParams.set('f_notes', notes);
+      redirect(`/book/${slug}/confirm?${errParams.toString()}`);
     }
   }
 
@@ -314,20 +331,43 @@ export default async function BookingConfirm({
           <form action={onSubmit} className="space-y-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Vorname" required>
-                <Input required name="firstName" autoComplete="given-name" />
+                <Input
+                  required
+                  name="firstName"
+                  autoComplete="given-name"
+                  defaultValue={sp.f_firstName ?? ''}
+                />
               </Field>
               <Field label="Nachname" required>
-                <Input required name="lastName" autoComplete="family-name" />
+                <Input
+                  required
+                  name="lastName"
+                  autoComplete="family-name"
+                  defaultValue={sp.f_lastName ?? ''}
+                />
               </Field>
             </div>
             <Field label="E-Mail" required>
-              <Input required type="email" name="email" autoComplete="email" inputMode="email" />
+              <Input
+                required
+                type="email"
+                name="email"
+                autoComplete="email"
+                inputMode="email"
+                defaultValue={sp.f_email ?? ''}
+              />
             </Field>
             <Field label="Telefon (optional)">
-              <Input type="tel" name="phone" autoComplete="tel" inputMode="tel" />
+              <Input
+                type="tel"
+                name="phone"
+                autoComplete="tel"
+                inputMode="tel"
+                defaultValue={sp.f_phone ?? ''}
+              />
             </Field>
             <Field label="Bemerkung (optional)">
-              <Textarea name="notes" rows={3} />
+              <Textarea name="notes" rows={3} defaultValue={sp.f_notes ?? ''} />
             </Field>
             <Button type="submit" variant="accent" size="lg" className="w-full">
               Termin verbindlich buchen
