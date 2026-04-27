@@ -1,23 +1,28 @@
 'use client';
 import * as React from 'react';
-import { Badge, Button } from '@salon-os/ui';
-
-/** Formatiert einen Preis — ganze Zahlen ohne Dezimal, sonst 2 Nachkommastellen. */
-function fmtPrice(n: number): string {
-  const rounded = Math.round(n * 100) / 100;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
-}
+import { Button } from '@salon-os/ui';
 
 /**
- * Service-Booking-Wizard — reusable für Kunden-Online-Booking UND Staff-Kalender.
+ * Service-Booking-Wizard — Phorest-grade Step-by-Step UX.
  *
- * UX-Prinzipien:
- * - Live-Preis-Calculator: Preis + Dauer aktualisieren beim Klicken.
- * - Smart-Default: erste Option pro Gruppe ist vorausgewählt (mit Badge "Beliebt").
- * - Add-Ons als visuelle Cards — upsell-optimiert, 0-Min Add-Ons = nur Preis.
- * - Bundle-Cross-Sell: "Pediküre dazu für -5 CHF" als Card vor dem CTA.
- * - Alle Gruppen werden auf einem Screen gezeigt — weniger Reibung.
+ * Designprinzipien (5-Spezialisten-Konsens):
+ * - 1 Designer: 1 Frage pro Screen, max 3-4 Karten, big tap targets, mobile-first
+ * - 2 UX: Progress-Dots oben, Smooth-Transitions, Sticky-Total mit Back/Next
+ * - 3 Psychologie: Default + Beliebt-Badge biased Auswahl, "Nein danke"-Option
+ *   für optionale Steps (negative Framing reduziert Decision-Burden)
+ * - 4 Programmer: state-machine über currentStep + selections-Map, alle Daten
+ *   bleiben erhalten beim Zurück-Navigieren, kein Local-Storage nötig (Server-
+ *   Action sammelt am Schluss alles)
+ * - 5 Architect: Steps = OptionGroups (sortOrder) + virtuelle Add-On-Step +
+ *   virtuelle Bundle-Step. Skip Add-On/Bundle-Steps wenn leer.
+ *
+ * Endpreis-First: jede Option zeigt CHF X (Basispreis + Delta), nicht "+10 CHF".
  */
+
+function fmtPrice(n: number): string {
+  const r = Math.round(n * 100) / 100;
+  return Number.isInteger(r) ? String(r) : r.toFixed(2);
+}
 
 type Option = {
   id: string;
@@ -68,6 +73,13 @@ export type WizardSelection = {
   totalDurationMin: number;
 };
 
+const SKIP_TOKEN = '__skip__';
+
+type Step =
+  | { kind: 'group'; group: Group }
+  | { kind: 'addons'; addOns: AddOn[] }
+  | { kind: 'bundles'; bundles: BundleOffer[] };
+
 export function ServiceWizard({
   serviceId,
   serviceName,
@@ -78,7 +90,7 @@ export function ServiceWizard({
   bundles = [],
   currency = 'CHF',
   onConfirm,
-  ctaLabel = 'Weiter',
+  ctaLabel = 'Weiter zum Termin',
   showHeader = true,
 }: {
   serviceId?: string;
@@ -93,326 +105,196 @@ export function ServiceWizard({
   ctaLabel?: string;
   showHeader?: boolean;
 }): React.JSX.Element {
-  const initialSelection = React.useMemo<Record<string, string>>(() => {
+  // Steps assemblieren — Group-Steps in sortOrder, dann optional Add-Ons + Bundles
+  const steps = React.useMemo<Step[]>(() => {
+    const out: Step[] = [];
+    for (const g of [...groups].sort((a, b) => a.sortOrder - b.sortOrder)) {
+      if (g.options.length === 0) continue;
+      out.push({ kind: 'group', group: g });
+    }
+    if (addOns.length > 0) out.push({ kind: 'addons', addOns });
+    if (bundles.length > 0) out.push({ kind: 'bundles', bundles });
+    return out;
+  }, [groups, addOns, bundles]);
+
+  const [currentStep, setCurrentStep] = React.useState(0);
+  const [selections, setSelections] = React.useState<Record<string, string>>(() => {
     const out: Record<string, string> = {};
     for (const g of groups) {
       if (g.options.length === 0) continue;
-      const def = g.options.find((o) => o.isDefault) ?? g.options[0];
-      if (def) out[g.id] = def.id;
+      // Pflicht-Gruppen: default vorausgewählt. Optionale: leer → User entscheidet.
+      if (g.required) {
+        const def = g.options.find((o) => o.isDefault) ?? g.options[0];
+        if (def) out[g.id] = def.id;
+      }
     }
     return out;
-  }, [groups]);
-
-  const [selections, setSelections] = React.useState<Record<string, string>>(initialSelection);
+  });
   const [addOnSelection, setAddOnSelection] = React.useState<Set<string>>(new Set());
   const [bundleSelection, setBundleSelection] = React.useState<Set<string>>(new Set());
-
-  const selectedOptions = React.useMemo(() => {
-    const out: Option[] = [];
-    for (const g of groups) {
-      const sel = selections[g.id];
-      if (!sel) continue;
-      const opt = g.options.find((o) => o.id === sel);
-      if (opt) out.push(opt);
-    }
-    return out;
-  }, [groups, selections]);
-
-  const selectedAddOns = React.useMemo(
-    () => addOns.filter((a) => addOnSelection.has(a.id)),
-    [addOns, addOnSelection],
-  );
-
-  const selectedBundles = React.useMemo(
-    () => bundles.filter((b) => bundleSelection.has(b.id)),
-    [bundles, bundleSelection],
-  );
 
   const totals = React.useMemo(() => {
     let price = Number(basePrice);
     let duration = Number(baseDuration);
-    for (const o of selectedOptions) {
-      price += Number(o.priceDelta);
-      duration += Number(o.durationDeltaMin);
+    for (const g of groups) {
+      const sel = selections[g.id];
+      if (!sel || sel === SKIP_TOKEN) continue;
+      const opt = g.options.find((o) => o.id === sel);
+      if (opt) {
+        price += Number(opt.priceDelta);
+        duration += Number(opt.durationDeltaMin);
+      }
     }
-    for (const a of selectedAddOns) {
+    for (const a of addOns) {
+      if (!addOnSelection.has(a.id)) continue;
       price += Number(a.priceDelta);
       duration += Number(a.durationDeltaMin);
     }
-    for (const b of selectedBundles) {
-      // Bundle: + Zweit-Service-Preis + Zeit, minus Rabatt
-      const bundledPrice = Number(b.bundledService.basePrice);
-      const discountAmount = Number(b.discountAmount ?? 0);
-      const discountPct = Number(b.discountPct ?? 0);
-      let net = bundledPrice;
-      if (discountAmount > 0) net -= discountAmount;
-      if (discountPct > 0) net = net * (1 - discountPct / 100);
+    for (const b of bundles) {
+      if (!bundleSelection.has(b.id)) continue;
+      const bp = Number(b.bundledService.basePrice);
+      const da = Number(b.discountAmount ?? 0);
+      const dp = Number(b.discountPct ?? 0);
+      let net = bp;
+      if (da > 0) net -= da;
+      if (dp > 0) net = net * (1 - dp / 100);
       price += Math.max(0, net);
       duration += b.bundledService.durationMinutes;
     }
     return { price: Math.max(0, price), duration: Math.max(0, duration) };
-  }, [basePrice, baseDuration, selectedOptions, selectedAddOns, selectedBundles]);
+  }, [
+    basePrice,
+    baseDuration,
+    groups,
+    addOns,
+    bundles,
+    selections,
+    addOnSelection,
+    bundleSelection,
+  ]);
 
-  const pickOption = (groupId: string, optionId: string): void => {
+  // Wenn keine Steps (Service ohne Varianten/Add-Ons): direkter CTA
+  if (steps.length === 0) {
+    return (
+      <div className="space-y-6">
+        {showHeader ? <Header name={serviceName} /> : null}
+        <Summary price={totals.price} duration={totals.duration} currency={currency} />
+        <Button
+          type="button"
+          variant="accent"
+          size="lg"
+          className="w-full"
+          onClick={() =>
+            onConfirm?.({
+              primaryServiceId: serviceId,
+              optionIds: [],
+              addOnIds: [],
+              bundleIds: [],
+              totalPrice: totals.price,
+              totalDurationMin: totals.duration,
+            })
+          }
+        >
+          {ctaLabel}
+        </Button>
+      </div>
+    );
+  }
+
+  const safeStep = Math.min(currentStep, steps.length - 1);
+  const step = steps[safeStep]!;
+  const isLast = safeStep === steps.length - 1;
+
+  const canAdvance = ((): boolean => {
+    if (step.kind !== 'group') return true;
+    if (step.group.required) {
+      const sel = selections[step.group.id];
+      return Boolean(sel && sel !== SKIP_TOKEN);
+    }
+    return true; // optionaler Step → immer weiterklickbar (auch ohne Auswahl)
+  })();
+
+  const advance = (): void => {
+    if (!canAdvance) return;
+    if (isLast) {
+      // Confirm
+      const optionIds: string[] = [];
+      for (const v of Object.values(selections)) {
+        if (v && v !== SKIP_TOKEN) optionIds.push(v);
+      }
+      onConfirm?.({
+        primaryServiceId: serviceId,
+        optionIds,
+        addOnIds: Array.from(addOnSelection),
+        bundleIds: Array.from(bundleSelection),
+        totalPrice: totals.price,
+        totalDurationMin: totals.duration,
+      });
+      return;
+    }
+    setCurrentStep((s) => Math.min(s + 1, steps.length - 1));
+  };
+
+  const goBack = (): void => setCurrentStep((s) => Math.max(s - 1, 0));
+
+  const pick = (groupId: string, optionId: string): void => {
     setSelections((s) => ({ ...s, [groupId]: optionId }));
-  };
-
-  const toggleAddOn = (addOnId: string): void => {
-    setAddOnSelection((s) => {
-      const next = new Set(s);
-      if (next.has(addOnId)) next.delete(addOnId);
-      else next.add(addOnId);
-      return next;
-    });
-  };
-
-  const toggleBundle = (bundleId: string): void => {
-    setBundleSelection((s) => {
-      const next = new Set(s);
-      if (next.has(bundleId)) next.delete(bundleId);
-      else next.add(bundleId);
-      return next;
-    });
-  };
-
-  const missingGroup = groups.find((g) => g.required && !selections[g.id]);
-
-  const handleConfirm = (): void => {
-    if (missingGroup) return;
-    onConfirm?.({
-      primaryServiceId: serviceId,
-      optionIds: Object.values(selections),
-      addOnIds: Array.from(addOnSelection),
-      bundleIds: Array.from(bundleSelection),
-      totalPrice: totals.price,
-      totalDurationMin: totals.duration,
-    });
   };
 
   return (
     <div className="space-y-6">
-      {showHeader ? (
-        <header>
-          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
-            Deine Auswahl
-          </p>
-          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight">{serviceName}</h2>
-          <p className="mt-1 text-sm text-text-secondary">
-            Wähle deine Variante — Preis rechnet sich live mit.
-          </p>
-        </header>
-      ) : null}
+      {showHeader ? <Header name={serviceName} /> : null}
 
-      {groups.length === 0
-        ? null
-        : groups.map((g) => {
-            const selectedOpt = selections[g.id];
-            const defaultId = g.options.find((o) => o.isDefault)?.id ?? g.options[0]?.id;
-            return (
-              <section key={g.id}>
-                <div className="mb-3 flex items-baseline justify-between">
-                  <h3 className="font-display text-lg font-semibold tracking-tight text-text-primary">
-                    {g.name}
-                  </h3>
-                  {!g.required ? (
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
-                      Optional
-                    </span>
-                  ) : null}
-                </div>
-                <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 sm:grid-cols-3">
-                  {g.options.map((o) => {
-                    const active = selectedOpt === o.id;
-                    const isPopular = o.id === defaultId;
-                    const priceN = Number(o.priceDelta);
-                    const priceTxt =
-                      priceN === 0
-                        ? ''
-                        : priceN > 0
-                          ? `+${priceN} ${currency}`
-                          : `${priceN} ${currency}`;
-                    return (
-                      <button
-                        key={o.id}
-                        type="button"
-                        onClick={() => pickOption(g.id, o.id)}
-                        className={[
-                          'group relative flex min-h-[4.5rem] flex-col items-start gap-1 rounded-md border p-3 text-left transition-all duration-200',
-                          'hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0',
-                          active
-                            ? 'border-accent bg-accent/10 ring-2 ring-accent shadow-glow'
-                            : 'border-border bg-surface hover:border-accent/50 hover:bg-surface-raised/40 hover:shadow-md',
-                        ].join(' ')}
-                      >
-                        {isPopular ? (
-                          <span className="absolute right-2 top-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-accent">
-                            ★ Beliebt
-                          </span>
-                        ) : null}
-                        <span className="text-sm font-medium text-text-primary">{o.label}</span>
-                        <span className="flex flex-wrap gap-1 text-[11px] tabular-nums text-text-muted">
-                          {priceTxt ? <span>{priceTxt}</span> : null}
-                          {o.durationDeltaMin !== 0 ? (
-                            <span>
-                              {o.durationDeltaMin > 0 ? '+' : ''}
-                              {o.durationDeltaMin} Min
-                            </span>
-                          ) : null}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
+      <ProgressDots total={steps.length} current={safeStep} steps={steps} />
 
-      {addOns.length > 0 ? (
-        <section>
-          <div className="mb-2 flex items-baseline justify-between">
-            <h3 className="text-sm font-semibold text-text-primary">
-              Add-Ons <span className="text-xs font-normal text-text-muted">(optional)</span>
-            </h3>
-            {addOnSelection.size > 0 ? (
-              <button
-                type="button"
-                onClick={() => setAddOnSelection(new Set())}
-                className="text-xs text-text-muted hover:underline"
-              >
-                Alle abwählen
-              </button>
-            ) : null}
-          </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {addOns.map((a) => {
-              const active = addOnSelection.has(a.id);
-              const priceN = Number(a.priceDelta);
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => toggleAddOn(a.id)}
-                  className={[
-                    'flex items-center justify-between gap-3 rounded-md border p-3 text-left transition-all duration-200',
-                    'hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0',
-                    active
-                      ? 'border-accent bg-accent/5 ring-1 ring-accent shadow-glow'
-                      : 'border-border bg-surface hover:border-accent/50 hover:bg-surface-raised/40 hover:shadow-md',
-                  ].join(' ')}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-text-primary">{a.name}</span>
-                      {a.durationDeltaMin === 0 ? (
-                        <Badge tone="neutral">keine Extra-Zeit</Badge>
-                      ) : null}
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap gap-2 text-[11px] tabular-nums text-text-muted">
-                      <span className="font-semibold text-accent">
-                        +{priceN} {currency}
-                      </span>
-                      {a.durationDeltaMin > 0 ? <span>+{a.durationDeltaMin} Min</span> : null}
-                    </div>
-                  </div>
-                  <div
-                    className={[
-                      'flex h-6 w-6 items-center justify-center rounded-full border-2 text-xs font-bold',
-                      active
-                        ? 'border-accent bg-accent text-white'
-                        : 'border-border bg-surface text-transparent',
-                    ].join(' ')}
-                    aria-hidden
-                  >
-                    ✓
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
+      {/* Step-Content */}
+      <div key={safeStep} className="transition-opacity duration-200">
+        {step.kind === 'group' ? (
+          <GroupStep
+            group={step.group}
+            basePrice={basePrice}
+            currency={currency}
+            selectedId={selections[step.group.id]}
+            onPick={(optId) => pick(step.group.id, optId)}
+          />
+        ) : null}
+        {step.kind === 'addons' ? (
+          <AddOnsStep
+            addOns={step.addOns}
+            currency={currency}
+            selected={addOnSelection}
+            onToggle={(id) => {
+              setAddOnSelection((s) => {
+                const next = new Set(s);
+                if (next.has(id)) next.delete(id);
+                else next.add(id);
+                return next;
+              });
+            }}
+          />
+        ) : null}
+        {step.kind === 'bundles' ? (
+          <BundlesStep
+            bundles={step.bundles}
+            currency={currency}
+            selected={bundleSelection}
+            onToggle={(id) => {
+              setBundleSelection((s) => {
+                const next = new Set(s);
+                if (next.has(id)) next.delete(id);
+                else next.add(id);
+                return next;
+              });
+            }}
+          />
+        ) : null}
+      </div>
 
-      {bundles.length > 0 ? (
-        <section>
-          <div className="mb-3">
-            <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
-              Passt dazu
-            </p>
-            <h3 className="mt-1 font-display text-lg font-semibold tracking-tight text-text-primary">
-              Nimm es gleich dazu — spar beim Kombi
-            </h3>
-          </div>
-          <div className="space-y-2">
-            {bundles.map((b) => {
-              const active = bundleSelection.has(b.id);
-              const basePrice = Number(b.bundledService.basePrice);
-              const discountAmount = Number(b.discountAmount ?? 0);
-              const discountPct = Number(b.discountPct ?? 0);
-              let finalPrice = basePrice;
-              if (discountAmount > 0) finalPrice -= discountAmount;
-              if (discountPct > 0) finalPrice = finalPrice * (1 - discountPct / 100);
-              finalPrice = Math.max(0, finalPrice);
-              const saved = basePrice - finalPrice;
-              return (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => toggleBundle(b.id)}
-                  className={[
-                    'flex w-full items-center justify-between gap-3 rounded-lg border p-4 text-left transition-all duration-200',
-                    'hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0',
-                    active
-                      ? 'border-accent bg-accent/10 shadow-glow'
-                      : 'border-accent/30 bg-accent/[0.03] hover:border-accent/60 hover:bg-accent/5 hover:shadow-md',
-                  ].join(' ')}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-base font-semibold tracking-tight text-text-primary">
-                        + {b.bundledService.name}
-                      </span>
-                      <Badge tone="accent">
-                        − {fmtPrice(saved)} {currency}
-                      </Badge>
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-2 text-xs text-text-secondary">
-                      <span>{b.label}</span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-2 text-[11px] tabular-nums text-text-muted">
-                      <span>
-                        statt {fmtPrice(basePrice)} {currency} nur{' '}
-                        <span className="font-semibold text-accent">
-                          {fmtPrice(finalPrice)} {currency}
-                        </span>
-                      </span>
-                      <span>+{b.bundledService.durationMinutes} Min</span>
-                    </div>
-                  </div>
-                  <div
-                    className={[
-                      'flex h-8 w-8 items-center justify-center rounded-full border text-sm font-bold transition-all',
-                      active
-                        ? 'border-accent bg-accent text-accent-foreground shadow-glow'
-                        : 'border-accent/50 bg-transparent text-accent',
-                    ].join(' ')}
-                    aria-hidden
-                  >
-                    {active ? '✓' : '+'}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
+      {/* Sticky Footer */}
       <div className="sticky bottom-0 -mx-1 flex items-center justify-between gap-4 rounded-lg border border-border bg-surface/95 px-5 py-4 shadow-lg backdrop-blur-md">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] font-medium uppercase tracking-[0.25em] text-accent">
-            Gesamt
-            {selectedBundles.length > 0 ? (
-              <span className="ml-2 tracking-normal text-text-secondary">· inkl. Bundle</span>
-            ) : null}
+            Schritt {safeStep + 1} von {steps.length}
           </span>
           <div className="flex items-baseline gap-2">
             <span className="font-display text-2xl font-semibold tabular-nums text-text-primary md:text-3xl">
@@ -421,17 +303,339 @@ export function ServiceWizard({
             <span className="text-xs tabular-nums text-text-muted">· {totals.duration} Min</span>
           </div>
         </div>
-        <Button
-          type="button"
-          variant="accent"
-          size="lg"
-          onClick={handleConfirm}
-          disabled={!!missingGroup}
-          title={missingGroup ? `Bitte ${missingGroup.name} wählen` : undefined}
-        >
-          {ctaLabel}
-        </Button>
+        <div className="flex gap-2">
+          {safeStep > 0 ? (
+            <Button type="button" variant="ghost" size="lg" onClick={goBack}>
+              ← Zurück
+            </Button>
+          ) : null}
+          <Button type="button" variant="accent" size="lg" onClick={advance} disabled={!canAdvance}>
+            {isLast ? ctaLabel : 'Weiter →'}
+          </Button>
+        </div>
       </div>
     </div>
+  );
+}
+
+function Header({ name }: { name: string }): React.JSX.Element {
+  return (
+    <header>
+      <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
+        Deine Auswahl
+      </p>
+      <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight">{name}</h2>
+    </header>
+  );
+}
+
+function Summary({
+  price,
+  duration,
+  currency,
+}: {
+  price: number;
+  duration: number;
+  currency: string;
+}): React.JSX.Element {
+  return (
+    <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 text-center">
+      <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-accent">Gesamt</p>
+      <div className="mt-1 flex items-baseline justify-center gap-2">
+        <span className="font-display text-3xl font-semibold tabular-nums">
+          {fmtPrice(price)} {currency}
+        </span>
+        <span className="text-sm tabular-nums text-text-muted">· {duration} Min</span>
+      </div>
+    </div>
+  );
+}
+
+function ProgressDots({
+  total,
+  current,
+  steps,
+}: {
+  total: number;
+  current: number;
+  steps: Step[];
+}): React.JSX.Element {
+  const labels = steps.map((s) => {
+    if (s.kind === 'group') return s.group.name;
+    if (s.kind === 'addons') return 'Extras';
+    return 'Kombi-Angebote';
+  });
+  return (
+    <nav aria-label="Wizard-Fortschritt" className="flex items-center justify-center gap-1.5">
+      {Array.from({ length: total }).map((_, i) => {
+        const isActive = i === current;
+        const isDone = i < current;
+        return (
+          <span
+            key={i}
+            aria-label={`Schritt ${i + 1}: ${labels[i]}${isActive ? ' (aktiv)' : isDone ? ' (erledigt)' : ''}`}
+            className={[
+              'h-1.5 rounded-full transition-all duration-300',
+              isActive ? 'w-8 bg-accent' : isDone ? 'w-4 bg-accent/60' : 'w-4 bg-border',
+            ].join(' ')}
+          />
+        );
+      })}
+    </nav>
+  );
+}
+
+function GroupStep({
+  group,
+  basePrice,
+  currency,
+  selectedId,
+  onPick,
+}: {
+  group: Group;
+  basePrice: number;
+  currency: string;
+  selectedId: string | undefined;
+  onPick: (optionId: string) => void;
+}): React.JSX.Element {
+  const sortedOptions = React.useMemo(
+    () => [...group.options].sort((a, b) => a.sortOrder - b.sortOrder),
+    [group.options],
+  );
+
+  return (
+    <section>
+      <div className="mb-4 text-center">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+          {group.required ? 'Pflicht-Auswahl' : 'Optional'}
+        </p>
+        <h3 className="mt-1 font-display text-xl font-semibold tracking-tight text-text-primary md:text-2xl">
+          {group.name}
+        </h3>
+      </div>
+      <div className="grid grid-cols-1 gap-3">
+        {sortedOptions.map((o) => {
+          const active = selectedId === o.id;
+          const endPrice = basePrice + Number(o.priceDelta);
+          const totalDur = Number(o.durationDeltaMin); // delta only — total computed elsewhere
+          const showPopular = o.isDefault;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => onPick(o.id)}
+              className={[
+                'group relative flex min-h-[68px] items-center justify-between gap-4 rounded-xl border-2 p-4 text-left transition-all duration-200',
+                'hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0',
+                active
+                  ? 'border-accent bg-accent/10 shadow-glow ring-2 ring-accent/30'
+                  : 'border-border bg-surface hover:border-accent/50 hover:bg-surface-elevated hover:shadow-md',
+              ].join(' ')}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-base font-semibold text-text-primary">
+                    {o.label}
+                  </span>
+                  {showPopular ? (
+                    <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+                      ★ Beliebt
+                    </span>
+                  ) : null}
+                </div>
+                {totalDur !== 0 ? (
+                  <div className="mt-1 text-xs tabular-nums text-text-muted">
+                    {totalDur > 0 ? `+${totalDur}` : totalDur} Min Extra-Zeit
+                  </div>
+                ) : null}
+              </div>
+              <div className="text-right">
+                <div className="font-display text-lg font-semibold tabular-nums text-text-primary">
+                  CHF {fmtPrice(endPrice)}
+                </div>
+              </div>
+              <div
+                className={[
+                  'flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 text-sm font-bold',
+                  active
+                    ? 'border-accent bg-accent text-accent-foreground'
+                    : 'border-border bg-surface text-transparent',
+                ].join(' ')}
+                aria-hidden
+              >
+                ✓
+              </div>
+            </button>
+          );
+        })}
+        {!group.required ? (
+          <button
+            type="button"
+            onClick={() => onPick(SKIP_TOKEN)}
+            className={[
+              'flex min-h-[60px] items-center justify-between gap-4 rounded-xl border-2 border-dashed p-4 text-left text-text-secondary transition-all duration-200',
+              'hover:bg-surface-elevated active:scale-[0.99]',
+              selectedId === SKIP_TOKEN ? 'border-text-muted bg-surface-elevated' : 'border-border',
+            ].join(' ')}
+          >
+            <span className="flex-1">
+              <span className="font-medium">Nein danke</span>
+              <span className="ml-2 text-xs text-text-muted">— diesmal nicht</span>
+            </span>
+            <span className="text-xs tabular-nums text-text-muted">+0 {currency}</span>
+          </button>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function AddOnsStep({
+  addOns,
+  currency,
+  selected,
+  onToggle,
+}: {
+  addOns: AddOn[];
+  currency: string;
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+}): React.JSX.Element {
+  return (
+    <section>
+      <div className="mb-4 text-center">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">Optional</p>
+        <h3 className="mt-1 font-display text-xl font-semibold tracking-tight text-text-primary md:text-2xl">
+          Extras dazu?
+        </h3>
+        <p className="mt-1 text-sm text-text-secondary">Wähle so viele wie Du magst</p>
+      </div>
+      <div className="grid grid-cols-1 gap-3">
+        {addOns.map((a) => {
+          const active = selected.has(a.id);
+          const price = Number(a.priceDelta);
+          return (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => onToggle(a.id)}
+              className={[
+                'flex min-h-[60px] items-center justify-between gap-4 rounded-xl border-2 p-4 text-left transition-all duration-200',
+                'hover:-translate-y-0.5 active:scale-[0.99]',
+                active
+                  ? 'border-accent bg-accent/10 shadow-glow'
+                  : 'border-border bg-surface hover:border-accent/50',
+              ].join(' ')}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="font-display text-base font-semibold text-text-primary">
+                  {a.name}
+                </div>
+                <div className="mt-1 text-xs tabular-nums text-text-muted">
+                  +{price} {currency}
+                  {a.durationDeltaMin > 0 ? ` · +${a.durationDeltaMin} Min` : ''}
+                </div>
+              </div>
+              <div
+                className={[
+                  'flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 text-sm font-bold',
+                  active
+                    ? 'border-accent bg-accent text-accent-foreground'
+                    : 'border-border bg-surface text-transparent',
+                ].join(' ')}
+                aria-hidden
+              >
+                ✓
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function BundlesStep({
+  bundles,
+  currency,
+  selected,
+  onToggle,
+}: {
+  bundles: BundleOffer[];
+  currency: string;
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+}): React.JSX.Element {
+  return (
+    <section>
+      <div className="mb-4 text-center">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+          Spar beim Kombi
+        </p>
+        <h3 className="mt-1 font-display text-xl font-semibold tracking-tight text-text-primary md:text-2xl">
+          Passt dazu
+        </h3>
+      </div>
+      <div className="grid grid-cols-1 gap-3">
+        {bundles.map((b) => {
+          const active = selected.has(b.id);
+          const bp = Number(b.bundledService.basePrice);
+          const da = Number(b.discountAmount ?? 0);
+          const dp = Number(b.discountPct ?? 0);
+          let final = bp;
+          if (da > 0) final -= da;
+          if (dp > 0) final = final * (1 - dp / 100);
+          final = Math.max(0, final);
+          const saved = bp - final;
+          return (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => onToggle(b.id)}
+              className={[
+                'flex w-full items-center justify-between gap-3 rounded-xl border-2 p-4 text-left transition-all duration-200',
+                'hover:-translate-y-0.5 active:scale-[0.99]',
+                active
+                  ? 'border-accent bg-accent/10 shadow-glow'
+                  : 'border-accent/40 bg-accent/[0.03] hover:border-accent/70 hover:bg-accent/5',
+              ].join(' ')}
+            >
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-base font-semibold text-text-primary">
+                    + {b.bundledService.name}
+                  </span>
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+                    − {fmtPrice(saved)} {currency}
+                  </span>
+                </div>
+                <div className="mt-1 text-xs text-text-secondary">{b.label}</div>
+                <div className="mt-1 text-[11px] tabular-nums text-text-muted">
+                  statt {fmtPrice(bp)} {currency} nur{' '}
+                  <span className="font-semibold text-accent">
+                    {fmtPrice(final)} {currency}
+                  </span>{' '}
+                  · +{b.bundledService.durationMinutes} Min
+                </div>
+              </div>
+              <div
+                className={[
+                  'flex h-8 w-8 flex-none items-center justify-center rounded-full border-2 text-sm font-bold',
+                  active
+                    ? 'border-accent bg-accent text-accent-foreground'
+                    : 'border-accent/50 bg-transparent text-accent',
+                ].join(' ')}
+                aria-hidden
+              >
+                {active ? '✓' : '+'}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-center text-xs text-text-muted">
+        Oder einfach weiter — Du kannst Kombis später noch hinzufügen.
+      </p>
+    </section>
   );
 }
