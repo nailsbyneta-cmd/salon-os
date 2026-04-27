@@ -654,7 +654,7 @@ export class PublicBookingsService {
             (service.durationMinutes + service.bufferBeforeMin + service.bufferAfterMin) * 60_000,
         );
 
-        return tx.appointment.create({
+        const appt = await tx.appointment.create({
           data: {
             tenantId: tenant.id,
             locationId: input.locationId,
@@ -680,21 +680,22 @@ export class PublicBookingsService {
           },
           include: { items: true },
         });
-      });
 
-      this.reminders
-        .sendConfirmationNow({
-          appointmentId: created.id,
+        // Atomic Outbox-Enqueue: Bestätigung sofort + 24h-Erinnerung
+        // werden im selben TX geschrieben. Tx-Rollback würde sie auch
+        // killen — kein Drift zwischen Buchung und Email.
+        await this.reminders.enqueueConfirmationViaOutbox(tx, {
+          appointmentId: appt.id,
           tenantId: tenant.id,
-        })
-        .catch(() => undefined);
-      this.reminders
-        .scheduleEmailReminder({
-          appointmentId: created.id,
+        });
+        await this.reminders.enqueueReminderViaOutbox(tx, {
+          appointmentId: appt.id,
           tenantId: tenant.id,
-          startAt: created.startAt,
-        })
-        .catch(() => undefined);
+          startAt: appt.startAt,
+        });
+
+        return appt;
+      });
 
       return created;
     } catch (err) {
@@ -799,22 +800,23 @@ export class PublicBookingsService {
           });
           appointments.push(appt);
         }
-        return appointments;
-      });
 
-      // Reminders für alle Termine raus
-      for (const a of created) {
-        this.reminders
-          .sendConfirmationNow({ appointmentId: a.id, tenantId: tenant.id })
-          .catch(() => undefined);
-        this.reminders
-          .scheduleEmailReminder({
+        // Atomic Outbox: Bestätigung + 24h-Reminder pro Termin innerhalb TX.
+        for (const a of appointments) {
+          await this.reminders.enqueueConfirmationViaOutbox(tx, {
+            appointmentId: a.id,
+            tenantId: tenant.id,
+          });
+          await this.reminders.enqueueReminderViaOutbox(tx, {
             appointmentId: a.id,
             tenantId: tenant.id,
             startAt: a.startAt,
-          })
-          .catch(() => undefined);
-      }
+          });
+        }
+
+        return appointments;
+      });
+
       return created;
     } catch (err) {
       if (isConflictError(err)) {
