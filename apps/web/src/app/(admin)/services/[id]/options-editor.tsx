@@ -32,15 +32,21 @@ export type Group = {
 /**
  * Options-Editor — Mangomint-Stil Varianten.
  * Beispiel Nägel: Gruppen = Typ (Gel/Acryl), Modus (Neu/Auffüllen), Länge (Kurz/Mittel/Lang).
- * Jede Option hat Preis-/Dauer-/Processing-Delta. Der Kunde klickt sich durch
- * die Gruppen, das System rechnet Endpreis + End-Dauer.
+ *
+ * UX: User trägt ENDPREISE + ENDDAUER pro Option ein (z.B. "Kurz 69 CHF, 60 Min";
+ * "Mittel 79 CHF, 75 Min"). Intern werden delta-Werte gespeichert (Schema-Vertrag),
+ * aber der Salon-Owner muss nie selbst rechnen.
  */
 export function OptionsEditor({
   serviceId,
   initialGroups,
+  basePrice,
+  baseDuration,
 }: {
   serviceId: string;
   initialGroups: Group[];
+  basePrice: number;
+  baseDuration: number;
 }): React.JSX.Element {
   const [groups, setGroups] = React.useState<Group[]>(initialGroups);
   const [newGroupName, setNewGroupName] = React.useState('');
@@ -99,7 +105,13 @@ export function OptionsEditor({
         ) : (
           <div className="space-y-3">
             {groups.map((g) => (
-              <GroupRow key={g.id} serviceId={serviceId} group={g} />
+              <GroupRow
+                key={g.id}
+                serviceId={serviceId}
+                group={g}
+                basePrice={basePrice}
+                baseDuration={baseDuration}
+              />
             ))}
           </div>
         )}
@@ -127,11 +139,22 @@ export function OptionsEditor({
   );
 }
 
-function GroupRow({ serviceId, group }: { serviceId: string; group: Group }): React.JSX.Element {
+function GroupRow({
+  serviceId,
+  group,
+  basePrice,
+  baseDuration,
+}: {
+  serviceId: string;
+  group: Group;
+  basePrice: number;
+  baseDuration: number;
+}): React.JSX.Element {
   const [pending, startTransition] = React.useTransition();
   const [newOptionLabel, setNewOptionLabel] = React.useState('');
-  const [newOptionPrice, setNewOptionPrice] = React.useState('0');
-  const [newOptionDuration, setNewOptionDuration] = React.useState('0');
+  // ENDPREIS + ENDDAUER (User-facing). Default = Service-Basispreis/Dauer.
+  const [newOptionPrice, setNewOptionPrice] = React.useState(String(basePrice));
+  const [newOptionDuration, setNewOptionDuration] = React.useState(String(baseDuration));
   const [newOptionProcessing, setNewOptionProcessing] = React.useState('0');
   const [error, setError] = React.useState<string | null>(null);
 
@@ -144,18 +167,21 @@ function GroupRow({ serviceId, group }: { serviceId: string; group: Group }): Re
     }
     startTransition(async () => {
       try {
+        // Convert User-Input (Endpreis/Enddauer) zurück in Delta für die API.
+        const endPrice = Number(newOptionPrice);
+        const endDuration = Number(newOptionDuration);
         await createOption(serviceId, {
           groupId: group.id,
           label,
-          priceDelta: Number(newOptionPrice) || 0,
-          durationDeltaMin: Number(newOptionDuration) || 0,
+          priceDelta: Number.isFinite(endPrice) ? endPrice - basePrice : 0,
+          durationDeltaMin: Number.isFinite(endDuration) ? endDuration - baseDuration : 0,
           processingDeltaMin: Number(newOptionProcessing) || 0,
           isDefault: group.options.length === 0,
           sortOrder: group.options.length,
         });
         setNewOptionLabel('');
-        setNewOptionPrice('0');
-        setNewOptionDuration('0');
+        setNewOptionPrice(String(basePrice));
+        setNewOptionDuration(String(baseDuration));
         setNewOptionProcessing('0');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Fehler');
@@ -215,6 +241,8 @@ function GroupRow({ serviceId, group }: { serviceId: string; group: Group }): Re
               key={o.id}
               serviceId={serviceId}
               option={o}
+              basePrice={basePrice}
+              baseDuration={baseDuration}
               onRemove={() => removeOption(o.id, o.label)}
               disabled={pending}
             />
@@ -235,17 +263,17 @@ function GroupRow({ serviceId, group }: { serviceId: string; group: Group }): Re
               className="w-32"
             />
           </Field>
-          <Field label="Preis Δ" hint="CHF ±">
+          <Field label="Endpreis CHF" hint={`Basis: ${basePrice}`}>
             <Input
               type="number"
-              step="0.01"
+              step="1"
               value={newOptionPrice}
               onChange={(e) => setNewOptionPrice(e.target.value)}
               disabled={pending}
               className="w-24"
             />
           </Field>
-          <Field label="Dauer Δ" hint="Min ±">
+          <Field label="Dauer Min" hint={`Basis: ${baseDuration}`}>
             <Input
               type="number"
               step="5"
@@ -278,27 +306,36 @@ function GroupRow({ serviceId, group }: { serviceId: string; group: Group }): Re
 function OptionRow({
   serviceId,
   option,
+  basePrice,
+  baseDuration,
   onRemove,
   disabled,
 }: {
   serviceId: string;
   option: Option;
+  basePrice: number;
+  baseDuration: number;
   onRemove: () => void;
   disabled: boolean;
 }): React.JSX.Element {
   const [editing, setEditing] = React.useState(false);
   const [label, setLabel] = React.useState(option.label);
-  const [price, setPrice] = React.useState(String(option.priceDelta));
-  const [duration, setDuration] = React.useState(String(option.durationDeltaMin));
+  // Endpreis/Enddauer (User-facing) statt Delta. Delta wird beim Save berechnet.
+  const endPrice = Number(option.priceDelta) + basePrice;
+  const endDuration = option.durationDeltaMin + baseDuration;
+  const [price, setPrice] = React.useState(String(endPrice));
+  const [duration, setDuration] = React.useState(String(endDuration));
   const [processing, setProcessing] = React.useState(String(option.processingDeltaMin));
   const [pending, startTransition] = React.useTransition();
 
   const save = (): void => {
     startTransition(async () => {
+      const newEndPrice = Number(price);
+      const newEndDuration = Number(duration);
       await updateOption(serviceId, option.id, {
         label: label.trim(),
-        priceDelta: Number(price) || 0,
-        durationDeltaMin: Number(duration) || 0,
+        priceDelta: Number.isFinite(newEndPrice) ? newEndPrice - basePrice : 0,
+        durationDeltaMin: Number.isFinite(newEndDuration) ? newEndDuration - baseDuration : 0,
         processingDeltaMin: Number(processing) || 0,
       });
       setEditing(false);
@@ -306,9 +343,8 @@ function OptionRow({
   };
 
   const fmt = (n: number): string => (n > 0 ? `+${n}` : String(n));
-  const priceNum = Number(option.priceDelta);
-  const priceLabel =
-    priceNum === 0 ? '±0 CHF' : priceNum > 0 ? `+${priceNum} CHF` : `${priceNum} CHF`;
+  const priceLabel = `CHF ${endPrice}`;
+  const durationLabel = `${endDuration} Min`;
 
   if (editing) {
     return (
@@ -353,7 +389,7 @@ function OptionRow({
     <li className="flex flex-wrap items-center gap-3 rounded-md bg-surface-raised/40 px-2 py-1.5 text-sm">
       <span className="font-medium text-text-primary">{option.label}</span>
       <Badge tone="neutral">{priceLabel}</Badge>
-      <Badge tone="neutral">{fmt(option.durationDeltaMin)} Min</Badge>
+      <Badge tone="neutral">{durationLabel}</Badge>
       {option.processingDeltaMin !== 0 ? (
         <Badge tone="neutral">Processing {fmt(option.processingDeltaMin)} Min</Badge>
       ) : null}

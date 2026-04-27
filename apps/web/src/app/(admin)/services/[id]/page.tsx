@@ -215,7 +215,12 @@ export default async function EditServicePage({
         </CardBody>
       </Card>
 
-      <OptionsEditor serviceId={id} initialGroups={groups} />
+      <OptionsEditor
+        serviceId={id}
+        initialGroups={groups}
+        baseDuration={service.durationMinutes}
+        basePrice={Number(service.basePrice)}
+      />
       <BundlesEditor serviceId={id} initialBundles={bundles} allServices={allServices} />
       <AddOnsEditor serviceId={id} initialAddOns={addOns} />
     </div>
