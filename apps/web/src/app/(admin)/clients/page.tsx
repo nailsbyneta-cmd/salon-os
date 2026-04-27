@@ -72,6 +72,33 @@ function applyFilter(clients: ClientRow[], f: FilterKey): ClientRow[] {
   }
 }
 
+/**
+ * Listing-View maskiert PII (Listing wird oft auch von Front-Desk-Personal
+ * mit limitiertem Need-to-know aufgerufen). Detail-View zeigt unmaskiert.
+ */
+function maskClientEmail(email: string | null | undefined): string | null {
+  if (!email) return null;
+  const at = email.indexOf('@');
+  if (at < 1) return '••@••.••';
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  const visibleLocal =
+    local.length <= 2
+      ? local
+      : `${local[0]}${'•'.repeat(Math.max(local.length - 2, 1))}${local.slice(-1)}`;
+  const dot = domain.lastIndexOf('.');
+  const tld = dot >= 0 ? domain.slice(dot) : '';
+  const maskedDomain = `${'•'.repeat(Math.max(domain.length - tld.length, 1))}${tld}`;
+  return `${visibleLocal}@${maskedDomain}`;
+}
+
+function maskClientPhone(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 4) return '•••';
+  return `${phone.slice(0, 2)} ••• •• ${digits.slice(-2)}`;
+}
+
 function phoneLinks(c: ClientRow & { phoneE164?: string | null }): {
   tel: string | null;
   wa: string | null;
@@ -273,14 +300,16 @@ export default async function ClientsPage({
                             </span>
                             {/* Kontakt auf Mobile unter den Namen */}
                             <span className="mt-0.5 block truncate text-xs font-normal text-text-muted sm:hidden">
-                              {c.email ?? c.phone ?? '—'}
+                              {maskClientEmail(c.email) ?? maskClientPhone(c.phone) ?? '—'}
                             </span>
                           </span>
                         </Link>
                       </td>
                       <td className="hidden px-4 py-3 text-text-secondary sm:table-cell sm:px-5">
-                        {c.email ?? '—'}
-                        {c.phone ? <span className="ml-2 text-text-muted">· {c.phone}</span> : null}
+                        {maskClientEmail(c.email) ?? '—'}
+                        {c.phone ? (
+                          <span className="ml-2 text-text-muted">· {maskClientPhone(c.phone)}</span>
+                        ) : null}
                       </td>
                       <td className="hidden px-4 py-3 text-text-secondary md:table-cell md:px-5">
                         {c.lastVisitAt ? new Date(c.lastVisitAt).toLocaleDateString('de-CH') : '—'}

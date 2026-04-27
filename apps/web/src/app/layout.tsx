@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Beautyneta',
+    title: 'Beautycenter by Neta',
   },
   formatDetection: { telephone: false },
 };
@@ -53,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
     <html
       lang="de-CH"
       className={`${inter.variable} ${montserrat.variable} ${playfair.variable}`}
+      data-product-theme="salon-os"
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-background font-sans text-text-primary antialiased">

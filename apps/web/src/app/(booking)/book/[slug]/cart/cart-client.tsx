@@ -56,7 +56,11 @@ export function CartClient({
         setError(result.error);
         return;
       }
-      setResults(result);
+      // Defensive: filter degenerate options ohne Stops weg — sonst crash beim Rendering
+      setResults({
+        ...result,
+        options: result.options.filter((o) => o.stops.length === items.length),
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Netzwerk-Fehler');
     } finally {

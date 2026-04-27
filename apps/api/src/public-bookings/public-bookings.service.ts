@@ -523,8 +523,11 @@ export class PublicBookingsService {
       seen.add(key);
       return true;
     });
-    deduped.sort((a, b) => a.score - b.score);
-    return { options: deduped.slice(0, MAX_OPTIONS) };
+    // Defensive: nie Options mit leerer Slot-Kette zurückgeben — Frontend
+    // erwartet stops[0] zu existieren und crasht sonst beim Rendering.
+    const valid = deduped.filter((r) => r.stops.length > 0);
+    valid.sort((a, b) => a.score - b.score);
+    return { options: valid.slice(0, MAX_OPTIONS) };
   }
 
   async createBooking(slug: string, input: PublicBookingInput): Promise<Appointment> {

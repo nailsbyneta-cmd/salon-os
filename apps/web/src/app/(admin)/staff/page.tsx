@@ -4,6 +4,31 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { deleteStaff } from './actions';
 
+/**
+ * Email/Phone-Masking auf Staff-Listing — Detail-View hat sie unmaskiert.
+ * Verhindert PII-Leaks im SSR-HTML solange Auth in Staging nicht scharf ist.
+ */
+function maskEmail(email: string): string {
+  const at = email.indexOf('@');
+  if (at < 1) return '••@••.••';
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  const visibleLocal =
+    local.length <= 2
+      ? local
+      : `${local[0]}${'•'.repeat(Math.max(local.length - 2, 1))}${local.slice(-1)}`;
+  const dot = domain.lastIndexOf('.');
+  const tld = dot >= 0 ? domain.slice(dot) : '';
+  const maskedDomain = `${'•'.repeat(Math.max(domain.length - tld.length, 1))}${tld}`;
+  return `${visibleLocal}@${maskedDomain}`;
+}
+
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 4) return '•••';
+  return `${phone.slice(0, 2)} ••• •• ${digits.slice(-2)}`;
+}
+
 interface StaffRow {
   id: string;
   firstName: string;
@@ -94,8 +119,8 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
                       </div>
                     </div>
                     <div className="mt-4 space-y-1 text-xs text-text-muted">
-                      <div>{s.email}</div>
-                      {s.phone ? <div>{s.phone}</div> : null}
+                      <div>{maskEmail(s.email)}</div>
+                      {s.phone ? <div>{maskPhone(s.phone)}</div> : null}
                     </div>
                   </Link>
                   <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
