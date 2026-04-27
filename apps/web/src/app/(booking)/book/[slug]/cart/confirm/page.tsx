@@ -4,6 +4,27 @@ import { Button, Card, CardBody, Field, Input, Textarea } from '@salon-os/ui';
 import { BookingSteps } from '../../booking-steps';
 import { createBulkBooking } from '../actions';
 
+const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
+
+async function loadServiceNames(slug: string, serviceIds: string[]): Promise<Map<string, string>> {
+  // Pro-Service-Detail-Calls — bei Multi-Booking max 5, akzeptabel.
+  const entries = await Promise.all(
+    serviceIds.map(async (id) => {
+      try {
+        const res = await fetch(`${API_URL}/v1/public/${slug}/services/${id}`, {
+          cache: 'no-store',
+        });
+        if (!res.ok) return [id, `Service`] as const;
+        const data = (await res.json()) as { service: { name: string } };
+        return [id, data.service.name] as const;
+      } catch {
+        return [id, `Service`] as const;
+      }
+    }),
+  );
+  return new Map(entries);
+}
+
 interface ParsedStop {
   serviceId: string;
   staffId: string;
@@ -68,6 +89,8 @@ export default async function CartConfirm({
   }
 
   const totalCents = sp.total ? Number(sp.total) : 0;
+  const serviceIds = Array.from(new Set(stops.map((s) => s.serviceId)));
+  const serviceNames = await loadServiceNames(slug, serviceIds);
   const firstStop = new Date(stops[0]!.startAt);
   const dayStr = firstStop.toLocaleDateString('de-CH', {
     weekday: 'long',
@@ -116,7 +139,9 @@ export default async function CartConfirm({
                     minute: '2-digit',
                   })}
                 </span>
-                <span className="flex-1 text-text-secondary">Service {i + 1}</span>
+                <span className="flex-1 text-text-secondary">
+                  {serviceNames.get(s.serviceId) ?? `Service ${i + 1}`}
+                </span>
               </li>
             ))}
           </ol>

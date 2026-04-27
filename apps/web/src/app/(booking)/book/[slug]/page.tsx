@@ -35,6 +35,7 @@ interface Service {
 interface Category {
   id: string;
   name: string;
+  order?: number;
 }
 
 interface StaffPublic {
@@ -302,14 +303,24 @@ export default async function BookingStart({
   if (!data) notFound();
   const { tenant, locations, services, categories, staff, faqs, reviews, gallery } = data;
 
-  const catById = new Map(categories.map((c) => [c.id, c.name]));
-  const byCategory = new Map<string, Service[]>();
+  // Phorest-Style Folders: gruppiere Services nach Kategorie + sortiere nach
+  // category.order (DB-Reihenfolge). Leere Kategorien werden gar nicht erst
+  // gerendert — verhindert "Klick auf Lashes → leer" für Endkundinnen.
+  const catById = new Map(categories.map((c) => [c.id, c]));
+  const groupedRaw = new Map<string, Service[]>();
   for (const s of services) {
-    const key = catById.get(s.categoryId) ?? 'Services';
-    const bucket = byCategory.get(key) ?? [];
+    const bucket = groupedRaw.get(s.categoryId) ?? [];
     bucket.push(s);
-    byCategory.set(key, bucket);
+    groupedRaw.set(s.categoryId, bucket);
   }
+  const grouped = Array.from(groupedRaw.entries())
+    .map(([catId, items]) => ({
+      catId,
+      catName: catById.get(catId)?.name ?? 'Services',
+      catOrder: catById.get(catId)?.order ?? 999,
+      items,
+    }))
+    .sort((a, b) => a.catOrder - b.catOrder || a.catName.localeCompare(b.catName));
 
   const primaryLocation = locations[0] ?? null;
   const hours = primaryLocation ? openingHoursArray(primaryLocation.openingHours) : null;
@@ -423,43 +434,63 @@ export default async function BookingStart({
         </section>
       ) : null}
 
-      {/* Services */}
-      {Array.from(byCategory.entries()).map(([catName, items]) => (
-        <section key={catName}>
-          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
-            {catName}
-          </h2>
-          <div className="grid gap-2">
-            {items.map((s) => (
-              <ServiceCardToggle
-                key={s.id}
-                slug={slug}
-                serviceId={s.id}
-                serviceName={s.name}
-                basePrice={s.basePrice}
-                durationMinutes={s.durationMinutes}
-                configureHref={`/book/${slug}/service/${s.id}/configure?location=${locations[0]?.id ?? ''}`}
+      {/* Services — Phorest-Style Kategorien-Folders (collapsible).
+          Erste Kategorie ist default offen, der Rest geschlossen — schnellerer
+          Scan auf Mobile, keine endlose Service-Wand. */}
+      <section aria-label="Behandlungen wählen" className="space-y-2">
+        {grouped.map(({ catId, catName, items }, idx) => (
+          <details
+            key={catId}
+            open={idx === 0}
+            className="group rounded-lg border border-border bg-surface open:bg-surface-elevated"
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 transition-colors hover:bg-surface-elevated [&::-webkit-details-marker]:hidden">
+              <div className="flex items-baseline gap-3">
+                <span className="font-display text-lg font-semibold tracking-tight text-text-primary">
+                  {catName}
+                </span>
+                <span className="text-xs text-text-muted">
+                  {items.length} {items.length === 1 ? 'Behandlung' : 'Behandlungen'}
+                </span>
+              </div>
+              <span
+                aria-hidden
+                className="text-text-muted transition-transform duration-200 group-open:rotate-180"
               >
-                <CardBody className="flex items-center justify-between gap-4 py-4 pr-14">
-                  <div className="min-w-0 flex-1">
-                    <div className="font-display text-lg font-semibold tracking-tight text-text-primary">
-                      {s.name}
+                ▾
+              </span>
+            </summary>
+            <div className="grid gap-2 border-t border-border/50 p-2">
+              {items.map((s) => (
+                <ServiceCardToggle
+                  key={s.id}
+                  slug={slug}
+                  serviceId={s.id}
+                  serviceName={s.name}
+                  basePrice={s.basePrice}
+                  durationMinutes={s.durationMinutes}
+                  configureHref={`/book/${slug}/service/${s.id}/configure?location=${locations[0]?.id ?? ''}`}
+                >
+                  <CardBody className="flex items-center justify-between gap-4 py-4 pr-14">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-display text-lg font-semibold tracking-tight text-text-primary">
+                        {s.name}
+                      </div>
+                      {s.description ? (
+                        <div className="mt-0.5 text-sm text-text-secondary">{s.description}</div>
+                      ) : null}
+                      <div className="mt-1.5 flex items-center gap-2 text-xs text-text-muted">
+                        <span>{s.durationMinutes} Min</span>
+                      </div>
                     </div>
-                    {s.description ? (
-                      <div className="mt-0.5 text-sm text-text-secondary">{s.description}</div>
-                    ) : null}
-                    <div className="mt-1.5 flex items-center gap-2 text-xs text-text-muted">
-                      <span>{s.durationMinutes} Min</span>
-                      <span className="text-accent">· ab</span>
-                    </div>
-                  </div>
-                  <PriceDisplay amount={s.basePrice} size="lg" />
-                </CardBody>
-              </ServiceCardToggle>
-            ))}
-          </div>
-        </section>
-      ))}
+                    <PriceDisplay amount={s.basePrice} size="lg" />
+                  </CardBody>
+                </ServiceCardToggle>
+              ))}
+            </div>
+          </details>
+        ))}
+      </section>
 
       {/* Team */}
       {staff.length > 0 ? (
