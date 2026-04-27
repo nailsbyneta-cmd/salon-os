@@ -638,8 +638,9 @@ export class PublicBookingsService {
       if (isConflictError(err)) {
         throw new ConflictException({
           type: 'https://salon-os.com/errors/appointment/conflict',
-          title: 'Slot no longer available',
-          detail: 'This time slot was just booked by someone else. Please choose another.',
+          title: 'Termin gerade vergeben',
+          detail:
+            'Dieser Termin wurde gerade von jemand anderem gebucht. Bitte wähle einen anderen Slot.',
           errors: [{ path: 'startAt', code: 'slot_taken' }],
         });
       }

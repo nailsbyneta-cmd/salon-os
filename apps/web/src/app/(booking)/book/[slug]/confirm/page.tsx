@@ -79,8 +79,19 @@ async function submitBooking(
       cache: 'no-store',
     });
     if (!res.ok) {
-      const body = (await res.json()) as { title?: string };
-      return { ok: false, error: body.title ?? 'Unbekannter Fehler' };
+      const body = (await res.json().catch(() => ({}))) as {
+        title?: string;
+        detail?: string;
+      };
+      // Conflict (409) hat genaue detail-Message; 500er sind generische
+      // 'Internal Server Error' — ersetze die durch user-freundliche Variante.
+      if (res.status === 500) {
+        return {
+          ok: false,
+          error: 'Etwas ist schief gelaufen — bitte versuche es nochmal in einem Moment.',
+        };
+      }
+      return { ok: false, error: body.detail ?? body.title ?? 'Unbekannter Fehler' };
     }
     const data = (await res.json()) as { id: string };
     return { ok: true, appointmentId: data.id };

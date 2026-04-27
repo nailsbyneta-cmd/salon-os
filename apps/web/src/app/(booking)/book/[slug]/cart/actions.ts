@@ -72,6 +72,12 @@ export async function createBulkBooking(
     });
     if (!res.ok) {
       const err = (await res.json().catch(() => ({}))) as { title?: string; detail?: string };
+      if (res.status === 500) {
+        return {
+          ok: false,
+          error: 'Etwas ist schief gelaufen — bitte versuche es nochmal in einem Moment.',
+        };
+      }
       return { ok: false, error: err.detail ?? err.title ?? 'Buchung fehlgeschlagen' };
     }
     const data = (await res.json()) as { appointments: Array<{ id: string }> };
