@@ -325,45 +325,145 @@ export default async function BookingStart({
   const primaryLocation = locations[0] ?? null;
   const hours = primaryLocation ? openingHoursArray(primaryLocation.openingHours) : null;
 
+  // Today-only Hours für die Hero-Pille — kompakt anzeigen "09:00–19:00"
+  const todayHoursEntry = hours?.find((h) => h.isToday);
+  const todayHoursText = todayHoursEntry?.text ?? null;
+  const isOpenToday = todayHoursText !== null && todayHoursText !== 'geschlossen';
+
+  // Avg-Rating für Floating-Stars
+  const avgRating =
+    reviews.length > 0
+      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+      : null;
+
   return (
     <main className="space-y-10">
-      {/* Hero */}
+      {/* HERO — UX-Brief Aufgabe 1. Vollbreite, ~60vh, dramatisches
+          Gradient-Overlay damit Text auf jeder Hero-Bild lesbar bleibt.
+          Ken-Burns Auto-Zoom auf dem Hintergrundbild (8s scale 1->1.05).
+          Floating-Pills unten: Sterne links, Öffnungs-Pille rechts. */}
       <header
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent/10 via-brand/5 to-transparent px-6 py-10 text-center"
-        style={
-          tenant.heroImageUrl
-            ? {
-                backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.55)), url(${tenant.heroImageUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                color: 'white',
-              }
-            : undefined
-        }
+        className="relative -mx-4 flex min-h-[60vh] items-center justify-center overflow-hidden bg-[#0A0A0A] text-center md:mx-0 md:min-h-[50vh] md:rounded-2xl"
       >
-        {tenant.logoUrl ? (
-          <img
-            src={tenant.logoUrl}
-            alt={tenant.name}
-            className="mx-auto mb-4 h-16 w-16 rounded-full object-cover shadow-lg"
+        {/* Ken-Burns Hintergrundbild oder Gradient-Fallback */}
+        {tenant.heroImageUrl ? (
+          <div
+            className="absolute inset-0 animate-[kenBurns_12s_ease-in-out_infinite_alternate]"
+            style={{
+              backgroundImage: `url(${tenant.heroImageUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+            aria-hidden
+          />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(180deg, #0A0A0A 0%, #1A1208 50%, #0A0A0A 100%)',
+            }}
+            aria-hidden
+          />
+        )}
+        {/* Overlay für Text-Lesbarkeit (Hero-Image-Variante) */}
+        {tenant.heroImageUrl ? (
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(to bottom, rgba(10,10,10,0.45) 0%, rgba(10,10,10,0.55) 60%, rgba(10,10,10,0.85) 100%)',
+            }}
+            aria-hidden
           />
         ) : null}
-        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
-          Online buchen
-        </p>
-        <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight md:text-5xl">
-          {tenant.name}
-        </h1>
-        {tenant.tagline ? <p className="mt-3 text-base font-medium">{tenant.tagline}</p> : null}
-        {primaryLocation ? (
-          <p className="mt-2 text-sm opacity-80">
-            {primaryLocation.name}
-            {primaryLocation.city ? ` · ${primaryLocation.city}` : ''}
+
+        {/* Inhalt */}
+        <div className="relative z-10 flex flex-col items-center px-6 py-10 text-white">
+          {tenant.logoUrl ? (
+            <img
+              src={tenant.logoUrl}
+              alt={tenant.name}
+              className="mb-5 h-20 w-20 rounded-full border border-white/20 object-cover shadow-2xl"
+            />
+          ) : null}
+          {primaryLocation?.city ? (
+            <p
+              className="animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] text-[11px] font-medium uppercase tracking-[0.4em] text-accent"
+              style={{ animationDelay: '50ms' }}
+            >
+              ★ {primaryLocation.city}
+            </p>
+          ) : (
+            <p
+              className="animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] text-[11px] font-medium uppercase tracking-[0.4em] text-accent"
+              style={{ animationDelay: '50ms' }}
+            >
+              Premium Beauty
+            </p>
+          )}
+          <h1
+            className="mt-4 animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] font-display text-5xl font-light tracking-tight text-white md:text-6xl lg:text-7xl"
+            style={{ animationDelay: '200ms' }}
+          >
+            {tenant.name}
+          </h1>
+          <p
+            className="mt-4 max-w-md animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] text-base font-light italic text-white/75 md:text-lg"
+            style={{ animationDelay: '400ms' }}
+          >
+            {tenant.tagline?.trim() ? tenant.tagline : 'Dein Moment. Dein Glanz.'}
           </p>
-        ) : null}
-        <p className="mt-4 text-xs opacity-70">
-          Wähle deine Behandlung, Datum &amp; Uhrzeit — alles in unter 60 Sek.
-        </p>
+        </div>
+
+        {/* Floating-Pills — unten links Sterne, unten rechts Öffnungs-Status */}
+        <div className="absolute inset-x-4 bottom-4 z-10 flex items-end justify-between gap-2 md:inset-x-6 md:bottom-6">
+          {avgRating !== null ? (
+            <div className="rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+              <span className="text-[11px] tabular-nums text-white/90">
+                <span className="text-accent">★★★★★</span>{' '}
+                <span className="font-semibold">{avgRating.toFixed(1)}</span>
+                <span className="text-white/60">
+                  {' '}
+                  · {reviews.length} {reviews.length === 1 ? 'Bewertung' : 'Bewertungen'}
+                </span>
+              </span>
+            </div>
+          ) : (
+            <div /> /* Spacer */
+          )}
+          {todayHoursText ? (
+            <div
+              className={[
+                'rounded-full px-3 py-1.5 text-[11px] font-medium backdrop-blur-sm',
+                isOpenToday
+                  ? 'bg-accent/20 text-accent'
+                  : 'bg-white/10 text-white/60',
+              ].join(' ')}
+            >
+              {isOpenToday ? `Heute geöffnet · ${todayHoursText}` : 'Heute geschlossen'}
+            </div>
+          ) : null}
+        </div>
+
+        <style>{`
+          @keyframes kenBurns {
+            from { transform: scale(1); }
+            to   { transform: scale(1.06); }
+          }
+          @keyframes heroFadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .animate-\\[kenBurns_12s_ease-in-out_infinite_alternate\\],
+            .animate-\\[heroFadeIn_700ms_cubic-bezier\\(0\\.16\\,1\\,0\\.3\\,1\\)_both\\] {
+              animation: none !important;
+              opacity: 1 !important;
+              transform: none !important;
+            }
+          }
+        `}</style>
       </header>
 
       {/* Trust-Strip — Social Proof direkt unter Hero */}
@@ -486,12 +586,22 @@ export default async function BookingStart({
                           {s.description}
                         </div>
                       ) : null}
-                      <div className="mt-1.5 flex items-center gap-2 text-xs text-text-muted">
-                        <span>{s.durationMinutes} Min</span>
+                      {/* UX-Brief Aufgabe 2: Dauer als Pill mit Uhr-Icon — gibt
+                          mehr Air & visuelle Trennung vom Preis. */}
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] tabular-nums text-white/60">
+                          <span aria-hidden>⏱</span>
+                          {s.durationMinutes} Min
+                        </span>
                       </div>
                     </div>
-                    <div className="flex-none">
-                      <PriceDisplay amount={s.basePrice} size="lg" />
+                    <div className="flex-none text-right">
+                      {/* UX-Brief: CHF klein, Preis gross — macht CHF zur Einheit
+                          nicht zum Erschrecken (Anchoring-Trick). */}
+                      <div className="font-display text-xl font-semibold tabular-nums text-text-primary md:text-2xl">
+                        <span className="mr-1 text-[10px] font-medium text-text-muted">CHF</span>
+                        {Number(s.basePrice).toFixed(0)}
+                      </div>
                     </div>
                   </CardBody>
                 </ServiceCardToggle>

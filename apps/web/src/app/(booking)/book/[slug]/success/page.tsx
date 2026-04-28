@@ -22,7 +22,41 @@ interface SalonInfo {
 }
 
 interface AppointmentSummary {
-  summary: { valueChf: number; currency: string; status: string } | null;
+  summary: {
+    valueChf: number;
+    currency: string;
+    status: string;
+    serviceCategoryIds: string[];
+  } | null;
+}
+
+interface CrossSellService {
+  id: string;
+  name: string;
+  categoryId: string;
+  durationMinutes: number;
+  basePrice: string | number;
+}
+
+async function loadCrossSell(
+  slug: string,
+  excludeCategoryIds: string[],
+): Promise<CrossSellService[]> {
+  try {
+    const res = await fetch(`${API_URL}/v1/public/${slug}/services`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { services: CrossSellService[] };
+    // 2 zufällige Services aus anderen Kategorien als die gebuchten — Diderot-
+    // Effekt: "diese passt dazu". Random-Pick damit's nicht immer dasselbe ist.
+    const pool = data.services.filter((s) => !excludeCategoryIds.includes(s.categoryId));
+    if (pool.length === 0) return [];
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 2);
+  } catch {
+    return [];
+  }
 }
 
 async function loadSalon(slug: string): Promise<SalonInfo | null> {
@@ -64,6 +98,8 @@ export default async function BookingSuccess({
     loadSalon(slug),
     id ? loadSummary(slug, id) : Promise.resolve(null),
   ]);
+
+  const crossSell = summary ? await loadCrossSell(slug, summary.serviceCategoryIds) : [];
 
   const salonName = salon?.tenant.name ?? 'uns';
   const phone = salon?.locations[0]?.phone ?? null;
@@ -181,6 +217,51 @@ export default async function BookingSuccess({
           </CardBody>
         </Card>
       ) : null}
+
+      {/* Cross-Sell-Block — UX-Brief Aufgabe 6.4 (Diderot-Effekt). Zeigt
+          2 Services aus einer ANDEREN Kategorie als das gerade Gebuchte.
+          "Perfekte Ergänzung" framing — nicht aggressiv. Random-Pick aus
+          Pool damit Wiederbesucher nicht immer dieselbe Empfehlung sehen. */}
+      {crossSell.length > 0 ? (
+        <Card elevation="flat" className="w-full max-w-md">
+          <CardBody className="space-y-3">
+            <p className="text-center text-xs uppercase tracking-[0.3em] text-accent">
+              ✨ Perfekte Ergänzung
+            </p>
+            <p className="text-center text-sm text-text-secondary">
+              Diese Behandlungen passen besonders gut dazu:
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {crossSell.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/book/${slug}/service/${s.id}/configure`}
+                  className="group rounded-md border border-border bg-surface p-3 transition-all hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+                >
+                  <div className="text-sm font-medium text-text-primary group-hover:text-accent">
+                    {s.name}
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-[11px] tabular-nums text-text-muted">
+                    <span>{s.durationMinutes} Min</span>
+                    <span>
+                      <span className="mr-0.5 text-[9px]">CHF</span>
+                      {Number(s.basePrice).toFixed(0)}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {/* Folgebuchungs-Nudge — UX-Brief Aufgabe 7.2. Sanft, nicht aufdringlich. */}
+      <p className="text-center text-xs text-text-muted">
+        Nächste Behandlung in 4 Wochen?{' '}
+        <Link href={`/book/${slug}`} className="text-accent hover:underline">
+          Slot vorbuchen →
+        </Link>
+      </p>
 
       <div className="flex flex-wrap justify-center gap-3">
         <Link href={`/book/${slug}`}>

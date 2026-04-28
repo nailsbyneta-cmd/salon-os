@@ -159,6 +159,7 @@ export class PublicBookingsService {
     valueChf: number;
     currency: string;
     status: string;
+    serviceCategoryIds: string[];
   } | null> {
     const tenant = await this.resolveTenant(slug);
     return this.withTenant(tenant.id, null, null, async (tx) => {
@@ -166,16 +167,25 @@ export class PublicBookingsService {
         where: { id: appointmentId, tenantId: tenant.id },
         select: {
           status: true,
-          items: { select: { price: true } },
+          items: {
+            select: {
+              price: true,
+              service: { select: { categoryId: true } },
+            },
+          },
           location: { select: { currency: true } },
         },
       });
       if (!appt) return null;
       const total = appt.items.reduce((sum, i) => sum + Number(i.price), 0);
+      const serviceCategoryIds = Array.from(
+        new Set(appt.items.map((i) => i.service.categoryId)),
+      );
       return {
         valueChf: Math.round(total * 100) / 100,
         currency: appt.location.currency,
         status: appt.status,
+        serviceCategoryIds,
       };
     });
   }
