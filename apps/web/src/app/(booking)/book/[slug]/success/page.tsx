@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Button, Card, CardBody } from '@salon-os/ui';
+import { ConversionFire } from '@/components/conversion-fire';
 import { ShareButton } from './share-button';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
@@ -12,6 +13,15 @@ interface SalonInfo {
     googleBusinessUrl: string | null;
   };
   locations: Array<{ phone: string | null; email: string | null }>;
+  adsTracking?: {
+    googleAdsId: string | null;
+    ga4MeasurementId: string | null;
+    conversionLabels: Record<string, string | null>;
+  };
+}
+
+interface AppointmentSummary {
+  summary: { valueChf: number; currency: string; status: string } | null;
 }
 
 async function loadSalon(slug: string): Promise<SalonInfo | null> {
@@ -19,6 +29,22 @@ async function loadSalon(slug: string): Promise<SalonInfo | null> {
     const res = await fetch(`${API_URL}/v1/public/${slug}/info`, { cache: 'no-store' });
     if (!res.ok) return null;
     return (await res.json()) as SalonInfo;
+  } catch {
+    return null;
+  }
+}
+
+async function loadSummary(
+  slug: string,
+  appointmentId: string,
+): Promise<AppointmentSummary['summary']> {
+  try {
+    const res = await fetch(
+      `${API_URL}/v1/public/${slug}/appointments/${appointmentId}/summary`,
+      { cache: 'no-store' },
+    );
+    if (!res.ok) return null;
+    return ((await res.json()) as AppointmentSummary).summary;
   } catch {
     return null;
   }
@@ -33,14 +59,29 @@ export default async function BookingSuccess({
 }): Promise<React.JSX.Element> {
   const { slug } = await params;
   const { id } = await searchParams;
-  const salon = await loadSalon(slug);
+  const [salon, summary] = await Promise.all([
+    loadSalon(slug),
+    id ? loadSummary(slug, id) : Promise.resolve(null),
+  ]);
 
   const salonName = salon?.tenant.name ?? 'uns';
   const phone = salon?.locations[0]?.phone ?? null;
   const whatsapp = salon?.tenant.whatsappE164 ?? null;
+  const conversionSendTo = salon?.adsTracking?.conversionLabels?.['booking_completed'] ?? null;
 
   return (
     <main className="flex min-h-[70vh] flex-col items-center justify-center space-y-8 py-10">
+      {/* Google-Ads + GA4 Conversion-Fire (Capability 1+2). Idempotent
+          per appointmentId — kein Doppel-Fire bei Reload. */}
+      {id && summary && summary.status !== 'CANCELLED' ? (
+        <ConversionFire
+          conversionSendTo={conversionSendTo}
+          valueChf={summary.valueChf}
+          appointmentId={id}
+          currency={summary.currency}
+        />
+      ) : null}
+
       {/* Celebration-Mark — Gold-Ring mit Check */}
       <div className="relative">
         <div

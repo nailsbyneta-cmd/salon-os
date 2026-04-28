@@ -42,6 +42,15 @@ export interface PublicBookingInput {
   /** Wizard-Variant-Auswahl. Backend resolves Labels und schreibt sie auf
    *  appointmentItem.optionLabels (für Calendar + Email + Receipt). */
   optionIds?: string[];
+  /** Google-Ads Click-ID — vom Frontend aus localStorage gelesen (90d TTL).
+   *  Wird auf Appointment + (für Erst-Kundinnen) auf Client gespeichert.
+   *  Trigger-Punkt für Server-Side uploadClickConversion. */
+  gclid?: string;
+  /** First-Touch Acquisition-Source. Default 'unknown' wenn nicht gesetzt.
+   *  Werte: 'google_ads' | 'gbp' | 'organic' | 'direct' | 'instagram' |
+   *  'referral' | 'unknown'. Nur bei NEUEN Clients geschrieben — für
+   *  bestehende bleibt der ursprüngliche First-Touch erhalten. */
+  acquisitionSource?: string;
 }
 
 const PG_EXCLUSION_VIOLATION = 'P2002';
@@ -137,6 +146,40 @@ export class PublicBookingsService {
    * Auth: nur appointmentId reicht (UUIDs sind nicht enumerable, plus
    * läuft normalerweise direkt nach dem Booking-Submit).
    */
+  /**
+   * Public-Summary fürs /success-Page Conversion-Fire. Gibt nur den
+   * Brutto-Wert + Currency zurück — KEINE PII (kein Name, kein Service-
+   * Detail). Wenn Appointment nicht existiert oder bereits cancelled
+   * → null (Conversion soll nicht feuern).
+   */
+  async getAppointmentSummary(
+    slug: string,
+    appointmentId: string,
+  ): Promise<{
+    valueChf: number;
+    currency: string;
+    status: string;
+  } | null> {
+    const tenant = await this.resolveTenant(slug);
+    return this.withTenant(tenant.id, null, null, async (tx) => {
+      const appt = await tx.appointment.findFirst({
+        where: { id: appointmentId, tenantId: tenant.id },
+        select: {
+          status: true,
+          items: { select: { price: true } },
+          location: { select: { currency: true } },
+        },
+      });
+      if (!appt) return null;
+      const total = appt.items.reduce((sum, i) => sum + Number(i.price), 0);
+      return {
+        valueChf: Math.round(total * 100) / 100,
+        currency: appt.location.currency,
+        status: appt.status,
+      };
+    });
+  }
+
   async getAppointmentIcs(slug: string, appointmentId: string): Promise<string | null> {
     const tenant = await this.resolveTenant(slug);
     return this.withTenant(tenant.id, null, null, async (tx) => {
@@ -359,6 +402,14 @@ export class PublicBookingsService {
       createdAt: Date;
     }>;
     gallery: Array<{ id: string; imageUrl: string; caption: string | null }>;
+    /** Google-Ads / GA4 Tracking-Config — nur public-safe IDs.
+     *  Frontend lädt gtag.js und feuert Conversion. KEINE secrets hier
+     *  (Refresh-Token bleibt server-side). */
+    adsTracking: {
+      googleAdsId: string | null;
+      ga4MeasurementId: string | null;
+      conversionLabels: Record<string, string | null>;
+    };
   }> {
     const tenantFull = await this.prismaPublic.tenant.findUnique({
       where: { slug },
@@ -384,6 +435,29 @@ export class PublicBookingsService {
     });
     if (!tenantFull || tenantFull.status === 'SUSPENDED' || tenantFull.status === 'CANCELLED') {
       throw new NotFoundException(`Unknown or inactive tenant: ${slug}`);
+    }
+    // Ads-Integration cross-tenant lesen (RLS-bypass via prismaPublic).
+    // Wir geben NUR die public-Identifier raus — niemals refresh_token.
+    const adsIntegration = await this.prismaPublic.tenantAdsIntegration.findFirst({
+      where: { tenantId: tenantFull.id, provider: 'google_ads', enabled: true },
+      select: { conversionActions: true },
+    });
+    const conv = (adsIntegration?.conversionActions ?? {}) as Record<
+      string,
+      { googleAdsId?: string | null; ga4MeasurementId?: string | null; sendTo?: string | null } | string | null
+    >;
+    // conversionActions kann zwei Shapes haben:
+    //   alt:  { booking_completed: "AW-X/abc" }      → string
+    //   neu:  { _meta: { googleAdsId, ga4MeasurementId },
+    //           booking_completed: "AW-X/abc" }
+    const meta = (conv['_meta'] ?? {}) as {
+      googleAdsId?: string | null;
+      ga4MeasurementId?: string | null;
+    };
+    const conversionLabels: Record<string, string | null> = {};
+    for (const [k, v] of Object.entries(conv)) {
+      if (k === '_meta') continue;
+      conversionLabels[k] = typeof v === 'string' ? v : (v?.sendTo ?? null);
     }
     return this.withTenant(tenantFull.id, null, null, async (tx) => {
       const [locations, staff, faqs, reviews, gallery] = await Promise.all([
@@ -469,6 +543,11 @@ export class PublicBookingsService {
         faqs,
         reviews,
         gallery,
+        adsTracking: {
+          googleAdsId: meta.googleAdsId ?? null,
+          ga4MeasurementId: meta.ga4MeasurementId ?? null,
+          conversionLabels,
+        },
       };
     });
   }
@@ -704,6 +783,12 @@ export class PublicBookingsService {
           },
         });
 
+        // First-Touch Attribution: nur bei NEUEN Clients schreiben.
+        // Returner behalten ihre ursprüngliche acquisitionSource → ein
+        // Re-Booking via Direct-Traffic darf das alte 'google_ads' nicht
+        // überschreiben.
+        const inferredSource =
+          input.acquisitionSource ?? (input.gclid ? 'google_ads' : 'unknown');
         const client =
           existingClient ??
           (await tx.client.create({
@@ -716,6 +801,9 @@ export class PublicBookingsService {
               phoneE164: input.client.phone ? normalizePhone(input.client.phone) : null,
               language: input.language ?? 'de-CH',
               source: 'public_booking',
+              acquisitionGclid: input.gclid ?? null,
+              acquisitionGclidTs: input.gclid ? new Date() : null,
+              acquisitionSource: inferredSource,
             },
           }));
 
@@ -769,6 +857,8 @@ export class PublicBookingsService {
             bookedVia: 'ONLINE_BRANDED',
             notes: input.notes ?? null,
             language: input.language ?? 'de-CH',
+            attributionGclid: input.gclid ?? null,
+            attributionSource: inferredSource,
             items: {
               create: [
                 {
@@ -797,6 +887,23 @@ export class PublicBookingsService {
           tenantId: tenant.id,
           startAt: appt.startAt,
         });
+
+        // Server-Side Google-Ads Conversion-Upload (Outbox).
+        // Worker entscheidet ob Upload überhaupt sinnvoll ist (Integration
+        // enabled + GCLID vorhanden ODER Email-Hash-Fallback). Wir enqueue
+        // jede Booking — Worker no-ops wenn Integration deaktiviert.
+        if (input.gclid) {
+          await tx.outboxEvent.create({
+            data: {
+              tenantId: tenant.id,
+              type: 'google_ads.upload_conversion',
+              payload: {
+                appointmentId: appt.id,
+                event: 'booking_completed',
+              },
+            },
+          });
+        }
 
         return appt;
       });

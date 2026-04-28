@@ -1,0 +1,43 @@
+name: Cron — Google-Ads Daily Spend Sync
+
+# Läuft 1x täglich um 04:00 UTC (= 06:00 CH-Sommer / 05:00 CH-Winter):
+# Pulled Spend/Clicks/Impressions/Conversions vom Vortag pro Tenant
+# mit aktiver tenant_ads_integration. Upsert in tenant_ads_spend_daily.
+# Dashboard liest aus dieser Tabelle (kein on-the-fly GAQL-Call).
+
+on:
+  schedule:
+    - cron: '0 4 * * *' # täglich 04:00 UTC
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Backfill-Date (YYYY-MM-DD). Leer = gestern."
+        required: false
+        type: string
+
+jobs:
+  ads-spend-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run Spend-Sync
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: ${{ vars.API_URL || 'https://salon-os-production-2346.up.railway.app' }}
+          DATE_OVERRIDE: ${{ inputs.date }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::CRON_SECRET not set — skipping."
+            exit 0
+          fi
+          URL="$API_URL/v1/public/cron/ads-spend/sync"
+          if [ -n "$DATE_OVERRIDE" ]; then
+            URL="$URL?date=$DATE_OVERRIDE"
+          fi
+          RESP=$(curl -sS -X POST "$URL" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -w "\nHTTP=%{http_code}")
+          echo "$RESP"
+          if echo "$RESP" | grep -q "HTTP=4\|HTTP=5"; then
+            exit 1
+          fi

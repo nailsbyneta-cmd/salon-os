@@ -24,6 +24,7 @@ const nav: NavItem[] = [
   { href: '/gift-cards', label: 'Gutscheine', icon: <IconGift /> },
   { href: '/inventory', label: 'Inventar', icon: <IconBox /> },
   { href: '/marketing', label: 'Marketing', icon: <IconMegaphone /> },
+  { href: '/ads-dashboard', label: 'Ads-ROI', icon: <IconReports /> },
   { href: '/reports', label: 'Reports', icon: <IconReports /> },
   { href: '/audit', label: 'Audit-Log', icon: <IconShield /> },
   { href: '/settings', label: 'Einstellungen', icon: <IconGear /> },

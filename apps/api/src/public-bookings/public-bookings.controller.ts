@@ -43,6 +43,12 @@ const publicBookingSchema = z.object({
   /** Wizard-Optionen (Variant-IDs). Backend resolves die Labels und
    * persistiert sie auf appointmentItem.optionLabels. */
   optionIds: z.array(uuidSchema).optional(),
+  /** Google-Ads Click-ID — vom Frontend aus localStorage gelesen.
+   *  Format: typischerweise "Cj0KCQiA..." (variabel, max. 200 char). */
+  gclid: z.string().min(1).max(200).optional(),
+  acquisitionSource: z
+    .enum(['google_ads', 'gbp', 'organic', 'direct', 'instagram', 'referral', 'unknown'])
+    .optional(),
 });
 
 @Controller('v1/public/:tenantSlug')
@@ -75,6 +81,21 @@ export class PublicBookingsController {
     @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
   ): Promise<{ categories: Array<{ id: string; name: string; order: number }> }> {
     return { categories: await this.svc.listServiceCategories(slug) };
+  }
+
+  /**
+   * Minimal-Summary für /success-Page Conversion-Fire. Nur Wert+Currency,
+   * keine PII (kein Name/Service/Datum). Wird vom ConversionFire-Component
+   * gelesen um den Brutto-Wert ans Conversion-Event zu hängen.
+   */
+  @Get('appointments/:appointmentId/summary')
+  async appointmentSummary(
+    @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
+    @Param('appointmentId', new ZodValidationPipe(uuidSchema)) appointmentId: string,
+  ): Promise<{
+    summary: { valueChf: number; currency: string; status: string } | null;
+  }> {
+    return { summary: await this.svc.getAppointmentSummary(slug, appointmentId) };
   }
 
   /**

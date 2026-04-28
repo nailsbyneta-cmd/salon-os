@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Avatar, Button, Card, CardBody, Field, Input, PriceDisplay, Textarea } from '@salon-os/ui';
 import { BookingSteps } from '../booking-steps';
+import { GclidFields } from '../gclid-fields';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -170,6 +171,9 @@ export default async function BookingConfirm({
     const email = String(formData.get('email') ?? '').trim();
     const phone = String(formData.get('phone') ?? '').trim() || undefined;
     const notes = String(formData.get('notes') ?? '').trim() || undefined;
+    const gclid = String(formData.get('gclid') ?? '').trim() || undefined;
+    const acquisitionSource =
+      String(formData.get('acquisitionSource') ?? '').trim() || undefined;
 
     const res = await submitBooking(slug, {
       serviceId: sp.serviceId,
@@ -182,6 +186,8 @@ export default async function BookingConfirm({
       // Wizard-Selection durchreichen — Backend persistiert Labels auf
       // dem AppointmentItem für Calendar-Display.
       optionIds: sp.options ? sp.options.split(',').filter(Boolean) : undefined,
+      gclid,
+      acquisitionSource,
     });
 
     if (res.ok) {
@@ -332,6 +338,7 @@ export default async function BookingConfirm({
       <Card>
         <CardBody>
           <form action={onSubmit} className="space-y-4">
+            <GclidFields />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Vorname" required>
                 <Input

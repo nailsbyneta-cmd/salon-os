@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
+import { AdsIntegrationModule } from './ads-integration/ads-integration.module.js';
 import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AppointmentSeriesModule } from './appointment-series/appointment-series.module.js';
 import { AuditModule } from './audit/audit.module.js';
@@ -46,6 +47,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
     ShiftsModule,
     RemindersModule,
     OutboxModule,
+    AdsIntegrationModule,
     MarketingModule,
     PaymentsModule,
     GiftCardsModule,

@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { OutboxEvent, PrismaClient } from '@salon-os/db';
+import { decryptSecret } from '@salon-os/utils/crypto';
 import { PRISMA } from '../db/db.module.js';
 import { EmailService } from '../email/email.service.js';
 import {
@@ -13,6 +14,7 @@ import {
   type TenantForEmail,
 } from './templates.js';
 import { generateIcsBase64 } from './ics.js';
+import { uploadClickConversion } from '../ads-integration/google-ads.client.js';
 
 const MAX_ATTEMPTS = 5;
 /** Reminder.24h darf erst kurz vor (startAt - leadTime) raus. */
@@ -33,6 +35,12 @@ interface ReminderPayload {
   clientId?: string;
   magicToken?: string;
   tenantSlug?: string;
+}
+
+interface AdsConversionPayload {
+  appointmentId: string;
+  /** Key in tenant_ads_integration.conversionActions, z.B. 'booking_completed'. */
+  event: string;
 }
 
 /**
@@ -142,6 +150,9 @@ export class OutboxWorkerService {
         return 'done';
       case 'auth.magic_link':
         await this.handleMagicLink(ev, payload);
+        return 'done';
+      case 'google_ads.upload_conversion':
+        await this.handleAdsConversionUpload(ev, payload as unknown as AdsConversionPayload);
         return 'done';
       case 'marketing.rebook':
       case 'marketing.birthday':
@@ -300,6 +311,125 @@ export class OutboxWorkerService {
     if (!res.ok) {
       throw new Error(res.error ?? 'email_send_failed');
     }
+  }
+
+  /**
+   * Capability 2: Server-Side Google-Ads Conversion-Upload.
+   *
+   * Strategie:
+   *   1. Booking laden (incl. tenant + client + items)
+   *   2. tenant_ads_integration laden, prüfen ob enabled + conversion-action
+   *      für `event` gemappt ist
+   *   3. uploadClickConversion mit GCLID (preferred) oder hashed-Email
+   *      (Enhanced-Conv-Fallback)
+   *   4. Bei Erfolg: appointment.conversionUploadedAt + Response speichern
+   *      → idempotent, nächster Worker-Tick sieht "schon hochgeladen" und macht no-op
+   */
+  private async handleAdsConversionUpload(
+    _ev: OutboxEvent,
+    payload: AdsConversionPayload,
+  ): Promise<void> {
+    if (!payload.appointmentId || !payload.event) {
+      throw new Error('appointmentId or event missing in google_ads.upload_conversion payload');
+    }
+
+    const appt = await this.prisma.appointment.findUnique({
+      where: { id: payload.appointmentId },
+      select: {
+        id: true,
+        tenantId: true,
+        startAt: true,
+        bookedAt: true,
+        attributionGclid: true,
+        conversionUploadedAt: true,
+        items: { select: { price: true } },
+        location: { select: { currency: true } },
+        client: { select: { email: true, phoneE164: true } },
+      },
+    });
+    if (!appt) {
+      this.logger.warn(`ads-conv: appointment ${payload.appointmentId} gone — drop`);
+      return;
+    }
+    if (appt.conversionUploadedAt) {
+      this.logger.log(`ads-conv: ${appt.id} already uploaded — skip`);
+      return;
+    }
+    const integration = await this.prisma.tenantAdsIntegration.findFirst({
+      where: { tenantId: appt.tenantId, provider: 'google_ads', enabled: true },
+    });
+    if (!integration) {
+      this.logger.log(`ads-conv: no integration for tenant ${appt.tenantId} — skip`);
+      return;
+    }
+
+    const map = (integration.conversionActions ?? {}) as Record<string, unknown>;
+    const rawAction = map[payload.event];
+    const action =
+      typeof rawAction === 'string'
+        ? rawAction
+        : typeof rawAction === 'object' && rawAction !== null
+          ? ((rawAction as { sendTo?: string }).sendTo ?? null)
+          : null;
+    if (!action) {
+      this.logger.log(
+        `ads-conv: tenant ${appt.tenantId} hat kein mapping für event=${payload.event} — skip`,
+      );
+      return;
+    }
+
+    const clientId = process.env['GOOGLE_ADS_CLIENT_ID'] ?? '';
+    const clientSecret = process.env['GOOGLE_ADS_CLIENT_SECRET'] ?? '';
+    const developerToken = process.env['GOOGLE_ADS_DEVELOPER_TOKEN'] ?? '';
+    if (!clientId || !clientSecret || !developerToken) {
+      this.logger.warn('ads-conv: GOOGLE_ADS_* env-vars fehlen — skip');
+      return;
+    }
+
+    let refreshToken: string;
+    try {
+      refreshToken = decryptSecret(integration.refreshTokenEncrypted);
+    } catch (e) {
+      this.logger.error(
+        `ads-conv: decrypt refresh-token failed for tenant ${appt.tenantId}: ${e instanceof Error ? e.message : String(e)}`,
+      );
+      return;
+    }
+
+    const valueChf = appt.items.reduce((sum, i) => sum + Number(i.price), 0);
+
+    const result = await uploadClickConversion(
+      {
+        tenantId: appt.tenantId,
+        customerId: integration.customerId,
+        loginCustomerId: integration.loginCustomerId,
+        refreshToken,
+        clientId,
+        clientSecret,
+        developerToken,
+      },
+      {
+        conversionAction: action,
+        gclid: appt.attributionGclid,
+        email: appt.client?.email ?? null,
+        phoneE164: appt.client?.phoneE164 ?? null,
+        valueChf,
+        bookedAt: appt.bookedAt,
+        orderId: appt.id,
+      },
+    );
+
+    if (!result.ok) {
+      throw new Error(`ads upload failed: ${result.error}`);
+    }
+
+    await this.prisma.appointment.update({
+      where: { id: appt.id },
+      data: {
+        conversionUploadedAt: new Date(),
+        conversionUploadResponse: result.raw as object,
+      },
+    });
   }
 
   private async loadAppointmentData(appointmentId: string): Promise<{

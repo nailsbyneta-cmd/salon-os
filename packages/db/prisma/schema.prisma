@@ -73,6 +73,8 @@ model Tenant {
   faqs             SalonFAQ[]
   reviews          SalonReview[]
   galleryImages    SalonGalleryImage[]
+  adsIntegrations  TenantAdsIntegration[]
+  adsSpendDaily    TenantAdsSpendDaily[]
 
   @@index([status])
   @@map("tenant")
@@ -624,6 +626,13 @@ model Client {
   blocked          Boolean   @default(false)
   familyParentId   String?   @db.Uuid
   source           String?
+  /// Google-Ads GCLID — gefangen via localStorage beim ersten Page-Load,
+  /// gespeichert beim ersten Booking. Ermöglicht Server-Side
+  /// uploadClickConversions auch ohne Cookie-Match.
+  acquisitionGclid    String?
+  acquisitionGclidTs  DateTime? @db.Timestamptz
+  /// 'google_ads' | 'organic' | 'instagram' | 'direct' | 'referral' | …
+  acquisitionSource   String?
   createdAt        DateTime  @default(now()) @db.Timestamptz
   updatedAt        DateTime  @updatedAt @db.Timestamptz
   deletedAt        DateTime? @db.Timestamptz
@@ -677,6 +686,14 @@ model Appointment {
   // Wenn Termin Teil einer Serie ist (Recurring/Stamm-Kundin):
   seriesId          String?           @db.Uuid
   occurrenceIndex   Int?              // 1-based Position in der Serie
+  /// Google-Ads Click-ID — vom Frontend mitgegeben, ermöglicht Server-Side
+  /// uploadClickConversion mit echter Click-Attribution.
+  attributionGclid          String?
+  /// 'google_ads' | 'organic' | 'instagram' | 'direct' | 'gbp' | 'referral' | 'unknown'
+  attributionSource         String?
+  /// Outbox-Worker setzt das wenn upload erfolgreich war (idempotent).
+  conversionUploadedAt      DateTime? @db.Timestamptz
+  conversionUploadResponse  Json?
   createdAt         DateTime          @default(now()) @db.Timestamptz
   updatedAt         DateTime          @updatedAt @db.Timestamptz
 
@@ -915,4 +932,61 @@ enum OutboxStatus {
   PROCESSING
   DONE
   FAILED
+}
+
+// ─── Ads-Integrationen (Capability 1–4) ───────────────────────
+//
+// Pro Tenant kann eine Ad-Plattform verbunden werden (Initial:
+// google_ads, später meta_ads, tiktok_ads). Refresh-Token wird
+// AES-256-GCM-verschlüsselt gespeichert (siehe @salon-os/utils/crypto).
+//
+// `conversionActions` mappt unsere internen Event-Namen auf Plattform-
+// Conversion-IDs, z.B.:
+//   {
+//     "booking_completed": "AW-18005447088/_M6bCOCAgYkcELCj1YlD",
+//     "booking_phone_call": null
+//   }
+
+model TenantAdsIntegration {
+  id                     String   @id @default(uuid()) @db.Uuid
+  tenantId               String   @db.Uuid
+  provider               String   @default("google_ads")
+  customerId             String
+  loginCustomerId        String?
+  refreshTokenEncrypted  String
+  oauthScope             String?
+  conversionActions      Json     @default("{}")
+  enabled                Boolean  @default(true)
+  lastSyncAt             DateTime? @db.Timestamptz
+  lastSyncError          String?
+  createdAt              DateTime @default(now()) @db.Timestamptz
+  updatedAt              DateTime @updatedAt @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, provider])
+  @@index([tenantId, enabled])
+  @@map("tenant_ads_integration")
+}
+
+// Daily Spend-Snapshot pro Kampagne. Cron-Worker pullt täglich
+// vom Vortag (idempotent, upsert auf [tenantId, date, campaignId]).
+// Dashboard rechnet Spend × Booking-Revenue zu ROAS/CPA.
+model TenantAdsSpendDaily {
+  id                  String   @id @default(uuid()) @db.Uuid
+  tenantId            String   @db.Uuid
+  date                DateTime @db.Date
+  campaignId          String?
+  campaignName        String?
+  clicks              Int      @default(0)
+  impressions         Int      @default(0)
+  costChf             Decimal  @default(0) @db.Decimal(10, 2)
+  conversions         Decimal  @default(0) @db.Decimal(10, 2)
+  conversionValueChf  Decimal  @default(0) @db.Decimal(10, 2)
+  pulledAt            DateTime @default(now()) @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, date(sort: Desc)])
+  @@map("tenant_ads_spend_daily")
 }

@@ -22,6 +22,10 @@
     "./phone": {
       "types": "./dist/phone.d.ts",
       "default": "./dist/phone.js"
+    },
+    "./crypto": {
+      "types": "./dist/crypto.d.ts",
+      "default": "./dist/crypto.js"
     }
   },
   "files": [
