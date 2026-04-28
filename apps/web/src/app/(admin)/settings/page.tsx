@@ -188,6 +188,14 @@ export default async function SettingsPage({
           Alles was Kundinnen auf deiner Buchungs-Seite sehen: Branding, Team, FAQ, Bewertungen,
           Gallerie. Änderungen sind sofort live.
         </p>
+        <nav className="mt-3 flex flex-wrap gap-2 text-xs">
+          <a
+            href="/settings/ads-integration"
+            className="rounded-md border border-border bg-surface px-3 py-1.5 font-medium text-text-secondary hover:border-accent/50"
+          >
+            → Google-Ads-Integration
+          </a>
+        </nav>
         {saved ? (
           <div className="mt-3 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-xs text-success">
             ✓ Gespeichert.
