@@ -1,0 +1,63 @@
+name: Deploy — Web (Railway)
+
+# Auto-deploy fuer das Railway-web-Service. Railway native auto-deploy
+# vom GitHub-Push ist fuer dieses Service nicht aktiviert (UI-Setting,
+# nicht CLI-konfigurierbar). Workaround: bei jedem Push der Web-relevante
+# Pfade aendert, triggern wir `railway up` aus dem CI-Runner.
+#
+# Voraussetzungen (1× einmalig, in Railway UI + GitHub Settings):
+#   1. Railway: Account-Settings → Tokens → "New Token" (Scope: Project)
+#      Kopiere den Token-Wert.
+#   2. GitHub: Repo Settings → Secrets and variables → Actions → New
+#      repository secret. Name: RAILWAY_TOKEN. Value: der kopierte Token.
+#   3. Optional in Railway UI: Service "web" → Settings → Source →
+#      Repository connection. Falls die Verbindung dort verfuegbar ist,
+#      wird Railway-native auto-deploy aktiv und dieser Workflow ist
+#      redundant (kann dann geloescht werden).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/ui/**'
+      - 'packages/auth/**'
+      - 'packages/utils/**'
+      - 'packages/types/**'
+      - 'packages/db/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'apps/web/Dockerfile'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+
+concurrency:
+  # Bei rapid-fire Pushes nur den letzten deployen
+  group: deploy-web
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Verify token present
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::RAILWAY_TOKEN secret missing. See workflow header for setup."
+            exit 1
+          fi
+
+      - name: Deploy to Railway (web service)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up --service web --detach
