@@ -24,6 +24,13 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'Beautyneta',
   },
+  // Next 15's appleWebApp.capable emittet nur das generische
+  // 'mobile-web-app-capable' Tag — das 'apple-mobile-web-app-capable'
+  // (Apple-spezifisch, Pflicht für Vollbild-Modus auf iOS-Homescreen)
+  // muss explizit als other-Meta gesetzt werden.
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+  },
 };
 
 export const viewport: Viewport = {

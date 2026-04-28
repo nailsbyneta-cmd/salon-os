@@ -147,10 +147,16 @@ export class PublicBookingsService {
    * läuft normalerweise direkt nach dem Booking-Submit).
    */
   /**
-   * Public-Summary fürs /success-Page Conversion-Fire. Gibt nur den
-   * Brutto-Wert + Currency zurück — KEINE PII (kein Name, kein Service-
-   * Detail). Wenn Appointment nicht existiert oder bereits cancelled
-   * → null (Conversion soll nicht feuern).
+   * Public-Summary fürs /success-Page Conversion-Fire + HeroWelcome-
+   * Personalisierung. Gibt zurück:
+   *  - valueChf + currency: Conversion-Fire wirft sie ans gtag-Event
+   *  - serviceCategoryIds: Cross-Sell exclude-Liste
+   *  - firstName + serviceCategoryNames + firstServiceName:
+   *    Client-Side recordBooking() schreibt damit die Welcome-Session
+   *    (kein Login → reine Browser-Personalisierung)
+   *
+   * Privacy: nur firstName, kein lastName/Email/Phone. Tenant-Scope via
+   * withTenant — andere Tenants können die ID nicht abrufen.
    */
   async getAppointmentSummary(
     slug: string,
@@ -160,6 +166,9 @@ export class PublicBookingsService {
     currency: string;
     status: string;
     serviceCategoryIds: string[];
+    firstName: string | null;
+    firstServiceName: string | null;
+    serviceCategoryNames: string[];
   } | null> {
     const tenant = await this.resolveTenant(slug);
     return this.withTenant(tenant.id, null, null, async (tx) => {
@@ -170,20 +179,33 @@ export class PublicBookingsService {
           items: {
             select: {
               price: true,
-              service: { select: { categoryId: true } },
+              service: {
+                select: {
+                  name: true,
+                  categoryId: true,
+                  category: { select: { name: true } },
+                },
+              },
             },
           },
           location: { select: { currency: true } },
+          client: { select: { firstName: true } },
         },
       });
       if (!appt) return null;
       const total = appt.items.reduce((sum, i) => sum + Number(i.price), 0);
       const serviceCategoryIds = Array.from(new Set(appt.items.map((i) => i.service.categoryId)));
+      const serviceCategoryNames = Array.from(
+        new Set(appt.items.map((i) => i.service.category.name)),
+      );
       return {
         valueChf: Math.round(total * 100) / 100,
         currency: appt.location.currency,
         status: appt.status,
         serviceCategoryIds,
+        firstName: appt.client?.firstName ?? null,
+        firstServiceName: appt.items[0]?.service.name ?? null,
+        serviceCategoryNames,
       };
     });
   }

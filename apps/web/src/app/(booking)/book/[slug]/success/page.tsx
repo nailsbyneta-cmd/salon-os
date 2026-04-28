@@ -3,6 +3,7 @@ import { Button, Card, CardBody } from '@salon-os/ui';
 import { ConversionFire } from '@/components/conversion-fire';
 import { ShareButton } from './share-button';
 import { ConfettiBurst } from './confetti-burst';
+import { RecordBookingClient } from './record-booking-client';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -27,6 +28,9 @@ interface AppointmentSummary {
     currency: string;
     status: string;
     serviceCategoryIds: string[];
+    firstName: string | null;
+    firstServiceName: string | null;
+    serviceCategoryNames: string[];
   } | null;
 }
 
@@ -121,6 +125,19 @@ export default async function BookingSuccess({
       {/* Peak-Moment-Konfetti — UX-Brief Aufgabe 6. Goldene Partikel
           fallen 2.4s, idempotent per Appointment-ID (kein Doppel-Fire). */}
       {id && summary && summary.status !== 'CANCELLED' ? <ConfettiBurst fireKey={id} /> : null}
+
+      {/* HeroWelcome-Personalisierung: Customer-Session in localStorage
+          schreiben, damit naechste Visit auf /book die Kundin namentlich
+          begruessen kann. Idempotent per appointmentId. */}
+      {id && summary && summary.firstName ? (
+        <RecordBookingClient
+          tenantSlug={slug}
+          firstName={summary.firstName}
+          serviceCategory={summary.serviceCategoryNames[0]}
+          serviceName={summary.firstServiceName ?? undefined}
+          bookingRef={id}
+        />
+      ) : null}
 
       {/* Celebration-Mark — Gold-Ring mit Check */}
       <div className="relative">

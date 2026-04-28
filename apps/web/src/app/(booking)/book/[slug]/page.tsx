@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Avatar, Badge, Card, CardBody } from '@salon-os/ui';
 import { CookieConsent } from '@/components/cookie-consent';
+import { HeroWelcome } from '@/components/booking/hero-welcome';
 import { ServiceCardToggle } from './service-card-toggle';
 import { CartPill } from './cart-pill';
 
@@ -409,6 +410,17 @@ export default async function BookingStart({
           >
             {tenant.tagline?.trim() ? tenant.tagline : 'Dein Moment. Dein Glanz.'}
           </p>
+          {/* HeroWelcome: personalisierte Begruessungszeile (Priority-
+              Waterfall in lib/welcome-logic). SSR-safe, faded in nach
+              Hydration via useEffect. */}
+          <HeroWelcome
+            tenantSlug={slug}
+            tenantName={tenant.name}
+            tenantCity={primaryLocation?.city ?? null}
+            serviceCategories={categories.map((c) => c.name)}
+            latitude={primaryLocation?.latitude ?? null}
+            longitude={primaryLocation?.longitude ?? null}
+          />
         </div>
 
         {/* Floating-Pills — unten links Sterne, unten rechts Öffnungs-Status */}
