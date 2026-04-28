@@ -29,6 +29,79 @@ export class MarketingService {
 
   constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
 
+  /** Tenant-scoped Preview für Admin-UI. */
+  async previewReactivationForTenant(
+    tenantId: string,
+  ): Promise<{ eligible: number; lastRunAt: string | null; lastRunCount: number }> {
+    const cutoff = this.cutoff();
+    const eligibleCount = await this.prisma.client.count({
+      where: { tenantId, ...this.eligibleWhere(cutoff) },
+    });
+    // Zähle auch Outbox-History: letzter Run + Anzahl Events (Erfolgs-Indikator)
+    const last = await this.prisma.outboxEvent.findFirst({
+      where: { tenantId, type: 'marketing.winback' },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    });
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const lastRunCount =
+      last != null
+        ? await this.prisma.outboxEvent.count({
+            where: {
+              tenantId,
+              type: 'marketing.winback',
+              createdAt: { gte: new Date(last.createdAt.getTime() - 60 * 60_000) },
+            },
+          })
+        : 0;
+    return {
+      eligible: eligibleCount,
+      lastRunAt: last?.createdAt.toISOString() ?? null,
+      lastRunCount,
+    };
+  }
+
+  /** Tenant-scoped Manual-Run für Admin (Owner/Manager triggert per Klick). */
+  async runReactivationForTenant(
+    tenantId: string,
+  ): Promise<{ enqueued: number; skippedRecent: number }> {
+    const cutoff = this.cutoff();
+    const cooldownCutoff = new Date(Date.now() - REACTIVATION_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
+    const eligible = await this.prisma.client.findMany({
+      where: { tenantId, ...this.eligibleWhere(cutoff) },
+      select: { id: true },
+    });
+
+    let enqueued = 0;
+    let skippedRecent = 0;
+    for (const c of eligible) {
+      const recent = await this.prisma.outboxEvent.findFirst({
+        where: {
+          tenantId,
+          type: 'marketing.winback',
+          createdAt: { gte: cooldownCutoff },
+          payload: { path: ['clientId'], equals: c.id },
+        },
+        select: { id: true },
+      });
+      if (recent) {
+        skippedRecent += 1;
+        continue;
+      }
+      await this.prisma.outboxEvent.create({
+        data: {
+          tenantId,
+          type: 'marketing.winback',
+          payload: { tenantId, clientId: c.id },
+          status: 'PENDING',
+        },
+      });
+      enqueued += 1;
+    }
+    return { enqueued, skippedRecent };
+  }
+
   /** Read-only: zeigt wie viele Kundinnen gerade reactivation-eligible sind. */
   async previewReactivation(): Promise<ReactivationPreview> {
     const cutoff = this.cutoff();

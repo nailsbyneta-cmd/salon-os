@@ -7,6 +7,7 @@ import {
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
+import { requireTenantContext } from '../tenant/tenant.context.js';
 import { MarketingService } from './marketing.service.js';
 
 /**
@@ -41,5 +42,27 @@ export class MarketingController {
     if (!expected || !secret || secret !== expected) {
       throw new UnauthorizedException('Invalid cron secret');
     }
+  }
+}
+
+/**
+ * Admin-Endpoints für Marketing — tenant-scoped via TenantMiddleware.
+ * Owner/Manager kann manuell Reactivation triggern oder Status ansehen.
+ */
+@Controller('v1/marketing')
+export class MarketingAdminController {
+  constructor(private readonly svc: MarketingService) {}
+
+  @Get('reactivation')
+  async preview(): Promise<Awaited<ReturnType<MarketingService['previewReactivationForTenant']>>> {
+    const ctx = requireTenantContext();
+    return this.svc.previewReactivationForTenant(ctx.tenantId);
+  }
+
+  @Post('reactivation/run')
+  @HttpCode(HttpStatus.OK)
+  async run(): Promise<Awaited<ReturnType<MarketingService['runReactivationForTenant']>>> {
+    const ctx = requireTenantContext();
+    return this.svc.runReactivationForTenant(ctx.tenantId);
   }
 }

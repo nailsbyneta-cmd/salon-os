@@ -23,6 +23,7 @@ const nav: NavItem[] = [
   { href: '/staff', label: 'Team', icon: <IconTeam /> },
   { href: '/gift-cards', label: 'Gutscheine', icon: <IconGift /> },
   { href: '/inventory', label: 'Inventar', icon: <IconBox /> },
+  { href: '/marketing', label: 'Marketing', icon: <IconMegaphone /> },
   { href: '/reports', label: 'Reports', icon: <IconReports /> },
   { href: '/audit', label: 'Audit-Log', icon: <IconShield /> },
   { href: '/settings', label: 'Einstellungen', icon: <IconGear /> },
@@ -524,6 +525,26 @@ function IconReports(): React.JSX.Element {
     >
       <path d="M3 3v18h18" />
       <path d="m7 15 4-4 4 4 6-6" />
+    </svg>
+  );
+}
+
+function IconMegaphone(): React.JSX.Element {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 11v3l13 5V6L3 11Z" />
+      <path d="M16 8a4 4 0 0 1 0 6" />
+      <path d="M7 14v3a2 2 0 0 0 4 0v-1.5" />
     </svg>
   );
 }
