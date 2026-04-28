@@ -476,9 +476,9 @@ export default async function BookingStart({
                   durationMinutes={s.durationMinutes}
                   configureHref={`/book/${slug}/service/${s.id}/configure?location=${locations[0]?.id ?? ''}`}
                 >
-                  <CardBody className="flex items-center justify-between gap-4 py-4 pr-14">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-display text-lg font-semibold tracking-tight text-text-primary">
+                  <CardBody className="flex items-center justify-between gap-3 overflow-hidden py-4 pl-4 pr-14">
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <div className="truncate font-display text-base font-semibold tracking-tight text-text-primary md:text-lg">
                         {s.name}
                       </div>
                       {s.description ? (
@@ -490,7 +490,9 @@ export default async function BookingStart({
                         <span>{s.durationMinutes} Min</span>
                       </div>
                     </div>
-                    <PriceDisplay amount={s.basePrice} size="lg" />
+                    <div className="flex-none">
+                      <PriceDisplay amount={s.basePrice} size="lg" />
+                    </div>
                   </CardBody>
                 </ServiceCardToggle>
               ))}

@@ -657,17 +657,37 @@ export class PublicBookingsService {
             (service.durationMinutes + service.bufferBeforeMin + service.bufferAfterMin) * 60_000,
         );
 
-        // Wizard-Optionen → Labels resolven für optionLabels[] auf dem Item.
-        // Mehrere Gruppen + Wizard-Add-Ons möglich, alles in eine Liste.
+        // Wizard-Optionen → Labels + Preis-/Dauer-Deltas auf dem Item.
+        // Item.price und Item.duration MÜSSEN die Varianten-Werte sein
+        // (nicht service.basePrice), sonst zeigen Termin-Detail + Kasse
+        // den Basispreis statt der echt bezahlten Summe (Audit Pass 10).
         let optionLabels: string[] = [];
+        let priceDelta = 0;
+        let durationDelta = 0;
         if (input.optionIds && input.optionIds.length > 0) {
           const opts = await tx.serviceOption.findMany({
             where: { id: { in: input.optionIds }, group: { serviceId: service.id } },
-            select: { label: true, group: { select: { sortOrder: true } } },
+            select: {
+              label: true,
+              priceDelta: true,
+              durationDeltaMin: true,
+              group: { select: { sortOrder: true } },
+            },
             orderBy: [{ group: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
           });
           optionLabels = opts.map((o) => o.label);
+          priceDelta = opts.reduce((sum, o) => sum + Number(o.priceDelta), 0);
+          durationDelta = opts.reduce((sum, o) => sum + o.durationDeltaMin, 0);
         }
+        const itemPrice = Number(service.basePrice) + priceDelta;
+        const itemDuration = service.durationMinutes + durationDelta;
+
+        // endAt korrigieren — die initial berechnete endAt nutzt die Basis-
+        // Duration. Bei Variant-Aufschlag muss endAt entsprechend verschoben.
+        const adjustedEndAt = new Date(
+          startAt.getTime() +
+            (itemDuration + service.bufferBeforeMin + service.bufferAfterMin) * 60_000,
+        );
 
         const appt = await tx.appointment.create({
           data: {
@@ -677,7 +697,7 @@ export class PublicBookingsService {
             staffId,
             status: 'BOOKED',
             startAt,
-            endAt,
+            endAt: adjustedEndAt,
             bookedVia: 'ONLINE_BRANDED',
             notes: input.notes ?? null,
             language: input.language ?? 'de-CH',
@@ -686,8 +706,8 @@ export class PublicBookingsService {
                 {
                   serviceId: service.id,
                   staffId,
-                  price: service.basePrice,
-                  duration: service.durationMinutes,
+                  price: itemPrice,
+                  duration: itemDuration,
                   taxClass: service.taxClass,
                   optionLabels,
                 },
