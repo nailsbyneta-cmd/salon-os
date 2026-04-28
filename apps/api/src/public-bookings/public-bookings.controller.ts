@@ -119,6 +119,21 @@ export class PublicBookingsController {
     return this.svc.getServiceDetail(slug, serviceId);
   }
 
+  @Get('services/:serviceId/next-slot')
+  async nextSlot(
+    @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
+    @Param('serviceId', new ZodValidationPipe(uuidSchema)) serviceId: string,
+    @Query('locationId', new ZodValidationPipe(uuidSchema)) locationId: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('durationMinutes') durationMinutes?: string,
+  ): Promise<{ slot: AvailabilitySlot | null }> {
+    const today = new Date().toISOString().slice(0, 10);
+    const start = fromDate && /^\d{4}-\d{2}-\d{2}$/.test(fromDate) ? fromDate : today;
+    const dur = durationMinutes ? Number(durationMinutes) : undefined;
+    const slot = await this.svc.findNextSlot(slug, serviceId, locationId, start, dur);
+    return { slot };
+  }
+
   @Get('services/:serviceId/slots')
   async availability(
     @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,

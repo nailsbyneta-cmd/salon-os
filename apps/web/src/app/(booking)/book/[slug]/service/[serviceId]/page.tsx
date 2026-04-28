@@ -58,6 +58,33 @@ async function loadSlots(
   }
 }
 
+/**
+ * Sucht den ersten verfügbaren Slot ab `fromDate` (max 14 Tage Look-Ahead).
+ * Wird gerufen wenn der ausgewählte Tag leer ist und der Customer einen
+ * Quick-Jump zu nächster Verfügbarkeit braucht (Audit Pass-13 Top-3).
+ */
+async function loadNextSlot(
+  slug: string,
+  serviceId: string,
+  locationId: string,
+  fromDate: string,
+  durationMinutes?: number,
+): Promise<Slot | null> {
+  try {
+    const qs = new URLSearchParams({ locationId, fromDate });
+    if (durationMinutes) qs.set('durationMinutes', String(durationMinutes));
+    const res = await fetch(
+      `${API_URL}/v1/public/${slug}/services/${serviceId}/next-slot?${qs.toString()}`,
+      { cache: 'no-store' },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as { slot: Slot | null };
+    return data.slot;
+  } catch {
+    return null;
+  }
+}
+
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -170,6 +197,13 @@ export default async function BookingSlots({
   const nextOpen =
     !selectedDayOpen || slots.length === 0 ? findNextOpenDay(openingHours, selectedDate) : null;
 
+  // Wenn keine Slots heute: such proaktiv den ersten echt verfügbaren Slot
+  // (look-ahead 14 Tage). Audit Pass-13 Customer-UX-Top-3.
+  const nextAvailableSlot =
+    slots.length === 0
+      ? await loadNextSlot(slug, serviceId, location, selectedDate, durationMin)
+      : null;
+
   const grouped = new Map<string, Slot[]>();
   for (const s of slots) {
     const hour = new Date(s.startAt).getHours();
@@ -276,12 +310,30 @@ export default async function BookingSlots({
                   : 'Wähl einen anderen Tag oder schau morgen vorbei.'}
               </p>
             </div>
-            {nextOpen ? (
+            {nextAvailableSlot ? (
+              <Link
+                href={`/book/${slug}/service/${serviceId}?location=${location}&date=${nextAvailableSlot.startAt.slice(0, 10)}${dateNavSuffix}`}
+                className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-glow transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98]"
+              >
+                ⚡ Nächster freier Termin:{' '}
+                {new Date(nextAvailableSlot.startAt).toLocaleDateString('de-CH', {
+                  weekday: 'long',
+                  day: '2-digit',
+                  month: 'long',
+                })}{' '}
+                ·{' '}
+                {new Date(nextAvailableSlot.startAt).toLocaleTimeString('de-CH', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+                {' →'}
+              </Link>
+            ) : nextOpen ? (
               <Link
                 href={`/book/${slug}/service/${serviceId}?location=${location}&date=${nextOpen}${dateNavSuffix}`}
                 className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-glow transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98]"
               >
-                Nächster freier Tag:{' '}
+                Nächster offener Tag:{' '}
                 {new Date(nextOpen).toLocaleDateString('de-CH', {
                   weekday: 'long',
                   day: '2-digit',

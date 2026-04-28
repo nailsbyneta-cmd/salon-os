@@ -101,6 +101,37 @@ export class PublicBookingsService {
   }
 
   /**
+   * "Nächster freier Termin"-Suche. Geht ab `fromDate` bis zu `maxDays` Tage
+   * vorwärts und gibt den ersten verfügbaren Slot zurück. Audit Pass-13
+   * Top-3 Customer-UX: "Wenn alle heutigen Slots belegt sind, ein 'Nächster
+   * freier Termin →'-Button würde den Flow für Rückkehrerinnen beschleunigen."
+   */
+  async findNextSlot(
+    slug: string,
+    serviceId: string,
+    locationId: string,
+    fromDateIso: string,
+    durationOverrideMin?: number,
+    maxDays = 14,
+  ): Promise<AvailabilitySlot | null> {
+    const start = new Date(`${fromDateIso}T00:00:00Z`);
+    for (let i = 0; i < maxDays; i++) {
+      const d = new Date(start);
+      d.setUTCDate(start.getUTCDate() + i);
+      const dateIso = d.toISOString().slice(0, 10);
+      const slots = await this.availability(slug, serviceId, {
+        date: dateIso,
+        locationId,
+        durationOverrideMin,
+      });
+      if (slots.length > 0) {
+        return slots[0]!;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Public-Endpoint für ICS-Download nach erfolgreicher Buchung.
    * /success-Page lädt diesen → Apple/Google Calendar Add-Dialog.
    * Auth: nur appointmentId reicht (UUIDs sind nicht enumerable, plus
