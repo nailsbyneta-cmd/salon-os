@@ -147,6 +147,73 @@ export class CustomerAuthService {
     return { clientId: session.clientId, tenantId: session.tenantId };
   }
 
+  /**
+   * DSGVO Art. 15 — Recht auf Auskunft.
+   * Customer kann ihre eigenen Daten als JSON-Dump herunterladen.
+   * Tenant-scoped: die Session validiert clientId+tenantId, deshalb sicher.
+   */
+  async exportPersonalData(clientId: string, tenantId: string): Promise<unknown> {
+    const client = await this.prisma.client.findFirst({
+      where: { id: clientId, tenantId },
+    });
+    if (!client) throw new Error('Client not found');
+    const appointments = await this.prisma.appointment.findMany({
+      where: { clientId, tenantId },
+      orderBy: { startAt: 'desc' },
+      include: {
+        items: { include: { service: { select: { name: true, slug: true } } } },
+        staff: { select: { firstName: true, lastName: true } },
+        location: { select: { name: true } },
+      },
+    });
+    const totalSpent = appointments
+      .filter((a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW')
+      .reduce((sum, a) => sum + a.items.reduce((s, i) => s + Number(i.price), 0), 0);
+    return {
+      exportedAt: new Date().toISOString(),
+      basisGdpr: 'EU GDPR Art. 15 / Swiss DSG Art. 25',
+      client,
+      appointments,
+      totals: {
+        totalAppointments: appointments.length,
+        totalVisits: client.totalVisits,
+        totalSpent,
+        lastVisitAt: client.lastVisitAt,
+      },
+    };
+  }
+
+  /**
+   * DSGVO Art. 17 — Recht auf Löschung.
+   * Soft-Delete: deletedAt setzen, alle Sessions revoken, alle Magic-Links
+   * invalidieren. Cron-Job (specs/compliance.md) macht harte Löschung in 30d.
+   */
+  async requestDeletion(clientId: string, tenantId: string): Promise<void> {
+    const existing = await this.prisma.client.findFirst({
+      where: { id: clientId, tenantId },
+    });
+    if (!existing) throw new Error('Client not found');
+    await this.prisma.$transaction([
+      this.prisma.client.update({
+        where: { id: clientId },
+        data: {
+          deletedAt: new Date(),
+          notesInternal: `[DSGVO-Löschung angefragt ${new Date().toISOString()} via /me]\n${existing.notesInternal ?? ''}`,
+        },
+      }),
+      // Alle Sessions revoken
+      this.prisma.clientSession.updateMany({
+        where: { clientId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      // Alle Magic-Links als used markieren
+      this.prisma.clientMagicLink.updateMany({
+        where: { clientId, usedAt: null },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+  }
+
   /** Logout — markiert Session als revoked. */
   async revokeSession(token: string): Promise<void> {
     const tokenHash = this.hash(token);

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { Badge, Button, Card, CardBody } from '@salon-os/ui';
-import { logout } from './actions';
+import { deleteMyAccount, logout } from './actions';
 
 const COOKIE_NAME = 'salon_customer_session';
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
@@ -158,6 +158,56 @@ export default async function MePage({
           </div>
         </section>
       ) : null}
+
+      {/* DSGVO-Selbst-Service: Daten-Export + Account-Löschung */}
+      <section className="border-t border-border pt-6">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-text-muted">
+          Datenschutz
+        </p>
+        <Card elevation="flat">
+          <CardBody className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-sm font-semibold text-text-primary">
+                  Meine Daten herunterladen
+                </p>
+                <p className="text-xs text-text-secondary">
+                  Alle Daten als JSON-Datei. Recht auf Auskunft (Art. 15 DSGVO / Art. 25 DSG).
+                </p>
+              </div>
+              <a
+                href={`/book/${slug}/me/export`}
+                download
+                className="rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-text-primary transition-all hover:border-accent/50 hover:shadow-sm"
+              >
+                📥 Herunterladen
+              </a>
+            </div>
+            <div className="border-t border-border pt-3">
+              <details className="group">
+                <summary className="cursor-pointer list-none text-xs font-medium text-danger hover:underline [&::-webkit-details-marker]:hidden">
+                  🗑 Account löschen…
+                </summary>
+                <div className="mt-3 rounded-md border border-danger/30 bg-danger/5 p-3 text-xs text-text-secondary">
+                  <p>
+                    Deine Daten werden sofort markiert und nach 30 Tagen endgültig gelöscht.
+                    Vergangene Termine können wegen gesetzlicher Aufbewahrungspflicht (Buchhaltung)
+                    pseudonymisiert erhalten bleiben.
+                  </p>
+                  <form action={deleteMyAccount.bind(null, slug)} className="mt-3">
+                    <button
+                      type="submit"
+                      className="rounded-md bg-danger px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-danger/90 active:scale-[0.98]"
+                    >
+                      Ja, Account jetzt löschen
+                    </button>
+                  </form>
+                </div>
+              </details>
+            </div>
+          </CardBody>
+        </Card>
+      </section>
 
       <div className="text-center">
         <Link

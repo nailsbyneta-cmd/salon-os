@@ -110,6 +110,34 @@ export class CustomerAuthController {
     if (token) await this.svc.revokeSession(token);
     return { ok: true };
   }
+
+  /**
+   * DSGVO Art. 15 — Daten-Export. Customer lädt ihre eigenen Daten als JSON.
+   * Auth via Session-Cookie (Bearer-Header).
+   */
+  @Get('me/export')
+  async exportData(@Headers('authorization') auth: string | undefined): Promise<unknown> {
+    const token = parseBearer(auth);
+    if (!token) throw new UnauthorizedException('Missing Bearer token');
+    const session = await this.svc.verifySession(token);
+    if (!session) throw new UnauthorizedException('Session invalid or expired');
+    return this.svc.exportPersonalData(session.clientId, session.tenantId);
+  }
+
+  /**
+   * DSGVO Art. 17 — Account-Löschung. Soft-Delete + alle Sessions revoken.
+   * Endgültige Löschung via Cron-Job nach 30 Tagen.
+   */
+  @Post('me/delete')
+  @HttpCode(HttpStatus.OK)
+  async deleteAccount(@Headers('authorization') auth: string | undefined): Promise<{ ok: true }> {
+    const token = parseBearer(auth);
+    if (!token) throw new UnauthorizedException('Missing Bearer token');
+    const session = await this.svc.verifySession(token);
+    if (!session) throw new UnauthorizedException('Session invalid or expired');
+    await this.svc.requestDeletion(session.clientId, session.tenantId);
+    return { ok: true };
+  }
 }
 
 function parseBearer(header: string | undefined): string | null {

@@ -34,3 +34,21 @@ export async function logout(slug: string): Promise<void> {
   cookieStore.delete(COOKIE_NAME);
   redirect(`/book/${slug}/me/login`);
 }
+
+/**
+ * DSGVO-Account-Löschung. Setzt deletedAt + revoked alle Sessions auf
+ * Server-Seite, dann Cookie weg + redirect Booking-Übersicht.
+ */
+export async function deleteMyAccount(slug: string): Promise<void> {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get(COOKIE_NAME)?.value;
+  if (sessionToken) {
+    await fetch(`${API_URL}/v1/public/me/delete`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${sessionToken}` },
+      cache: 'no-store',
+    });
+  }
+  cookieStore.delete(COOKIE_NAME);
+  redirect(`/book/${slug}?account-deleted=1`);
+}
