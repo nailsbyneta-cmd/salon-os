@@ -41,6 +41,8 @@ export type {
   TenantAdsSpendDaily,
   ClientMagicLink,
   ClientSession,
+  LoyaltyProgram,
+  LoyaltyStamp,
 } from '@prisma/client';
 
 export {
@@ -55,6 +57,7 @@ export {
   TimeOffStatus,
   OutboxStatus,
   StockMutationReason,
+  LoyaltyStampReason,
 } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };

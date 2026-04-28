@@ -7,6 +7,7 @@ import type {
 } from '@salon-os/types';
 import { AuditService } from '../audit/audit.service.js';
 import { WITH_TENANT } from '../db/db.module.js';
+import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { RemindersService } from '../reminders/reminders.service.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 
@@ -40,6 +41,7 @@ export class AppointmentsService {
     @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
     private readonly reminders: RemindersService,
     private readonly audit: AuditService,
+    private readonly loyalty: LoyaltyService,
   ) {}
 
   /**
@@ -411,6 +413,24 @@ export class AppointmentsService {
         await this.recomputeNoShowRisk(tx, existing.clientId);
       }
       return updated;
+    }).then(async (appt) => {
+      // Loyalty-Award nach erfolgreichem Tx-Commit. Idempotent (UNIQUE-Index).
+      // Bewusst AUSSERHALB des withTenant-Tx — der Loyalty-Service hat sein
+      // eigenes withTenant + braucht das Programm cross-tenant lesbar.
+      if (to === 'COMPLETED' && appt.clientId) {
+        const revenue = appt.items.reduce((s, i) => s + Number(i.price), 0);
+        try {
+          await this.loyalty.autoAwardForCompletedAppointment({
+            appointmentId: appt.id,
+            tenantId: appt.tenantId,
+            clientId: appt.clientId,
+            revenueChf: revenue,
+          });
+        } catch {
+          // Loyalty-Failure darf den State-Transition nicht killen — log+swallow
+        }
+      }
+      return appt;
     });
   }
 }

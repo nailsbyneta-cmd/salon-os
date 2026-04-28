@@ -41,6 +41,7 @@ describe('AppointmentsService — Outbox Integration', () => {
       mockWithTenant as any,
       mockReminders as RemindersService,
       mockAudit as AuditService,
+      { autoAwardForCompletedAppointment: () => Promise.resolve() } as never,
     );
   });
 

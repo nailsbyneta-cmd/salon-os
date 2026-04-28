@@ -57,7 +57,7 @@ describe('AppointmentsService', () => {
     withTenant = makeWithTenant(prisma);
     audit = makeAudit();
     reminders = makeReminders();
-    service = new AppointmentsService(withTenant as never, reminders as never, audit as never);
+    service = new AppointmentsService(withTenant as never, reminders as never, audit as never, { autoAwardForCompletedAppointment: () => Promise.resolve() } as never);
   });
 
   // ── cancel() ──────────────────────────────────────────────────────────────

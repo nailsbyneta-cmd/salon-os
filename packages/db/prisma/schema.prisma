@@ -75,6 +75,8 @@ model Tenant {
   galleryImages    SalonGalleryImage[]
   adsIntegrations  TenantAdsIntegration[]
   adsSpendDaily    TenantAdsSpendDaily[]
+  loyaltyProgram   LoyaltyProgram?
+  loyaltyStamps    LoyaltyStamp[]
 
   @@index([status])
   @@map("tenant")
@@ -687,6 +689,7 @@ model Client {
   waitlistEntries WaitlistEntry[]
   magicLinks      ClientMagicLink[]
   sessions        ClientSession[]
+  loyaltyStamps   LoyaltyStamp[]
   family          Client[]        @relation("Family")
   parent          Client?         @relation("Family", fields: [familyParentId], references: [id])
 
@@ -1032,4 +1035,59 @@ model TenantAdsSpendDaily {
 
   @@index([tenantId, date(sort: Desc)])
   @@map("tenant_ads_spend_daily")
+}
+
+// ─── Loyalty (klassische Stempelkarte) ─────────────────────────
+//
+// Pro Tenant ein Programm (1:1 — wenn ein Salon zwei Tarife will, wird
+// das später per program.code Discriminator erweitert). Stamps sind
+// einfach Mutations: AWARD bei Termin, REDEEM beim Einlösen.
+
+model LoyaltyProgram {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @unique @db.Uuid
+  name              String
+  active            Boolean  @default(true)
+  /// 'per_appointment' | 'per_chf'
+  earnRule          String   @default("per_appointment")
+  earnPerUnit       Int      @default(1)
+  redeemThreshold   Int      @default(10)
+  rewardValueChf    Decimal  @default(0) @db.Decimal(10, 2)
+  rewardLabel       String   @default("Gratis-Service")
+  createdAt         DateTime @default(now()) @db.Timestamptz
+  updatedAt         DateTime @updatedAt @db.Timestamptz
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stamps LoyaltyStamp[]
+
+  @@map("loyalty_program")
+}
+
+model LoyaltyStamp {
+  id            String              @id @default(uuid()) @db.Uuid
+  tenantId      String              @db.Uuid
+  programId     String              @db.Uuid
+  clientId      String              @db.Uuid
+  delta         Int
+  balanceAfter  Int
+  reason        LoyaltyStampReason
+  appointmentId String?             @db.Uuid
+  performedBy   String?             @db.Uuid
+  notes         String?
+  createdAt     DateTime            @default(now()) @db.Timestamptz
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  program LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  client  Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, clientId, createdAt(sort: Desc)])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("loyalty_stamp")
+}
+
+enum LoyaltyStampReason {
+  AWARD
+  REDEEM
+  ADJUST
+  EXPIRE
 }
