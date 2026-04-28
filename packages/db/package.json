@@ -27,10 +27,12 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx --env-file=../../.env prisma/seed.ts",
-    "db:reset": "prisma migrate reset --force"
+    "db:reset": "prisma migrate reset --force",
+    "setup:ads": "tsx --env-file=../../.env prisma/seed-ads-integration.ts"
   },
   "dependencies": {
-    "@prisma/client": "^6.1.0"
+    "@prisma/client": "^6.1.0",
+    "@salon-os/utils": "workspace:*"
   },
   "devDependencies": {
     "@salon-os/config": "workspace:*",
