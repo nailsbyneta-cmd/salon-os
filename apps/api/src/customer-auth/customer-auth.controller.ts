@@ -3,12 +3,13 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Inject,
   Param,
   Post,
-  Query,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { PrismaClient } from '@salon-os/db';
 import { z } from 'zod';
@@ -27,20 +28,26 @@ const requestLinkSchema = z.object({
   email: z.string().email().max(255),
 });
 
-const verifyQuerySchema = z.string().min(20).max(255);
+const exchangeSchema = z.object({
+  token: z.string().min(20).max(255),
+});
 
 /**
- * Public Endpoints für Customer-Self-Service-Login via Magic-Link.
+ * Public Customer-Self-Service-Login via Magic-Link + Session-Token.
  *
  * Flow:
  * 1. POST /v1/public/{slug}/me/request-link {email}
- *    → erstellt Token wenn Email-Match, sonst silent (Privacy).
- *    → IMMER 200 zurück — sonst kann ein Angreifer Email-Existenz enumerieren.
- *    → Mail mit Link wird via Outbox versendet (sobald POSTMARK_TOKEN gesetzt).
+ *    → IMMER 200 (Privacy). Bei Match: Magic-Link-Mail via Outbox.
  *
- * 2. GET /v1/public/me/verify?token=X
- *    → setzt einen sealed Cookie (todo: integrate iron-session) und leitet
- *      auf /me weiter. Aktuell returnt es JSON für Frontend-Verarbeitung.
+ * 2. POST /v1/public/me/exchange {token}
+ *    → Magic-Link-Token rein, Session-Token raus (30 Tage TTL)
+ *    → Web-Layer setzt Session-Token als HTTP-Only-Cookie
+ *
+ * 3. GET /v1/public/me/profile mit Authorization: Bearer SESSION_TOKEN
+ *    → Customer-Profil + ihre Termine
+ *
+ * 4. POST /v1/public/me/logout mit Authorization: Bearer SESSION_TOKEN
+ *    → Session als revoked markiert
  */
 @Controller('v1/public')
 export class CustomerAuthController {
@@ -57,18 +64,11 @@ export class CustomerAuthController {
     @Body(new ZodValidationPipe(requestLinkSchema))
     body: { email: string },
   ): Promise<{ ok: true }> {
-    // Tenant lookup ohne RLS (cron-style — login muss ohne tenant-context gehen)
     const tenant = await this.prisma.tenant.findUnique({ where: { slug } });
-    if (!tenant) {
-      // Privacy: kein 404, gleiche Response wie wenn Email unbekannt
-      return { ok: true };
-    }
+    if (!tenant) return { ok: true };
 
     const link = await this.svc.createLinkForEmail(tenant.id, body.email);
     if (link) {
-      // Token NIE im Response zurückgeben — geht ausschliesslich per Mail
-      // raus (Authentication-Bypass-Schutz, Audit Pass 12 hat den
-      // devToken-Production-Leak gefunden).
       await this.outbox.writeForTenant(tenant.id, 'auth.magic_link', {
         tenantId: tenant.id,
         clientId: link.clientId,
@@ -76,18 +76,44 @@ export class CustomerAuthController {
         tenantSlug: slug,
       });
     }
-    // IMMER 200 + ok:true — Privacy: keine Email-Enumeration.
     return { ok: true };
   }
 
-  @Get('me/verify')
-  async verify(
-    @Query('token', new ZodValidationPipe(verifyQuerySchema)) token: string,
-  ): Promise<{ ok: true; clientId: string; tenantId: string } | { ok: false; reason: string }> {
-    const res = await this.svc.verifyToken(token);
+  @Post('me/exchange')
+  @HttpCode(HttpStatus.OK)
+  async exchange(
+    @Body(new ZodValidationPipe(exchangeSchema)) body: { token: string },
+    @Headers('user-agent') userAgent: string | undefined,
+  ): Promise<{ ok: true; sessionToken: string; clientId: string; tenantId: string }> {
+    const res = await this.svc.verifyAndCreateSession(body.token, userAgent ?? null);
     if (!res.ok) {
-      throw new BadRequestException(`Token ${res.reason}`);
+      throw new BadRequestException(`Magic-Link ${res.reason}`);
     }
     return res;
   }
+
+  @Get('me/profile')
+  async profile(
+    @Headers('authorization') auth: string | undefined,
+  ): Promise<Awaited<ReturnType<CustomerAuthService['getProfile']>>> {
+    const token = parseBearer(auth);
+    if (!token) throw new UnauthorizedException('Missing Bearer token');
+    const session = await this.svc.verifySession(token);
+    if (!session) throw new UnauthorizedException('Session invalid or expired');
+    return this.svc.getProfile(session.clientId, session.tenantId);
+  }
+
+  @Post('me/logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Headers('authorization') auth: string | undefined): Promise<{ ok: true }> {
+    const token = parseBearer(auth);
+    if (token) await this.svc.revokeSession(token);
+    return { ok: true };
+  }
+}
+
+function parseBearer(header: string | undefined): string | null {
+  if (!header) return null;
+  const m = /^Bearer\s+(.+)$/i.exec(header);
+  return m?.[1] ?? null;
 }

@@ -65,6 +65,7 @@ model Tenant {
   appointmentSeries   AppointmentSeries[]
   clients          Client[]
   clientMagicLinks ClientMagicLink[]
+  clientSessions   ClientSession[]
   appointments     Appointment[]
   giftCards        GiftCard[]
   waitlistEntries  WaitlistEntry[]
@@ -633,6 +634,7 @@ model Client {
   giftCards       GiftCard[]
   waitlistEntries WaitlistEntry[]
   magicLinks      ClientMagicLink[]
+  sessions        ClientSession[]
   family          Client[]        @relation("Family")
   parent          Client?         @relation("Family", fields: [familyParentId], references: [id])
 
@@ -848,6 +850,28 @@ model AuditLog {
 }
 
 // ─── Outbox Events (reliable messaging) ───────────────────────
+
+/// Customer-Session — wird beim Magic-Link-Verify erstellt, hält 30 Tage.
+/// Token-Hash (sha256) statt Plaintext. Bei jedem API-Call wird lastSeenAt
+/// aktualisiert (Sliding-Window). Logout = usedAt setzen oder Row löschen.
+model ClientSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  tokenHash   String    @unique
+  clientId    String    @db.Uuid
+  tenantId    String    @db.Uuid
+  expiresAt   DateTime  @db.Timestamptz
+  lastSeenAt  DateTime? @db.Timestamptz
+  revokedAt   DateTime? @db.Timestamptz
+  userAgent   String?
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([clientId])
+  @@map("client_session")
+}
 
 /// Magic-Link für Kundinnen-Selbst-Service. Kundin gibt Email ein, kriegt
 /// Link, klickt → eingeloggt für 30 Tage (Cookie). Für /me/termine,
