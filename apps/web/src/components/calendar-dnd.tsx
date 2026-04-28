@@ -44,7 +44,7 @@ export interface DndAppt {
     lifetimeValue?: string | number | null;
   } | null;
   staff: { firstName: string; lastName: string; color: string | null };
-  items: Array<{ service: { name: string } }>;
+  items: Array<{ service: { name: string }; optionLabels?: string[] }>;
 }
 
 export interface DndStaff {
@@ -569,7 +569,14 @@ function DraggableAppt({
     cursor: isDragging ? 'grabbing' : 'grab',
   };
   const clientName = appt.client ? `${appt.client.firstName} ${appt.client.lastName}` : 'Blockzeit';
-  const services = appt.items.map((i) => i.service.name).join(', ') || '—';
+  // Service-Label inkl. Variant-Labels: "Premium Haarschnitt · Mittel"
+  const services =
+    appt.items
+      .map((i) => {
+        const labels = (i.optionLabels ?? []).filter(Boolean);
+        return labels.length > 0 ? `${i.service.name} · ${labels.join(' · ')}` : i.service.name;
+      })
+      .join(', ') || '—';
   const timeLabel = new Date(appt.startAt).toLocaleTimeString('de-CH', {
     hour: '2-digit',
     minute: '2-digit',

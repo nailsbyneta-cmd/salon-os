@@ -179,6 +179,9 @@ export default async function BookingConfirm({
       client: { firstName, lastName, email, phone },
       notes,
       language: 'de-CH',
+      // Wizard-Selection durchreichen — Backend persistiert Labels auf
+      // dem AppointmentItem für Calendar-Display.
+      optionIds: sp.options ? sp.options.split(',').filter(Boolean) : undefined,
     });
 
     if (res.ok) {

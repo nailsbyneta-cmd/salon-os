@@ -38,6 +38,9 @@ const publicBookingSchema = z.object({
   }),
   notes: z.string().max(2000).optional(),
   language: z.string().max(10).optional(),
+  /** Wizard-Optionen (Variant-IDs). Backend resolves die Labels und
+   * persistiert sie auf appointmentItem.optionLabels. */
+  optionIds: z.array(uuidSchema).optional(),
 });
 
 @Controller('v1/public/:tenantSlug')

@@ -293,7 +293,14 @@ function ViewToggle({ current, day }: { current: View; day: string }): React.JSX
 
 function ApptActions({ a }: { a: Appt }): React.JSX.Element {
   const clientName = a.client ? `${a.client.firstName} ${a.client.lastName}` : 'Blockzeit';
-  const services = a.items.map((i) => i.service.name).join(', ') || '—';
+  // Service-Label inkl. Variant-Labels: "Premium Haarschnitt · Mittel"
+  const services =
+    a.items
+      .map((i) => {
+        const labels = (i.optionLabels ?? []).filter(Boolean);
+        return labels.length > 0 ? `${i.service.name} · ${labels.join(' · ')}` : i.service.name;
+      })
+      .join(', ') || '—';
   const start = new Date(a.startAt).toLocaleTimeString('de-CH', {
     hour: '2-digit',
     minute: '2-digit',

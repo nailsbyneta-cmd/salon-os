@@ -39,6 +39,9 @@ export interface PublicBookingInput {
   };
   notes?: string;
   language?: string;
+  /** Wizard-Variant-Auswahl. Backend resolves Labels und schreibt sie auf
+   *  appointmentItem.optionLabels (für Calendar + Email + Receipt). */
+  optionIds?: string[];
 }
 
 const PG_EXCLUSION_VIOLATION = 'P2002';
@@ -654,6 +657,18 @@ export class PublicBookingsService {
             (service.durationMinutes + service.bufferBeforeMin + service.bufferAfterMin) * 60_000,
         );
 
+        // Wizard-Optionen → Labels resolven für optionLabels[] auf dem Item.
+        // Mehrere Gruppen + Wizard-Add-Ons möglich, alles in eine Liste.
+        let optionLabels: string[] = [];
+        if (input.optionIds && input.optionIds.length > 0) {
+          const opts = await tx.serviceOption.findMany({
+            where: { id: { in: input.optionIds }, group: { serviceId: service.id } },
+            select: { label: true, group: { select: { sortOrder: true } } },
+            orderBy: [{ group: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
+          });
+          optionLabels = opts.map((o) => o.label);
+        }
+
         const appt = await tx.appointment.create({
           data: {
             tenantId: tenant.id,
@@ -674,6 +689,7 @@ export class PublicBookingsService {
                   price: service.basePrice,
                   duration: service.durationMinutes,
                   taxClass: service.taxClass,
+                  optionLabels,
                 },
               ],
             },
