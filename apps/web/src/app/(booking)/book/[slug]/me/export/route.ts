@@ -26,7 +26,7 @@ export async function GET(): Promise<Response> {
     if (!res.ok) {
       return NextResponse.json({ error: 'export failed' }, { status: res.status });
     }
-    const data = await res.json();
+    const data = (await res.json()) as unknown;
     return new NextResponse(JSON.stringify(data, null, 2), {
       headers: {
         'content-type': 'application/json; charset=utf-8',

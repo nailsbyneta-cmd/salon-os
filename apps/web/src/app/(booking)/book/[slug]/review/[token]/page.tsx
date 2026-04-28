@@ -119,8 +119,10 @@ export default async function ReviewSubmitPage({
   async function onSubmit(formData: FormData): Promise<void> {
     'use server';
     const rating = Number(formData.get('rating') ?? 0);
-    const text = String(formData.get('text') ?? '').trim();
-    const authorName = String(formData.get('authorName') ?? '').trim();
+    const rawText = formData.get('text');
+    const text = (typeof rawText === 'string' ? rawText : '').trim();
+    const rawAuthor = formData.get('authorName');
+    const authorName = (typeof rawAuthor === 'string' ? rawAuthor : '').trim();
 
     if (!rating || rating < 1 || rating > 5) {
       redirect(`/book/${slug}/review/${token}?error=${encodeURIComponent('Bitte wähle 1-5 Sterne.')}`);

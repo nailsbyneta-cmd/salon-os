@@ -65,7 +65,7 @@ export default async function AdsIntegrationPage({
   };
   const bookingLabel =
     typeof status.conversionActions['booking_completed'] === 'string'
-      ? (status.conversionActions['booking_completed'] as string)
+      ? status.conversionActions['booking_completed']
       : '';
 
   return (

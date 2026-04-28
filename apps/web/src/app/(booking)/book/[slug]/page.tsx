@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Avatar, Badge, Card, CardBody, PriceDisplay } from '@salon-os/ui';
+import { Avatar, Badge, Card, CardBody } from '@salon-os/ui';
 import { CookieConsent } from '@/components/cookie-consent';
 import { ServiceCardToggle } from './service-card-toggle';
 import { CartPill } from './cart-pill';
