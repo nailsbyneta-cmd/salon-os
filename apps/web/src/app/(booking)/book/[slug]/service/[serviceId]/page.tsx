@@ -212,6 +212,17 @@ export default async function BookingSlots({
     grouped.get(bucket)!.push(s);
   }
 
+  // UX-Brief Aufgabe 4.1: Single-Staff-Dedup. Wenn alle Slots derselben
+  // Stylistin gehören (häufig bei Beautyneta wo Neta die einzige Nagel-
+  // Designerin ist) zeigen wir den Namen 1× oben statt 9× unter jedem Slot.
+  const uniqueStaff = new Map<string, string>();
+  for (const s of slots) uniqueStaff.set(s.staffId, s.staffDisplayName);
+  const singleStaff = uniqueStaff.size === 1 ? Array.from(uniqueStaff.values())[0]! : null;
+
+  // UX-Brief Aufgabe 4.3: Scarcity-Signal. ≤ 3 Slots heute = Verlustangst
+  // triggern (Cialdini). Nicht spammig — erst wenn wirklich knapp.
+  const scarcity = slots.length > 0 && slots.length <= 3 ? slots.length : 0;
+
   return (
     <main className="space-y-6">
       <BookingSteps current="slot" />
@@ -240,6 +251,22 @@ export default async function BookingSlots({
             Deine Auswahl: {price ? `CHF ${Number(price).toFixed(2).replace(/\.00$/, '')}` : ''}
             {price && durationMin ? ' · ' : ''}
             {durationMin ? `${durationMin} Min` : ''}
+          </p>
+        ) : null}
+        {/* Single-Staff Dedup: Stylistin namentlich (Audit-Pass-Erfahrung —
+            wenn 9× derselbe Name unter den Slots steht, ist das visuelles
+            Rauschen ohne Signal). */}
+        {singleStaff ? (
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs text-accent">
+            <span aria-hidden>✦</span>
+            Bei {singleStaff}
+          </p>
+        ) : null}
+        {/* Scarcity-Signal — Loss-Aversion-Trigger. Nicht spammig: nur ≤3. */}
+        {scarcity > 0 ? (
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-warning/15 px-3 py-1 text-xs font-semibold text-warning animate-[scarcityPulse_2s_ease-in-out_infinite]">
+            <span aria-hidden>🔥</span>
+            Nur noch {scarcity} {scarcity === 1 ? 'Platz' : 'Plätze'} heute frei
           </p>
         ) : null}
       </header>
@@ -364,9 +391,13 @@ export default async function BookingSlots({
                         minute: '2-digit',
                       })}
                     </div>
-                    <div className="mt-0.5 w-full truncate text-[11px] text-text-secondary">
-                      {s.staffDisplayName}
-                    </div>
+                    {/* Bei Single-Staff zeigen wir den Namen 1× oben in der
+                        Header-Pill und sparen visuelles Rauschen. */}
+                    {singleStaff ? null : (
+                      <div className="mt-0.5 w-full truncate text-[11px] text-text-secondary">
+                        {s.staffDisplayName}
+                      </div>
+                    )}
                   </Link>
                 ))}
               </div>
@@ -374,6 +405,17 @@ export default async function BookingSlots({
           ))}
         </div>
       )}
+      <style>{`
+        @keyframes scarcityPulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.85; transform: scale(1.02); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-\\[scarcityPulse_2s_ease-in-out_infinite\\] {
+            animation: none !important;
+          }
+        }
+      `}</style>
     </main>
   );
 }
