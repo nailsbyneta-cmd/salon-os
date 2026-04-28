@@ -155,8 +155,8 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
               <tbody>
                 {products.map((p) => {
                   const low = p.stockLevel <= p.reorderAt;
-                  const minus = adjustStock.bind(null, p.id, -1);
-                  const plus = adjustStock.bind(null, p.id, +1);
+                  const minus = adjustStock.bind(null, p.id, -1, 'ADJUSTMENT', undefined);
+                  const plus = adjustStock.bind(null, p.id, +1, 'ADJUSTMENT', undefined);
                   const rm = deleteProduct.bind(null, p.id);
                   return (
                     <tr
@@ -164,7 +164,12 @@ export default async function InventoryPage(): Promise<React.JSX.Element> {
                       className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised/60"
                     >
                       <td className="px-4 py-3 sm:px-5">
-                        <div className="font-medium text-text-primary">{p.name}</div>
+                        <Link
+                          href={`/inventory/${p.id}`}
+                          className="font-medium text-text-primary hover:text-accent"
+                        >
+                          {p.name}
+                        </Link>
                         <div className="text-xs text-text-muted">
                           {[p.brand, p.sku, p.unit].filter(Boolean).join(' · ') || '—'}
                         </div>

@@ -45,16 +45,43 @@ export async function createProduct(form: FormData): Promise<void> {
   redirect('/inventory');
 }
 
-export async function adjustStock(id: string, delta: number): Promise<void> {
+export type StockReason =
+  | 'PURCHASE'
+  | 'SALE'
+  | 'USAGE'
+  | 'ADJUSTMENT'
+  | 'RETURN'
+  | 'INITIAL';
+
+export async function adjustStock(
+  id: string,
+  delta: number,
+  reason: StockReason = 'ADJUSTMENT',
+  notes?: string,
+): Promise<void> {
   const ctx = await getCurrentTenant();
   await apiFetch(`/v1/products/${id}/adjust`, {
     method: 'POST',
     tenantId: ctx.tenantId,
     userId: ctx.userId,
     role: ctx.role,
-    body: { delta },
+    body: { delta, reason, notes },
   });
   revalidatePath('/inventory');
+  revalidatePath(`/inventory/${id}`);
+}
+
+/** Form-action variant für FormData submits aus den Adjust-Forms. */
+export async function adjustStockForm(productId: string, form: FormData): Promise<void> {
+  const delta = Number(form.get('delta') ?? 0);
+  if (!Number.isFinite(delta) || delta === 0) {
+    throw new Error('Anpassung muss eine ganze Zahl ungleich 0 sein.');
+  }
+  const reason = String(form.get('reason') ?? 'ADJUSTMENT') as StockReason;
+  const notes = String(form.get('notes') ?? '').trim() || undefined;
+  await adjustStock(productId, Math.round(delta), reason, notes);
+  revalidatePath(`/inventory/${productId}`);
+  redirect(`/inventory/${productId}?adjusted=1`);
 }
 
 export async function deleteProduct(id: string): Promise<void> {

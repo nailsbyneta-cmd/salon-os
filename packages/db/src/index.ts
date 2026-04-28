@@ -32,10 +32,15 @@ export type {
   GiftCard,
   WaitlistEntry,
   Product,
+  StockMutation,
   SalonFAQ,
   SalonReview,
   SalonGalleryImage,
   OutboxEvent,
+  TenantAdsIntegration,
+  TenantAdsSpendDaily,
+  ClientMagicLink,
+  ClientSession,
 } from '@prisma/client';
 
 export {
@@ -49,6 +54,7 @@ export {
   BookingChannel,
   TimeOffStatus,
   OutboxStatus,
+  StockMutationReason,
 } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };

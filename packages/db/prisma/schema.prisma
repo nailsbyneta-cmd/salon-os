@@ -177,12 +177,47 @@ model Product {
   updatedAt   DateTime  @updatedAt @db.Timestamptz
   deletedAt   DateTime? @db.Timestamptz
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  mutations StockMutation[]
 
   @@index([tenantId])
   @@index([tenantId, active])
   @@index([tenantId, stockLevel, reorderAt])
   @@map("product")
+}
+
+// Audit-Trail pro Stock-Anpassung. Snapshot-basiert: jede Mutation
+// schreibt delta + den resultierenden stockAfter. Replay-frei abfragbar.
+//
+// performedBy: User-Id (Manager/Owner). Bei automatischen Mutations
+// (z.B. POS-Sale) bleibt das null.
+// appointmentId: für USAGE-Mutations (Backbar-Verbrauch im Service).
+model StockMutation {
+  id            String              @id @default(uuid()) @db.Uuid
+  tenantId      String              @db.Uuid
+  productId     String              @db.Uuid
+  delta         Int
+  stockAfter    Int
+  reason        StockMutationReason
+  notes         String?
+  performedBy   String?             @db.Uuid
+  appointmentId String?             @db.Uuid
+  createdAt     DateTime            @default(now()) @db.Timestamptz
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, productId, createdAt(sort: Desc)])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("stock_mutation")
+}
+
+enum StockMutationReason {
+  PURCHASE
+  SALE
+  USAGE
+  ADJUSTMENT
+  RETURN
+  INITIAL
 }
 
 model WaitlistEntry {

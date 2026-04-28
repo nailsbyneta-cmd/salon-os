@@ -137,12 +137,12 @@ describe('ProductsService', () => {
   describe('adjustStock()', () => {
     it('throws NotFoundException when product not found', async () => {
       prisma.product.findFirst.mockResolvedValue(null);
-      await expect(service.adjustStock('prod1', 5)).rejects.toThrow(NotFoundException);
+      await expect(service.adjustStock('prod1', { delta: 5, reason: 'ADJUSTMENT' })).rejects.toThrow(NotFoundException);
     });
 
     it('adds positive delta to stockLevel', async () => {
       prisma.product.findFirst.mockResolvedValue({ ...BASE_PRODUCT, stockLevel: 10 });
-      await service.adjustStock('prod1', 5);
+      await service.adjustStock('prod1', { delta: 5, reason: 'ADJUSTMENT' });
       expect(prisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { stockLevel: 15 } }),
       );
@@ -150,7 +150,7 @@ describe('ProductsService', () => {
 
     it('subtracts negative delta from stockLevel', async () => {
       prisma.product.findFirst.mockResolvedValue({ ...BASE_PRODUCT, stockLevel: 10 });
-      await service.adjustStock('prod1', -3);
+      await service.adjustStock('prod1', { delta: -3, reason: 'ADJUSTMENT' });
       expect(prisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { stockLevel: 7 } }),
       );
@@ -158,7 +158,7 @@ describe('ProductsService', () => {
 
     it('clamps stockLevel to minimum 0 (no negative stock)', async () => {
       prisma.product.findFirst.mockResolvedValue({ ...BASE_PRODUCT, stockLevel: 2 });
-      await service.adjustStock('prod1', -10);
+      await service.adjustStock('prod1', { delta: -10, reason: 'ADJUSTMENT' });
       expect(prisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { stockLevel: 0 } }),
       );

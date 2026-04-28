@@ -10,7 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { z } from 'zod';
-import type { Product } from '@salon-os/db';
+import type { Product, StockMutation } from '@salon-os/db';
 import { uuidSchema } from '@salon-os/types';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { ProductsService } from './products.service.js';
@@ -33,6 +33,9 @@ const createSchema = z.object({
 
 const adjustSchema = z.object({
   delta: z.number().int(),
+  reason: z.enum(['PURCHASE', 'SALE', 'USAGE', 'ADJUSTMENT', 'RETURN', 'INITIAL']),
+  notes: z.string().max(500).optional(),
+  appointmentId: uuidSchema.optional(),
 });
 
 @Controller('v1/products')
@@ -58,7 +61,16 @@ export class ProductsController {
     @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
     @Body(new ZodValidationPipe(adjustSchema)) body: z.infer<typeof adjustSchema>,
   ): Promise<Product> {
-    return this.svc.adjustStock(id, body.delta);
+    return this.svc.adjustStock(id, body);
+  }
+
+  @Get(':id/mutations')
+  async mutations(
+    @Param('id', new ZodValidationPipe(uuidSchema)) id: string,
+    @Query('limit') limit?: string,
+  ): Promise<{ mutations: StockMutation[] }> {
+    const n = limit ? Math.max(1, Math.min(200, Number(limit))) : 50;
+    return { mutations: await this.svc.listMutations(id, n) };
   }
 
   @Delete(':id')
