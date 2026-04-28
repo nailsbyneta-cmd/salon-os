@@ -19,11 +19,17 @@ interface AuditEntry {
 
 async function loadAudit(opts: {
   entity?: string;
+  action?: string;
+  from?: string;
+  to?: string;
   cursor?: string;
 }): Promise<{ entries: AuditEntry[]; nextCursor: string | null }> {
   const ctx = await getCurrentTenant();
   const qs = new URLSearchParams();
   if (opts.entity) qs.set('entity', opts.entity);
+  if (opts.action) qs.set('action', opts.action);
+  if (opts.from) qs.set('from', `${opts.from}T00:00:00.000Z`);
+  if (opts.to) qs.set('to', `${opts.to}T23:59:59.999Z`);
   if (opts.cursor) qs.set('cursor', opts.cursor);
   qs.set('limit', '100');
   try {
@@ -33,6 +39,19 @@ async function loadAudit(opts: {
     );
   } catch (err) {
     if (err instanceof ApiError) return { entries: [], nextCursor: null };
+    throw err;
+  }
+}
+
+async function loadFacets(): Promise<{ entities: string[]; actions: string[] }> {
+  const ctx = await getCurrentTenant();
+  try {
+    return await apiFetch<{ entities: string[]; actions: string[] }>(
+      '/v1/audit-log/facets',
+      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
+    );
+  } catch (err) {
+    if (err instanceof ApiError) return { entities: [], actions: [] };
     throw err;
   }
 }
@@ -68,10 +87,19 @@ function entityHref(entity: string, id: string): string | null {
 export default async function AuditPage({
   searchParams,
 }: {
-  searchParams: Promise<{ entity?: string; cursor?: string }>;
+  searchParams: Promise<{
+    entity?: string;
+    action?: string;
+    from?: string;
+    to?: string;
+    cursor?: string;
+  }>;
 }): Promise<React.JSX.Element> {
-  const { entity, cursor } = await searchParams;
-  const { entries, nextCursor } = await loadAudit({ entity, cursor });
+  const { entity, action, from, to, cursor } = await searchParams;
+  const [{ entries, nextCursor }, facets] = await Promise.all([
+    loadAudit({ entity, action, from, to, cursor }),
+    loadFacets(),
+  ]);
 
   const filters: Array<{ id: string; label: string }> = [
     { id: '', label: 'Alle' },
@@ -79,6 +107,21 @@ export default async function AuditPage({
     { id: 'Appointment', label: 'Termine' },
     { id: 'GiftCard', label: 'Gutscheine' },
   ];
+
+  /** Bauet die Audit-URL zusammen mit aktuellen Filtern + 1 override. */
+  function buildHref(override: Partial<{ entity: string; action: string; from: string; to: string }>): string {
+    const qs = new URLSearchParams();
+    const finalEntity = override.entity ?? entity;
+    const finalAction = override.action ?? action;
+    const finalFrom = override.from ?? from;
+    const finalTo = override.to ?? to;
+    if (finalEntity) qs.set('entity', finalEntity);
+    if (finalAction) qs.set('action', finalAction);
+    if (finalFrom) qs.set('from', finalFrom);
+    if (finalTo) qs.set('to', finalTo);
+    const s = qs.toString();
+    return s ? `/audit?${s}` : '/audit';
+  }
 
   return (
     <div className="w-full p-4 md:p-8">
@@ -97,20 +140,70 @@ export default async function AuditPage({
         </div>
       </header>
 
-      <div className="mb-4 inline-flex items-center rounded-md border border-border bg-surface p-0.5">
-        {filters.map((f) => (
-          <Link
-            key={f.id}
-            href={f.id ? `/audit?entity=${f.id}` : '/audit'}
-            className={`rounded-sm px-3 py-1.5 text-xs font-medium transition-colors ${
-              (entity ?? '') === f.id
-                ? 'bg-brand text-brand-foreground'
-                : 'text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            {f.label}
-          </Link>
-        ))}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="inline-flex items-center rounded-md border border-border bg-surface p-0.5">
+          {filters.map((f) => (
+            <Link
+              key={f.id}
+              href={buildHref({ entity: f.id, action: '', from: '', to: '' })}
+              className={`rounded-sm px-3 py-1.5 text-xs font-medium transition-colors ${
+                (entity ?? '') === f.id
+                  ? 'bg-brand text-brand-foreground'
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              {f.label}
+            </Link>
+          ))}
+        </div>
+
+        {facets.actions.length > 0 ? (
+          <form method="GET" action="/audit" className="flex flex-wrap items-center gap-2">
+            {entity ? <input type="hidden" name="entity" value={entity} /> : null}
+            {from ? <input type="hidden" name="from" value={from} /> : null}
+            {to ? <input type="hidden" name="to" value={to} /> : null}
+            <select
+              name="action"
+              defaultValue={action ?? ''}
+              className="rounded-md border border-border bg-surface px-2 py-1.5 text-xs"
+            >
+              <option value="">Alle Aktionen</option>
+              {facets.actions.map((a) => (
+                <option key={a} value={a}>
+                  {actionLabel[a]?.label ?? a}
+                </option>
+              ))}
+            </select>
+            <input
+              type="date"
+              name="from"
+              defaultValue={from ?? ''}
+              className="rounded-md border border-border bg-surface px-2 py-1.5 text-xs"
+              aria-label="Von"
+            />
+            <input
+              type="date"
+              name="to"
+              defaultValue={to ?? ''}
+              className="rounded-md border border-border bg-surface px-2 py-1.5 text-xs"
+              aria-label="Bis"
+            />
+            <button
+              type="submit"
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:border-accent/50"
+            >
+              Filtern
+            </button>
+            {(action || from || to) ? (
+              <Link
+                href={buildHref({ action: '', from: '', to: '' })}
+                className="text-xs text-text-muted hover:text-accent"
+              >
+                Zurücksetzen
+              </Link>
+            ) : null}
+          </form>
+        ) : null}
       </div>
 
       <Card>
@@ -203,7 +296,7 @@ export default async function AuditPage({
       {nextCursor ? (
         <div className="mt-4 flex justify-center">
           <Link
-            href={`/audit?${entity ? `entity=${entity}&` : ''}cursor=${nextCursor}`}
+            href={`${buildHref({})}${buildHref({}).includes('?') ? '&' : '?'}cursor=${nextCursor}`}
             className="text-xs font-medium text-accent hover:underline"
           >
             Ältere anzeigen →

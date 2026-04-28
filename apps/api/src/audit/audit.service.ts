@@ -73,16 +73,26 @@ export class AuditService {
   async list(opts: {
     entity?: string;
     entityId?: string;
+    action?: string;
+    actorId?: string;
+    fromIso?: string;
+    toIso?: string;
     limit?: number;
     cursor?: string;
   }): Promise<{ entries: AuditEntry[]; nextCursor: string | null }> {
     const ctx = requireTenantContext();
     const take = Math.min(Math.max(opts.limit ?? 50, 1), 200);
+    const dateFilter: { gte?: Date; lte?: Date } = {};
+    if (opts.fromIso) dateFilter.gte = new Date(opts.fromIso);
+    if (opts.toIso) dateFilter.lte = new Date(opts.toIso);
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
       const entries = await tx.auditLog.findMany({
         where: {
           ...(opts.entity ? { entity: opts.entity } : {}),
           ...(opts.entityId ? { entityId: opts.entityId } : {}),
+          ...(opts.action ? { action: opts.action } : {}),
+          ...(opts.actorId ? { actorId: opts.actorId } : {}),
+          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
         },
         orderBy: { createdAt: 'desc' },
         take: take + 1,
@@ -93,6 +103,21 @@ export class AuditService {
       return {
         entries: page as AuditEntry[],
         nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
+      };
+    });
+  }
+
+  /** Liefert distinct entity + action Werte zur Befüllung der Filter-Dropdowns. */
+  async listFacets(): Promise<{ entities: string[]; actions: string[] }> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const [entities, actions] = await Promise.all([
+        tx.auditLog.findMany({ distinct: ['entity'], select: { entity: true }, take: 50 }),
+        tx.auditLog.findMany({ distinct: ['action'], select: { action: true }, take: 50 }),
+      ]);
+      return {
+        entities: entities.map((e) => e.entity).sort(),
+        actions: actions.map((a) => a.action).sort(),
       };
     });
   }

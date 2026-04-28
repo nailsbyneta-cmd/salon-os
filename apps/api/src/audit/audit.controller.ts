@@ -9,6 +9,10 @@ export class AuditController {
   async list(
     @Query('entity') entity?: string,
     @Query('entityId') entityId?: string,
+    @Query('action') action?: string,
+    @Query('actorId') actorId?: string,
+    @Query('from') fromIso?: string,
+    @Query('to') toIso?: string,
     @Query('limit') limit?: string,
     @Query('cursor') cursor?: string,
   ): Promise<{ entries: AuditEntry[]; nextCursor: string | null }> {
@@ -16,8 +20,17 @@ export class AuditController {
     return this.svc.list({
       entity,
       entityId,
+      action,
+      actorId,
+      fromIso,
+      toIso,
       limit: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
       cursor,
     });
+  }
+
+  @Get('facets')
+  async facets(): Promise<{ entities: string[]; actions: string[] }> {
+    return this.svc.listFacets();
   }
 }
