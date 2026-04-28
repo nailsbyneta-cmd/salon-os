@@ -125,6 +125,35 @@ export class CustomerAuthController {
   }
 
   /**
+   * Customer storniert eigenen Termin via /me.
+   */
+  @Post('me/appointments/:id/cancel')
+  @HttpCode(HttpStatus.OK)
+  async cancelAppointment(
+    @Param('id', new ZodValidationPipe(z.string().uuid())) appointmentId: string,
+    @Headers('authorization') auth: string | undefined,
+  ): Promise<{ ok: true } | { ok: false; reason: string }> {
+    const token = parseBearer(auth);
+    if (!token) throw new UnauthorizedException('Missing Bearer token');
+    const session = await this.svc.verifySession(token);
+    if (!session) throw new UnauthorizedException('Session invalid or expired');
+    const result = await this.svc.cancelOwnAppointment(
+      session.clientId,
+      session.tenantId,
+      appointmentId,
+    );
+    if (!result.ok) {
+      const messages: Record<string, string> = {
+        'not-found': 'Termin nicht gefunden',
+        'too-late': 'Stornierung nur bis 2 Stunden vor dem Termin möglich',
+        'wrong-status': 'Termin kann nicht mehr storniert werden',
+      };
+      throw new BadRequestException(messages[result.reason] ?? 'Stornierung nicht möglich');
+    }
+    return { ok: true };
+  }
+
+  /**
    * DSGVO Art. 17 — Account-Löschung. Soft-Delete + alle Sessions revoken.
    * Endgültige Löschung via Cron-Job nach 30 Tagen.
    */

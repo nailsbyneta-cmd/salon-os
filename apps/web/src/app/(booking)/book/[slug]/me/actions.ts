@@ -36,6 +36,28 @@ export async function logout(slug: string): Promise<void> {
 }
 
 /**
+ * Customer storniert eigenen Termin. 2h-Vorlauf-Regel im Backend.
+ * Bei Erfolg: revalidate /me. Bei Fehler: redirect mit Error-Message.
+ */
+export async function cancelMyAppointment(slug: string, appointmentId: string): Promise<void> {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get(COOKIE_NAME)?.value;
+  if (!sessionToken) {
+    redirect(`/book/${slug}/me/login`);
+  }
+  const res = await fetch(`${API_URL}/v1/public/me/appointments/${appointmentId}/cancel`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${sessionToken}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    redirect(`/book/${slug}/me?cancel-error=${encodeURIComponent(body.detail ?? 'fehler')}`);
+  }
+  redirect(`/book/${slug}/me?cancelled=${appointmentId.slice(0, 8)}`);
+}
+
+/**
  * DSGVO-Account-Löschung. Setzt deletedAt + revoked alle Sessions auf
  * Server-Seite, dann Cookie weg + redirect Booking-Übersicht.
  */

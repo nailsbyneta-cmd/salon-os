@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { Badge, Button, Card, CardBody } from '@salon-os/ui';
-import { deleteMyAccount, logout } from './actions';
+import { cancelMyAppointment, deleteMyAccount, logout } from './actions';
 
 const COOKIE_NAME = 'salon_customer_session';
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
@@ -67,10 +67,13 @@ function statusLabel(s: string): {
 
 export default async function MePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ cancelled?: string; 'cancel-error'?: string }>;
 }): Promise<React.JSX.Element> {
   const { slug } = await params;
+  const sp = await searchParams;
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(COOKIE_NAME)?.value;
 
@@ -89,6 +92,7 @@ export default async function MePage({
   const past = profile.appointments.filter((a) => new Date(a.startAt).getTime() < now);
 
   const fullName = `${profile.client.firstName} ${profile.client.lastName}`.trim();
+  const cancelError = sp['cancel-error'];
 
   return (
     <main className="space-y-6">
@@ -122,6 +126,24 @@ export default async function MePage({
         </CardBody>
       </Card>
 
+      {/* Cancel-Confirmation oder Error-Banner */}
+      {sp.cancelled ? (
+        <div
+          role="status"
+          className="rounded-md border border-success/40 bg-success/10 px-4 py-3 text-sm text-success"
+        >
+          ✓ Termin storniert.
+        </div>
+      ) : null}
+      {cancelError ? (
+        <div
+          role="alert"
+          className="rounded-md border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger"
+        >
+          {cancelError}
+        </div>
+      ) : null}
+
       {/* Bevorstehende Termine */}
       <section>
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
@@ -139,7 +161,7 @@ export default async function MePage({
         ) : (
           <div className="space-y-2">
             {upcoming.map((a) => (
-              <AppointmentCard key={a.id} appt={a} />
+              <AppointmentCard key={a.id} appt={a} slug={slug} canCancel />
             ))}
           </div>
         )}
@@ -153,7 +175,7 @@ export default async function MePage({
           </p>
           <div className="space-y-2">
             {past.map((a) => (
-              <AppointmentCard key={a.id} appt={a} />
+              <AppointmentCard key={a.id} appt={a} slug={slug} canCancel={false} />
             ))}
           </div>
         </section>
@@ -221,7 +243,15 @@ export default async function MePage({
   );
 }
 
-function AppointmentCard({ appt }: { appt: Profile['appointments'][number] }): React.JSX.Element {
+function AppointmentCard({
+  appt,
+  slug,
+  canCancel,
+}: {
+  appt: Profile['appointments'][number];
+  slug: string;
+  canCancel: boolean;
+}): React.JSX.Element {
   const dt = new Date(appt.startAt);
   const dateStr = dt.toLocaleDateString('de-CH', {
     weekday: 'long',
@@ -231,6 +261,12 @@ function AppointmentCard({ appt }: { appt: Profile['appointments'][number] }): R
   const timeStr = dt.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
   const status = statusLabel(appt.status);
   const total = appt.items.reduce((s, i) => s + Number(i.price), 0);
+  // Stornieren erlaubt nur ≥ 2h vor Termin + Status BOOKED/CONFIRMED
+  const minLeadMs = 2 * 60 * 60_000;
+  const cancellable =
+    canCancel &&
+    (appt.status === 'BOOKED' || appt.status === 'CONFIRMED') &&
+    dt.getTime() - Date.now() >= minLeadMs;
 
   return (
     <Card>
@@ -260,6 +296,18 @@ function AppointmentCard({ appt }: { appt: Profile['appointments'][number] }): R
           </span>
           <span className="tabular-nums">CHF {total.toFixed(2).replace(/\.00$/, '')}</span>
         </div>
+        {cancellable ? (
+          <div className="border-t border-border pt-2">
+            <form action={cancelMyAppointment.bind(null, slug, appt.id)}>
+              <button
+                type="submit"
+                className="text-xs text-text-muted underline-offset-2 hover:text-danger hover:underline"
+              >
+                Termin stornieren
+              </button>
+            </form>
+          </div>
+        ) : null}
       </CardBody>
     </Card>
   );

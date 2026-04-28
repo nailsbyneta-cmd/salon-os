@@ -148,6 +148,39 @@ export class CustomerAuthService {
   }
 
   /**
+   * Customer storniert eigenen Termin. Erlaubt nur wenn:
+   * - Termin gehört dieser Kundin
+   * - Status ist BOOKED oder CONFIRMED (nicht IN_SERVICE oder COMPLETED)
+   * - Mindestens 2h vor Termin-Start (verhindert Last-Minute-No-Shows)
+   */
+  async cancelOwnAppointment(
+    clientId: string,
+    tenantId: string,
+    appointmentId: string,
+  ): Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'too-late' | 'wrong-status' }> {
+    const appt = await this.prisma.appointment.findFirst({
+      where: { id: appointmentId, clientId, tenantId },
+    });
+    if (!appt) return { ok: false, reason: 'not-found' };
+    if (appt.status !== 'BOOKED' && appt.status !== 'CONFIRMED') {
+      return { ok: false, reason: 'wrong-status' };
+    }
+    const minLeadMs = 2 * 60 * 60_000;
+    if (appt.startAt.getTime() - Date.now() < minLeadMs) {
+      return { ok: false, reason: 'too-late' };
+    }
+    await this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancelReason: 'Customer self-service cancellation via /me',
+      },
+    });
+    return { ok: true };
+  }
+
+  /**
    * DSGVO Art. 15 — Recht auf Auskunft.
    * Customer kann ihre eigenen Daten als JSON-Dump herunterladen.
    * Tenant-scoped: die Session validiert clientId+tenantId, deshalb sicher.
