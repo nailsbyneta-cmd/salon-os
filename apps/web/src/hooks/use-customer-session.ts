@@ -17,7 +17,16 @@ import * as React from 'react';
  * Pure-Client-Personalisierungs-Cache fuer den HeroWelcome-Flow.
  */
 
-const KEY_PREFIX = 'salon-os::welcome::';
+/**
+ * Key-Convention: `salon_customer_session_<tenantSlug>` (matched UX-Brief
+ * Spec). Nicht zu verwechseln mit dem HTTP-Only-Cookie 'salon_customer_session'
+ * (sealed Magic-Link-Auth) — localStorage und Cookie sind getrennte
+ * Storages, keine Kollision.
+ */
+const KEY_PREFIX = 'salon_customer_session_';
+/** Legacy-Prefix aus der ersten HeroWelcome-Iteration, lesen für
+ *  Sessions die schon vor dem Key-Rename geschrieben wurden. */
+const LEGACY_KEY_PREFIX = 'salon-os::welcome::';
 
 export interface CustomerSession {
   firstName: string;
@@ -33,6 +42,10 @@ function key(tenantSlug: string): string {
   return `${KEY_PREFIX}${tenantSlug}`;
 }
 
+function legacyKey(tenantSlug: string): string {
+  return `${LEGACY_KEY_PREFIX}${tenantSlug}`;
+}
+
 export function useCustomerSession(tenantSlug: string): {
   session: CustomerSession | null;
   /** Hydrated = useEffect ist gelaufen, wir wissen dass localStorage gelesen wurde. */
@@ -44,7 +57,10 @@ export function useCustomerSession(tenantSlug: string): {
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const raw = window.localStorage.getItem(key(tenantSlug));
+      // Read canonical key first; fall back to legacy key for sessions
+      // written before the 2026-04-28 rename.
+      let raw = window.localStorage.getItem(key(tenantSlug));
+      if (!raw) raw = window.localStorage.getItem(legacyKey(tenantSlug));
       if (raw) {
         const parsed = JSON.parse(raw) as CustomerSession;
         if (parsed && typeof parsed.firstName === 'string') {
