@@ -383,7 +383,7 @@ export default async function BookingSlots({
                   <Link
                     key={`${s.staffId}-${s.startAt}`}
                     href={`/book/${slug}/confirm?serviceId=${serviceId}&locationId=${location}&staffId=${s.staffId}&startAt=${encodeURIComponent(s.startAt)}${confirmSuffix}`}
-                    className="group flex flex-col items-center rounded-lg border border-border bg-surface px-3 py-3 text-center shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-accent/5 hover:shadow-md active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    className="slot-link group flex flex-col items-center rounded-lg border border-border bg-surface px-3 py-3 text-center shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:bg-accent/5 hover:shadow-md active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   >
                     <div className="font-display text-base font-semibold tabular-nums text-text-primary group-hover:text-accent">
                       {new Date(s.startAt).toLocaleTimeString('de-CH', {
@@ -410,9 +410,32 @@ export default async function BookingSlots({
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.85; transform: scale(1.02); }
         }
+        /* UX-Brief Aufgabe 8.4 -- Slot-Click Ring-Pulse. Goldener Ring
+           expandiert beim Klick (visuelles Bestaetigungs-Feedback bevor
+           Page-Transition zum /confirm laedt). */
+        .slot-link {
+          position: relative;
+        }
+        .slot-link:active::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          box-shadow: 0 0 0 0 rgba(208, 176, 124, 0.6);
+          animation: ringPulse 400ms ease-out;
+          pointer-events: none;
+        }
+        @keyframes ringPulse {
+          to {
+            box-shadow: 0 0 0 12px rgba(208, 176, 124, 0);
+          }
+        }
         @media (prefers-reduced-motion: reduce) {
           .animate-\\[scarcityPulse_2s_ease-in-out_infinite\\] {
             animation: none !important;
+          }
+          .slot-link:active::after {
+            animation: none;
           }
         }
       `}</style>

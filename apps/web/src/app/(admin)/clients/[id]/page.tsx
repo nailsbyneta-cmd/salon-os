@@ -6,6 +6,7 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { BlockToggleButton } from '@/components/block-toggle-button';
 import { forgetClient } from './actions';
+import { LoyaltyCard } from './loyalty-card';
 
 interface Client {
   id: string;
@@ -52,6 +53,67 @@ async function loadClient(id: string): Promise<Client | null> {
     if (err instanceof ApiError) return null;
     throw err;
   }
+}
+
+interface LoyaltyBalance {
+  clientId: string;
+  balance: number;
+  lifetimeEarned: number;
+  lifetimeRedeemed: number;
+  rewardsAvailable: number;
+}
+
+interface LoyaltyStamp {
+  id: string;
+  delta: number;
+  balanceAfter: number;
+  reason: string;
+  notes: string | null;
+  createdAt: string;
+}
+
+interface LoyaltyProgram {
+  id: string;
+  name: string;
+  active: boolean;
+  earnRule: 'per_appointment' | 'per_chf';
+  earnPerUnit: number;
+  redeemThreshold: number;
+  rewardLabel: string;
+}
+
+async function loadLoyalty(clientId: string): Promise<{
+  program: LoyaltyProgram | null;
+  balance: LoyaltyBalance | null;
+  stamps: LoyaltyStamp[];
+}> {
+  const ctx = await getCurrentTenant();
+  const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
+  const safe = async <T,>(p: Promise<T>, fallback: T): Promise<T> => {
+    try {
+      return await p;
+    } catch (err) {
+      if (err instanceof ApiError) return fallback;
+      throw err;
+    }
+  };
+  const [programRes, balance, stampsRes] = await Promise.all([
+    safe(apiFetch<{ program: LoyaltyProgram | null }>('/v1/loyalty/program', auth), {
+      program: null,
+    }),
+    safe(apiFetch<LoyaltyBalance>(`/v1/loyalty/clients/${clientId}`, auth), null),
+    safe(
+      apiFetch<{ stamps: LoyaltyStamp[] }>(`/v1/loyalty/clients/${clientId}/stamps?limit=10`, auth),
+      {
+        stamps: [],
+      },
+    ),
+  ]);
+  return {
+    program: programRes.program,
+    balance,
+    stamps: stampsRes.stamps,
+  };
 }
 
 async function loadClientAppointments(clientId: string): Promise<Appt[]> {
@@ -103,7 +165,11 @@ export default async function ClientDetailPage({
   params: Promise<{ id: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
-  const [client, appts] = await Promise.all([loadClient(id), loadClientAppointments(id)]);
+  const [client, appts, loyaltyData] = await Promise.all([
+    loadClient(id),
+    loadClientAppointments(id),
+    loadLoyalty(id),
+  ]);
   if (!client) notFound();
 
   const upcoming = appts.filter((a) => new Date(a.startAt) >= new Date());
@@ -438,6 +504,23 @@ export default async function ClientDetailPage({
             </div>
           </CardBody>
         </Card>
+      ) : null}
+
+      {/* Loyalty-Stempelkarte. Nur sichtbar wenn Programm aktiv UND Balance-
+          Daten geladen (= keine API-Fehler). Sonst Komponente weglassen statt
+          leeres Skelett zu zeigen. */}
+      {loyaltyData.program && loyaltyData.program.active && loyaltyData.balance ? (
+        <LoyaltyCard
+          clientId={id}
+          clientFirstName={client.firstName}
+          program={{
+            name: loyaltyData.program.name,
+            redeemThreshold: loyaltyData.program.redeemThreshold,
+            rewardLabel: loyaltyData.program.rewardLabel,
+          }}
+          balance={loyaltyData.balance}
+          stamps={loyaltyData.stamps}
+        />
       ) : null}
 
       {topServices.length > 0 ? (

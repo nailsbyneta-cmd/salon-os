@@ -883,6 +883,30 @@ export default async function BookingStart({
 
       <CookieConsent privacyHref={`/book/${slug}/datenschutz`} />
       <CartPill slug={slug} />
+
+      <style>{`
+        /* UX-Brief Aufgabe 8.3 — Folder-Slide-In auf Booking-Landing.
+           Native <details name="..."> hat keinen Animations-Hook ausser
+           CSS-Selectors auf die Children. */
+        details[name='booking-folders'][open] > *:not(summary) {
+          animation: folderSlideIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes folderSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          details[name='booking-folders'][open] > *:not(summary) {
+            animation: none;
+          }
+        }
+      `}</style>
     </main>
   );
 }
