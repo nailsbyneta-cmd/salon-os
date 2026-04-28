@@ -66,21 +66,17 @@ export class CustomerAuthController {
 
     const link = await this.svc.createLinkForEmail(tenant.id, body.email);
     if (link) {
-      // Outbox-Event mit Token + Slug für den auth.magic_link-Handler.
-      // writeForTenant() bypasst requireTenantContext() (Endpoint ist
-      // /v1/public/* ohne Tenant-Middleware) und übergibt tenantId direkt.
+      // Token NIE im Response zurückgeben — geht ausschliesslich per Mail
+      // raus (Authentication-Bypass-Schutz, Audit Pass 12 hat den
+      // devToken-Production-Leak gefunden).
       await this.outbox.writeForTenant(tenant.id, 'auth.magic_link', {
         tenantId: tenant.id,
         clientId: link.clientId,
         magicToken: link.token,
         tenantSlug: slug,
       });
-      if (process.env['NODE_ENV'] !== 'production') {
-        return { ok: true, ...({ devToken: link.token } as Record<string, string>) } as {
-          ok: true;
-        };
-      }
     }
+    // IMMER 200 + ok:true — Privacy: keine Email-Enumeration.
     return { ok: true };
   }
 
