@@ -88,32 +88,37 @@ export default async function BookingSuccess({
         </a>
       ) : null}
 
-      {/* Contact-Shortcuts */}
-      <Card elevation="flat" className="w-full max-w-md">
-        <CardBody className="space-y-3">
-          <p className="text-center text-xs text-text-muted">Fragen? Wir sind da.</p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {whatsapp ? (
-              <a
-                href={`https://wa.me/${whatsapp.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent/5 px-3 py-2.5 text-sm font-medium text-accent transition-all hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
-              >
-                💬 WhatsApp
-              </a>
-            ) : null}
-            {phone ? (
-              <a
-                href={`tel:${phone}`}
-                className="flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-3 py-2.5 text-sm font-medium text-text-primary transition-all hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
-              >
-                📞 Anrufen
-              </a>
-            ) : null}
-          </div>
-        </CardBody>
-      </Card>
+      {/* Contact-Shortcuts — nur rendern wenn mindestens 1 Kanal existiert.
+          Audit Pass 12+13: leerer Box-Header 'Fragen? Wir sind da.' ohne
+          Inhalt war Vertrauens-Killer. Lorenc muss WhatsApp + Telefon
+          unter /settings einpflegen damit die Box erscheint. */}
+      {whatsapp || phone ? (
+        <Card elevation="flat" className="w-full max-w-md">
+          <CardBody className="space-y-3">
+            <p className="text-center text-xs text-text-muted">Fragen? Wir sind da.</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {whatsapp ? (
+                <a
+                  href={`https://wa.me/${whatsapp.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent/5 px-3 py-2.5 text-sm font-medium text-accent transition-all hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+                >
+                  💬 WhatsApp
+                </a>
+              ) : null}
+              {phone ? (
+                <a
+                  href={`tel:${phone}`}
+                  className="flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-3 py-2.5 text-sm font-medium text-text-primary transition-all hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+                >
+                  📞 Anrufen
+                </a>
+              ) : null}
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
 
       <div className="flex flex-wrap justify-center gap-3">
         <Link href={`/book/${slug}`}>

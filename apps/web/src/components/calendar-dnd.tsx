@@ -570,11 +570,14 @@ function DraggableAppt({
   };
   const clientName = appt.client ? `${appt.client.firstName} ${appt.client.lastName}` : 'Blockzeit';
   // Service-Label inkl. Variant-Labels: "Premium Haarschnitt · Mittel"
+  // Service-Name OHNE Klammer-Suffix damit der Block-Text kompakt bleibt
+  // (Audit Pass 13: 'Premium Haarschnitt (Inklusive W...' war zu lang).
   const services =
     appt.items
       .map((i) => {
+        const shortName = i.service.name.replace(/\s*\([^)]+\)\s*$/, '').trim();
         const labels = (i.optionLabels ?? []).filter(Boolean);
-        return labels.length > 0 ? `${i.service.name} · ${labels.join(' · ')}` : i.service.name;
+        return labels.length > 0 ? `${shortName} · ${labels.join(' · ')}` : shortName;
       })
       .join(', ') || '—';
   const timeLabel = new Date(appt.startAt).toLocaleTimeString('de-CH', {

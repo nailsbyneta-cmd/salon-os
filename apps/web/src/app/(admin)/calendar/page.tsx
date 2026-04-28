@@ -294,11 +294,13 @@ function ViewToggle({ current, day }: { current: View; day: string }): React.JSX
 function ApptActions({ a }: { a: Appt }): React.JSX.Element {
   const clientName = a.client ? `${a.client.firstName} ${a.client.lastName}` : 'Blockzeit';
   // Service-Label inkl. Variant-Labels: "Premium Haarschnitt · Mittel"
+  // Klammer-Suffix wegkürzen (Audit Pass 13: 'Premium Haarschnitt (Inkl...').
   const services =
     a.items
       .map((i) => {
+        const shortName = i.service.name.replace(/\s*\([^)]+\)\s*$/, '').trim();
         const labels = (i.optionLabels ?? []).filter(Boolean);
-        return labels.length > 0 ? `${i.service.name} · ${labels.join(' · ')}` : i.service.name;
+        return labels.length > 0 ? `${shortName} · ${labels.join(' · ')}` : shortName;
       })
       .join(', ') || '—';
   const start = new Date(a.startAt).toLocaleTimeString('de-CH', {
