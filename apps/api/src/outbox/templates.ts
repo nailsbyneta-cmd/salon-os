@@ -149,6 +149,39 @@ Bis morgen.
   return { subject, html, text };
 }
 
+export function magicLinkEmail(
+  client: ClientForEmail,
+  tenant: TenantForEmail,
+  loginUrl: string,
+): { subject: string; html: string; text: string } {
+  const greeting = client.firstName ? `Hallo ${client.firstName},` : 'Hallo,';
+  const subject = `Dein Login-Link für ${tenant.name}`;
+  const text = `${greeting}
+
+hier ist dein Login-Link für ${tenant.name}:
+
+${loginUrl}
+
+Der Link ist 30 Minuten gültig und kann nur einmal verwendet werden.
+Falls Du keinen Login angefordert hast, ignoriere diese Mail.
+
+— ${tenant.name}`;
+  const html = shell(
+    'Dein Login-Link',
+    `<p>${escape(greeting)}</p>
+     <p>hier ist Dein Login-Link für <strong>${escape(tenant.name)}</strong>:</p>
+     <p style="text-align:center;padding:24px 0;">
+       <a href="${escape(loginUrl)}" style="display:inline-block;background:#2a2522;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;">
+         Jetzt einloggen
+       </a>
+     </p>
+     <p style="font-size:13px;color:#7a6f68;">Falls der Button nicht klappt: ${escape(loginUrl)}</p>
+     <p style="font-size:13px;color:#7a6f68;">Der Link ist 30 Minuten gültig und kann nur einmal verwendet werden. Falls Du keinen Login angefordert hast, ignoriere diese Mail.</p>`,
+    tenant,
+  );
+  return { subject, html, text };
+}
+
 export function winbackEmail(
   client: ClientForEmail,
   tenant: TenantForEmail,

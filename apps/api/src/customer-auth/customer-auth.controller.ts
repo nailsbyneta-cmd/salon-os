@@ -66,12 +66,15 @@ export class CustomerAuthController {
 
     const link = await this.svc.createLinkForEmail(tenant.id, body.email);
     if (link) {
-      // Token in DB ist persistent. Mail-Versand-Handler im Outbox-Worker
-      // kommt im next-ship — solange der nicht da ist, nicht in Outbox
-      // schreiben (würde nur als unbearbeitetes Event liegen bleiben).
-      // OutboxService.write() würde requireTenantContext() aufrufen und
-      // weil dieser Endpoint /v1/public/* bypasst TenantMiddleware → 500.
-      // Audit Pass 11 hat den Email-Enumeration-Bug damit gefunden.
+      // Outbox-Event mit Token + Slug für den auth.magic_link-Handler.
+      // writeForTenant() bypasst requireTenantContext() (Endpoint ist
+      // /v1/public/* ohne Tenant-Middleware) und übergibt tenantId direkt.
+      await this.outbox.writeForTenant(tenant.id, 'auth.magic_link', {
+        tenantId: tenant.id,
+        clientId: link.clientId,
+        magicToken: link.token,
+        tenantSlug: slug,
+      });
       if (process.env['NODE_ENV'] !== 'production') {
         return { ok: true, ...({ devToken: link.token } as Record<string, string>) } as {
           ok: true;

@@ -5,6 +5,7 @@ import { EmailService } from '../email/email.service.js';
 import {
   cancelEmail,
   confirmationEmail,
+  magicLinkEmail,
   reminder24hEmail,
   winbackEmail,
   type ApptForEmail,
@@ -30,6 +31,8 @@ interface ReminderPayload {
   startAt?: string;
   leadTimeMs?: number;
   clientId?: string;
+  magicToken?: string;
+  tenantSlug?: string;
 }
 
 /**
@@ -137,6 +140,9 @@ export class OutboxWorkerService {
       case 'marketing.winback':
         await this.handleWinback(ev, payload);
         return 'done';
+      case 'auth.magic_link':
+        await this.handleMagicLink(ev, payload);
+        return 'done';
       case 'marketing.rebook':
       case 'marketing.birthday':
         // Marketing-Templates kommen separat — für jetzt: log + done damit Outbox sauber bleibt.
@@ -204,6 +210,46 @@ export class OutboxWorkerService {
       text: tpl.text,
       tag: `${ev.type}|${ev.tenantId ?? 'unknown'}`,
       attachments,
+    });
+    if (!res.ok) {
+      throw new Error(res.error ?? 'email_send_failed');
+    }
+  }
+
+  private async handleMagicLink(ev: OutboxEvent, payload: ReminderPayload): Promise<void> {
+    if (!payload.clientId || !payload.magicToken || !payload.tenantSlug) {
+      throw new Error('clientId, magicToken or tenantSlug missing in magic-link payload');
+    }
+    const row = await this.prisma.client.findUnique({
+      where: { id: payload.clientId },
+      select: {
+        firstName: true,
+        email: true,
+        deletedAt: true,
+        tenant: { select: { name: true, slug: true } },
+      },
+    });
+    if (!row || !row.tenant || row.deletedAt) {
+      this.logger.warn(`magic-link: client ${payload.clientId} not found / deleted — drop`);
+      return;
+    }
+    if (!row.email) {
+      this.logger.warn(`magic-link: client ${payload.clientId} has no email — drop`);
+      return;
+    }
+    const publicUrl = process.env['PUBLIC_BOOKING_URL_BASE'] ?? 'https://salon-os.app/book';
+    const loginUrl = `${publicUrl}/${row.tenant.slug}/me/login?token=${encodeURIComponent(payload.magicToken)}`;
+    const tpl = magicLinkEmail(
+      { firstName: row.firstName, email: row.email },
+      row.tenant,
+      loginUrl,
+    );
+    const res = await this.email.send({
+      to: row.email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      tag: `auth.magic_link|${ev.tenantId ?? 'unknown'}`,
     });
     if (!res.ok) {
       throw new Error(res.error ?? 'email_send_failed');

@@ -16,7 +16,8 @@ export type OutboxEventType =
   | 'reminder.cancel'
   | 'marketing.rebook'
   | 'marketing.winback'
-  | 'marketing.birthday';
+  | 'marketing.birthday'
+  | 'auth.magic_link';
 
 export interface OutboxPayload {
   appointmentId?: string;
@@ -24,6 +25,10 @@ export interface OutboxPayload {
   startAt?: string;
   clientId?: string;
   leadTimeMs?: number;
+  /** Magic-Link payload — Token (plaintext, kommt nur 1× in den Mail-Versand-Pfad). */
+  magicToken?: string;
+  /** Magic-Link Tenant-Slug für URL-Generierung. */
+  tenantSlug?: string;
 }
 
 @Injectable()
@@ -52,6 +57,21 @@ export class OutboxService {
   async write(type: OutboxEventType, payload: OutboxPayload): Promise<void> {
     const ctx = requireTenantContext();
     await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      await this.writeWithinTx(tx, type, payload);
+    });
+  }
+
+  /**
+   * Standalone-Schreiben OHNE Tenant-Context — für public Endpoints
+   * (z.B. Magic-Link-Request) wo der Tenant aus dem URL-Slug aufgelöst
+   * wird statt aus der User-Session. tenantId muss im payload sein.
+   */
+  async writeForTenant(
+    tenantId: string,
+    type: OutboxEventType,
+    payload: OutboxPayload,
+  ): Promise<void> {
+    await this.withTenant(tenantId, null, null, async (tx) => {
       await this.writeWithinTx(tx, type, payload);
     });
   }
