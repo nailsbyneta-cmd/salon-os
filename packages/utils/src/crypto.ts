@@ -34,9 +34,7 @@ function getKey(): Buffer {
     return key;
   }
   if (process.env['NODE_ENV'] === 'production') {
-    throw new Error(
-      'APP_ENCRYPTION_KEY fehlt — Pflicht in Produktion (32 Byte base64-encoded).',
-    );
+    throw new Error('APP_ENCRYPTION_KEY fehlt — Pflicht in Produktion (32 Byte base64-encoded).');
   }
   if (!process.env['__APP_ENCRYPTION_WARNED']) {
     console.warn('[crypto] APP_ENCRYPTION_KEY nicht gesetzt — dev-fallback aktiv. NICHT in Prod.');

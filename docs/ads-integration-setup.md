@@ -76,10 +76,12 @@ Output sollte sein:
 ## Schritt 4: Verifizieren
 
 1. **Public-Info zeigt adsTracking-Block:**
+
    ```bash
    curl -s https://salon-os-production-2346.up.railway.app/v1/public/beautycenter-by-neta/info \
      | python3 -c "import sys,json; print(json.load(sys.stdin)['adsTracking'])"
    ```
+
    Erwartung: `{'googleAdsId': 'AW-18005447088', 'ga4MeasurementId': 'G-HTR7SG4GGL', 'conversionLabels': {'booking_completed': '...'}}`
 
 2. **Test-Booking mit `?gclid=TEST_X` durchklicken:**
@@ -88,16 +90,19 @@ Output sollte sein:
    - Auf /success-Page sollte gtag.js geladen sein (DevTools → Network → `gtag/js`)
 
 3. **DB-Check:**
+
    ```sql
    SELECT id, "attributionGclid", "attributionSource", "conversionUploadedAt"
    FROM appointment ORDER BY "createdAt" DESC LIMIT 1;
    ```
+
    `attributionGclid = 'TEST_X'`, `attributionSource = 'google_ads'`.
 
 4. **Outbox-Worker-Log:** sollte `ads-conv` mit Erfolg zeigen, dann
    `conversionUploadedAt` gesetzt.
 
 5. **Nach 24h:** GitHub Actions Cron `cron-ads-spend` lief. Check:
+
    ```sql
    SELECT * FROM tenant_ads_spend_daily ORDER BY date DESC LIMIT 5;
    ```
@@ -106,10 +111,10 @@ Output sollte sein:
 
 ## Wenn was nicht läuft
 
-| Symptom | Ursache | Fix |
-|---|---|---|
-| `decrypt refresh-token failed` im API-log | `APP_ENCRYPTION_KEY` weicht ab zwischen seed und Railway | Beide auf gleichen Wert setzen, dann `setup:ads` re-run |
-| `oauth refresh failed: 400` | Refresh-Token ungültig oder revoked | Neuen Token in Google Cloud Console generieren |
-| `developer-token` Fehler 401 | Developer-Token nicht approved für dieses Customer | Im Google-Ads Manager API-Center anfordern |
-| `tenant_ads_spend_daily` bleibt leer | Cron läuft erst nach 04:00 UTC, oder Customer hat keine Kampagnen aktiv | manuell triggern: `gh workflow run cron-ads-spend.yml -f date=2026-04-27` |
-| Dashboard zeigt 0 Conversions | Bookings haben kein `attributionSource='google_ads'` | Mit `?gclid=...` in URL testen — der Capture läuft nur wenn der Param ankommt |
+| Symptom                                   | Ursache                                                                 | Fix                                                                           |
+| ----------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `decrypt refresh-token failed` im API-log | `APP_ENCRYPTION_KEY` weicht ab zwischen seed und Railway                | Beide auf gleichen Wert setzen, dann `setup:ads` re-run                       |
+| `oauth refresh failed: 400`               | Refresh-Token ungültig oder revoked                                     | Neuen Token in Google Cloud Console generieren                                |
+| `developer-token` Fehler 401              | Developer-Token nicht approved für dieses Customer                      | Im Google-Ads Manager API-Center anfordern                                    |
+| `tenant_ads_spend_daily` bleibt leer      | Cron läuft erst nach 04:00 UTC, oder Customer hat keine Kampagnen aktiv | manuell triggern: `gh workflow run cron-ads-spend.yml -f date=2026-04-27`     |
+| Dashboard zeigt 0 Conversions             | Bookings haben kein `attributionSource='google_ads'`                    | Mit `?gclid=...` in URL testen — der Capture läuft nur wenn der Param ankommt |

@@ -380,10 +380,7 @@ export class OutboxWorkerService {
    * Idempotency: Wenn bereits SalonReview für appointmentId existiert,
    * silently drop. Wenn Termin gelöscht/cancelled — drop.
    */
-  private async handleReviewRequest(
-    ev: OutboxEvent,
-    payload: ReminderPayload,
-  ): Promise<void> {
+  private async handleReviewRequest(ev: OutboxEvent, payload: ReminderPayload): Promise<void> {
     if (!payload.appointmentId) {
       throw new Error('appointmentId missing in review.request payload');
     }

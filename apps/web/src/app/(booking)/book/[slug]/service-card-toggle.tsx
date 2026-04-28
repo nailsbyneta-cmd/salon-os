@@ -89,7 +89,9 @@ export function ServiceCardToggle({
         type="button"
         onClick={onToggleClick}
         aria-pressed={inCart}
-        aria-label={inCart ? `${serviceName} bereits im Warenkorb` : `${serviceName} in Warenkorb legen`}
+        aria-label={
+          inCart ? `${serviceName} bereits im Warenkorb` : `${serviceName} in Warenkorb legen`
+        }
         title={inCart ? 'Bereits im Warenkorb' : 'Hinzufügen'}
         className={[
           'absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 text-sm font-bold transition-all duration-200',

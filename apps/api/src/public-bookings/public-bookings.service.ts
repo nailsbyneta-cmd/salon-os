@@ -178,9 +178,7 @@ export class PublicBookingsService {
       });
       if (!appt) return null;
       const total = appt.items.reduce((sum, i) => sum + Number(i.price), 0);
-      const serviceCategoryIds = Array.from(
-        new Set(appt.items.map((i) => i.service.categoryId)),
-      );
+      const serviceCategoryIds = Array.from(new Set(appt.items.map((i) => i.service.categoryId)));
       return {
         valueChf: Math.round(total * 100) / 100,
         currency: appt.location.currency,
@@ -454,7 +452,9 @@ export class PublicBookingsService {
     });
     const conv = (adsIntegration?.conversionActions ?? {}) as Record<
       string,
-      { googleAdsId?: string | null; ga4MeasurementId?: string | null; sendTo?: string | null } | string | null
+      | { googleAdsId?: string | null; ga4MeasurementId?: string | null; sendTo?: string | null }
+      | string
+      | null
     >;
     // conversionActions kann zwei Shapes haben:
     //   alt:  { booking_completed: "AW-X/abc" }      → string
@@ -797,8 +797,7 @@ export class PublicBookingsService {
         // Returner behalten ihre ursprüngliche acquisitionSource → ein
         // Re-Booking via Direct-Traffic darf das alte 'google_ads' nicht
         // überschreiben.
-        const inferredSource =
-          input.acquisitionSource ?? (input.gclid ? 'google_ads' : 'unknown');
+        const inferredSource = input.acquisitionSource ?? (input.gclid ? 'google_ads' : 'unknown');
         const client =
           existingClient ??
           (await tx.client.create({

@@ -15,11 +15,7 @@ import { requireTenantContext } from '../tenant/tenant.context.js';
 import { AdsSettingsService, type AdsIntegrationInput } from './ads-settings.service.js';
 
 const adsSettingsSchema = z.object({
-  customerId: z
-    .string()
-    .min(5)
-    .max(20)
-    .regex(/^\d+$/, 'Customer-ID muss numerisch sein'),
+  customerId: z.string().min(5).max(20).regex(/^\d+$/, 'Customer-ID muss numerisch sein'),
   loginCustomerId: z
     .string()
     .max(20)

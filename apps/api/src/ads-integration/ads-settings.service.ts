@@ -86,9 +86,7 @@ export class AdsSettingsService {
     } else {
       // Bei NEW Integration ist refreshToken Pflicht
       if (!input.refreshToken) {
-        throw new Error(
-          'refreshToken ist Pflicht beim ersten Anlegen der Integration.',
-        );
+        throw new Error('refreshToken ist Pflicht beim ersten Anlegen der Integration.');
       }
       await this.prisma.tenantAdsIntegration.create({
         data: {

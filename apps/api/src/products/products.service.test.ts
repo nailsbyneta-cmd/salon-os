@@ -137,7 +137,9 @@ describe('ProductsService', () => {
   describe('adjustStock()', () => {
     it('throws NotFoundException when product not found', async () => {
       prisma.product.findFirst.mockResolvedValue(null);
-      await expect(service.adjustStock('prod1', { delta: 5, reason: 'ADJUSTMENT' })).rejects.toThrow(NotFoundException);
+      await expect(
+        service.adjustStock('prod1', { delta: 5, reason: 'ADJUSTMENT' }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('adds positive delta to stockLevel', async () => {

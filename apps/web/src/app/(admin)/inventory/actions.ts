@@ -45,13 +45,7 @@ export async function createProduct(form: FormData): Promise<void> {
   redirect('/inventory');
 }
 
-export type StockReason =
-  | 'PURCHASE'
-  | 'SALE'
-  | 'USAGE'
-  | 'ADJUSTMENT'
-  | 'RETURN'
-  | 'INITIAL';
+export type StockReason = 'PURCHASE' | 'SALE' | 'USAGE' | 'ADJUSTMENT' | 'RETURN' | 'INITIAL';
 
 export async function adjustStock(
   id: string,

@@ -58,10 +58,11 @@ async function loadProduct(id: string): Promise<Product | null> {
 async function loadMutations(id: string): Promise<StockMutation[]> {
   const ctx = await getCurrentTenant();
   try {
-    const res = await apiFetch<{ mutations: StockMutation[] }>(
-      `/v1/products/${id}/mutations`,
-      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
-    );
+    const res = await apiFetch<{ mutations: StockMutation[] }>(`/v1/products/${id}/mutations`, {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+    });
     return res.mutations;
   } catch (err) {
     if (err instanceof ApiError) return [];
@@ -171,13 +172,7 @@ export default async function ProductDetailPage({
             <h2 className="mb-4 text-base font-semibold">Bestand anpassen</h2>
             <form action={adjustForId} className="space-y-3">
               <Field label="Menge (positiv = Eingang, negativ = Abgang)" required>
-                <Input
-                  required
-                  name="delta"
-                  type="number"
-                  step={1}
-                  placeholder="z.B. 5 oder -2"
-                />
+                <Input required name="delta" type="number" step={1} placeholder="z.B. 5 oder -2" />
               </Field>
               <Field label="Grund" required>
                 <select

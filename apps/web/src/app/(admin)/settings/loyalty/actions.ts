@@ -32,11 +32,7 @@ export async function saveLoyaltyProgram(form: FormData): Promise<void> {
   redirect('/settings/loyalty?saved=1');
 }
 
-export async function awardStamps(
-  clientId: string,
-  delta: number,
-  notes?: string,
-): Promise<void> {
+export async function awardStamps(clientId: string, delta: number, notes?: string): Promise<void> {
   const ctx = await getCurrentTenant();
   await apiFetch(`/v1/loyalty/clients/${clientId}/award`, {
     method: 'POST',
@@ -60,11 +56,7 @@ export async function redeemReward(clientId: string): Promise<void> {
   revalidatePath(`/clients/${clientId}`);
 }
 
-export async function adjustStamps(
-  clientId: string,
-  delta: number,
-  notes?: string,
-): Promise<void> {
+export async function adjustStamps(clientId: string, delta: number, notes?: string): Promise<void> {
   if (delta === 0) return;
   const ctx = await getCurrentTenant();
   await apiFetch(`/v1/loyalty/clients/${clientId}/adjust`, {

@@ -172,8 +172,7 @@ export default async function BookingConfirm({
     const phone = String(formData.get('phone') ?? '').trim() || undefined;
     const notes = String(formData.get('notes') ?? '').trim() || undefined;
     const gclid = String(formData.get('gclid') ?? '').trim() || undefined;
-    const acquisitionSource =
-      String(formData.get('acquisitionSource') ?? '').trim() || undefined;
+    const acquisitionSource = String(formData.get('acquisitionSource') ?? '').trim() || undefined;
 
     const res = await submitBooking(slug, {
       serviceId: sp.serviceId,

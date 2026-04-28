@@ -43,7 +43,7 @@ async function main(): Promise<void> {
   if (!process.env['APP_ENCRYPTION_KEY']) {
     console.error('✖ APP_ENCRYPTION_KEY fehlt. Generiere mit:');
     console.error(
-      '    APP_ENCRYPTION_KEY=$(node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))")',
+      "    APP_ENCRYPTION_KEY=$(node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\")",
     );
     console.error('  Danach denselben Wert auch in Railway-env setzen.');
     process.exit(1);
@@ -101,7 +101,13 @@ async function main(): Promise<void> {
   console.log(`  tenant: ${tenant.name} (${tenant.id})`);
   console.log(`  customerId: ${customerId}`);
   console.log(`  loginCustomerId: ${loginCustomerId ?? '(none)'}`);
-  console.log(`  conversion-actions: ${Object.keys(conversionActions).filter((k) => k !== '_meta').join(', ') || '(none)'}`);
+  console.log(
+    `  conversion-actions: ${
+      Object.keys(conversionActions)
+        .filter((k) => k !== '_meta')
+        .join(', ') || '(none)'
+    }`,
+  );
   console.log(`  gtag: ads=${gtagId ?? '-'} ga4=${ga4Id ?? '-'}`);
   console.log(`  id: ${result.id}`);
 }

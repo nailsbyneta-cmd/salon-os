@@ -34,15 +34,12 @@ async function submitReview(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   'use server';
   try {
-    const res = await fetch(
-      `${API_URL}/v1/public/reviews/${encodeURIComponent(token)}/submit`,
-      {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
-        cache: 'no-store',
-      },
-    );
+    const res = await fetch(`${API_URL}/v1/public/reviews/${encodeURIComponent(token)}/submit`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    });
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { detail?: string; title?: string };
       return { ok: false, error: body.detail ?? body.title ?? 'Submit fehlgeschlagen' };
@@ -125,10 +122,14 @@ export default async function ReviewSubmitPage({
     const authorName = (typeof rawAuthor === 'string' ? rawAuthor : '').trim();
 
     if (!rating || rating < 1 || rating > 5) {
-      redirect(`/book/${slug}/review/${token}?error=${encodeURIComponent('Bitte wähle 1-5 Sterne.')}`);
+      redirect(
+        `/book/${slug}/review/${token}?error=${encodeURIComponent('Bitte wähle 1-5 Sterne.')}`,
+      );
     }
     if (!text || text.length < 5) {
-      redirect(`/book/${slug}/review/${token}?error=${encodeURIComponent('Bitte schreib einen kurzen Kommentar.')}`);
+      redirect(
+        `/book/${slug}/review/${token}?error=${encodeURIComponent('Bitte schreib einen kurzen Kommentar.')}`,
+      );
     }
 
     const res = await submitReview(token, {

@@ -45,9 +45,7 @@ function rangeFromTo(daysParam: string | undefined): { from: string; to: string 
   const days = ['7', '30', '90', '365'].includes(daysParam ?? '') ? Number(daysParam) : 30;
   const today = new Date();
   const to = today.toISOString().slice(0, 10);
-  const from = new Date(today.getTime() - days * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  const from = new Date(today.getTime() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   return { from, to };
 }
 

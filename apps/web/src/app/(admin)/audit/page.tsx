@@ -46,10 +46,11 @@ async function loadAudit(opts: {
 async function loadFacets(): Promise<{ entities: string[]; actions: string[] }> {
   const ctx = await getCurrentTenant();
   try {
-    return await apiFetch<{ entities: string[]; actions: string[] }>(
-      '/v1/audit-log/facets',
-      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
-    );
+    return await apiFetch<{ entities: string[]; actions: string[] }>('/v1/audit-log/facets', {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+    });
   } catch (err) {
     if (err instanceof ApiError) return { entities: [], actions: [] };
     throw err;
@@ -109,7 +110,9 @@ export default async function AuditPage({
   ];
 
   /** Bauet die Audit-URL zusammen mit aktuellen Filtern + 1 override. */
-  function buildHref(override: Partial<{ entity: string; action: string; from: string; to: string }>): string {
+  function buildHref(
+    override: Partial<{ entity: string; action: string; from: string; to: string }>,
+  ): string {
     const qs = new URLSearchParams();
     const finalEntity = override.entity ?? entity;
     const finalAction = override.action ?? action;
@@ -194,7 +197,7 @@ export default async function AuditPage({
             >
               Filtern
             </button>
-            {(action || from || to) ? (
+            {action || from || to ? (
               <Link
                 href={buildHref({ action: '', from: '', to: '' })}
                 className="text-xs text-text-muted hover:text-accent"

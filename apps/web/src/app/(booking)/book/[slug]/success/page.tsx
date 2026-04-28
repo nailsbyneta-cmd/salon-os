@@ -74,10 +74,9 @@ async function loadSummary(
   appointmentId: string,
 ): Promise<AppointmentSummary['summary']> {
   try {
-    const res = await fetch(
-      `${API_URL}/v1/public/${slug}/appointments/${appointmentId}/summary`,
-      { cache: 'no-store' },
-    );
+    const res = await fetch(`${API_URL}/v1/public/${slug}/appointments/${appointmentId}/summary`, {
+      cache: 'no-store',
+    });
     if (!res.ok) return null;
     return ((await res.json()) as AppointmentSummary).summary;
   } catch {
@@ -121,9 +120,7 @@ export default async function BookingSuccess({
 
       {/* Peak-Moment-Konfetti — UX-Brief Aufgabe 6. Goldene Partikel
           fallen 2.4s, idempotent per Appointment-ID (kein Doppel-Fire). */}
-      {id && summary && summary.status !== 'CANCELLED' ? (
-        <ConfettiBurst fireKey={id} />
-      ) : null}
+      {id && summary && summary.status !== 'CANCELLED' ? <ConfettiBurst fireKey={id} /> : null}
 
       {/* Celebration-Mark — Gold-Ring mit Check */}
       <div className="relative">
@@ -145,9 +142,7 @@ export default async function BookingSuccess({
       </div>
 
       <div className="text-center">
-        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
-          Gebucht ✓
-        </p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">Gebucht ✓</p>
         <h1 className="mt-2 font-display text-4xl font-semibold italic tracking-tight text-text-primary md:text-5xl">
           Du wirst es geniessen.
         </h1>
@@ -186,25 +181,25 @@ export default async function BookingSuccess({
               Schreib uns auf WhatsApp — wir sind schnell.
             </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {whatsapp ? (
-                (() => {
-                  const cleanNum = whatsapp.replace(/[^+\d]/g, '').replace(/^\+/, '');
-                  const refSuffix = id ? ` (Ref: ${id.slice(0, 8)})` : '';
-                  const msg = encodeURIComponent(
-                    `Hallo ${salonName}, ich habe soeben einen Termin gebucht${refSuffix}. `,
-                  );
-                  return (
-                    <a
-                      href={`https://wa.me/${cleanNum}?text=${msg}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent/5 px-3 py-2.5 text-sm font-medium text-accent transition-all hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
-                    >
-                      💬 Schreib uns →
-                    </a>
-                  );
-                })()
-              ) : null}
+              {whatsapp
+                ? (() => {
+                    const cleanNum = whatsapp.replace(/[^+\d]/g, '').replace(/^\+/, '');
+                    const refSuffix = id ? ` (Ref: ${id.slice(0, 8)})` : '';
+                    const msg = encodeURIComponent(
+                      `Hallo ${salonName}, ich habe soeben einen Termin gebucht${refSuffix}. `,
+                    );
+                    return (
+                      <a
+                        href={`https://wa.me/${cleanNum}?text=${msg}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent/5 px-3 py-2.5 text-sm font-medium text-accent transition-all hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+                      >
+                        💬 Schreib uns →
+                      </a>
+                    );
+                  })()
+                : null}
               {phone ? (
                 <a
                   href={`tel:${phone}`}

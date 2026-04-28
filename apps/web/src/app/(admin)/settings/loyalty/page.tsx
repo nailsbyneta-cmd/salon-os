@@ -158,11 +158,15 @@ export default async function LoyaltyProgramPage({
         <CardBody className="space-y-2">
           <h3 className="text-sm font-semibold">So funktioniert's</h3>
           <ul className="list-disc space-y-1 pl-5 text-xs text-text-secondary">
-            <li>Beim ersten <strong>COMPLETED</strong>-Status eines Termins werden Stempel
-              automatisch gutgeschrieben (idempotent — kein Doppel-Award).</li>
+            <li>
+              Beim ersten <strong>COMPLETED</strong>-Status eines Termins werden Stempel automatisch
+              gutgeschrieben (idempotent — kein Doppel-Award).
+            </li>
             <li>Manueller Award/Adjust ist auf der Kunden-Detail-Seite verfügbar.</li>
             <li>Stempel-Verlauf pro Kundin sichtbar, mit Datum + Grund.</li>
-            <li>Reward-Einlösung verbraucht <code>redeemThreshold</code> Stempel auf einmal.</li>
+            <li>
+              Reward-Einlösung verbraucht <code>redeemThreshold</code> Stempel auf einmal.
+            </li>
           </ul>
         </CardBody>
       </Card>

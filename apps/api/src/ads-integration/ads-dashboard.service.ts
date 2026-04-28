@@ -95,10 +95,7 @@ export class AdsDashboardService {
 
       const bookingRevenue = bookings
         .filter((b) => b.attributionSource === 'google_ads')
-        .reduce(
-          (sum, b) => sum + b.items.reduce((s, i) => s + Number(i.price), 0),
-          0,
-        );
+        .reduce((sum, b) => sum + b.items.reduce((s, i) => s + Number(i.price), 0), 0);
       const adsConversions = bookings.filter((b) => b.attributionSource === 'google_ads').length;
 
       const totalSpend = spendRows.reduce((sum, r) => sum + Number(r.costChf), 0);

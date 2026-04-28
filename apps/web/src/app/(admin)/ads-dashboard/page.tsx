@@ -36,9 +36,7 @@ function rangeToFromTo(daysParam: string | undefined): { from: string; to: strin
   const days = daysParam === '7' || daysParam === '90' ? Number(daysParam) : 30;
   const today = new Date();
   const to = today.toISOString().slice(0, 10);
-  const from = new Date(today.getTime() - days * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  const from = new Date(today.getTime() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   return { from, to };
 }
 
@@ -46,14 +44,11 @@ async function loadDashboard(daysParam: string | undefined): Promise<AdsDashboar
   const ctx = await getCurrentTenant();
   const { from, to } = rangeToFromTo(daysParam);
   try {
-    return await apiFetch<AdsDashboardData>(
-      `/v1/ads/dashboard?from=${from}&to=${to}`,
-      {
-        tenantId: ctx.tenantId,
-        userId: ctx.userId,
-        role: ctx.role,
-      },
-    );
+    return await apiFetch<AdsDashboardData>(`/v1/ads/dashboard?from=${from}&to=${to}`, {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      role: ctx.role,
+    });
   } catch (err) {
     if (err instanceof ApiError) return null;
     throw err;
@@ -183,9 +178,7 @@ export default async function AdsDashboardPage({
         </Card>
         <Card>
           <CardBody className="space-y-1">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
-              ROAS
-            </p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">ROAS</p>
             <p className="font-display text-2xl font-semibold tabular-nums">
               {kpis.roas !== null ? `${kpis.roas.toFixed(1)}x` : '—'}
             </p>
@@ -200,12 +193,8 @@ export default async function AdsDashboardPage({
         </Card>
         <Card>
           <CardBody className="space-y-1">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
-              CPA
-            </p>
-            <p className="font-display text-2xl font-semibold tabular-nums">
-              {fmtChf(kpis.cpa)}
-            </p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">CPA</p>
+            <p className="font-display text-2xl font-semibold tabular-nums">{fmtChf(kpis.cpa)}</p>
           </CardBody>
         </Card>
         <Card>

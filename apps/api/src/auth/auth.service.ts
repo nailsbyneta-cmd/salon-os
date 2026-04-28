@@ -28,8 +28,8 @@ export class AuthService {
   isEnabled(): boolean {
     return Boolean(
       process.env['WORKOS_API_KEY'] &&
-        process.env['WORKOS_CLIENT_ID'] &&
-        process.env['WORKOS_COOKIE_PASSWORD'],
+      process.env['WORKOS_CLIENT_ID'] &&
+      process.env['WORKOS_COOKIE_PASSWORD'],
     );
   }
 
@@ -130,13 +130,7 @@ export class AuthService {
 
   buildLogoutCookie(): string {
     const isProd = process.env['NODE_ENV'] === 'production';
-    const parts = [
-      `${COOKIE_NAME}=`,
-      'Path=/',
-      'Max-Age=0',
-      'HttpOnly',
-      'SameSite=Lax',
-    ];
+    const parts = [`${COOKIE_NAME}=`, 'Path=/', 'Max-Age=0', 'HttpOnly', 'SameSite=Lax'];
     if (isProd) parts.push('Secure');
     return parts.join('; ');
   }

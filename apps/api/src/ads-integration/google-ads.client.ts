@@ -143,10 +143,7 @@ export async function uploadClickConversion(
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 
-  const conversionAction = buildConversionActionResource(
-    conv.conversionAction,
-    creds.customerId,
-  );
+  const conversionAction = buildConversionActionResource(conv.conversionAction, creds.customerId);
 
   const conversion: Record<string, unknown> = {
     conversionAction,
@@ -203,7 +200,11 @@ export async function uploadClickConversion(
   }
   const obj = parsed as { results?: unknown[]; partialFailureError?: { message?: string } };
   if (obj.partialFailureError) {
-    return { ok: false, error: `partial: ${obj.partialFailureError.message ?? 'unknown'}`, raw: parsed };
+    return {
+      ok: false,
+      error: `partial: ${obj.partialFailureError.message ?? 'unknown'}`,
+      raw: parsed,
+    };
   }
   return { ok: true, received: obj.results?.length ?? 0, raw: parsed };
 }

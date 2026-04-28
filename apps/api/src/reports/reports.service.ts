@@ -194,8 +194,7 @@ export class ReportsService {
 
       // Re-Booking-Rate: % der Kundinnen mit ≥2 Termine im Range
       const rebookingClients = Array.from(clientVisitCount.values()).filter((n) => n >= 2).length;
-      const rebookingRate =
-        uniqueClientIds.size > 0 ? rebookingClients / uniqueClientIds.size : 0;
+      const rebookingRate = uniqueClientIds.size > 0 ? rebookingClients / uniqueClientIds.size : 0;
 
       // New-Clients: client.createdAt liegt im Range. Pro Client unique.
       const seenNew = new Set<string>();
@@ -273,8 +272,7 @@ export class ReportsService {
         revenueChf: round2(revenueChf),
         avgTicketChf: completed > 0 ? round2(revenueChf / completed) : null,
         rebookingRate: Math.round(rebookingRate * 1000) / 10,
-        noShowRate:
-          appts.length > 0 ? Math.round((noShow / appts.length) * 1000) / 10 : 0,
+        noShowRate: appts.length > 0 ? Math.round((noShow / appts.length) * 1000) / 10 : 0,
         uniqueClients: uniqueClientIds.size,
         newClients: seenNew.size,
         from: range.fromIso,

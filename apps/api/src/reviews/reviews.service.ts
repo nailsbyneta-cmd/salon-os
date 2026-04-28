@@ -73,9 +73,7 @@ export class ReviewsService {
       if (p?.appointmentId) enqueuedIds.add(p.appointmentId);
     }
 
-    const toEnqueue = candidates.filter(
-      (a) => !reviewedIds.has(a.id) && !enqueuedIds.has(a.id),
-    );
+    const toEnqueue = candidates.filter((a) => !reviewedIds.has(a.id) && !enqueuedIds.has(a.id));
 
     let enqueued = 0;
     const tenants = new Set<string>();

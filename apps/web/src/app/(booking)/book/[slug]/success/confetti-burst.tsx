@@ -45,7 +45,7 @@ export function ConfettiBurst({ fireKey }: Props): React.JSX.Element | null {
         const colors = ['#D0B07C', '#F0E0A0', '#C8A96E', '#FFFFFF'];
         const color = colors[i % colors.length];
         const rotate = (i * 113) % 360;
-        const sway = (i * 53) % 30 - 15; // -15..15 vw drift
+        const sway = ((i * 53) % 30) - 15; // -15..15 vw drift
         return (
           <span
             key={i}

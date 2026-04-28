@@ -332,9 +332,7 @@ export default async function BookingStart({
 
   // Avg-Rating für Floating-Stars
   const avgRating =
-    reviews.length > 0
-      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-      : null;
+    reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : null;
 
   return (
     <main className="space-y-10">
@@ -342,9 +340,7 @@ export default async function BookingStart({
           Gradient-Overlay damit Text auf jeder Hero-Bild lesbar bleibt.
           Ken-Burns Auto-Zoom auf dem Hintergrundbild (8s scale 1->1.05).
           Floating-Pills unten: Sterne links, Öffnungs-Pille rechts. */}
-      <header
-        className="relative -mx-4 flex min-h-[60vh] items-center justify-center overflow-hidden bg-[#0A0A0A] text-center md:mx-0 md:min-h-[50vh] md:rounded-2xl"
-      >
+      <header className="relative -mx-4 flex min-h-[60vh] items-center justify-center overflow-hidden bg-[#0A0A0A] text-center md:mx-0 md:min-h-[50vh] md:rounded-2xl">
         {/* Ken-Burns Hintergrundbild oder Gradient-Fallback */}
         {tenant.heroImageUrl ? (
           <div
@@ -360,8 +356,7 @@ export default async function BookingStart({
           <div
             className="absolute inset-0"
             style={{
-              background:
-                'linear-gradient(180deg, #0A0A0A 0%, #1A1208 50%, #0A0A0A 100%)',
+              background: 'linear-gradient(180deg, #0A0A0A 0%, #1A1208 50%, #0A0A0A 100%)',
             }}
             aria-hidden
           />
@@ -436,9 +431,7 @@ export default async function BookingStart({
             <div
               className={[
                 'rounded-full px-3 py-1.5 text-[11px] font-medium backdrop-blur-sm',
-                isOpenToday
-                  ? 'bg-accent/20 text-accent'
-                  : 'bg-white/10 text-white/60',
+                isOpenToday ? 'bg-accent/20 text-accent' : 'bg-white/10 text-white/60',
               ].join(' ')}
             >
               {isOpenToday ? `Heute geöffnet · ${todayHoursText}` : 'Heute geschlossen'}

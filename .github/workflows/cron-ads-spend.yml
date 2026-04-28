@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: "Backfill-Date (YYYY-MM-DD). Leer = gestern."
+        description: 'Backfill-Date (YYYY-MM-DD). Leer = gestern.'
         required: false
         type: string
 

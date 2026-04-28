@@ -206,9 +206,7 @@ export class MarketingService {
 
     // Postgres EXTRACT für month/day match. Wir nutzen $queryRaw weil
     // Prisma kein date_part-Filter hat.
-    const matches = await this.prisma.$queryRaw<
-      Array<{ id: string; tenantId: string }>
-    >`
+    const matches = await this.prisma.$queryRaw<Array<{ id: string; tenantId: string }>>`
       SELECT id, "tenantId"
       FROM "client"
       WHERE "deletedAt" IS NULL
@@ -262,9 +260,7 @@ export class MarketingService {
    */
   async runRebookSweep(): Promise<{ enqueued: number; tenants: number }> {
     const days = Number(process.env['REBOOK_WINDOW_DAYS'] ?? 42);
-    const reactivationCutoff = new Date(
-      Date.now() - REACTIVATION_DAYS * 24 * 60 * 60 * 1000,
-    );
+    const reactivationCutoff = new Date(Date.now() - REACTIVATION_DAYS * 24 * 60 * 60 * 1000);
     const rebookCutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const cooldown = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 

@@ -222,10 +222,7 @@ export default async function AdsIntegrationPage({
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Button type="submit">Speichern</Button>
-              <Link
-                href="/ads-dashboard"
-                className="text-sm text-text-muted hover:text-accent"
-              >
+              <Link href="/ads-dashboard" className="text-sm text-text-muted hover:text-accent">
                 Zum Ads-Dashboard →
               </Link>
             </div>
@@ -274,8 +271,7 @@ export default async function AdsIntegrationPage({
               <strong>GA4 Measurement-ID</strong>: GA4 Property → Datenstreams → Web → MID.
             </li>
             <li>
-              Globale OAuth-Creds (
-              <code>GOOGLE_ADS_CLIENT_ID</code>, <code>_SECRET</code>,{' '}
+              Globale OAuth-Creds (<code>GOOGLE_ADS_CLIENT_ID</code>, <code>_SECRET</code>,{' '}
               <code>_DEVELOPER_TOKEN</code>) und <code>APP_ENCRYPTION_KEY</code> setzt der
               Hosting-Admin in den Server-ENV-Vars.
             </li>

@@ -43,19 +43,14 @@ export class AuthController {
       return;
     }
     if (!code) {
-      void res
-        .status(302)
-        .header('location', `${webBase}/login?error=missing_code`)
-        .send();
+      void res.status(302).header('location', `${webBase}/login?error=missing_code`).send();
       return;
     }
 
     try {
       const { sealed } = await this.auth.handleCallback(code);
       const target =
-        state && /^%2F[A-Za-z0-9_/.\-?=&%]+$/.test(state)
-          ? decodeURIComponent(state)
-          : '/';
+        state && /^%2F[A-Za-z0-9_/.\-?=&%]+$/.test(state) ? decodeURIComponent(state) : '/';
       void res
         .status(302)
         .header('set-cookie', this.auth.buildCookie(sealed))
@@ -72,9 +67,6 @@ export class AuthController {
 
   @Post('logout')
   async logout(@Res() res: FastifyReply): Promise<void> {
-    void res
-      .status(204)
-      .header('set-cookie', this.auth.buildLogoutCookie())
-      .send();
+    void res.status(204).header('set-cookie', this.auth.buildLogoutCookie()).send();
   }
 }
