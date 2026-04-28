@@ -64,6 +64,7 @@ model Tenant {
   serviceBundlesOut   ServiceBundle[]
   appointmentSeries   AppointmentSeries[]
   clients          Client[]
+  clientMagicLinks ClientMagicLink[]
   appointments     Appointment[]
   giftCards        GiftCard[]
   waitlistEntries  WaitlistEntry[]
@@ -631,6 +632,7 @@ model Client {
   appointmentSeries AppointmentSeries[]
   giftCards       GiftCard[]
   waitlistEntries WaitlistEntry[]
+  magicLinks      ClientMagicLink[]
   family          Client[]        @relation("Family")
   parent          Client?         @relation("Family", fields: [familyParentId], references: [id])
 
@@ -846,6 +848,27 @@ model AuditLog {
 }
 
 // ─── Outbox Events (reliable messaging) ───────────────────────
+
+/// Magic-Link für Kundinnen-Selbst-Service. Kundin gibt Email ein, kriegt
+/// Link, klickt → eingeloggt für 30 Tage (Cookie). Für /me/termine,
+/// DSGVO-Export, Termin-Cancel/Reschedule. Token einmal verwendbar.
+model ClientMagicLink {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique
+  clientId  String    @db.Uuid
+  tenantId  String    @db.Uuid
+  email     String
+  expiresAt DateTime  @db.Timestamptz
+  usedAt    DateTime? @db.Timestamptz
+  createdAt DateTime  @default(now()) @db.Timestamptz
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([clientId, createdAt])
+  @@map("client_magic_link")
+}
 
 model OutboxEvent {
   id          String   @id @default(uuid()) @db.Uuid

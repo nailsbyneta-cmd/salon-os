@@ -5,6 +5,7 @@ import { AppointmentSeriesModule } from './appointment-series/appointment-series
 import { AuditModule } from './audit/audit.module.js';
 import { BrandingModule } from './branding/branding.module.js';
 import { ClientsModule } from './clients/clients.module.js';
+import { CustomerAuthModule } from './customer-auth/customer-auth.module.js';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter.js';
 import { CommonModule } from './common/common.module.js';
 import { DbModule } from './db/db.module.js';
@@ -37,6 +38,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
     RoomsModule,
     StaffModule,
     ClientsModule,
+    CustomerAuthModule,
     ServicesModule,
     AppointmentsModule,
     AppointmentSeriesModule,
