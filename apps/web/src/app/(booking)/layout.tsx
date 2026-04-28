@@ -1,5 +1,6 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { GtagSnippet } from '@/components/gtag-snippet';
+import { SwRegister } from '@/components/sw-register';
 
 /**
  * Public-Booking-Layout. Kein Admin-Sidebar, kein Auth.
@@ -11,9 +12,25 @@ import { GtagSnippet } from '@/components/gtag-snippet';
  * env-Vars: PUBLIC_DEFAULT_GOOGLE_ADS_ID + PUBLIC_DEFAULT_GA4_ID. Pro
  * Tenant overrides via tenant_ads_integration.conversionActions._meta —
  * die Page-Level Tenants übersteuern die ENV-Defaults.
+ *
+ * App-Store-Readiness: viewport.themeColor erzwingt #0A0A0A für Status-
+ * Bar / Browser-Chrome auf der Booking-Page (matched Manifest +
+ * Splash-Screen — kein weisser Blitz beim PWA-Launch).
  */
 export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Beautyneta',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0A0A0A',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function BookingLayout({
@@ -26,6 +43,7 @@ export default function BookingLayout({
   return (
     <div data-theme="dark" className="min-h-screen bg-background text-text-primary">
       <GtagSnippet googleAdsId={adsId} ga4MeasurementId={ga4Id} />
+      <SwRegister />
       <div className="mx-auto max-w-2xl px-4 pb-12 pt-10">{children}</div>
     </div>
   );

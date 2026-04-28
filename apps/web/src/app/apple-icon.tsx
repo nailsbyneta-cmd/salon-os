@@ -9,13 +9,14 @@ export default function AppleIcon(): ImageResponse {
       style={{
         width: '100%',
         height: '100%',
-        background: 'linear-gradient(135deg, #E91E63 0%, #9C27B0 100%)',
+        background: '#0A0A0A',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#fff',
+        color: '#D0B07C',
         fontSize: 110,
-        fontWeight: 700,
+        fontWeight: 600,
+        fontFamily: 'serif',
         letterSpacing: -4,
         borderRadius: 36,
       }}
