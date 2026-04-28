@@ -54,6 +54,7 @@ interface Appt {
     duration: number;
     serviceId: string;
     service: { name: string };
+    optionLabels?: string[];
   }>;
 }
 
@@ -406,9 +407,21 @@ export default async function AppointmentDetailPage({
               key={i.id}
               className="flex items-center justify-between border-b border-border px-5 py-3 text-sm last:border-0"
             >
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="font-medium text-text-primary">{i.service.name}</div>
-                <div className="text-xs text-text-muted">{i.duration} Min</div>
+                {i.optionLabels && i.optionLabels.length > 0 ? (
+                  <div className="mt-0.5 flex flex-wrap gap-1">
+                    {i.optionLabels.map((l, idx) => (
+                      <span
+                        key={idx}
+                        className="rounded-sm bg-accent/10 px-1.5 py-0.5 text-[11px] text-accent"
+                      >
+                        {l}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="mt-0.5 text-xs text-text-muted">{i.duration} Min</div>
               </div>
               <PriceDisplay amount={i.price} />
             </li>

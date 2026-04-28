@@ -66,16 +66,12 @@ export class CustomerAuthController {
 
     const link = await this.svc.createLinkForEmail(tenant.id, body.email);
     if (link) {
-      // Outbox-Event für die Login-Mail
-      await this.outbox.write('reminder.confirmation', {
-        // Re-using the type field — we'll add a dedicated 'auth.magic_link'
-        // type once Outbox-Worker can handle it. For now log-only.
-        tenantId: tenant.id,
-        clientId: link.clientId,
-      });
-      // TODO: Sobald Outbox-Worker einen 'auth.magic_link'-Handler hat,
-      // verschicken wir die Mail mit dem Token. Bis dahin kommt der Token
-      // hier zurück als Devresponse — Production muss diesen Pfad sperren.
+      // Token in DB ist persistent. Mail-Versand-Handler im Outbox-Worker
+      // kommt im next-ship — solange der nicht da ist, nicht in Outbox
+      // schreiben (würde nur als unbearbeitetes Event liegen bleiben).
+      // OutboxService.write() würde requireTenantContext() aufrufen und
+      // weil dieser Endpoint /v1/public/* bypasst TenantMiddleware → 500.
+      // Audit Pass 11 hat den Email-Enumeration-Bug damit gefunden.
       if (process.env['NODE_ENV'] !== 'production') {
         return { ok: true, ...({ devToken: link.token } as Record<string, string>) } as {
           ok: true;
