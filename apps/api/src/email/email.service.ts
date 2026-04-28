@@ -1,5 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+export interface EmailAttachment {
+  filename: string;
+  /** Base64-encoded content. */
+  content: string;
+  contentType: string;
+}
+
 export interface EmailMessage {
   to: string;
   subject: string;
@@ -9,6 +16,7 @@ export interface EmailMessage {
   from?: string;
   /** Telemetry tag for tracking (e.g. tenantId, event type). */
   tag?: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface EmailResult {
@@ -55,6 +63,15 @@ export class EmailService {
           TextBody: msg.text,
           MessageStream: 'outbound',
           Tag: msg.tag,
+          ...(msg.attachments && msg.attachments.length > 0
+            ? {
+                Attachments: msg.attachments.map((a) => ({
+                  Name: a.filename,
+                  Content: a.content,
+                  ContentType: a.contentType,
+                })),
+              }
+            : {}),
         }),
       });
       if (!res.ok) {

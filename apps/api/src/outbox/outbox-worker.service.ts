@@ -11,6 +11,7 @@ import {
   type ClientForEmail,
   type TenantForEmail,
 } from './templates.js';
+import { generateIcsBase64 } from './ics.js';
 
 const MAX_ATTEMPTS = 5;
 /** Reminder.24h darf erst kurz vor (startAt - leadTime) raus. */
@@ -174,12 +175,35 @@ export class OutboxWorkerService {
         : kind === 'reminder24h'
           ? reminder24hEmail(appt, client, tenant)
           : cancelEmail(appt, client, tenant);
+
+    // ICS-Anhang nur bei Confirmation + Reminder. Apple/Google Calendar
+    // erkennen text/calendar-Attachment und bieten "Zum Kalender"-Button.
+    const attachments =
+      kind === 'cancel'
+        ? undefined
+        : [
+            {
+              filename: 'termin.ics',
+              contentType: 'text/calendar; charset=utf-8; method=REQUEST',
+              content: generateIcsBase64({
+                uid: payload.appointmentId!,
+                summary: `${tenant.name} — ${appt.items.map((i) => i.service.name).join(' + ')}`,
+                description: `Termin bei ${appt.staff.firstName}\n${appt.location.name}`,
+                location: appt.location.name,
+                startUtc: appt.startAt,
+                endUtc: appt.endAt ?? new Date(appt.startAt.getTime() + 60 * 60_000),
+                organizerName: tenant.name,
+              }),
+            },
+          ];
+
     const res = await this.email.send({
       to: client.email,
       subject: tpl.subject,
       html: tpl.html,
       text: tpl.text,
       tag: `${ev.type}|${ev.tenantId ?? 'unknown'}`,
+      attachments,
     });
     if (!res.ok) {
       throw new Error(res.error ?? 'email_send_failed');
@@ -241,9 +265,10 @@ export class OutboxWorkerService {
       where: { id: appointmentId },
       select: {
         startAt: true,
+        endAt: true,
         location: { select: { name: true } },
         staff: { select: { firstName: true } },
-        items: { select: { service: { select: { name: true } } } },
+        items: { select: { service: { select: { name: true } }, optionLabels: true } },
         client: { select: { firstName: true, email: true } },
         tenant: { select: { name: true, slug: true } },
       },
@@ -252,6 +277,7 @@ export class OutboxWorkerService {
     return {
       appt: {
         startAt: row.startAt,
+        endAt: row.endAt,
         location: row.location,
         staff: row.staff,
         items: row.items,

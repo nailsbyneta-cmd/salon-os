@@ -6,9 +6,10 @@
 
 export interface ApptForEmail {
   startAt: Date;
+  endAt?: Date;
   location: { name: string };
   staff: { firstName: string };
-  items: { service: { name: string } }[];
+  items: Array<{ service: { name: string }; optionLabels?: string[] }>;
 }
 
 export interface ClientForEmail {
@@ -36,7 +37,12 @@ function fmt(d: Date): string {
 }
 
 function services(items: ApptForEmail['items']): string {
-  return items.map((i) => i.service.name).join(', ');
+  return items
+    .map((i) => {
+      const labels = (i.optionLabels ?? []).filter(Boolean);
+      return labels.length > 0 ? `${i.service.name} · ${labels.join(' · ')}` : i.service.name;
+    })
+    .join(', ');
 }
 
 function escape(s: string): string {
