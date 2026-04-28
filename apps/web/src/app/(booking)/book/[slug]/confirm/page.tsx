@@ -232,11 +232,11 @@ export default async function BookingConfirm({
 
       <header>
         <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">Bestätigen</p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-text-primary">
-          Fast geschafft
+        <h1 className="mt-2 font-display text-3xl font-semibold italic tracking-tight text-text-primary">
+          Du hast es dir verdient.
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Prüfe deine Auswahl, dann trage deine Daten ein.
+          Überprüf deine Auswahl — dann gehört dieser Termin dir.
         </p>
       </header>
 
@@ -380,8 +380,25 @@ export default async function BookingConfirm({
               <Textarea name="notes" rows={3} defaultValue={sp.f_notes ?? ''} />
             </Field>
             <Button type="submit" variant="accent" size="lg" className="w-full">
-              Termin verbindlich buchen
+              Jetzt buchen — kostenlos
             </Button>
+            {/* Trust-Signals direkt unter dem CTA — senkt letzte Hemmschwelle.
+                Reihenfolge: stärkster Schutz zuerst (kein Geld jetzt) →
+                Schnelligkeit → Reversibilität. */}
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-[11px] text-text-muted">
+              <span className="inline-flex items-center gap-1">
+                <span aria-hidden>🔒</span>
+                Keine Kreditkarte nötig
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span aria-hidden>✓</span>
+                Sofortige Bestätigung
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span aria-hidden>↩</span>
+                24h vorher kostenlos stornierbar
+              </span>
+            </div>
             <p className="text-center text-[11px] text-text-muted">
               Mit der Buchung stimmst du unseren{' '}
               <Link href={`/book/${slug}/datenschutz`} className="underline hover:text-accent">

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Button, Card, CardBody } from '@salon-os/ui';
 import { ConversionFire } from '@/components/conversion-fire';
 import { ShareButton } from './share-button';
+import { ConfettiBurst } from './confetti-burst';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
@@ -82,6 +83,12 @@ export default async function BookingSuccess({
         />
       ) : null}
 
+      {/* Peak-Moment-Konfetti — UX-Brief Aufgabe 6. Goldene Partikel
+          fallen 2.4s, idempotent per Appointment-ID (kein Doppel-Fire). */}
+      {id && summary && summary.status !== 'CANCELLED' ? (
+        <ConfettiBurst fireKey={id} />
+      ) : null}
+
       {/* Celebration-Mark — Gold-Ring mit Check */}
       <div className="relative">
         <div
@@ -102,13 +109,15 @@ export default async function BookingSuccess({
       </div>
 
       <div className="text-center">
-        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">Gebucht</p>
-        <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight text-text-primary md:text-5xl">
-          Wir freuen uns auf dich
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
+          Gebucht ✓
+        </p>
+        <h1 className="mt-2 font-display text-4xl font-semibold italic tracking-tight text-text-primary md:text-5xl">
+          Du wirst es geniessen.
         </h1>
         <p className="mt-3 max-w-md text-sm text-text-secondary md:text-base">
-          Deine Buchung ist bestätigt. Du erhältst gleich eine E-Mail mit allen Details. Bis bald
-          bei {salonName}.
+          Dein Termin bei {salonName} ist bestätigt. Du bekommst gleich eine E-Mail mit allen
+          Details — bis bald.
         </p>
         {id ? (
           <p className="mt-4 text-xs text-text-muted">
@@ -129,24 +138,36 @@ export default async function BookingSuccess({
         </a>
       ) : null}
 
-      {/* Contact-Shortcuts — nur rendern wenn mindestens 1 Kanal existiert.
-          Audit Pass 12+13: leerer Box-Header 'Fragen? Wir sind da.' ohne
-          Inhalt war Vertrauens-Killer. Lorenc muss WhatsApp + Telefon
-          unter /settings einpflegen damit die Box erscheint. */}
+      {/* Contact-Shortcuts. Pre-filled WhatsApp-Message senkt No-Shows (UX-Brief
+          QW3): Stornierung trivial macht Bookings emotional sicherer. */}
       {whatsapp || phone ? (
         <Card elevation="flat" className="w-full max-w-md">
           <CardBody className="space-y-3">
-            <p className="text-center text-xs text-text-muted">Fragen? Wir sind da.</p>
+            <p className="text-center text-sm font-medium text-text-primary">
+              💬 Fragen zum Termin?
+            </p>
+            <p className="text-center text-xs text-text-muted">
+              Schreib uns auf WhatsApp — wir sind schnell.
+            </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {whatsapp ? (
-                <a
-                  href={`https://wa.me/${whatsapp.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent/5 px-3 py-2.5 text-sm font-medium text-accent transition-all hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
-                >
-                  💬 WhatsApp
-                </a>
+                (() => {
+                  const cleanNum = whatsapp.replace(/[^+\d]/g, '').replace(/^\+/, '');
+                  const refSuffix = id ? ` (Ref: ${id.slice(0, 8)})` : '';
+                  const msg = encodeURIComponent(
+                    `Hallo ${salonName}, ich habe soeben einen Termin gebucht${refSuffix}. `,
+                  );
+                  return (
+                    <a
+                      href={`https://wa.me/${cleanNum}?text=${msg}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent/5 px-3 py-2.5 text-sm font-medium text-accent transition-all hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+                    >
+                      💬 Schreib uns →
+                    </a>
+                  );
+                })()
               ) : null}
               {phone ? (
                 <a

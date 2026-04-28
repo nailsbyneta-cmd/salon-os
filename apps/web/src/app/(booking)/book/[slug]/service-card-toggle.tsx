@@ -1,18 +1,23 @@
 'use client';
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@salon-os/ui';
 import { useCart, type CartItem } from './cart-store';
 
 /**
  * Service-Card-Wrapper mit Cart-Toggle.
- * - Klick auf Card-Body: → /configure (Single-Buchung-Flow wie vorher)
- * - Klick auf "+ Cart" Button: in Cart aufnehmen (Multi-Buchung)
+ *
+ * UX-Brief QW2 (2026-04-28): Doppelbuchungs-Schutz.
+ *  - Service NICHT im Cart: "+" → fügt hinzu, kurze Pop-Animation,
+ *    optional haptic feedback (navigator.vibrate).
+ *  - Service IM Cart: "✓" wird DISABLED visuell + Klick zeigt Toast
+ *    "Bereits im Warenkorb". Removal erfolgt im Cart-Pill / Drawer,
+ *    NICHT mehr direkt am Card-Toggle (Doppel-Click-Confusion).
  *
  * Cart bekommt minimale Service-Daten (id, name, basePrice,
- * durationMinutes). Wenn der Kunde später aus dem Cart bucht,
- * wird der Wizard nicht durchlaufen — Default-Optionen werden
- * verwendet. Falls jemand komplette Konfig will, geht er direkt
- * zur Configure-Page (nicht via Cart).
+ * durationMinutes). Wenn der Kunde später aus dem Cart bucht, wird
+ * der Wizard nicht durchlaufen — Default-Optionen werden verwendet.
+ * Falls komplette Konfig gewünscht: direkt zur /configure (Card-Body).
  */
 export function ServiceCardToggle({
   slug,
@@ -31,23 +36,38 @@ export function ServiceCardToggle({
   configureHref: string;
   children: React.ReactNode;
 }): React.JSX.Element {
-  const { has, add, remove } = useCart(slug);
+  const { has, add } = useCart(slug);
   const router = useRouter();
+  const toast = useToast();
+  const [popping, setPopping] = React.useState(false);
   const inCart = has(serviceId);
 
-  const toggle = (e: React.MouseEvent): void => {
+  const onToggleClick = (e: React.MouseEvent): void => {
     e.preventDefault();
     e.stopPropagation();
     if (inCart) {
-      remove(serviceId);
-    } else {
-      const item: CartItem = {
-        serviceId,
-        serviceName,
-        priceMinor: Math.round(Number(basePrice) * 100),
-        durationMinutes,
-      };
-      add(item);
+      // Doppelbuchungs-Schutz: kein Re-Add, kein Remove. Nur sanfter
+      // Hinweis, was zu tun ist (im Cart unten).
+      toast.push({
+        tone: 'success',
+        title: 'Bereits im Warenkorb',
+        description: 'Du kannst diesen Service unten im Warenkorb anpassen.',
+        duration: 2500,
+      });
+      return;
+    }
+    const item: CartItem = {
+      serviceId,
+      serviceName,
+      priceMinor: Math.round(Number(basePrice) * 100),
+      durationMinutes,
+    };
+    add(item);
+    setPopping(true);
+    window.setTimeout(() => setPopping(false), 200);
+    // Mobile haptic feedback (no-op auf Desktop / unsupported Browsers)
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(10);
     }
   };
 
@@ -67,14 +87,16 @@ export function ServiceCardToggle({
       </button>
       <button
         type="button"
-        onClick={toggle}
+        onClick={onToggleClick}
         aria-pressed={inCart}
-        aria-label={inCart ? `${serviceName} aus Cart entfernen` : `${serviceName} in Cart legen`}
+        aria-label={inCart ? `${serviceName} bereits im Warenkorb` : `${serviceName} in Warenkorb legen`}
+        title={inCart ? 'Bereits im Warenkorb' : 'Hinzufügen'}
         className={[
           'absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 text-sm font-bold transition-all duration-200',
           inCart
-            ? 'border-accent bg-accent text-accent-foreground shadow-glow'
+            ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400 cursor-default'
             : 'border-border bg-surface text-text-muted hover:border-accent hover:text-accent',
+          popping ? 'scale-125' : 'scale-100',
         ].join(' ')}
       >
         {inCart ? '✓' : '+'}
