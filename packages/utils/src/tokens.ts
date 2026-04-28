@@ -9,7 +9,7 @@
  */
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-type Action = 'cancel' | 'reschedule';
+type Action = 'cancel' | 'reschedule' | 'review';
 
 function getSecret(): string {
   const secret = process.env['SELF_SERVICE_SECRET'];
@@ -84,7 +84,7 @@ export function verifySelfServiceToken(token: string): {
     string,
     string,
   ];
-  if (action !== 'cancel' && action !== 'reschedule') return null;
+  if (action !== 'cancel' && action !== 'reschedule' && action !== 'review') return null;
   if (!appointmentId || !tenantId) return null;
   const expiresAtSec = Number(expiresAtStr);
   if (!Number.isFinite(expiresAtSec)) return null;

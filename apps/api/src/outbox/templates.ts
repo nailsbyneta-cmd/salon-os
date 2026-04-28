@@ -212,6 +212,47 @@ Termin direkt online buchen: ${bookingUrl}
   return { subject, html, text };
 }
 
+/**
+ * Review-Request — 24h nach COMPLETED-Termin. 1-Click Link führt zur
+ * Submit-Page mit HMAC-Token. Conversion-positiv: kurz, persönlich,
+ * Stylistin namentlich (Audit-Pass-Erfahrung).
+ */
+export function reviewRequestEmail(
+  appt: ApptForEmail & { staff: { firstName: string } },
+  client: ClientForEmail,
+  tenant: TenantForEmail,
+  reviewUrl: string,
+): { subject: string; html: string; text: string } {
+  const greeting = client.firstName ? `Hallo ${client.firstName},` : 'Hallo,';
+  const stylistName = appt.staff.firstName;
+  const subject = `Wie war Dein Termin bei ${tenant.name}?`;
+  const text = `${greeting}
+
+Du warst gestern bei ${stylistName} — wie hat es Dir gefallen?
+
+In 30 Sekunden bewerten:
+${reviewUrl}
+
+Deine ehrliche Rückmeldung hilft anderen Kundinnen + uns, immer besser zu werden. Danke!
+
+— ${stylistName} und das ${tenant.name} Team`;
+  const html = shell(
+    'Wie war Dein Termin?',
+    `<p>${escape(greeting)}</p>
+     <p>Du warst gestern bei <strong>${escape(stylistName)}</strong> — wie hat es Dir gefallen?</p>
+     <p style="text-align:center;padding:24px 0;">
+       <a href="${escape(reviewUrl)}" style="display:inline-block;background:#2a2522;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;">
+         In 30 Sekunden bewerten
+       </a>
+     </p>
+     <p>Deine ehrliche Rückmeldung hilft anderen Kundinnen + uns, immer besser zu werden. Danke!</p>
+     <p style="font-size:13px;color:#7a6f68;">Falls der Button nicht klappt: ${escape(reviewUrl)}</p>
+     <p style="font-size:13px;color:#7a6f68;">— ${escape(stylistName)} und das ${escape(tenant.name)} Team</p>`,
+    tenant,
+  );
+  return { subject, html, text };
+}
+
 export function cancelEmail(
   appt: ApptForEmail,
   client: ClientForEmail,

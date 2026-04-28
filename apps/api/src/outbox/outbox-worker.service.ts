@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { OutboxEvent, PrismaClient } from '@salon-os/db';
 import { decryptSecret } from '@salon-os/utils/crypto';
+import { signSelfServiceToken } from '@salon-os/utils';
 import { PRISMA } from '../db/db.module.js';
 import { EmailService } from '../email/email.service.js';
 import {
@@ -8,6 +9,7 @@ import {
   confirmationEmail,
   magicLinkEmail,
   reminder24hEmail,
+  reviewRequestEmail,
   winbackEmail,
   type ApptForEmail,
   type ClientForEmail,
@@ -150,6 +152,9 @@ export class OutboxWorkerService {
         return 'done';
       case 'auth.magic_link':
         await this.handleMagicLink(ev, payload);
+        return 'done';
+      case 'review.request':
+        await this.handleReviewRequest(ev, payload);
         return 'done';
       case 'google_ads.upload_conversion':
         await this.handleAdsConversionUpload(ev, payload as unknown as AdsConversionPayload);
@@ -307,6 +312,63 @@ export class OutboxWorkerService {
       html: tpl.html,
       text: tpl.text,
       tag: `marketing.winback|${ev.tenantId ?? 'unknown'}`,
+    });
+    if (!res.ok) {
+      throw new Error(res.error ?? 'email_send_failed');
+    }
+  }
+
+  /**
+   * Reviews-Automation. Lädt Termin + Kundin + Tenant, generiert HMAC-
+   * Review-Token (30d gültig), versendet Review-Request-Email.
+   *
+   * Idempotency: Wenn bereits SalonReview für appointmentId existiert,
+   * silently drop. Wenn Termin gelöscht/cancelled — drop.
+   */
+  private async handleReviewRequest(
+    ev: OutboxEvent,
+    payload: ReminderPayload,
+  ): Promise<void> {
+    if (!payload.appointmentId) {
+      throw new Error('appointmentId missing in review.request payload');
+    }
+    const data = await this.loadAppointmentData(payload.appointmentId);
+    if (!data) {
+      this.logger.warn(`review.request: appt ${payload.appointmentId} gone — drop`);
+      return;
+    }
+    const { appt, client, tenant } = data;
+    if (!client.email) {
+      this.logger.warn(`review.request: appt ${payload.appointmentId} no email — drop`);
+      return;
+    }
+    // Dedup: existiert schon Review?
+    const existingReview = await this.prisma.salonReview.findFirst({
+      where: { tenantId: ev.tenantId ?? '', appointmentId: payload.appointmentId },
+      select: { id: true },
+    });
+    if (existingReview) {
+      this.logger.log(`review.request: ${payload.appointmentId} already reviewed — drop`);
+      return;
+    }
+
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const token = signSelfServiceToken({
+      action: 'review',
+      appointmentId: payload.appointmentId,
+      tenantId: ev.tenantId ?? '',
+      expiresAt,
+    });
+    const webBase = process.env['PUBLIC_WEB_URL_BASE'] ?? 'https://salon-os.app';
+    const reviewUrl = `${webBase}/book/${tenant.slug}/review/${encodeURIComponent(token)}`;
+
+    const tpl = reviewRequestEmail(appt, client, tenant, reviewUrl);
+    const res = await this.email.send({
+      to: client.email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      tag: `review.request|${ev.tenantId ?? 'unknown'}`,
     });
     if (!res.ok) {
       throw new Error(res.error ?? 'email_send_failed');

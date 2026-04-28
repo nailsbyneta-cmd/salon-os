@@ -17,7 +17,9 @@ export type OutboxEventType =
   | 'marketing.rebook'
   | 'marketing.winback'
   | 'marketing.birthday'
-  | 'auth.magic_link';
+  | 'auth.magic_link'
+  | 'review.request'
+  | 'google_ads.upload_conversion';
 
 export interface OutboxPayload {
   appointmentId?: string;

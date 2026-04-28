@@ -1,0 +1,33 @@
+name: Cron — Reviews-Request Sweep
+
+# Läuft 1x täglich um 10:00 UTC (= 12:00 CH-Sommer / 11:00 CH-Winter):
+# Findet COMPLETED Termine ≥24h alt ohne Review + emailOptIn,
+# enqueued review.request Outbox-Events. Worker schickt sie dann
+# (5-Min-Cron). Idempotent — schon enqueued/gereviewt wird übersprungen.
+
+on:
+  schedule:
+    - cron: '0 10 * * *' # täglich 10:00 UTC
+  workflow_dispatch:
+
+jobs:
+  reviews-sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Run Reviews-Sweep
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: ${{ vars.API_URL || 'https://salon-os-production-2346.up.railway.app' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::CRON_SECRET not set — skipping."
+            exit 0
+          fi
+          RESP=$(curl -sS -X POST "$API_URL/v1/public/cron/reviews/enqueue" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -w "\nHTTP=%{http_code}")
+          echo "$RESP"
+          if echo "$RESP" | grep -q "HTTP=4\|HTTP=5"; then
+            exit 1
+          fi
