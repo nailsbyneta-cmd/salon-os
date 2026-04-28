@@ -76,6 +76,18 @@ export default async function BookingSuccess({
         ) : null}
       </div>
 
+      {/* ICS-Download — funktioniert auch ohne POSTMARK */}
+      {id ? (
+        <a
+          href={`${API_URL}/v1/public/${slug}/appointments/${id}/ics`}
+          download
+          className="flex items-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-[0.98]"
+        >
+          <span aria-hidden>📅</span>
+          Termin in Kalender eintragen
+        </a>
+      ) : null}
+
       {/* Contact-Shortcuts */}
       <Card elevation="flat" className="w-full max-w-md">
         <CardBody className="space-y-3">

@@ -101,6 +101,43 @@ export class PublicBookingsService {
   }
 
   /**
+   * Public-Endpoint für ICS-Download nach erfolgreicher Buchung.
+   * /success-Page lädt diesen → Apple/Google Calendar Add-Dialog.
+   * Auth: nur appointmentId reicht (UUIDs sind nicht enumerable, plus
+   * läuft normalerweise direkt nach dem Booking-Submit).
+   */
+  async getAppointmentIcs(slug: string, appointmentId: string): Promise<string | null> {
+    const tenant = await this.resolveTenant(slug);
+    return this.withTenant(tenant.id, null, null, async (tx) => {
+      const appt = await tx.appointment.findFirst({
+        where: { id: appointmentId, tenantId: tenant.id },
+        include: {
+          location: { select: { name: true } },
+          staff: { select: { firstName: true } },
+          items: { include: { service: { select: { name: true } } } },
+        },
+      });
+      if (!appt) return null;
+      const tenantRow = await tx.tenant.findUnique({
+        where: { id: tenant.id },
+        select: { name: true },
+      });
+      const summary = `${tenantRow?.name ?? 'Salon'} — ${appt.items.map((i) => i.service.name).join(' + ')}`;
+      const description = `Termin bei ${appt.staff.firstName}\n${appt.location.name}`;
+      const { generateIcs } = await import('../outbox/ics.js');
+      return generateIcs({
+        uid: appt.id,
+        summary,
+        description,
+        location: appt.location.name,
+        startUtc: appt.startAt,
+        endUtc: appt.endAt,
+        organizerName: tenantRow?.name ?? 'Salon',
+      });
+    });
+  }
+
+  /**
    * Public-Endpoint für Mitarbeiter-Picker im Booking-Flow.
    * Liefert NUR Staff die diesen Service an dieser Location anbieten —
    * Phorest-Pattern "Wer betreut Dich?" zwischen Service-Auswahl und Slot-Picker.

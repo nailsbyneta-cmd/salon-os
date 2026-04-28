@@ -8,7 +8,9 @@ import {
   Param,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { FastifyReply } from 'fastify';
 import { z } from 'zod';
 import type { Appointment, Location, Service } from '@salon-os/db';
 import { uuidSchema } from '@salon-os/types';
@@ -73,6 +75,31 @@ export class PublicBookingsController {
     @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
   ): Promise<{ categories: Array<{ id: string; name: string; order: number }> }> {
     return { categories: await this.svc.listServiceCategories(slug) };
+  }
+
+  /**
+   * ICS-Download für 'Zum Kalender hinzufügen'-Button auf der /success-Page.
+   * Returnt direkt den ICS-Body als text/calendar — Browser triggert
+   * Calendar-App automatisch.
+   */
+  @Get('appointments/:appointmentId/ics')
+  async appointmentIcs(
+    @Param('tenantSlug', new ZodValidationPipe(slugParamSchema)) slug: string,
+    @Param('appointmentId', new ZodValidationPipe(uuidSchema)) appointmentId: string,
+    @Res() res: FastifyReply,
+  ): Promise<void> {
+    const ics = await this.svc.getAppointmentIcs(slug, appointmentId);
+    if (!ics) {
+      void res.status(404).send({ error: 'Appointment not found' });
+      return;
+    }
+    void res
+      .header('content-type', 'text/calendar; charset=utf-8')
+      .header(
+        'content-disposition',
+        `attachment; filename="termin-${appointmentId.slice(0, 8)}.ics"`,
+      )
+      .send(ics);
   }
 
   @Get('services/:serviceId/staff')
