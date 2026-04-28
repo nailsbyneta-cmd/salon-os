@@ -5,9 +5,11 @@ import { signSelfServiceToken } from '@salon-os/utils';
 import { PRISMA } from '../db/db.module.js';
 import { EmailService } from '../email/email.service.js';
 import {
+  birthdayEmail,
   cancelEmail,
   confirmationEmail,
   magicLinkEmail,
+  rebookEmail,
   reminder24hEmail,
   reviewRequestEmail,
   winbackEmail,
@@ -160,11 +162,10 @@ export class OutboxWorkerService {
         await this.handleAdsConversionUpload(ev, payload as unknown as AdsConversionPayload);
         return 'done';
       case 'marketing.rebook':
+        await this.handleMarketingClient(ev, payload, 'rebook');
+        return 'done';
       case 'marketing.birthday':
-        // Marketing-Templates kommen separat — für jetzt: log + done damit Outbox sauber bleibt.
-        this.logger.log(
-          `marketing event ${ev.type} skipped (no template) appt=${payload.appointmentId}`,
-        );
+        await this.handleMarketingClient(ev, payload, 'birthday');
         return 'done';
       default:
         this.logger.warn(`unknown outbox event type: ${ev.type}`);
@@ -266,6 +267,60 @@ export class OutboxWorkerService {
       html: tpl.html,
       text: tpl.text,
       tag: `auth.magic_link|${ev.tenantId ?? 'unknown'}`,
+    });
+    if (!res.ok) {
+      throw new Error(res.error ?? 'email_send_failed');
+    }
+  }
+
+  /**
+   * Birthday + Rebook nutzen denselben Pfad: Client laden, opt-in checken,
+   * Mail mit dem passenden Template. Idempotency-Cooldown wird VOM
+   * marketing-service vor enqueue durchgesetzt — hier kein Re-Check.
+   */
+  private async handleMarketingClient(
+    ev: OutboxEvent,
+    payload: ReminderPayload,
+    kind: 'birthday' | 'rebook',
+  ): Promise<void> {
+    if (!payload.clientId) {
+      throw new Error(`clientId missing in marketing.${kind} payload`);
+    }
+    const row = await this.prisma.client.findUnique({
+      where: { id: payload.clientId },
+      select: {
+        firstName: true,
+        email: true,
+        emailOptIn: true,
+        marketingOptIn: true,
+        deletedAt: true,
+        tenant: { select: { name: true, slug: true } },
+      },
+    });
+    if (!row || !row.tenant || row.deletedAt) {
+      this.logger.warn(`marketing.${kind}: client ${payload.clientId} gone — drop`);
+      return;
+    }
+    if (!row.emailOptIn || !row.marketingOptIn) {
+      this.logger.warn(`marketing.${kind}: client ${payload.clientId} opted-out — drop`);
+      return;
+    }
+    if (!row.email) {
+      this.logger.warn(`marketing.${kind}: client ${payload.clientId} no email — drop`);
+      return;
+    }
+    const publicUrl = process.env['PUBLIC_BOOKING_URL_BASE'] ?? 'https://salon-os.app/book';
+    const bookingUrl = `${publicUrl}/${row.tenant.slug}`;
+    const tpl =
+      kind === 'birthday'
+        ? birthdayEmail({ firstName: row.firstName, email: row.email }, row.tenant, bookingUrl)
+        : rebookEmail({ firstName: row.firstName, email: row.email }, row.tenant, bookingUrl);
+    const res = await this.email.send({
+      to: row.email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      tag: `marketing.${kind}|${ev.tenantId ?? 'unknown'}`,
     });
     if (!res.ok) {
       throw new Error(res.error ?? 'email_send_failed');

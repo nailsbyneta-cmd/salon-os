@@ -191,6 +191,125 @@ export class MarketingService {
     };
   }
 
+  /**
+   * Birthday-Sweep. Findet Clients deren `birthday` (DATE) heute entspricht
+   * (Monat+Tag, Jahr egal) UND emailOptIn=true UND lastBirthdayMessageYear ≠
+   * heute. Idempotent: cooldown via marketing.birthday Outbox-Event mit Year.
+   */
+  async runBirthdaySweep(today: Date = new Date()): Promise<{
+    enqueued: number;
+    tenants: number;
+  }> {
+    const month = today.getUTCMonth() + 1;
+    const day = today.getUTCDate();
+    const yearKey = today.getUTCFullYear();
+
+    // Postgres EXTRACT für month/day match. Wir nutzen $queryRaw weil
+    // Prisma kein date_part-Filter hat.
+    const matches = await this.prisma.$queryRaw<
+      Array<{ id: string; tenantId: string }>
+    >`
+      SELECT id, "tenantId"
+      FROM "client"
+      WHERE "deletedAt" IS NULL
+        AND blocked = FALSE
+        AND "emailOptIn" = TRUE
+        AND email IS NOT NULL
+        AND birthday IS NOT NULL
+        AND EXTRACT(MONTH FROM birthday) = ${month}::int
+        AND EXTRACT(DAY FROM birthday) = ${day}::int
+      LIMIT 500
+    `;
+
+    if (matches.length === 0) return { enqueued: 0, tenants: 0 };
+
+    let enqueued = 0;
+    const tenants = new Set<string>();
+
+    for (const c of matches) {
+      // Skip wenn schon dieses Jahr gesendet
+      const start = new Date(Date.UTC(yearKey, 0, 1));
+      const end = new Date(Date.UTC(yearKey + 1, 0, 1));
+      const recent = await this.prisma.outboxEvent.findFirst({
+        where: {
+          tenantId: c.tenantId,
+          type: 'marketing.birthday',
+          createdAt: { gte: start, lt: end },
+          payload: { path: ['clientId'], equals: c.id },
+        },
+        select: { id: true },
+      });
+      if (recent) continue;
+
+      await this.prisma.outboxEvent.create({
+        data: {
+          tenantId: c.tenantId,
+          type: 'marketing.birthday',
+          payload: { tenantId: c.tenantId, clientId: c.id, year: yearKey },
+          status: 'PENDING',
+        },
+      });
+      enqueued += 1;
+      tenants.add(c.tenantId);
+    }
+    return { enqueued, tenants: tenants.size };
+  }
+
+  /**
+   * Rebook-Reminder. Findet Clients deren letzter Termin >= "Rebook-Window-Days"
+   * her ist (default 6 Wochen für Coiffeur/Nägel-Salons), aber < 90d
+   * (sonst kommt der Reactivation-Sweep dran). Cooldown 30d pro Client.
+   */
+  async runRebookSweep(): Promise<{ enqueued: number; tenants: number }> {
+    const days = Number(process.env['REBOOK_WINDOW_DAYS'] ?? 42);
+    const reactivationCutoff = new Date(
+      Date.now() - REACTIVATION_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const rebookCutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const cooldown = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const eligible = await this.prisma.client.findMany({
+      where: {
+        deletedAt: null,
+        blocked: false,
+        marketingOptIn: true,
+        emailOptIn: true,
+        email: { not: null },
+        lastVisitAt: { lt: rebookCutoff, gte: reactivationCutoff },
+      },
+      select: { id: true, tenantId: true },
+      take: 500,
+    });
+
+    let enqueued = 0;
+    const tenants = new Set<string>();
+
+    for (const c of eligible) {
+      const recent = await this.prisma.outboxEvent.findFirst({
+        where: {
+          tenantId: c.tenantId,
+          type: 'marketing.rebook',
+          createdAt: { gte: cooldown },
+          payload: { path: ['clientId'], equals: c.id },
+        },
+        select: { id: true },
+      });
+      if (recent) continue;
+
+      await this.prisma.outboxEvent.create({
+        data: {
+          tenantId: c.tenantId,
+          type: 'marketing.rebook',
+          payload: { tenantId: c.tenantId, clientId: c.id },
+          status: 'PENDING',
+        },
+      });
+      enqueued += 1;
+      tenants.add(c.tenantId);
+    }
+    return { enqueued, tenants: tenants.size };
+  }
+
   private cutoff(): Date {
     return new Date(Date.now() - REACTIVATION_DAYS * 24 * 60 * 60 * 1000);
   }

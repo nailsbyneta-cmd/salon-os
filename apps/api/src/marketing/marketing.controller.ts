@@ -37,6 +37,24 @@ export class MarketingController {
     return this.svc.runReactivation();
   }
 
+  @Post('birthday')
+  @HttpCode(HttpStatus.OK)
+  async birthdaySweep(
+    @Headers('x-cron-secret') secret?: string,
+  ): Promise<Awaited<ReturnType<MarketingService['runBirthdaySweep']>>> {
+    this.assertSecret(secret);
+    return this.svc.runBirthdaySweep();
+  }
+
+  @Post('rebook')
+  @HttpCode(HttpStatus.OK)
+  async rebookSweep(
+    @Headers('x-cron-secret') secret?: string,
+  ): Promise<Awaited<ReturnType<MarketingService['runRebookSweep']>>> {
+    this.assertSecret(secret);
+    return this.svc.runRebookSweep();
+  }
+
   private assertSecret(secret?: string): void {
     const expected = process.env['CRON_SECRET'];
     if (!expected || !secret || secret !== expected) {

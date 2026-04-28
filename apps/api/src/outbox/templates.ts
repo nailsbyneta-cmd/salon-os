@@ -213,6 +213,80 @@ Termin direkt online buchen: ${bookingUrl}
 }
 
 /**
+ * Birthday-Greeting. Tag-genau am Geburtstag, einmal pro Jahr (Cooldown
+ * im Outbox-Dispatch). Keine Rabatt-Codes hier — bleibt edel, der
+ * Sales-Push kommt höchstens via separater Marketing-Welle.
+ */
+export function birthdayEmail(
+  client: ClientForEmail,
+  tenant: TenantForEmail,
+  bookingUrl: string,
+): { subject: string; html: string; text: string } {
+  const greeting = client.firstName ? `Hallo ${client.firstName},` : 'Hallo,';
+  const subject = `Alles Gute zum Geburtstag, ${client.firstName ?? 'liebe Kundin'}!`;
+  const text = `${greeting}
+
+das ganze Team von ${tenant.name} wünscht Dir einen wunderschönen Geburtstag.
+Wir freuen uns immer, Dich zu sehen — feier schön!
+
+Falls Du verwöhnt werden willst: ${bookingUrl}
+
+— Dein ${tenant.name} Team`;
+  const html = shell(
+    `Alles Gute zum Geburtstag`,
+    `<p>${escape(greeting)}</p>
+     <p>das ganze Team von <strong>${escape(tenant.name)}</strong> wünscht Dir einen
+        wunderschönen Geburtstag. Wir freuen uns immer, Dich zu sehen — feier schön!</p>
+     <p style="text-align:center;padding:24px 0;">
+       <a href="${escape(bookingUrl)}" style="display:inline-block;background:#2a2522;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;">
+         Termin buchen
+       </a>
+     </p>
+     <p style="font-size:13px;color:#7a6f68;">— Dein ${escape(tenant.name)} Team</p>`,
+    tenant,
+  );
+  return { subject, html, text };
+}
+
+/**
+ * Rebook-Reminder. Nach typ. Service-Frequenz (~6 Wochen). Ist NICHT
+ * Reactivation (das wäre nach 90+ Tagen) — sondern proaktiver Ping
+ * "Zeit für deinen üblichen Rhythmus".
+ */
+export function rebookEmail(
+  client: ClientForEmail,
+  tenant: TenantForEmail,
+  bookingUrl: string,
+): { subject: string; html: string; text: string } {
+  const greeting = client.firstName ? `Hallo ${client.firstName},` : 'Hallo,';
+  const subject = `Zeit für Deinen nächsten Termin bei ${tenant.name}?`;
+  const text = `${greeting}
+
+es ist eine Weile her — viele Kundinnen kommen alle 4 bis 6 Wochen, und
+Du bist gerade in dem Fenster. Wenn Du magst, sicher Dir gleich Deinen
+Termin:
+
+${bookingUrl}
+
+— ${tenant.name}`;
+  const html = shell(
+    'Zeit für Deinen nächsten Termin?',
+    `<p>${escape(greeting)}</p>
+     <p>es ist eine Weile her — viele Kundinnen kommen alle 4 bis 6 Wochen,
+        und Du bist gerade in dem Fenster. Wenn Du magst, sicher Dir gleich
+        Deinen Termin:</p>
+     <p style="text-align:center;padding:24px 0;">
+       <a href="${escape(bookingUrl)}" style="display:inline-block;background:#2a2522;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;">
+         Termin buchen
+       </a>
+     </p>
+     <p style="font-size:13px;color:#7a6f68;">Falls der Button nicht klappt: ${escape(bookingUrl)}</p>`,
+    tenant,
+  );
+  return { subject, html, text };
+}
+
+/**
  * Review-Request — 24h nach COMPLETED-Termin. 1-Click Link führt zur
  * Submit-Page mit HMAC-Token. Conversion-positiv: kurz, persönlich,
  * Stylistin namentlich (Audit-Pass-Erfahrung).

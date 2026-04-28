@@ -1,0 +1,66 @@
+name: Cron — Marketing Birthday + Rebook
+
+# Birthday: täglich 08:00 UTC (= 10:00 CH-Sommer / 09:00 CH-Winter):
+#   findet Kundinnen mit Geburtstag heute (Monat+Tag, Jahr egal),
+#   enqueued marketing.birthday Events. 1× pro Jahr Cooldown im Service.
+#
+# Rebook: täglich 11:00 UTC (= 13:00 CH-Sommer):
+#   findet Kundinnen deren letzter Besuch >= 6 Wochen her ist UND <90d
+#   (sonst geht Reactivation-Sweep ran). 30d Cooldown.
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # Birthday
+    - cron: '0 11 * * *' # Rebook
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: 'birthday | rebook'
+        required: true
+        type: choice
+        options: [birthday, rebook]
+
+jobs:
+  birthday:
+    if: github.event.schedule == '0 8 * * *' || inputs.kind == 'birthday'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Birthday Sweep
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: ${{ vars.API_URL || 'https://salon-os-production-2346.up.railway.app' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::CRON_SECRET not set — skipping."
+            exit 0
+          fi
+          RESP=$(curl -sS -X POST "$API_URL/v1/public/cron/marketing/birthday" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -w "\nHTTP=%{http_code}")
+          echo "$RESP"
+          if echo "$RESP" | grep -q "HTTP=4\|HTTP=5"; then
+            exit 1
+          fi
+
+  rebook:
+    if: github.event.schedule == '0 11 * * *' || inputs.kind == 'rebook'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Rebook Sweep
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: ${{ vars.API_URL || 'https://salon-os-production-2346.up.railway.app' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::CRON_SECRET not set — skipping."
+            exit 0
+          fi
+          RESP=$(curl -sS -X POST "$API_URL/v1/public/cron/marketing/rebook" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -w "\nHTTP=%{http_code}")
+          echo "$RESP"
+          if echo "$RESP" | grep -q "HTTP=4\|HTTP=5"; then
+            exit 1
+          fi
