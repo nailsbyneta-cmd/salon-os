@@ -27,7 +27,7 @@ function csvEscape(v: string | null | undefined): string {
 }
 
 export async function GET(): Promise<Response> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ clients: Client[] }>('/v1/clients?limit=5000', {
       tenantId: ctx.tenantId,

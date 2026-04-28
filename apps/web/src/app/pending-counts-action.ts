@@ -17,7 +17,7 @@ export interface PendingCounts {
  * Fetcht minimal — nur Counts, keine Details.
  */
 export async function getPendingCounts(): Promise<PendingCounts> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   // Europe/Zurich Tagesgrenzen statt UTC — sonst zeigt Badge zwischen
   // 22:00-24:00 CH bereits Folgetags-Counts (UTC ist schon neuer Tag).

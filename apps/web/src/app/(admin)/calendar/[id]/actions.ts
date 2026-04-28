@@ -4,7 +4,7 @@ import { apiFetch } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
 export async function updateAppointmentNotes(appointmentId: string, form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const notes = form.get('notes')?.toString() ?? '';
   const internalNotes = form.get('internalNotes')?.toString() ?? '';
   await apiFetch(`/v1/appointments/${appointmentId}/notes`, {

@@ -14,7 +14,7 @@ interface Appt {
 }
 
 async function load(days: number): Promise<Appt[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date();

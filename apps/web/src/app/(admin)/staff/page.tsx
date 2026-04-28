@@ -43,7 +43,7 @@ interface StaffRow {
 }
 
 async function loadStaff(): Promise<StaffRow[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ staff: StaffRow[] }>('/v1/staff', {
       tenantId: ctx.tenantId,

@@ -4,7 +4,7 @@ import { ApiError, apiFetch } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
 export async function mergeClients(primaryId: string, duplicateId: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     await apiFetch(`/v1/clients/${primaryId}/merge`, {
       method: 'POST',

@@ -57,7 +57,7 @@ async function load(id: string): Promise<{
   addOns: AddOn[];
   bundles: Bundle[];
 } | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   try {
     const [svc, groupsRes, addOnsRes, bundlesRes] = await Promise.all([

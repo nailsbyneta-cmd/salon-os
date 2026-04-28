@@ -11,7 +11,7 @@ interface CategoryRow {
 }
 
 async function loadCategories(): Promise<CategoryRow[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ categories: CategoryRow[] }>('/v1/service-categories', {
       tenantId: ctx.tenantId,

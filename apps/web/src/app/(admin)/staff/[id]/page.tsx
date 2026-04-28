@@ -91,7 +91,7 @@ function zurichDayKey(iso: string): string {
 const BOOKED_STATUSES = new Set(['BOOKED', 'CONFIRMED', 'CHECKED_IN', 'IN_SERVICE', 'COMPLETED']);
 
 async function loadWeekStats(staffId: string): Promise<WeekStats> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const { fromIso, toIso } = mondayOfCurrentZurichWeek();
   const qs = new URLSearchParams({ staffId, from: fromIso, to: toIso });
   try {
@@ -179,7 +179,7 @@ async function load(id: string): Promise<{
   staff: StaffFull | null;
   allServices: ServiceRow[];
 }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   try {
     const [staff, services] = await Promise.all([

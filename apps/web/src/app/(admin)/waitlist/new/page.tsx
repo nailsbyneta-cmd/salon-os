@@ -32,7 +32,7 @@ async function loadFormData(): Promise<{
   clients: ClientRow[];
   locations: Loc[];
 }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   try {
     const [svc, stf, cli, loc] = await Promise.all([

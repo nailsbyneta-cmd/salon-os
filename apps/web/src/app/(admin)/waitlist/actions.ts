@@ -13,7 +13,7 @@ function toIso(date: string, time: string): string {
 }
 
 export async function createWaitlistEntry(form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
 
   const serviceId = formString(form, 'serviceId');
   const locationId = formString(form, 'locationId');
@@ -75,7 +75,7 @@ export async function createWaitlistEntry(form: FormData): Promise<void> {
 }
 
 export async function fulfillWaitlist(id: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/waitlist/${id}/fulfill`, {
     method: 'POST',
     tenantId: ctx.tenantId,
@@ -86,7 +86,7 @@ export async function fulfillWaitlist(id: string): Promise<void> {
 }
 
 export async function cancelWaitlist(id: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/waitlist/${id}/cancel`, {
     method: 'POST',
     tenantId: ctx.tenantId,

@@ -79,7 +79,7 @@ async function loadWaitlistMatches(
   endAt: string,
   preferredStaffId: string,
 ): Promise<{ entries: WaitlistMatch[]; total: number }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const qs = new URLSearchParams({
     serviceIds: serviceIds.join(','),
     from: startAt,
@@ -99,7 +99,7 @@ async function loadWaitlistMatches(
 }
 
 async function loadTenantName(): Promise<string> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ name: string }>('/v1/settings/tenant', {
       tenantId: ctx.tenantId,
@@ -114,7 +114,7 @@ async function loadTenantName(): Promise<string> {
 }
 
 async function loadAppointment(id: string): Promise<Appt | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     return await apiFetch<Appt>(`/v1/appointments/${id}`, {
       tenantId: ctx.tenantId,

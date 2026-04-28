@@ -114,7 +114,7 @@ function previousRange(current: { from: Date; to: Date; days: number }): { from:
 }
 
 async function loadAppointments(range: { from: Date; to: Date }): Promise<Appt[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ appointments: Appt[] }>(
       `/v1/appointments?from=${range.from.toISOString()}&to=${range.to.toISOString()}`,

@@ -19,7 +19,7 @@ interface Appt {
 }
 
 async function loadToday(): Promise<Appt[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date();
@@ -43,7 +43,7 @@ interface Birthday {
 }
 
 async function loadBirthdays(): Promise<Birthday[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   // MM-DD in Europe/Zurich — analog Admin-Dashboard-Heuristik.
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Zurich',

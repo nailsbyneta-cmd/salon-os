@@ -5,7 +5,7 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
 export async function issueGiftCard(form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const amount = Number(form.get('amount'));
   const recipientName = form.get('recipientName')?.toString().trim() || undefined;
   const recipientEmail = form.get('recipientEmail')?.toString().trim() || undefined;

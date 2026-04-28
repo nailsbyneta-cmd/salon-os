@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
   const { id } = await params;
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const data = await apiFetch<unknown>(`/v1/clients/${id}/export`, {
       tenantId: ctx.tenantId,

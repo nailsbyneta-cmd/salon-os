@@ -118,7 +118,7 @@ function phoneLinks(c: ClientRow & { phoneE164?: string | null }): {
 }
 
 async function loadClients(q?: string): Promise<ClientRow[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ clients: ClientRow[] }>(
       `/v1/clients${q ? `?q=${encodeURIComponent(q)}&limit=500` : '?limit=500'}`,

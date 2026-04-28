@@ -42,7 +42,7 @@ function weekRange(dateIso: string): { from: Date; to: Date; weekStart: Date } {
 }
 
 async function loadAppointments(from: Date, to: Date): Promise<Appt[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ appointments: Appt[] }>(
       `/v1/appointments?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`,
@@ -56,7 +56,7 @@ async function loadAppointments(from: Date, to: Date): Promise<Appt[]> {
 }
 
 async function loadStaff(): Promise<DndStaff[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{
       staff: Array<{

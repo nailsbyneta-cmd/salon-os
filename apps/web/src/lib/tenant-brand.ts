@@ -44,7 +44,7 @@ export async function loadTenantBranding(): Promise<{
   name: string | null;
   brandColor: string | null;
 }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<TenantInfo>('/v1/salon/tenant', {
       tenantId: ctx.tenantId,
@@ -63,7 +63,7 @@ export async function loadTenantSettings(): Promise<{
   brandColor: string | null;
   settings: TenantSettings | null;
 }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<TenantInfo>('/v1/salon/tenant', {
       tenantId: ctx.tenantId,

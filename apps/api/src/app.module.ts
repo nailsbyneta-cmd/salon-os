@@ -4,6 +4,7 @@ import { AdsIntegrationModule } from './ads-integration/ads-integration.module.j
 import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AppointmentSeriesModule } from './appointment-series/appointment-series.module.js';
 import { AuditModule } from './audit/audit.module.js';
+import { AuthModule } from './auth/auth.module.js';
 import { BrandingModule } from './branding/branding.module.js';
 import { ClientsModule } from './clients/clients.module.js';
 import { CustomerAuthModule } from './customer-auth/customer-auth.module.js';
@@ -34,6 +35,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
     DbModule,
     CommonModule,
     TenantModule,
+    AuthModule,
     AuditModule,
     LocationsModule,
     RoomsModule,

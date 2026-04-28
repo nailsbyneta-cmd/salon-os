@@ -43,7 +43,7 @@ function rangeToFromTo(daysParam: string | undefined): { from: string; to: strin
 }
 
 async function loadDashboard(daysParam: string | undefined): Promise<AdsDashboardData | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const { from, to } = rangeToFromTo(daysParam);
   try {
     return await apiFetch<AdsDashboardData>(

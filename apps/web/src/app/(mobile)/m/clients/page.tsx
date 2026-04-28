@@ -14,7 +14,7 @@ interface Client {
 }
 
 async function load(q?: string): Promise<Client[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ clients: Client[] }>(
       `/v1/clients${q ? `?q=${encodeURIComponent(q)}` : ''}`,

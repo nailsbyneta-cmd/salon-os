@@ -27,7 +27,7 @@ async function loadFormData(): Promise<{
   staff: StaffRow[];
   clients: ClientRow[];
 }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const [svc, stf, cli] = await Promise.all([
       apiFetch<{ services: Service[] }>('/v1/services', {

@@ -7,6 +7,7 @@ import { ShortcutsHelp } from './shortcuts-help';
 import { searchCommand } from '@/app/search-action';
 import { getPendingCounts, type PendingCounts } from '@/app/pending-counts-action';
 import { Celebrate } from '@/components/celebrate';
+import { logoutAction } from '@/app/(public)/login/actions';
 
 interface NavItem {
   href: string;
@@ -324,7 +325,7 @@ export function AdminShell({
           })}
         </nav>
 
-        <div className="border-t border-border p-3">
+        <div className="border-t border-border p-3 space-y-1">
           <button
             onClick={toggle}
             className="flex w-full items-center justify-between rounded-md px-3 py-2 text-xs text-text-secondary hover:bg-surface-raised transition-colors"
@@ -333,6 +334,16 @@ export function AdminShell({
             <span>{resolved === 'dark' ? 'Dunkel' : 'Hell'}</span>
             <span className="text-base">{resolved === 'dark' ? '🌙' : '☀️'}</span>
           </button>
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-xs text-text-secondary hover:bg-surface-raised transition-colors"
+              aria-label="Abmelden"
+            >
+              <span>Abmelden</span>
+              <span aria-hidden>↪</span>
+            </button>
+          </form>
         </div>
       </aside>
 

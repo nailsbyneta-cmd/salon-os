@@ -84,7 +84,7 @@ async function load(staffId: string): Promise<{
   staff: StaffRow | null;
   timeOff: TimeOffEntry[];
 }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
 
   try {

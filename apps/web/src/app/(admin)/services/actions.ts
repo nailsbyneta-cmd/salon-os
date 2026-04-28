@@ -16,7 +16,7 @@ function slugify(s: string): string {
 }
 
 export async function createService(form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const name = form.get('name')?.toString().trim();
   const categoryId = form.get('categoryId')?.toString();
   const durationMinutes = Number(form.get('durationMinutes'));
@@ -59,7 +59,7 @@ export async function createService(form: FormData): Promise<void> {
 }
 
 export async function createCategory(form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const name = form.get('name')?.toString().trim();
   if (!name) throw new Error('Kategorie-Name fehlt.');
 
@@ -76,7 +76,7 @@ export async function createCategory(form: FormData): Promise<void> {
 }
 
 export async function deleteService(id: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/services/${id}`, {
     method: 'DELETE',
     tenantId: ctx.tenantId,
@@ -87,7 +87,7 @@ export async function deleteService(id: string): Promise<void> {
 }
 
 export async function updateService(id: string, form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const name = form.get('name')?.toString().trim();
   const durationMinutes = Number(form.get('durationMinutes'));
   const basePrice = Number(form.get('basePrice'));
@@ -133,7 +133,7 @@ export async function createOptionGroup(
   serviceId: string,
   input: { name: string; required: boolean; multi: boolean; sortOrder: number },
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/services/${serviceId}/option-groups`, {
     method: 'POST',
     tenantId: ctx.tenantId,
@@ -149,7 +149,7 @@ export async function updateOptionGroup(
   groupId: string,
   input: { name?: string; required?: boolean; multi?: boolean; sortOrder?: number },
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/option-groups/${groupId}`, {
     method: 'PATCH',
     tenantId: ctx.tenantId,
@@ -161,7 +161,7 @@ export async function updateOptionGroup(
 }
 
 export async function deleteOptionGroup(serviceId: string, groupId: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/option-groups/${groupId}`, {
     method: 'DELETE',
     tenantId: ctx.tenantId,
@@ -183,7 +183,7 @@ export async function createOption(
     sortOrder: number;
   },
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch('/v1/service-options', {
     method: 'POST',
     tenantId: ctx.tenantId,
@@ -206,7 +206,7 @@ export async function updateOption(
     sortOrder?: number;
   },
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/service-options/${optionId}`, {
     method: 'PATCH',
     tenantId: ctx.tenantId,
@@ -218,7 +218,7 @@ export async function updateOption(
 }
 
 export async function deleteOption(serviceId: string, optionId: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/service-options/${optionId}`, {
     method: 'DELETE',
     tenantId: ctx.tenantId,
@@ -234,7 +234,7 @@ export async function createAddOn(
   serviceId: string,
   input: { name: string; priceDelta: number; durationDeltaMin: number; sortOrder: number },
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/services/${serviceId}/add-ons`, {
     method: 'POST',
     tenantId: ctx.tenantId,
@@ -250,7 +250,7 @@ export async function updateAddOn(
   addOnId: string,
   input: { name?: string; priceDelta?: number; durationDeltaMin?: number; sortOrder?: number },
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/add-ons/${addOnId}`, {
     method: 'PATCH',
     tenantId: ctx.tenantId,
@@ -262,7 +262,7 @@ export async function updateAddOn(
 }
 
 export async function deleteAddOn(serviceId: string, addOnId: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/add-ons/${addOnId}`, {
     method: 'DELETE',
     tenantId: ctx.tenantId,
@@ -285,7 +285,7 @@ export async function createBundle(
     sortOrder: number;
   },
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/services/${serviceId}/bundles`, {
     method: 'POST',
     tenantId: ctx.tenantId,
@@ -308,7 +308,7 @@ export async function updateBundle(
     sortOrder?: number;
   },
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/bundles/${bundleId}`, {
     method: 'PATCH',
     tenantId: ctx.tenantId,
@@ -320,7 +320,7 @@ export async function updateBundle(
 }
 
 export async function deleteBundle(serviceId: string, bundleId: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/bundles/${bundleId}`, {
     method: 'DELETE',
     tenantId: ctx.tenantId,
@@ -409,7 +409,7 @@ const PEDICURE_PRESETS: ServiceSpec[] = [
 ];
 
 async function createServiceWithSpec(categoryId: string, spec: ServiceSpec): Promise<string> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
 
   const svc = await apiFetch<{ id: string }>('/v1/services', {
@@ -455,7 +455,7 @@ async function createServiceWithSpec(categoryId: string, spec: ServiceSpec): Pro
 }
 
 async function getOrCreateCategory(name: string): Promise<string> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   const catRes = await apiFetch<{ categories: Array<{ id: string; name: string }> }>(
     '/v1/service-categories',

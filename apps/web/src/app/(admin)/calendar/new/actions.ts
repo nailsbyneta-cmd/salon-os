@@ -16,7 +16,7 @@ interface LocationInfo {
 }
 
 async function fetchService(id: string): Promise<ServiceInfo> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   return apiFetch<ServiceInfo>(`/v1/services/${id}`, {
     tenantId: ctx.tenantId,
     userId: ctx.userId,
@@ -25,7 +25,7 @@ async function fetchService(id: string): Promise<ServiceInfo> {
 }
 
 async function fetchFirstLocation(): Promise<LocationInfo> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const res = await apiFetch<{ locations: LocationInfo[] }>('/v1/locations', {
     tenantId: ctx.tenantId,
     userId: ctx.userId,
@@ -36,7 +36,7 @@ async function fetchFirstLocation(): Promise<LocationInfo> {
 }
 
 async function ensureClient(form: FormData): Promise<string | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const existingId = form.get('clientId')?.toString();
   if (existingId) return existingId;
 
@@ -58,7 +58,7 @@ async function ensureClient(form: FormData): Promise<string | null> {
 }
 
 export async function createAppointment(form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
 
   const serviceId = form.get('serviceId')?.toString();
   const staffId = form.get('staffId')?.toString();

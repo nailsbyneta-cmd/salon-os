@@ -16,7 +16,7 @@ interface ClientFull {
 }
 
 async function loadClient(id: string): Promise<ClientFull | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     return await apiFetch<ClientFull>(`/v1/clients/${id}`, {
       tenantId: ctx.tenantId,

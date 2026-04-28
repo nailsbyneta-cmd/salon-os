@@ -19,7 +19,7 @@ export async function searchCommand(query: string): Promise<SearchHit[]> {
   const q = query.trim();
   if (q.length < 2) return [];
 
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
 
   const fetchClients = apiFetch<{

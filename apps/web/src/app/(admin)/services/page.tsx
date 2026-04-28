@@ -22,7 +22,7 @@ interface CategoryRow {
 }
 
 async function loadData(): Promise<{ services: ServiceRow[]; categories: CategoryRow[] }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const [svcRes, catRes] = await Promise.all([
       apiFetch<{ services: ServiceRow[] }>('/v1/services', {

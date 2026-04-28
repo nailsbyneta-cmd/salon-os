@@ -9,7 +9,7 @@ interface Location {
 }
 
 async function firstLocation(): Promise<string> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const res = await apiFetch<{ locations: Location[] }>('/v1/locations', {
     tenantId: ctx.tenantId,
     userId: ctx.userId,
@@ -20,7 +20,7 @@ async function firstLocation(): Promise<string> {
 }
 
 export async function createStaff(form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const firstName = form.get('firstName')?.toString().trim();
   const lastName = form.get('lastName')?.toString().trim();
   const email = form.get('email')?.toString().trim();
@@ -65,7 +65,7 @@ export async function createStaff(form: FormData): Promise<void> {
 }
 
 export async function updateStaff(id: string, form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const firstName = form.get('firstName')?.toString().trim();
   const lastName = form.get('lastName')?.toString().trim();
   const email = form.get('email')?.toString().trim();
@@ -122,7 +122,7 @@ export async function updateStaff(id: string, form: FormData): Promise<void> {
 }
 
 export async function deleteStaff(id: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/staff/${id}`, {
     method: 'DELETE',
     tenantId: ctx.tenantId,

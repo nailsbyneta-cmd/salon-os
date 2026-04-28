@@ -7,7 +7,7 @@ import { getCurrentTenant } from '@/lib/tenant';
 type Transition = 'confirm' | 'check-in' | 'start' | 'complete';
 
 export async function transitionAppointment(appointmentId: string, to: Transition): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/appointments/${appointmentId}/${to}`, {
     method: 'POST',
     tenantId: ctx.tenantId,
@@ -25,7 +25,7 @@ export async function transitionAppointment(appointmentId: string, to: Transitio
 }
 
 export async function cancelAppointment(appointmentId: string, reason: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/appointments/${appointmentId}/cancel`, {
     method: 'POST',
     tenantId: ctx.tenantId,
@@ -40,7 +40,7 @@ export async function cancelAppointment(appointmentId: string, reason: string): 
 }
 
 export async function markNoShow(appointmentId: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/appointments/${appointmentId}/cancel`, {
     method: 'POST',
     tenantId: ctx.tenantId,

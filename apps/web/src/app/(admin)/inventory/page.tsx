@@ -20,7 +20,7 @@ interface Product {
 }
 
 async function load(): Promise<Product[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ products: Product[] }>('/v1/products', {
       tenantId: ctx.tenantId,

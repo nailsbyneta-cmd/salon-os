@@ -135,7 +135,7 @@ async function loadData(): Promise<{
   gallery: GalleryImage[];
   locations: Loc[];
 }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   try {
     const [t, f, r, g, l] = await Promise.all([

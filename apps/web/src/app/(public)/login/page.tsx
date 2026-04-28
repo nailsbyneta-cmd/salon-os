@@ -1,103 +1,55 @@
-'use client';
+import Link from 'next/link';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
 
-export default function LoginPage(): React.JSX.Element {
-  const router = useRouter();
-  const [email, setEmail] = useState('lorenc@beautyneta.ch');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+/**
+ * Login-Page. Klick auf "Mit WorkOS einloggen" triggert
+ * GET /v1/public/auth/login auf API → Redirect zu WorkOS-AuthKit →
+ * Callback → Cookie gesetzt → User landet auf `/`.
+ *
+ * Falls WORKOS-Envs nicht gesetzt sind, antwortet die API mit 503 — wir
+ * zeigen dann eine Dev-Hint-Box an.
+ */
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; redirect?: string }>;
+}): Promise<React.JSX.Element> {
+  const sp = await searchParams;
+  const errorMsg = sp.error;
+  const redirectTo = sp.redirect ?? '/';
 
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      // In dev mode, we just check email matches and redirect to /admin
-      // In production, WorkOS would handle this
-      if (email !== 'lorenc@beautyneta.ch') {
-        setError('Invalid email. Use lorenc@beautyneta.ch for demo.');
-        setLoading(false);
-        return;
-      }
-
-      // Demo: redirect straight to admin (getCurrentTenant() reads from env vars)
-      router.push('/');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
-      setLoading(false);
-    }
-  };
+  const loginUrl = `${API_URL}/v1/public/auth/login?redirect=${encodeURIComponent(redirectTo)}`;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-text-primary mb-2">Salon OS</h1>
-          <p className="text-text-muted">Demo Login</p>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <h1 className="font-display text-3xl font-semibold text-text-primary">SALON OS</h1>
+          <p className="mt-2 text-sm text-text-muted">Login mit WorkOS AuthKit</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-text-primary mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="lorenc@beautyneta.ch"
-            />
+        {errorMsg ? (
+          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {decodeURIComponent(errorMsg)}
           </div>
+        ) : null}
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-text-primary mb-2">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              placeholder="(any password for demo)"
-            />
-            <p className="text-xs text-text-muted mt-1">
-              For this demo, any password works. Production uses WorkOS.
-            </p>
-          </div>
+        <a
+          href={loginUrl}
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-[0.98]"
+        >
+          → Mit WorkOS einloggen
+        </a>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-4 py-2 bg-brand-accent text-white font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded text-sm text-text-secondary">
-          <p className="font-medium mb-2">Demo Credentials:</p>
-          <p>
-            Email: <code className="bg-white px-2 py-1 rounded">lorenc@beautyneta.ch</code>
-          </p>
-          <p>
-            Password: <code className="bg-white px-2 py-1 rounded">any password</code>
-          </p>
-          <p className="mt-2 text-xs">
-            ⚠️ This is a development login only. Production uses WorkOS SSO.
-          </p>
+        <div className="rounded-md border border-border bg-surface p-3 text-xs text-text-muted">
+          <strong>Dev-Hinweis:</strong> Solange WORKOS_API_KEY nicht in der API gesetzt ist, läuft
+          die App im Dev-Header-Modus (DEMO_TENANT_ID env). Du brauchst dieses Login dann nicht —
+          direkt zu{' '}
+          <Link href="/" className="underline">
+            /
+          </Link>
+          .
         </div>
       </div>
     </div>

@@ -10,7 +10,7 @@ interface Preview {
 }
 
 async function loadPreview(): Promise<Preview> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     return await apiFetch<Preview>('/v1/marketing/reactivation', {
       tenantId: ctx.tenantId,

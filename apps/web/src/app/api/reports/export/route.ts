@@ -33,7 +33,7 @@ function csvEscape(v: string | number | null | undefined): string {
 }
 
 export async function GET(req: Request): Promise<Response> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const url = new URL(req.url);
   const period = url.searchParams.get('period') ?? '30d';
   const days = PERIODS[period] ?? 30;

@@ -19,7 +19,7 @@ interface ClientDetail {
 }
 
 async function load(id: string): Promise<ClientDetail | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     return await apiFetch<ClientDetail>(`/v1/clients/${id}`, {
       tenantId: ctx.tenantId,

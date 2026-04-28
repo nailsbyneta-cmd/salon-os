@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
 export async function forgetClient(clientId: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/clients/${clientId}/forget`, {
     method: 'POST',
     tenantId: ctx.tenantId,

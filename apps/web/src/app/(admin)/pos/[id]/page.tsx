@@ -28,7 +28,7 @@ interface Appt {
 }
 
 async function loadAppointment(id: string): Promise<Appt | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     return await apiFetch<Appt>(`/v1/appointments/${id}`, {
       tenantId: ctx.tenantId,

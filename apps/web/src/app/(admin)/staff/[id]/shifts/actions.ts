@@ -9,7 +9,7 @@ interface Location {
 }
 
 async function firstLocation(): Promise<string> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const res = await apiFetch<{ locations: Location[] }>('/v1/locations', {
     tenantId: ctx.tenantId,
     userId: ctx.userId,
@@ -20,7 +20,7 @@ async function firstLocation(): Promise<string> {
 }
 
 export async function createShift(staffId: string, form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const date = form.get('date')?.toString();
   const startTime = form.get('startTime')?.toString();
   const endTime = form.get('endTime')?.toString();
@@ -51,7 +51,7 @@ export async function createShift(staffId: string, form: FormData): Promise<void
 }
 
 export async function deleteShift(staffId: string, shiftId: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/shifts/${shiftId}`, {
     method: 'DELETE',
     tenantId: ctx.tenantId,
@@ -65,7 +65,7 @@ export async function saveWeeklySchedule(
   staffId: string,
   schedule: Record<string, Array<{ open: string; close: string }>>,
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/staff/${staffId}/weekly-schedule`, {
     method: 'PATCH',
     tenantId: ctx.tenantId,
@@ -88,7 +88,7 @@ export async function createTimeOff(
   staffId: string,
   input: { startAt: string; endAt: string; reason?: string },
 ): Promise<TimeOffEntry> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const created = await apiFetch<TimeOffEntry>(`/v1/staff/${staffId}/time-off`, {
     method: 'POST',
     tenantId: ctx.tenantId,
@@ -101,7 +101,7 @@ export async function createTimeOff(
 }
 
 export async function deleteTimeOff(staffId: string, timeOffId: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/staff/${staffId}/time-off/${timeOffId}`, {
     method: 'DELETE',
     tenantId: ctx.tenantId,
@@ -118,7 +118,7 @@ export async function saveScheduleExceptions(
     { closed: true } | { intervals: Array<{ open: string; close: string }> }
   >,
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/staff/${staffId}/schedule-exceptions`, {
     method: 'PATCH',
     tenantId: ctx.tenantId,
@@ -130,7 +130,7 @@ export async function saveScheduleExceptions(
 }
 
 export async function generateShifts(staffId: string, days: number): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const locationId = await firstLocation();
   await apiFetch<{ created: number; skipped: number }>('/v1/shifts/generate-from-location', {
     method: 'POST',

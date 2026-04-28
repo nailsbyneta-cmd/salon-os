@@ -21,7 +21,7 @@ export interface ClientHit {
 export async function searchClientsInline(query: string): Promise<ClientHit[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ clients: ClientHit[] }>(
       `/v1/clients?q=${encodeURIComponent(q)}&limit=8`,

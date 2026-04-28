@@ -23,7 +23,7 @@ interface Entry {
 }
 
 async function load(): Promise<Entry[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ entries: Entry[] }>('/v1/waitlist', {
       tenantId: ctx.tenantId,

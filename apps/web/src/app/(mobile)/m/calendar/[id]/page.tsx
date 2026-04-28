@@ -38,7 +38,7 @@ interface Appt {
 }
 
 async function load(id: string): Promise<Appt | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     return await apiFetch<Appt>(`/v1/appointments/${id}`, {
       tenantId: ctx.tenantId,
@@ -67,7 +67,7 @@ interface WaitlistMatch {
 async function loadWaitlistMatches(
   appt: Appt,
 ): Promise<{ entries: WaitlistMatch[]; total: number; tenantName: string | null }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   // Slot-Range: 4h vor Start bis 4h nach End — Match-Window
   const slotStart = new Date(appt.startAt);
   slotStart.setHours(slotStart.getHours() - 4);

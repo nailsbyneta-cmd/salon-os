@@ -1,4 +1,5 @@
 'use server';
+import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { apiFetch } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
@@ -8,7 +9,7 @@ interface FirstLocation {
 }
 
 async function firstLocationId(): Promise<string> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const res = await apiFetch<{ locations: FirstLocation[] }>('/v1/locations', {
     tenantId: ctx.tenantId,
     userId: ctx.userId,
@@ -32,7 +33,7 @@ export async function acceptSuggestedPattern(
     nextSuggestedAt: string;
   },
 ): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const locationId = await firstLocationId();
 
   await apiFetch('/v1/appointment-series', {
@@ -55,4 +56,50 @@ export async function acceptSuggestedPattern(
 
   revalidatePath(`/m/clients/${clientId}`);
   revalidatePath(`/clients/${clientId}`);
+}
+
+/**
+ * DSGVO Art. 15 — Recht auf Auskunft.
+ * Holt alle persönlichen Daten der Kundin als JSON-Dump und triggert Download
+ * über die Server-Action API-Route. Returnt das Payload damit das Client-
+ * Component es als Blob speichert (Server-Actions können selbst keine Files
+ * an den Browser streamen ohne Workaround).
+ */
+export async function exportClientPersonalData(clientId: string): Promise<{
+  filename: string;
+  content: string;
+}> {
+  const ctx = await getCurrentTenant();
+  const data = await apiFetch<unknown>(`/v1/clients/${clientId}/export`, {
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+  });
+  const stamp = new Date().toISOString().slice(0, 10);
+  return {
+    filename: `dsgvo-export-${clientId}-${stamp}.json`,
+    content: JSON.stringify(data, null, 2),
+  };
+}
+
+/**
+ * DSGVO Art. 17 — Recht auf Löschung.
+ * Markiert die Kundin als zu löschen, schreibt Audit-Log. Backend macht aktuell
+ * Soft-Delete mit Notiz; richtige Anonymisierung kommt mit dem 30-Tage-Cron.
+ *
+ * Nach erfolgreicher Löschung: Redirect auf Client-Liste, kein Sinn auf der
+ * Detail-Seite zu bleiben.
+ */
+export async function requestClientDeletion(clientId: string, reason: string): Promise<void> {
+  const ctx = await getCurrentTenant();
+  await apiFetch(`/v1/clients/${clientId}/forget`, {
+    method: 'POST',
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    role: ctx.role,
+    body: { reason: reason || undefined },
+  });
+  revalidatePath('/m/clients');
+  revalidatePath('/clients');
+  redirect('/m/clients');
 }

@@ -55,7 +55,7 @@ function parseForm(form: FormData, mode: 'create' | 'update'): ClientBody {
 }
 
 export async function createClient(form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const body = parseForm(form, 'create');
   try {
     const created = await apiFetch<{ id: string }>('/v1/clients', {
@@ -76,7 +76,7 @@ export async function createClient(form: FormData): Promise<void> {
 }
 
 export async function updateClient(id: string, form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const body = parseForm(form, 'update');
   try {
     await apiFetch(`/v1/clients/${id}`, {
@@ -103,7 +103,7 @@ export async function updateClient(id: string, form: FormData): Promise<void> {
  * Waitlist-Match. Rückgängig machen via erneutes Toggle.
  */
 export async function toggleClientBlocked(id: string, nextBlocked: boolean): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     await apiFetch(`/v1/clients/${id}`, {
       method: 'PATCH',

@@ -41,7 +41,7 @@ interface Appt {
 }
 
 async function loadClient(id: string): Promise<Client | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     return await apiFetch<Client>(`/v1/clients/${id}`, {
       tenantId: ctx.tenantId,
@@ -55,7 +55,7 @@ async function loadClient(id: string): Promise<Client | null> {
 }
 
 async function loadClientAppointments(clientId: string): Promise<Appt[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const from = new Date();
   from.setFullYear(from.getFullYear() - 2);
   const to = new Date();

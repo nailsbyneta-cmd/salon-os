@@ -19,7 +19,7 @@ interface GiftCard {
 }
 
 async function load(code: string): Promise<GiftCard | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ giftCards: GiftCard[] }>('/v1/gift-cards', {
       tenantId: ctx.tenantId,

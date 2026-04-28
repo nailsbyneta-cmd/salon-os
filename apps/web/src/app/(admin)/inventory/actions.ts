@@ -5,7 +5,7 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
 export async function createProduct(form: FormData): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const name = form.get('name')?.toString().trim();
   const type = form.get('type')?.toString() ?? 'RETAIL';
   const sku = form.get('sku')?.toString().trim() || undefined;
@@ -46,7 +46,7 @@ export async function createProduct(form: FormData): Promise<void> {
 }
 
 export async function adjustStock(id: string, delta: number): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/products/${id}/adjust`, {
     method: 'POST',
     tenantId: ctx.tenantId,
@@ -58,7 +58,7 @@ export async function adjustStock(id: string, delta: number): Promise<void> {
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch(`/v1/products/${id}`, {
     method: 'DELETE',
     tenantId: ctx.tenantId,

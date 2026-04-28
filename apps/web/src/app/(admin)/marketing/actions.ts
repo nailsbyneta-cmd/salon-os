@@ -4,7 +4,7 @@ import { apiFetch } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
 export async function runReactivation(): Promise<void> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   await apiFetch<{ enqueued: number; skippedRecent: number }>('/v1/marketing/reactivation/run', {
     method: 'POST',
     tenantId: ctx.tenantId,

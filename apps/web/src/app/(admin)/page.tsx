@@ -64,7 +64,7 @@ interface Dashboard {
 }
 
 async function loadDashboard(): Promise<Dashboard> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
 
   const start = new Date();

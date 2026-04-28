@@ -4,8 +4,8 @@ import { redirect } from 'next/navigation';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 
-function ctxHeaders(): { tenantId: string; userId: string; role: string } {
-  const c = getCurrentTenant();
+async function ctxHeaders(): Promise<{ tenantId: string; userId: string; role: string }> {
+  const c = await getCurrentTenant();
   return { tenantId: c.tenantId, userId: c.userId, role: c.role };
 }
 
@@ -39,7 +39,7 @@ export async function saveLocationHours(
   try {
     await apiFetch(`/v1/locations/${locationId}`, {
       method: 'PATCH',
-      ...ctxHeaders(),
+      ...(await ctxHeaders()),
       body: { openingHours: schedule },
     });
   } catch (err) {
@@ -66,7 +66,7 @@ export async function updateLocation(locationId: string, form: FormData): Promis
   try {
     await apiFetch(`/v1/locations/${locationId}`, {
       method: 'PATCH',
-      ...ctxHeaders(),
+      ...(await ctxHeaders()),
       body,
     });
   } catch (err) {
@@ -95,7 +95,7 @@ export async function updateBranding(form: FormData): Promise<void> {
   try {
     await apiFetch('/v1/salon/branding', {
       method: 'PATCH',
-      ...ctxHeaders(),
+      ...(await ctxHeaders()),
       body,
     });
   } catch (err) {
@@ -115,7 +115,7 @@ export async function createFaq(form: FormData): Promise<void> {
   try {
     await apiFetch('/v1/salon/faqs', {
       method: 'POST',
-      ...ctxHeaders(),
+      ...(await ctxHeaders()),
       body: { question, answer, order: int(form, 'order') ?? 0 },
     });
   } catch (err) {
@@ -129,7 +129,7 @@ export async function createFaq(form: FormData): Promise<void> {
 export async function deleteFaq(id: string): Promise<void> {
   await apiFetch(`/v1/salon/faqs/${id}`, {
     method: 'DELETE',
-    ...ctxHeaders(),
+    ...(await ctxHeaders()),
   });
   revalidateAll();
   redirect('/settings#faq');
@@ -146,7 +146,7 @@ export async function createReview(form: FormData): Promise<void> {
   }
   await apiFetch('/v1/salon/reviews', {
     method: 'POST',
-    ...ctxHeaders(),
+    ...(await ctxHeaders()),
     body: {
       authorName,
       rating,
@@ -162,7 +162,7 @@ export async function createReview(form: FormData): Promise<void> {
 export async function deleteReview(id: string): Promise<void> {
   await apiFetch(`/v1/salon/reviews/${id}`, {
     method: 'DELETE',
-    ...ctxHeaders(),
+    ...(await ctxHeaders()),
   });
   revalidateAll();
   redirect('/settings#reviews');
@@ -171,7 +171,7 @@ export async function deleteReview(id: string): Promise<void> {
 export async function toggleReviewFeatured(id: string, featured: boolean): Promise<void> {
   await apiFetch(`/v1/salon/reviews/${id}`, {
     method: 'PATCH',
-    ...ctxHeaders(),
+    ...(await ctxHeaders()),
     body: { featured },
   });
   revalidateAll();
@@ -185,7 +185,7 @@ export async function createGalleryImage(form: FormData): Promise<void> {
   if (!imageUrl) throw new Error('Bild-URL ist Pflicht.');
   await apiFetch('/v1/salon/gallery', {
     method: 'POST',
-    ...ctxHeaders(),
+    ...(await ctxHeaders()),
     body: {
       imageUrl,
       caption: str(form, 'caption'),
@@ -199,7 +199,7 @@ export async function createGalleryImage(form: FormData): Promise<void> {
 export async function deleteGalleryImage(id: string): Promise<void> {
   await apiFetch(`/v1/salon/gallery/${id}`, {
     method: 'DELETE',
-    ...ctxHeaders(),
+    ...(await ctxHeaders()),
   });
   revalidateAll();
   redirect('/settings#gallery');
@@ -221,7 +221,7 @@ export async function updateBookingSettings(form: FormData): Promise<void> {
   try {
     await apiFetch('/v1/salon/settings', {
       method: 'PATCH',
-      ...ctxHeaders(),
+      ...(await ctxHeaders()),
       body: { booking },
     });
   } catch (err) {
@@ -249,7 +249,7 @@ export async function updateNotificationSettings(form: FormData): Promise<void> 
   try {
     await apiFetch('/v1/salon/settings', {
       method: 'PATCH',
-      ...ctxHeaders(),
+      ...(await ctxHeaders()),
       body: { notifications },
     });
   } catch (err) {
@@ -270,7 +270,7 @@ export async function updateFeatureSettings(form: FormData): Promise<void> {
   try {
     await apiFetch('/v1/salon/settings', {
       method: 'PATCH',
-      ...ctxHeaders(),
+      ...(await ctxHeaders()),
       body: { features },
     });
   } catch (err) {

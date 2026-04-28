@@ -21,7 +21,7 @@ async function loadAudit(opts: {
   entity?: string;
   cursor?: string;
 }): Promise<{ entries: AuditEntry[]; nextCursor: string | null }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   const qs = new URLSearchParams();
   if (opts.entity) qs.set('entity', opts.entity);
   if (opts.cursor) qs.set('cursor', opts.cursor);

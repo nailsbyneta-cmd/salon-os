@@ -45,7 +45,7 @@ interface Series {
 }
 
 async function loadSeries(clientId: string): Promise<Series[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ series: Series[] }>(
       `/v1/appointment-series?clientId=${clientId}`,
@@ -74,7 +74,7 @@ interface SuggestedPattern {
 }
 
 async function loadSuggestion(clientId: string): Promise<SuggestedPattern | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ pattern: SuggestedPattern | null }>(
       `/v1/appointment-series/suggest?clientId=${clientId}`,
@@ -88,7 +88,7 @@ async function loadSuggestion(clientId: string): Promise<SuggestedPattern | null
 }
 
 async function loadClient(id: string): Promise<Client | null> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     return await apiFetch<Client>(`/v1/clients/${id}`, {
       tenantId: ctx.tenantId,
@@ -102,7 +102,7 @@ async function loadClient(id: string): Promise<Client | null> {
 }
 
 async function loadAppointments(clientId: string): Promise<Appt[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   // Past 6 months + next 3 months
   const from = new Date();
   from.setMonth(from.getMonth() - 6);

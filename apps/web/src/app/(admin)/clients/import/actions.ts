@@ -176,7 +176,7 @@ export async function runImport(form: FormData): Promise<ImportResult> {
     };
   }
 
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{
       created: number;

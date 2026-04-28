@@ -14,7 +14,7 @@ export async function rescheduleAppointment(
   newEndIso: string,
   newStaffId?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     await apiFetch(`/v1/appointments/${appointmentId}/reschedule`, {
       method: 'POST',

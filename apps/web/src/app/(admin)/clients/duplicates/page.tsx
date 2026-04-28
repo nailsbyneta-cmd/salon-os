@@ -18,7 +18,7 @@ interface ClientRow {
 }
 
 async function loadAll(): Promise<ClientRow[]> {
-  const ctx = getCurrentTenant();
+  const ctx = await getCurrentTenant();
   try {
     const res = await apiFetch<{ clients: ClientRow[] }>('/v1/clients?limit=5000', {
       tenantId: ctx.tenantId,
