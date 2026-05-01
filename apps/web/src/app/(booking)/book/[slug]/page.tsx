@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { Avatar, Badge, Card, CardBody } from '@salon-os/ui';
 import { CookieConsent } from '@/components/cookie-consent';
 import { HeroWelcome } from '@/components/booking/hero-welcome';
-import { ServiceCardToggle } from './service-card-toggle';
+import { CategoryServiceGrid } from './category-service-grid';
 import { CartPill } from './cart-pill';
 
 const API_URL = process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000';
@@ -539,81 +539,13 @@ export default async function BookingStart({
         </section>
       ) : null}
 
-      {/* Services — Phorest-Style Kategorien-Folders (collapsible).
-          Erste Kategorie ist default offen, der Rest geschlossen — schnellerer
-          Scan auf Mobile, keine endlose Service-Wand. */}
-      <section aria-label="Behandlungen wählen" className="space-y-2">
-        {grouped.map(({ catId, catName, items }) => (
-          <details
-            key={catId}
-            // Phorest-Pattern: alle Folders default geschlossen + Single-
-            // Accordion via name="" (HTML5 exclusive-group, Chrome/FF/Safari
-            // support seit 2024). Klick auf einen Folder schliesst andere
-            // automatisch. Audit Pass 8+9.
-            name="booking-folders"
-            open={false}
-            className="group rounded-lg border border-border bg-surface open:bg-surface-elevated"
-          >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 transition-colors hover:bg-surface-elevated [&::-webkit-details-marker]:hidden">
-              <div className="flex items-baseline gap-3">
-                <span className="font-display text-lg font-semibold tracking-tight text-text-primary">
-                  {catName}
-                </span>
-                <span className="text-xs text-text-muted">
-                  {items.length} {items.length === 1 ? 'Behandlung' : 'Behandlungen'}
-                </span>
-              </div>
-              <span
-                aria-hidden
-                className="text-text-muted transition-transform duration-200 group-open:rotate-180"
-              >
-                ▾
-              </span>
-            </summary>
-            <div className="grid gap-2 border-t border-border/50 p-2">
-              {items.map((s) => (
-                <ServiceCardToggle
-                  key={s.id}
-                  slug={slug}
-                  serviceId={s.id}
-                  serviceName={s.name}
-                  basePrice={s.basePrice}
-                  durationMinutes={s.durationMinutes}
-                  configureHref={`/book/${slug}/service/${s.id}/configure?location=${locations[0]?.id ?? ''}`}
-                >
-                  <CardBody className="flex items-center justify-between gap-3 overflow-hidden py-4 pl-4 pr-14">
-                    <div className="min-w-0 flex-1 overflow-hidden">
-                      <div className="truncate font-display text-base font-semibold tracking-tight text-text-primary md:text-lg">
-                        {s.name}
-                      </div>
-                      {s.description ? (
-                        <div className="mt-0.5 line-clamp-2 text-sm text-text-secondary">
-                          {s.description}
-                        </div>
-                      ) : null}
-                      {/* UX-Brief Aufgabe 2: Dauer als Pill mit Uhr-Icon — gibt
-                          mehr Air & visuelle Trennung vom Preis. */}
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] tabular-nums text-white/60">
-                          <span aria-hidden>⏱</span>
-                          {s.durationMinutes} Min
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex-none text-right">
-                      {/* UX-Brief: CHF klein, Preis gross — macht CHF zur Einheit
-                          nicht zum Erschrecken (Anchoring-Trick). */}
-                      <div className="font-display text-xl font-semibold tabular-nums text-text-primary md:text-2xl">
-                        <span className="mr-1 text-[10px] font-medium text-text-muted">CHF</span>
-                        {Number(s.basePrice).toFixed(0)}
-                      </div>
-                    </div>
-                  </CardBody>
-                </ServiceCardToggle>
-              ))}
-            </div>
-          </details>
-        ))}
+      {/* Services — sticky category tab nav + animated service list */}
+      <section aria-label="Behandlungen wählen">
+        <CategoryServiceGrid
+          slug={slug}
+          locationId={locations[0]?.id ?? ''}
+          groups={grouped}
+        />
       </section>
 
       {/* Team */}
@@ -737,55 +669,76 @@ export default async function BookingStart({
         </section>
       ) : null}
 
-      {/* Gallery */}
+      {/* Gallery — horizontal filmstrip on mobile */}
       {gallery.length > 0 ? (
         <section>
           <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
             Gallerie
           </h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div
+            className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0"
+            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+          >
             {gallery.map((g) => (
               <img
                 key={g.id}
                 src={g.imageUrl}
                 alt={g.caption ?? 'Gallerie'}
-                className="aspect-square w-full rounded-md border border-border object-cover transition-transform hover:scale-[1.02]"
+                className="h-44 w-44 flex-none rounded-xl border border-border object-cover shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md md:h-auto md:w-auto md:aspect-square md:flex-initial md:rounded-lg"
               />
             ))}
           </div>
         </section>
       ) : null}
 
-      {/* Reviews */}
+      {/* Reviews — horizontal scroll carousel on mobile */}
       {reviews.length > 0 ? (
         <section>
-          <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
-            Das sagen unsere Kundinnen
-          </h2>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+              Das sagen unsere Kundinnen
+            </h2>
+            {avgRating !== null ? (
+              <span className="flex items-center gap-1 text-[11px] text-text-muted">
+                <span className="text-accent">★</span>
+                <span className="font-semibold text-text-primary">{avgRating.toFixed(1)}</span>
+                <span>· {reviews.length} Bewertungen</span>
+              </span>
+            ) : null}
+          </div>
+          <div
+            className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0"
+            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+          >
             {reviews.map((r) => (
-              <Card key={r.id}>
-                <CardBody>
-                  <div className="mb-1 flex items-center justify-between">
+              <div
+                key={r.id}
+                className="w-72 flex-none rounded-xl border border-border bg-surface p-4 shadow-sm md:w-auto md:flex-initial"
+              >
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-accent/15 text-[13px] font-semibold text-accent">
+                      {r.authorName.charAt(0).toUpperCase()}
+                    </div>
                     <span className="text-sm font-medium text-text-primary">{r.authorName}</span>
-                    <span className="text-xs tabular-nums text-accent">
-                      {'★'.repeat(r.rating)}
-                      <span className="text-text-muted">{'☆'.repeat(5 - r.rating)}</span>
-                    </span>
                   </div>
-                  <p className="text-sm text-text-secondary whitespace-pre-line">{r.text}</p>
-                  {r.sourceUrl ? (
-                    <a
-                      href={r.sourceUrl}
-                      target="_blank"
-                      rel="noopener"
-                      className="mt-2 inline-block text-[11px] text-text-muted hover:text-accent"
-                    >
-                      Auf Google ansehen →
-                    </a>
-                  ) : null}
-                </CardBody>
-              </Card>
+                  <span className="text-sm text-accent" aria-label={`${r.rating} von 5 Sternen`}>
+                    {'★'.repeat(r.rating)}
+                    <span className="text-text-muted/40">{'★'.repeat(5 - r.rating)}</span>
+                  </span>
+                </div>
+                <p className="line-clamp-4 text-sm leading-relaxed text-text-secondary">{r.text}</p>
+                {r.sourceUrl ? (
+                  <a
+                    href={r.sourceUrl}
+                    target="_blank"
+                    rel="noopener"
+                    className="mt-2 inline-block text-[11px] text-text-muted hover:text-accent"
+                  >
+                    Auf Google →
+                  </a>
+                ) : null}
+              </div>
             ))}
           </div>
         </section>
@@ -896,29 +849,6 @@ export default async function BookingStart({
       <CookieConsent privacyHref={`/book/${slug}/datenschutz`} />
       <CartPill slug={slug} />
 
-      <style>{`
-        /* UX-Brief Aufgabe 8.3 — Folder-Slide-In auf Booking-Landing.
-           Native <details name="..."> hat keinen Animations-Hook ausser
-           CSS-Selectors auf die Children. */
-        details[name='booking-folders'][open] > *:not(summary) {
-          animation: folderSlideIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes folderSlideIn {
-          from {
-            opacity: 0;
-            transform: translateY(-6px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          details[name='booking-folders'][open] > *:not(summary) {
-            animation: none;
-          }
-        }
-      `}</style>
     </main>
   );
 }
