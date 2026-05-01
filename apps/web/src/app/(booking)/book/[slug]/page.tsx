@@ -541,11 +541,7 @@ export default async function BookingStart({
 
       {/* Services — sticky category tab nav + animated service list */}
       <section aria-label="Behandlungen wählen">
-        <CategoryServiceGrid
-          slug={slug}
-          locationId={locations[0]?.id ?? ''}
-          groups={grouped}
-        />
+        <CategoryServiceGrid slug={slug} locationId={locations[0]?.id ?? ''} groups={grouped} />
       </section>
 
       {/* Team */}
@@ -848,7 +844,6 @@ export default async function BookingStart({
 
       <CookieConsent privacyHref={`/book/${slug}/datenschutz`} />
       <CartPill slug={slug} />
-
     </main>
   );
 }

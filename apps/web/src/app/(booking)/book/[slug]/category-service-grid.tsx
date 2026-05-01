@@ -161,9 +161,7 @@ function ServiceCardBody({
       {/* Right: price */}
       <div className="flex-none text-right">
         <div className="font-display text-xl font-semibold tabular-nums text-text-primary">
-          <span className="mr-0.5 text-[10px] font-medium tracking-wider text-text-muted">
-            CHF
-          </span>
+          <span className="mr-0.5 text-[10px] font-medium tracking-wider text-text-muted">CHF</span>
           {Number(basePrice).toFixed(0)}
         </div>
       </div>
