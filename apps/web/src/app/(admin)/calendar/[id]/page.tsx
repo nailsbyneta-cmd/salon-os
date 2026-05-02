@@ -6,6 +6,7 @@ import { getCurrentTenant } from '@/lib/tenant';
 import { ClientBrief } from '@/components/client-brief';
 import { transitionAppointment, cancelAppointment, markNoShow } from '../actions';
 import { updateAppointmentNotes } from './actions';
+import { AppointmentEditForm } from './appointment-edit-form';
 
 function addDaysIso(isoDate: string, days: number): string {
   const [y, m, d] = isoDate.split('-').map(Number);
@@ -432,6 +433,16 @@ export default async function AppointmentDetailPage({
           </li>
         </ul>
       </Card>
+
+      {a.status !== 'COMPLETED' && a.status !== 'CANCELLED' && a.status !== 'NO_SHOW' ? (
+        <div className="mb-6">
+          <AppointmentEditForm
+            appointmentId={a.id}
+            currentStartIso={a.startAt}
+            durationMinutes={a.items.reduce((s, i) => s + i.duration, 0)}
+          />
+        </div>
+      ) : null}
 
       {a.status !== 'COMPLETED' && a.status !== 'CANCELLED' ? (
         <section className="mb-6 flex flex-wrap gap-2">
