@@ -1,6 +1,12 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, ForbiddenException, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { requireTenantContext } from '../tenant/tenant.context.js';
 import { ReportsService } from './reports.service.js';
+
+function requireManagerOrOwner(role: string | null | undefined): void {
+  if (role !== 'OWNER' && role !== 'MANAGER') {
+    throw new ForbiddenException('Nur OWNER oder MANAGER dürfen Berichte einsehen.');
+  }
+}
 
 /**
  * Reports v2 — server-side aggregation für /admin/reports.
@@ -26,6 +32,27 @@ export class ReportsController {
     const from = fromIso && /^\d{4}-\d{2}-\d{2}$/.test(fromIso) ? fromIso : defaultFrom;
     const to = toIso && /^\d{4}-\d{2}-\d{2}$/.test(toIso) ? toIso : defaultTo;
     return this.svc.getDashboard(ctx.tenantId, ctx.userId, ctx.role, {
+      fromIso: `${from}T00:00:00.000Z`,
+      toIso: `${to}T23:59:59.999Z`,
+    });
+  }
+
+  @Get('staff/:staffId')
+  async staffKpi(
+    @Param('staffId', ParseUUIDPipe) staffId: string,
+    @Query('from') fromIso?: string,
+    @Query('to') toIso?: string,
+  ): Promise<Awaited<ReturnType<ReportsService['getStaffKpi']>>> {
+    const ctx = requireTenantContext();
+    requireManagerOrOwner(ctx.role);
+    const today = new Date();
+    const defaultTo = today.toISOString().slice(0, 10);
+    const defaultFrom = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const from = fromIso && /^\d{4}-\d{2}-\d{2}$/.test(fromIso) ? fromIso : defaultFrom;
+    const to = toIso && /^\d{4}-\d{2}-\d{2}$/.test(toIso) ? toIso : defaultTo;
+    return this.svc.getStaffKpi(ctx.tenantId, ctx.userId, ctx.role, staffId, {
       fromIso: `${from}T00:00:00.000Z`,
       toIso: `${to}T23:59:59.999Z`,
     });

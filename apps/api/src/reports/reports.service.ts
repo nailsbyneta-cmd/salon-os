@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '@salon-os/db';
-import { WITH_TENANT } from '../db/db.module.js';
+import { PRISMA, WITH_TENANT } from '../db/db.module.js';
 
 type WithTenantFn = <T>(
   tenantId: string,
@@ -66,9 +66,30 @@ export interface ReportsBookingChannel {
   revenueChf: number;
 }
 
+export interface StaffKpi {
+  staffId: string;
+  name: string;
+  color: string | null;
+  commissionRate: number | null;
+  revenueChf: number;
+  completedCount: number;
+  cancelledCount: number;
+  noShowCount: number;
+  avgTicketChf: number | null;
+  rebookingRate: number;
+  noShowRate: number;
+  utilizationPct: number | null;
+  commissionChf: number;
+  trend: ReportsTrendPoint[];
+  topServices: ReportsTopService[];
+}
+
 @Injectable()
 export class ReportsService {
-  constructor(@Inject(WITH_TENANT) private readonly withTenant: WithTenantFn) {}
+  constructor(
+    @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
+  ) {}
 
   async getDashboard(
     tenantId: string,
@@ -280,6 +301,112 @@ export class ReportsService {
       };
 
       return { kpis, trend, topServices, topClients, staffUtilization, channels };
+    });
+  }
+
+  async getStaffKpi(
+    tenantId: string,
+    userId: string | null,
+    role: string | null,
+    staffId: string,
+    range: { fromIso: string; toIso: string },
+  ): Promise<StaffKpi> {
+    return this.withTenant(tenantId, userId, role, async (tx) => {
+      const fromDate = new Date(range.fromIso);
+      const toDate = new Date(range.toIso);
+      const round2 = (n: number): number => Math.round(n * 100) / 100;
+
+      const staff = await tx.staff.findFirst({
+        where: { id: staffId, tenantId },
+        select: { firstName: true, lastName: true, color: true, commissionRate: true },
+      });
+
+      const appts = await tx.appointment.findMany({
+        where: { staffId, startAt: { gte: fromDate, lte: toDate } },
+        select: {
+          id: true,
+          status: true,
+          startAt: true,
+          endAt: true,
+          clientId: true,
+          items: { select: { serviceId: true, price: true, service: { select: { name: true } } } },
+        },
+      });
+
+      let completed = 0;
+      let cancelled = 0;
+      let noShow = 0;
+      let revenueChf = 0;
+      const byDay = new Map<string, { count: number; revenueChf: number }>();
+      const byService = new Map<string, ReportsTopService>();
+      const clientVisitCount = new Map<string, number>();
+
+      for (const a of appts) {
+        const isRev = a.status === 'COMPLETED';
+        const itemSum = a.items.reduce((s, i) => s + Number(i.price), 0);
+        const dayKey = a.startAt.toISOString().slice(0, 10);
+        const day = byDay.get(dayKey) ?? { count: 0, revenueChf: 0 };
+        day.count += 1;
+        if (isRev) { day.revenueChf += itemSum; revenueChf += itemSum; completed += 1; }
+        if (a.status === 'CANCELLED') cancelled += 1;
+        if (a.status === 'NO_SHOW') noShow += 1;
+        byDay.set(dayKey, day);
+        if (a.clientId) clientVisitCount.set(a.clientId, (clientVisitCount.get(a.clientId) ?? 0) + 1);
+        for (const item of a.items) {
+          const cur = byService.get(item.serviceId) ?? { serviceId: item.serviceId, name: item.service.name, count: 0, revenueChf: 0 };
+          cur.count += 1;
+          if (isRev) cur.revenueChf += Number(item.price);
+          byService.set(item.serviceId, cur);
+        }
+      }
+
+      const rebookingClients = Array.from(clientVisitCount.values()).filter((n) => n >= 2).length;
+      const rebookingRate = clientVisitCount.size > 0 ? Math.round((rebookingClients / clientVisitCount.size) * 1000) / 10 : 0;
+      const noShowRate = appts.length > 0 ? Math.round((noShow / appts.length) * 1000) / 10 : 0;
+
+      // Utilization: shifts vs appointment minutes
+      const shifts = await tx.shift.findMany({
+        where: { staffId, startAt: { gte: fromDate, lte: toDate } },
+        select: { startAt: true, endAt: true },
+      });
+      const shiftMin = shifts.reduce((s, sh) => s + Math.max(0, (sh.endAt.getTime() - sh.startAt.getTime()) / 60_000), 0);
+      const apptMin = appts
+        .filter((a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW')
+        .reduce((s, a) => s + Math.max(0, (a.endAt.getTime() - a.startAt.getTime()) / 60_000), 0);
+      const utilizationPct = shiftMin > 0 ? Math.round((apptMin / shiftMin) * 1000) / 10 : null;
+
+      // Commission earned in range
+      const commissionsAgg = await tx.staffCommission.aggregate({
+        where: { staffId, tenantId, appointment: { startAt: { gte: fromDate, lte: toDate } } },
+        _sum: { commissionChf: true },
+      });
+      const commissionChf = round2(Number(commissionsAgg._sum.commissionChf ?? 0));
+
+      const trend = Array.from(byDay.entries())
+        .map(([date, v]) => ({ date, count: v.count, revenueChf: round2(v.revenueChf) }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+      const topServices = Array.from(byService.values())
+        .map((s) => ({ ...s, revenueChf: round2(s.revenueChf) }))
+        .sort((a, b) => b.revenueChf - a.revenueChf)
+        .slice(0, 8);
+
+      return {
+        staffId,
+        name: staff ? `${staff.firstName} ${staff.lastName}` : staffId.slice(0, 8),
+        color: staff?.color ?? null,
+        commissionRate: staff?.commissionRate != null ? Number(staff.commissionRate) : null,
+        revenueChf: round2(revenueChf),
+        completedCount: completed,
+        cancelledCount: cancelled,
+        noShowCount: noShow,
+        avgTicketChf: completed > 0 ? round2(revenueChf / completed) : null,
+        rebookingRate,
+        noShowRate,
+        utilizationPct,
+        commissionChf,
+        trend,
+        topServices,
+      };
     });
   }
 }

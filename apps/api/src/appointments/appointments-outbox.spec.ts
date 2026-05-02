@@ -39,6 +39,7 @@ describe('AppointmentsService — Outbox Integration', () => {
 
     appointmentsService = new AppointmentsService(
       mockWithTenant as any,
+      {} as never, // prisma — not needed for outbox tests
       mockReminders as RemindersService,
       mockAudit as AuditService,
       { autoAwardForCompletedAppointment: () => Promise.resolve() } as never,

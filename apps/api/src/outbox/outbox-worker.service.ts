@@ -12,6 +12,7 @@ import {
   rebookEmail,
   reminder24hEmail,
   reviewRequestEmail,
+  waitlistSlotEmail,
   winbackEmail,
   type ApptForEmail,
   type ClientForEmail,
@@ -45,6 +46,16 @@ interface AdsConversionPayload {
   appointmentId: string;
   /** Key in tenant_ads_integration.conversionActions, z.B. 'booking_completed'. */
   event: string;
+}
+
+interface WaitlistSlotPayload {
+  clientId: string;
+  clientEmail: string;
+  clientName: string | null;
+  serviceName: string;
+  slotStartAt: string;
+  waitlistEntryId: string;
+  tenantSlug?: string;
 }
 
 /**
@@ -166,6 +177,9 @@ export class OutboxWorkerService {
         return 'done';
       case 'marketing.birthday':
         await this.handleMarketingClient(ev, payload, 'birthday');
+        return 'done';
+      case 'waitlist.slot_available':
+        await this.handleWaitlistSlot(ev, payload as unknown as WaitlistSlotPayload);
         return 'done';
       default:
         this.logger.warn(`unknown outbox event type: ${ev.type}`);
@@ -544,6 +558,57 @@ export class OutboxWorkerService {
         conversionUploadResponse: result.raw as object,
       },
     });
+  }
+
+  private async handleWaitlistSlot(ev: OutboxEvent, payload: WaitlistSlotPayload): Promise<void> {
+    if (!payload.clientId || !payload.clientEmail) {
+      throw new Error('clientId or clientEmail missing in waitlist.slot_available payload');
+    }
+    const client = await this.prisma.client.findUnique({
+      where: { id: payload.clientId },
+      select: {
+        firstName: true,
+        email: true,
+        emailOptIn: true,
+        deletedAt: true,
+        tenant: { select: { name: true, slug: true } },
+      },
+    });
+    if (!client || !client.tenant || client.deletedAt) {
+      this.logger.warn(`waitlist.slot_available: client ${payload.clientId} gone — drop`);
+      return;
+    }
+    if (!client.emailOptIn) {
+      this.logger.warn(`waitlist.slot_available: client ${payload.clientId} opted-out — drop`);
+      return;
+    }
+    // Always use the live DB email — never trust payload-supplied email addresses
+    // to prevent email spoofing if an attacker can inject outbox events.
+    if (!client.email) {
+      this.logger.warn(`waitlist.slot_available: client ${payload.clientId} no email — drop`);
+      return;
+    }
+    const email = client.email;
+    const publicUrl = process.env['PUBLIC_BOOKING_URL_BASE'] ?? 'https://salon-os.app/book';
+    const bookingUrl = `${publicUrl}/${client.tenant.slug}`;
+    const slotDate = new Date(payload.slotStartAt);
+    const tpl = waitlistSlotEmail(
+      { firstName: client.firstName, email },
+      client.tenant,
+      payload.serviceName,
+      slotDate,
+      bookingUrl,
+    );
+    const res = await this.email.send({
+      to: email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      tag: `waitlist.slot_available|${ev.tenantId ?? 'unknown'}`,
+    });
+    if (!res.ok) {
+      throw new Error(res.error ?? 'email_send_failed');
+    }
   }
 
   private async loadAppointmentData(appointmentId: string): Promise<{

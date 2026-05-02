@@ -59,6 +59,7 @@ describe('AppointmentsService', () => {
     reminders = makeReminders();
     service = new AppointmentsService(
       withTenant as never,
+      prisma as never,
       reminders as never,
       audit as never,
       { autoAwardForCompletedAppointment: () => Promise.resolve() } as never,

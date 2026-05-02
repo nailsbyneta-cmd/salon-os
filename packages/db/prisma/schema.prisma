@@ -79,6 +79,7 @@ model Tenant {
   loyaltyStamps    LoyaltyStamp[]
   consultationForms ConsultationForm[]
   consultationSubmissions ConsultationSubmission[]
+  staffCommissions StaffCommission[]
 
   @@index([status])
   @@map("tenant")
@@ -433,6 +434,7 @@ model Staff {
   appointmentItems    AppointmentItem[]
   appointmentSeries   AppointmentSeries[]
   waitlistEntries     WaitlistEntry[]
+  commissions         StaffCommission[]
 
   @@index([tenantId])
   @@index([tenantId, active])
@@ -741,6 +743,33 @@ model ConsultationSubmission {
   @@map("consultation_submission")
 }
 
+// ─── Staff Commission ──────────────────────────────────────────
+
+/**
+ * One record per completed appointment where the assigned staff has a
+ * commissionRate set. Immutable after creation — stores a snapshot of the
+ * rate so historic records are not affected by rate changes.
+ */
+model StaffCommission {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  staffId       String   @db.Uuid
+  appointmentId String   @unique @db.Uuid
+  revenueChf    Decimal  @db.Decimal(10, 2)
+  rate          Decimal  @db.Decimal(5, 2)
+  commissionChf Decimal  @db.Decimal(10, 2)
+  recordedAt    DateTime @default(now()) @db.Timestamptz
+  paidAt        DateTime? @db.Timestamptz
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  staff       Staff       @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, staffId, recordedAt])
+  @@index([tenantId, paidAt])
+  @@map("staff_commission")
+}
+
 // ─── Appointments ──────────────────────────────────────────────
 
 model Appointment {
@@ -793,6 +822,7 @@ model Appointment {
   items    AppointmentItem[]
   series   AppointmentSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   consultationSubmissions ConsultationSubmission[]
+  commission StaffCommission?
 
   @@index([tenantId, startAt])
   @@index([tenantId, staffId, startAt])

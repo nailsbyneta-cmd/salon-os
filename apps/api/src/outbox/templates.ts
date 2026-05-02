@@ -327,6 +327,47 @@ Deine ehrliche Rückmeldung hilft anderen Kundinnen + uns, immer besser zu werde
   return { subject, html, text };
 }
 
+/**
+ * Waitlist slot-available notification. Client gets a direct booking link
+ * when a cancellation frees a slot matching their waitlist entry.
+ */
+export function waitlistSlotEmail(
+  client: ClientForEmail,
+  tenant: TenantForEmail,
+  serviceName: string,
+  slotStartAt: Date,
+  bookingUrl: string,
+): { subject: string; html: string; text: string } {
+  const greeting = client.firstName ? `Hallo ${client.firstName},` : 'Hallo,';
+  const when = fmt(slotStartAt);
+  const subject = `Freier Platz verfügbar — ${serviceName} am ${when}`;
+  const text = `${greeting}
+
+gute Neuigkeit: ein Platz für ${serviceName} am ${when} bei ${tenant.name} ist frei geworden.
+
+Jetzt schnell sichern:
+${bookingUrl}
+
+Wir freuen uns auf Dich.
+
+— ${tenant.name}`;
+  const html = shell(
+    'Ein Platz ist frei geworden',
+    `<p>${escape(greeting)}</p>
+     <p>gute Neuigkeit: ein Platz für <strong>${escape(serviceName)}</strong> am
+        <strong>${escape(when)}</strong> bei <strong>${escape(tenant.name)}</strong>
+        ist frei geworden.</p>
+     <p style="text-align:center;padding:24px 0;">
+       <a href="${escape(bookingUrl)}" style="display:inline-block;background:#2a2522;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;">
+         Jetzt buchen
+       </a>
+     </p>
+     <p style="font-size:13px;color:#7a6f68;">Falls der Button nicht klappt: ${escape(bookingUrl)}</p>`,
+    tenant,
+  );
+  return { subject, html, text };
+}
+
 export function cancelEmail(
   appt: ApptForEmail,
   client: ClientForEmail,

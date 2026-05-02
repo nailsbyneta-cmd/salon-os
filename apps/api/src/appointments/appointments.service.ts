@@ -6,7 +6,7 @@ import type {
   CancelAppointmentInput,
 } from '@salon-os/types';
 import { AuditService } from '../audit/audit.service.js';
-import { WITH_TENANT } from '../db/db.module.js';
+import { PRISMA, WITH_TENANT } from '../db/db.module.js';
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { RemindersService } from '../reminders/reminders.service.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
@@ -41,6 +41,7 @@ export class AppointmentsService {
 
   constructor(
     @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
     private readonly reminders: RemindersService,
     private readonly audit: AuditService,
     private readonly loyalty: LoyaltyService,
@@ -494,7 +495,45 @@ export class AppointmentsService {
           // Loyalty-Failure darf den State-Transition nicht killen — log+swallow
         }
       }
+      if (to === 'COMPLETED') {
+        this.autoRecordCommission(appt.id, appt.tenantId, appt.staffId).catch(() => {
+          /* non-critical */
+        });
+      }
       return appt;
+    });
+  }
+
+  private async autoRecordCommission(
+    appointmentId: string,
+    tenantId: string,
+    staffId: string,
+  ): Promise<void> {
+    // Scope both reads to tenantId to prevent cross-tenant data leakage
+    // even though raw prisma bypasses RLS.
+    const staff = await this.prisma.staff.findFirst({
+      where: { id: staffId, tenantId },
+      select: { commissionRate: true },
+    });
+    if (!staff?.commissionRate) return;
+
+    // rate is stored as percentage (e.g. 10 = 10%), validated by schema constraint.
+    const rate = Number(staff.commissionRate);
+    if (rate <= 0 || rate > 100) return;
+
+    const items = await this.prisma.appointmentItem.findMany({
+      where: { appointmentId, appointment: { tenantId } },
+      select: { price: true },
+    });
+    const revenueChf = items.reduce((s, i) => s + Number(i.price), 0);
+    if (revenueChf <= 0) return;
+
+    const commissionChf = Math.round(revenueChf * rate) / 100;
+
+    await this.prisma.staffCommission.upsert({
+      where: { appointmentId },
+      create: { tenantId, staffId, appointmentId, revenueChf, rate, commissionChf },
+      update: {},
     });
   }
 }
