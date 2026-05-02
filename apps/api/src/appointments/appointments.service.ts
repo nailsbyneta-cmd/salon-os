@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { PrismaClient, Appointment } from '@salon-os/db';
 import type {
   CreateAppointmentInput,
@@ -37,6 +37,8 @@ function isConflictError(err: unknown): boolean {
 
 @Injectable()
 export class AppointmentsService {
+  private readonly logger = new Logger(AppointmentsService.name);
+
   constructor(
     @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
     private readonly reminders: RemindersService,
@@ -340,7 +342,69 @@ export class AppointmentsService {
       /* logged in RemindersService */
     });
 
+    // Trigger waitlist notifications for freed slot (fire-and-forget)
+    if (!input.noShow) {
+      this.notifyWaitlistForCancelledSlot(cancelled).catch(() => {
+        /* non-critical */
+      });
+    }
+
     return cancelled;
+  }
+
+  private async notifyWaitlistForCancelledSlot(appt: Appointment): Promise<void> {
+    const ctx = requireTenantContext();
+    const items = await this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      // Find waitlist entries for the same time window + overlapping services
+      const apptItems = await tx.appointmentItem.findMany({
+        where: { appointmentId: appt.id },
+        select: { serviceId: true },
+      });
+      const serviceIds = apptItems.map((i) => i.serviceId);
+      if (serviceIds.length === 0) return [];
+
+      const matches = await tx.waitlistEntry.findMany({
+        where: {
+          tenantId: appt.tenantId,
+          status: 'WAITING',
+          serviceId: { in: serviceIds },
+          earliestAt: { lte: appt.endAt },
+          latestAt: { gte: appt.startAt },
+        },
+        select: {
+          id: true,
+          client: { select: { id: true, email: true, firstName: true } },
+          service: { select: { name: true } },
+        },
+        take: 5,
+        orderBy: { createdAt: 'asc' },
+      });
+
+      for (const entry of matches) {
+        if (!entry.client.email) continue;
+        await tx.outboxEvent.create({
+          data: {
+            tenantId: appt.tenantId,
+            type: 'waitlist.slot_available',
+            payload: {
+              clientId: entry.client.id,
+              clientEmail: entry.client.email,
+              clientName: entry.client.firstName,
+              serviceName: entry.service.name,
+              slotStartAt: appt.startAt.toISOString(),
+              waitlistEntryId: entry.id,
+            },
+            status: 'PENDING',
+          },
+        });
+      }
+      return matches;
+    });
+    if (items.length > 0) {
+      this.logger.log(
+        `Waitlist: notified ${items.length} clients for freed slot ${appt.id}`,
+      );
+    }
   }
 
   /**

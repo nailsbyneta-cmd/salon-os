@@ -13,6 +13,7 @@ const sections = [
     title: 'Business',
     items: [
       { href: '/services', label: 'Services', emoji: '✂️' },
+      { href: '/forms', label: 'Formulare', emoji: '📋' },
       { href: '/gift-cards', label: 'Gutscheine', emoji: '🎁' },
       { href: '/inventory', label: 'Inventar', emoji: '📦' },
     ],
