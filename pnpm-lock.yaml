@@ -141,6 +141,9 @@ importers:
       canvas-confetti:
         specifier: ^1.9.3
         version: 1.9.4
+      date-fns-tz:
+        specifier: ^3.2.0
+        version: 3.2.0(date-fns@4.1.0)
       next:
         specifier: ^15.1.2
         version: 15.5.15(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
