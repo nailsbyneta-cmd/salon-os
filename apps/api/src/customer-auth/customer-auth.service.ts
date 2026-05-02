@@ -276,6 +276,12 @@ export class CustomerAuthService {
         optionLabels: string[];
       }>;
     }>;
+    loyalty: {
+      programName: string;
+      balance: number;
+      redeemThreshold: number;
+      rewardLabel: string;
+    } | null;
   }> {
     const client = await this.prisma.client.findFirst({
       where: { id: clientId, tenantId },
@@ -306,6 +312,19 @@ export class CustomerAuthService {
         },
       },
     });
+    const [loyaltyProgram, loyaltyBalance] = await Promise.all([
+      this.prisma.loyaltyProgram.findUnique({
+        where: { tenantId },
+        select: { name: true, redeemThreshold: true, rewardLabel: true },
+      }),
+      this.prisma.loyaltyStamp.aggregate({
+        where: { tenantId, clientId },
+        _sum: { delta: true },
+      }),
+    ]);
+
+    const balance = loyaltyBalance._sum.delta ?? 0;
+
     return {
       client,
       appointments: appts.map((a) => ({
@@ -322,6 +341,15 @@ export class CustomerAuthService {
           service: i.service,
         })),
       })),
+      loyalty:
+        loyaltyProgram && balance > 0
+          ? {
+              programName: loyaltyProgram.name,
+              balance,
+              redeemThreshold: loyaltyProgram.redeemThreshold,
+              rewardLabel: loyaltyProgram.rewardLabel,
+            }
+          : null,
     };
   }
 }

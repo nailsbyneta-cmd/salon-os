@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -58,5 +59,24 @@ export class FormsController {
   submit(@Body() dto: SubmitAnswersDto) {
     const ctx = requireTenantContext();
     return this.svc.submitAnswers(ctx.tenantId, dto);
+  }
+}
+
+/** Public endpoints — no tenant middleware, form ID resolves tenant. */
+@Controller('v1/public/forms')
+export class PublicFormsController {
+  constructor(private readonly svc: FormsService) {}
+
+  @Get(':id')
+  async getPublic(@Param('id') id: string) {
+    const form = await this.svc.getPublicForm(id);
+    if (!form) throw new NotFoundException('Form not found');
+    return form;
+  }
+
+  @Post('submit')
+  @HttpCode(HttpStatus.CREATED)
+  submitPublic(@Body() dto: SubmitAnswersDto) {
+    return this.svc.submitPublicAnswers(dto);
   }
 }

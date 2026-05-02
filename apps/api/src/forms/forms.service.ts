@@ -1,6 +1,6 @@
 import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import type { PrismaClient, Prisma } from '@salon-os/db';
-import { WITH_TENANT } from '../db/db.module.js';
+import { PRISMA, WITH_TENANT } from '../db/db.module.js';
 
 type WithTenantFn = <T>(
   tenantId: string,
@@ -32,7 +32,10 @@ export interface SubmitAnswersDto {
 
 @Injectable()
 export class FormsService {
-  constructor(@Inject(WITH_TENANT) private readonly withTenant: WithTenantFn) {}
+  constructor(
+    @Inject(WITH_TENANT) private readonly withTenant: WithTenantFn,
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
+  ) {}
 
   async listForms(tenantId: string, userId: string | null, role: string | null) {
     return this.withTenant(tenantId, userId, role, (db) =>
@@ -143,5 +146,39 @@ export class FormsService {
         },
       }),
     );
+  }
+
+  async getPublicForm(formId: string) {
+    const form = await this.prisma.consultationForm.findUnique({
+      where: { id: formId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        active: true,
+        fields: true,
+        tenant: { select: { name: true, slug: true } },
+      },
+    });
+    if (!form || !form.active) return null;
+    return form;
+  }
+
+  async submitPublicAnswers(dto: SubmitAnswersDto) {
+    const form = await this.prisma.consultationForm.findUnique({
+      where: { id: dto.formId },
+      select: { tenantId: true, active: true },
+    });
+    if (!form || !form.active) throw new NotFoundException('Form not found');
+    return this.prisma.consultationSubmission.create({
+      data: {
+        tenantId: form.tenantId,
+        formId: dto.formId,
+        clientId: dto.clientId ?? null,
+        appointmentId: dto.appointmentId ?? null,
+        answers: dto.answers as unknown as Prisma.InputJsonValue,
+      },
+      select: { id: true },
+    });
   }
 }

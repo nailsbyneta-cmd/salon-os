@@ -14,6 +14,12 @@ interface Profile {
     email: string | null;
     phone: string | null;
   };
+  loyalty: {
+    programName: string;
+    balance: number;
+    redeemThreshold: number;
+    rewardLabel: string;
+  } | null;
   appointments: Array<{
     id: string;
     startAt: string;
@@ -125,6 +131,61 @@ export default async function MePage({
           ) : null}
         </CardBody>
       </Card>
+
+      {/* Loyalty-Punkte */}
+      {profile.loyalty ? (
+        <Card className="border-accent/30 bg-gradient-to-br from-accent/5 to-accent/10">
+          <CardBody>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+                  {profile.loyalty.programName}
+                </p>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className="font-display text-3xl font-semibold tabular-nums text-text-primary">
+                    {profile.loyalty.balance}
+                  </span>
+                  <span className="text-sm text-text-secondary">
+                    / {profile.loyalty.redeemThreshold} Punkte
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-text-muted">
+                  Noch {Math.max(0, profile.loyalty.redeemThreshold - profile.loyalty.balance)} bis:{' '}
+                  <span className="font-medium text-accent">{profile.loyalty.rewardLabel}</span>
+                </p>
+              </div>
+              <div className="shrink-0">
+                <div className="relative h-16 w-16">
+                  <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.9"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      className="text-border"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.9"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeDasharray={`${Math.min(100, (profile.loyalty.balance / profile.loyalty.redeemThreshold) * 100)} 100`}
+                      className="text-accent transition-all"
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-accent">
+                    {Math.round((profile.loyalty.balance / profile.loyalty.redeemThreshold) * 100)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
 
       {/* Cancel-Confirmation oder Error-Banner */}
       {sp.cancelled ? (

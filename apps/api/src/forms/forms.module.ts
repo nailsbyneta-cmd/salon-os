@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { FormsController } from './forms.controller.js';
+import { FormsController, PublicFormsController } from './forms.controller.js';
 import { FormsService } from './forms.service.js';
 
 @Module({
-  controllers: [FormsController],
+  controllers: [FormsController, PublicFormsController],
   providers: [FormsService],
   exports: [FormsService],
 })
