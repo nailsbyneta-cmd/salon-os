@@ -75,14 +75,37 @@ jobs:
           cd packages/db
           pnpm prisma migrate deploy
 
+      - name: Build API
+        env:
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/salon_os_test'
+          DIRECT_URL: 'postgresql://postgres:postgres@localhost:5432/salon_os_test'
+        run: pnpm --filter api build
+
+      - name: Start API server
+        env:
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/salon_os_test'
+          DIRECT_URL: 'postgresql://postgres:postgres@localhost:5432/salon_os_test'
+          REDIS_URL: 'redis://localhost:6379'
+          NODE_ENV: 'development'
+          PORT: '4000'
+        run: |
+          pnpm --filter api start &
+          # Wait until /health/ready responds (max 60s)
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4000/health/ready && echo "API ready" && break
+            echo "Waiting for API... ($i/30)"
+            sleep 2
+          done
+
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
         env:
           DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/salon_os_test'
           DIRECT_URL: 'postgresql://postgres:postgres@localhost:5432/salon_os_test'
           REDIS_URL: 'redis://localhost:6379'
+          PUBLIC_API_URL: 'http://localhost:4000'
         run: pnpm test:e2e
 
       - name: Upload Playwright Report
