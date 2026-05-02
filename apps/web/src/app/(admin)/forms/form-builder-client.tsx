@@ -31,7 +31,13 @@ interface Props {
     id: string;
     name: string;
     description: string | null;
-    fields: Array<{ id: string; label: string; type: FieldType; required: boolean; options?: string[] }>;
+    fields: Array<{
+      id: string;
+      label: string;
+      type: FieldType;
+      required: boolean;
+      options?: string[];
+    }>;
     active: boolean;
   };
 }
@@ -68,7 +74,10 @@ export function FormBuilderClient({ initial }: Props): React.JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) { setError('Name ist Pflicht'); return; }
+    if (!name.trim()) {
+      setError('Name ist Pflicht');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -80,7 +89,13 @@ export function FormBuilderClient({ initial }: Props): React.JSX.Element {
           label: f.label,
           type: f.type,
           required: f.required,
-          options: f.type === 'select' ? f.options.split('\n').map((o) => o.trim()).filter(Boolean) : undefined,
+          options:
+            f.type === 'select'
+              ? f.options
+                  .split('\n')
+                  .map((o) => o.trim())
+                  .filter(Boolean)
+              : undefined,
         })),
       };
       if (initial) {

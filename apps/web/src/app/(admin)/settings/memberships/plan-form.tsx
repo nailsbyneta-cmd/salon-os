@@ -45,22 +45,10 @@ export function PlanForm(): React.JSX.Element {
               </select>
             </Field>
             <Field label="Session-Credits" hint="Leer lassen = unbegrenzt">
-              <Input
-                name="sessionCredits"
-                type="number"
-                min={1}
-                max={9999}
-                placeholder="4"
-              />
+              <Input name="sessionCredits" type="number" min={1} max={9999} placeholder="4" />
             </Field>
             <Field label="Rabatt %" hint="0–100, für alle Services">
-              <Input
-                name="discountPct"
-                type="number"
-                min={0}
-                max={100}
-                placeholder="10"
-              />
+              <Input name="discountPct" type="number" min={0} max={100} placeholder="10" />
             </Field>
           </div>
 

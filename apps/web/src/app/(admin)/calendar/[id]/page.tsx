@@ -682,9 +682,7 @@ export default async function AppointmentDetailPage({
                 <div>
                   <div className="font-medium text-text-primary">
                     {r.paymentMethod}
-                    {r.reason
-                      ? ` · ${refundReasonLabels[r.reason] ?? r.reason}`
-                      : ''}
+                    {r.reason ? ` · ${refundReasonLabels[r.reason] ?? r.reason}` : ''}
                   </div>
                   <div className="text-xs text-text-muted">
                     {new Date(r.refundedAt).toLocaleString('de-CH', {

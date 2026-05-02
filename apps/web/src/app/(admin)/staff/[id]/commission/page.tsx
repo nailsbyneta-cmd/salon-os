@@ -43,7 +43,10 @@ function rangeFromTo(days: number): { from: string; to: string } {
   return { from, to };
 }
 
-async function loadKpi(staffId: string, days: number): Promise<{ kpi: StaffKpi | null; staff: StaffRow | null }> {
+async function loadKpi(
+  staffId: string,
+  days: number,
+): Promise<{ kpi: StaffKpi | null; staff: StaffRow | null }> {
   const ctx = await getCurrentTenant();
   const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
   const { from, to } = rangeFromTo(days);
@@ -60,19 +63,35 @@ async function loadKpi(staffId: string, days: number): Promise<{ kpi: StaffKpi |
 }
 
 function fmtChf(n: number): string {
-  return new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat('de-CH', {
+    style: 'currency',
+    currency: 'CHF',
+    maximumFractionDigits: 0,
+  }).format(n);
 }
 
 function fmtPct(n: number): string {
   return `${n.toFixed(1)} %`;
 }
 
-function KpiCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
+function KpiCard({
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  accent?: boolean;
+}) {
   return (
     <Card className={accent ? 'border-accent/30 bg-accent/5' : ''}>
       <CardBody className="space-y-1">
         <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">{label}</p>
-        <p className={`font-display text-2xl font-semibold tabular-nums ${accent ? 'text-accent' : 'text-text-primary'}`}>
+        <p
+          className={`font-display text-2xl font-semibold tabular-nums ${accent ? 'text-accent' : 'text-text-primary'}`}
+        >
           {value}
         </p>
         {sub && <p className="text-xs text-text-muted">{sub}</p>}
@@ -106,13 +125,16 @@ export default async function CommissionPage({
       <header className="mt-4 mb-6 flex items-center gap-4">
         <Avatar name={`${staff.firstName} ${staff.lastName}`} color={staff.color} size="lg" />
         <div>
-          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">Provision &amp; KPIs</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
+            Provision &amp; KPIs
+          </p>
           <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight">
             {staff.firstName} {staff.lastName}
           </h1>
           {kpi?.commissionRate != null ? (
             <p className="text-sm text-text-secondary">
-              Provisionssatz: <span className="font-semibold text-accent">{kpi.commissionRate.toFixed(0)} %</span>
+              Provisionssatz:{' '}
+              <span className="font-semibold text-accent">{kpi.commissionRate.toFixed(0)} %</span>
             </p>
           ) : (
             <p className="text-sm text-text-muted">Kein Provisionssatz hinterlegt</p>
@@ -156,10 +178,7 @@ export default async function CommissionPage({
               value={fmtPct(kpi.rebookingRate)}
               sub="Kundinnen mit ≥2 Terminen"
             />
-            <KpiCard
-              label="No-Show-Rate"
-              value={fmtPct(kpi.noShowRate)}
-            />
+            <KpiCard label="No-Show-Rate" value={fmtPct(kpi.noShowRate)} />
             <KpiCard
               label="Auslastung"
               value={kpi.utilizationPct != null ? fmtPct(kpi.utilizationPct) : '—'}
@@ -228,7 +247,9 @@ export default async function CommissionPage({
                 <div className="flex justify-between">
                   <span className="text-text-secondary">× Provisionssatz</span>
                   <span className="tabular-nums text-text-primary">
-                    {kpi.commissionRate != null ? `${kpi.commissionRate.toFixed(0)} %` : 'nicht gesetzt'}
+                    {kpi.commissionRate != null
+                      ? `${kpi.commissionRate.toFixed(0)} %`
+                      : 'nicht gesetzt'}
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-border pt-2 font-semibold">

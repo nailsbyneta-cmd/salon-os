@@ -1,10 +1,4 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { PrismaClient, SalonReview } from '@salon-os/db';
 import { signSelfServiceToken, verifySelfServiceToken } from '@salon-os/utils';
 import { PRISMA } from '../db/db.module.js';
@@ -276,9 +270,7 @@ export class ReviewsService {
       ratingSum += r.rating;
     }
     const avgRating =
-      allForStats.length > 0
-        ? Math.round((ratingSum / allForStats.length) * 10) / 10
-        : 0;
+      allForStats.length > 0 ? Math.round((ratingSum / allForStats.length) * 10) / 10 : 0;
 
     return { reviews, total, avgRating, distribution };
   }

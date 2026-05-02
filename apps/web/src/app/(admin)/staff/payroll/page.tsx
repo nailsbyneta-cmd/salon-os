@@ -190,10 +190,7 @@ export default async function PayrollPage(): Promise<React.JSX.Element> {
                         Details
                       </Link>
                       {p.status === 'OPEN' ? (
-                        <form
-                          action={closePeriod.bind(null, p.id)}
-                          className="inline"
-                        >
+                        <form action={closePeriod.bind(null, p.id)} className="inline">
                           <button
                             type="submit"
                             className="text-xs font-medium text-warning hover:underline"

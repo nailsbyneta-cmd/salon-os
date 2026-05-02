@@ -83,12 +83,8 @@ export default async function FormDetailPage({
       </header>
 
       <div className="mb-6 rounded-lg border border-accent/20 bg-accent/5 p-4">
-        <p className="text-sm font-medium text-text-primary">
-          Formular-Link für Kundinnen:
-        </p>
-        <p className="mt-1 font-mono text-xs text-text-secondary break-all">
-          {`/form/${id}`}
-        </p>
+        <p className="text-sm font-medium text-text-primary">Formular-Link für Kundinnen:</p>
+        <p className="mt-1 font-mono text-xs text-text-secondary break-all">{`/form/${id}`}</p>
         <p className="mt-1 text-xs text-text-muted">
           Schicke diesen Link per E-Mail vor dem Termin — Kundin füllt es am Handy aus.
         </p>
@@ -99,7 +95,11 @@ export default async function FormDetailPage({
       <div className="mt-8 border-t border-border pt-6">
         <h2 className="mb-3 text-sm font-semibold text-danger">Gefahrenzone</h2>
         <form action={deleteForm.bind(null, id)}>
-          <Button type="submit" variant="ghost" className="border border-danger text-danger hover:bg-danger/10">
+          <Button
+            type="submit"
+            variant="ghost"
+            className="border border-danger text-danger hover:bg-danger/10"
+          >
             Formular löschen
           </Button>
         </form>

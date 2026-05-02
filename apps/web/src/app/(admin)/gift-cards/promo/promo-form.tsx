@@ -57,32 +57,13 @@ export function PromoForm({ onSuccess }: Props): React.JSX.Element {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Field label="Wert" required hint="Prozent (0–100) oder CHF-Betrag.">
-          <Input
-            type="number"
-            name="value"
-            min={0.01}
-            step="0.01"
-            placeholder="10"
-            required
-          />
+          <Input type="number" name="value" min={0.01} step="0.01" placeholder="10" required />
         </Field>
         <Field label="Mindestbetrag (CHF)" hint="Optional">
-          <Input
-            type="number"
-            name="minOrderChf"
-            min={0}
-            step="0.50"
-            placeholder="0"
-          />
+          <Input type="number" name="minOrderChf" min={0} step="0.50" placeholder="0" />
         </Field>
         <Field label="Max. Einlösungen" hint="Leer = unbegrenzt">
-          <Input
-            type="number"
-            name="maxUsages"
-            min={1}
-            step="1"
-            placeholder="—"
-          />
+          <Input type="number" name="maxUsages" min={1} step="1" placeholder="—" />
         </Field>
       </div>
 

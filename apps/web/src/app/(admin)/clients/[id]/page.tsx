@@ -669,8 +669,8 @@ export default async function ClientDetailPage({
                 ) : null}
               </div>
 
-              {(membershipData.membership.status === 'ACTIVE' ||
-                membershipData.membership.status === 'PAUSED') ? (
+              {membershipData.membership.status === 'ACTIVE' ||
+              membershipData.membership.status === 'PAUSED' ? (
                 <form
                   action={cancelMembership.bind(null, membershipData.membership.id, id)}
                   className="pt-1"

@@ -104,7 +104,10 @@ export class PayrollService {
       tenantId,
       ...(staffId ? { staffId } : {}),
       paidAt: null,
-      recordedAt: { gte: fromDate, lte: new Date(`${toDate.toISOString().slice(0, 10)}T23:59:59.999Z`) },
+      recordedAt: {
+        gte: fromDate,
+        lte: new Date(`${toDate.toISOString().slice(0, 10)}T23:59:59.999Z`),
+      },
     };
   }
 
@@ -264,7 +267,14 @@ export class PayrollService {
       const date = new Date(c.appointment.startAt).toLocaleDateString('de-CH');
       const staffName = `${c.staff.firstName} ${c.staff.lastName}`;
       const ratePct = (Number(c.rate) * 100).toFixed(2);
-      return [date, c.appointmentId, staffName, Number(c.revenueChf).toFixed(2), ratePct, Number(c.commissionChf).toFixed(2)]
+      return [
+        date,
+        c.appointmentId,
+        staffName,
+        Number(c.revenueChf).toFixed(2),
+        ratePct,
+        Number(c.commissionChf).toFixed(2),
+      ]
         .map(csvEscape)
         .join(',');
     });
@@ -288,30 +298,26 @@ export class PayrollService {
 
   // ─── Mapper ───────────────────────────────────────────────────────────────
 
-  private toPeriodRow(
-    period: {
-      id: string;
-      tenantId: string;
-      staffId: string | null;
-      fromDate: Date;
-      toDate: Date;
-      status: string;
-      totalRevenueChf: { toString(): string };
-      totalCommChf: { toString(): string };
-      commissionCount: number;
-      exportedAt: Date | null;
-      closedAt: Date | null;
-      createdAt: Date;
-      staff: { firstName: string; lastName: string } | null;
-    },
-  ): PayrollPeriodRow {
+  private toPeriodRow(period: {
+    id: string;
+    tenantId: string;
+    staffId: string | null;
+    fromDate: Date;
+    toDate: Date;
+    status: string;
+    totalRevenueChf: { toString(): string };
+    totalCommChf: { toString(): string };
+    commissionCount: number;
+    exportedAt: Date | null;
+    closedAt: Date | null;
+    createdAt: Date;
+    staff: { firstName: string; lastName: string } | null;
+  }): PayrollPeriodRow {
     return {
       id: period.id,
       tenantId: period.tenantId,
       staffId: period.staffId,
-      staffName: period.staff
-        ? `${period.staff.firstName} ${period.staff.lastName}`
-        : null,
+      staffName: period.staff ? `${period.staff.firstName} ${period.staff.lastName}` : null,
       fromDate: period.fromDate,
       toDate: period.toDate,
       status: period.status as 'OPEN' | 'CLOSED' | 'EXPORTED',

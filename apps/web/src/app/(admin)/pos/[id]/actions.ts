@@ -43,11 +43,7 @@ export async function issueRefund(appointmentId: string, form: FormData): Promis
   if (!Number.isFinite(amount) || amount <= 0) {
     throw new Error('Ungültiger Betrag.');
   }
-  if (
-    paymentMethod !== 'CASH' &&
-    paymentMethod !== 'CARD' &&
-    paymentMethod !== 'TWINT'
-  ) {
+  if (paymentMethod !== 'CASH' && paymentMethod !== 'CARD' && paymentMethod !== 'TWINT') {
     throw new Error('Zahlungsart wählen.');
   }
 

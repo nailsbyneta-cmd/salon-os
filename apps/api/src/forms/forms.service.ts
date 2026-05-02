@@ -95,9 +95,7 @@ export class FormsService {
         data: {
           ...(dto.name ? { name: dto.name.trim() } : {}),
           ...(dto.description !== undefined ? { description: dto.description } : {}),
-          ...(dto.fields
-            ? { fields: dto.fields as unknown as Prisma.InputJsonValue }
-            : {}),
+          ...(dto.fields ? { fields: dto.fields as unknown as Prisma.InputJsonValue } : {}),
           ...(dto.active !== undefined ? { active: dto.active } : {}),
         },
       }),

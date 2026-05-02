@@ -142,7 +142,12 @@ export class MembershipsService {
   }
 
   async listActiveMemberships(): Promise<
-    Array<ClientMembership & { plan: MembershipPlan; client: { id: string; firstName: string; lastName: string } }>
+    Array<
+      ClientMembership & {
+        plan: MembershipPlan;
+        client: { id: string; firstName: string; lastName: string };
+      }
+    >
   > {
     const ctx = requireTenantContext();
     return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {

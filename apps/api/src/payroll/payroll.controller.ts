@@ -14,7 +14,12 @@ import type { FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { requireTenantContext } from '../tenant/tenant.context.js';
-import { PayrollService, type GenerateResult, type PayrollPeriodDetail, type PayrollPeriodRow } from './payroll.service.js';
+import {
+  PayrollService,
+  type GenerateResult,
+  type PayrollPeriodDetail,
+  type PayrollPeriodRow,
+} from './payroll.service.js';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -68,9 +73,7 @@ export class PayrollController {
   }
 
   @Get(':id')
-  async detail(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<PayrollPeriodDetail> {
+  async detail(@Param('id', ParseUUIDPipe) id: string): Promise<PayrollPeriodDetail> {
     const ctx = requireTenantContext();
     requireOwnerOrManager(ctx.role);
     return this.svc.detail(id);
@@ -78,19 +81,14 @@ export class PayrollController {
 
   @Post(':id/close')
   @HttpCode(HttpStatus.OK)
-  async close(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<PayrollPeriodRow> {
+  async close(@Param('id', ParseUUIDPipe) id: string): Promise<PayrollPeriodRow> {
     const ctx = requireTenantContext();
     requireOwnerOrManager(ctx.role);
     return this.svc.close(id);
   }
 
   @Get(':id/export')
-  async export(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Res() res: FastifyReply,
-  ): Promise<void> {
+  async export(@Param('id', ParseUUIDPipe) id: string, @Res() res: FastifyReply): Promise<void> {
     const ctx = requireTenantContext();
     requireOwnerOrManager(ctx.role);
     const { csv, filename } = await this.svc.exportCsv(id);

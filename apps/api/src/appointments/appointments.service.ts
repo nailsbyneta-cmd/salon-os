@@ -414,9 +414,7 @@ export class AppointmentsService {
       return matches;
     });
     if (items.length > 0) {
-      this.logger.log(
-        `Waitlist: notified ${items.length} clients for freed slot ${appt.id}`,
-      );
+      this.logger.log(`Waitlist: notified ${items.length} clients for freed slot ${appt.id}`);
     }
   }
 

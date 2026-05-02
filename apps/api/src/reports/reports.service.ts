@@ -347,13 +347,23 @@ export class ReportsService {
         const dayKey = a.startAt.toISOString().slice(0, 10);
         const day = byDay.get(dayKey) ?? { count: 0, revenueChf: 0 };
         day.count += 1;
-        if (isRev) { day.revenueChf += itemSum; revenueChf += itemSum; completed += 1; }
+        if (isRev) {
+          day.revenueChf += itemSum;
+          revenueChf += itemSum;
+          completed += 1;
+        }
         if (a.status === 'CANCELLED') cancelled += 1;
         if (a.status === 'NO_SHOW') noShow += 1;
         byDay.set(dayKey, day);
-        if (a.clientId) clientVisitCount.set(a.clientId, (clientVisitCount.get(a.clientId) ?? 0) + 1);
+        if (a.clientId)
+          clientVisitCount.set(a.clientId, (clientVisitCount.get(a.clientId) ?? 0) + 1);
         for (const item of a.items) {
-          const cur = byService.get(item.serviceId) ?? { serviceId: item.serviceId, name: item.service.name, count: 0, revenueChf: 0 };
+          const cur = byService.get(item.serviceId) ?? {
+            serviceId: item.serviceId,
+            name: item.service.name,
+            count: 0,
+            revenueChf: 0,
+          };
           cur.count += 1;
           if (isRev) cur.revenueChf += Number(item.price);
           byService.set(item.serviceId, cur);
@@ -361,7 +371,10 @@ export class ReportsService {
       }
 
       const rebookingClients = Array.from(clientVisitCount.values()).filter((n) => n >= 2).length;
-      const rebookingRate = clientVisitCount.size > 0 ? Math.round((rebookingClients / clientVisitCount.size) * 1000) / 10 : 0;
+      const rebookingRate =
+        clientVisitCount.size > 0
+          ? Math.round((rebookingClients / clientVisitCount.size) * 1000) / 10
+          : 0;
       const noShowRate = appts.length > 0 ? Math.round((noShow / appts.length) * 1000) / 10 : 0;
 
       // Utilization: shifts vs appointment minutes
@@ -369,7 +382,10 @@ export class ReportsService {
         where: { staffId, startAt: { gte: fromDate, lte: toDate } },
         select: { startAt: true, endAt: true },
       });
-      const shiftMin = shifts.reduce((s, sh) => s + Math.max(0, (sh.endAt.getTime() - sh.startAt.getTime()) / 60_000), 0);
+      const shiftMin = shifts.reduce(
+        (s, sh) => s + Math.max(0, (sh.endAt.getTime() - sh.startAt.getTime()) / 60_000),
+        0,
+      );
       const apptMin = appts
         .filter((a) => a.status !== 'CANCELLED' && a.status !== 'NO_SHOW')
         .reduce((s, a) => s + Math.max(0, (a.endAt.getTime() - a.startAt.getTime()) / 60_000), 0);

@@ -131,10 +131,7 @@ export class PromoCodesService {
    * Validate a promo code against an order amount and — if valid —
    * atomically increment usages in the same transaction.
    */
-  async validate(input: {
-    code: string;
-    orderAmountChf: number;
-  }): Promise<ValidateResult> {
+  async validate(input: { code: string; orderAmountChf: number }): Promise<ValidateResult> {
     const ctx = requireTenantContext();
     const code = input.code.trim().toUpperCase();
 
@@ -166,10 +163,7 @@ export class PromoCodesService {
       const promoValue = Number(promo.value);
       const discountChf =
         promo.type === 'PERCENT'
-          ? Math.min(
-              +((input.orderAmountChf * promoValue) / 100).toFixed(2),
-              input.orderAmountChf,
-            )
+          ? Math.min(+((input.orderAmountChf * promoValue) / 100).toFixed(2), input.orderAmountChf)
           : Math.min(promoValue, input.orderAmountChf);
 
       // Atomically increment usages in the same transaction

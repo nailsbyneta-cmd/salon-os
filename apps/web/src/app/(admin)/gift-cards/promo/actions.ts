@@ -44,10 +44,7 @@ export async function createPromoCode(formData: FormData): Promise<{ error?: str
   return {};
 }
 
-export async function togglePromoCode(
-  id: string,
-  active: boolean,
-): Promise<{ error?: string }> {
+export async function togglePromoCode(id: string, active: boolean): Promise<{ error?: string }> {
   const ctx = await getCurrentTenant();
 
   try {

@@ -75,10 +75,9 @@ async function loadData(): Promise<{
   };
   const [plansRes, membershipsRes] = await Promise.all([
     safe(apiFetch<{ plans: MembershipPlan[] }>('/v1/memberships/plans', auth), { plans: [] }),
-    safe(
-      apiFetch<{ memberships: ClientMembership[] }>('/v1/memberships/active', auth),
-      { memberships: [] },
-    ),
+    safe(apiFetch<{ memberships: ClientMembership[] }>('/v1/memberships/active', auth), {
+      memberships: [],
+    }),
   ]);
   return { plans: plansRes.plans, memberships: membershipsRes.memberships };
 }

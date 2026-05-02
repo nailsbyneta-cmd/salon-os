@@ -25,7 +25,10 @@ describe('AppointmentsService (behavior)', () => {
     const audit = new AuditService(h.withTenant);
     const outbox = new OutboxService(h.withTenant);
     const reminders = new RemindersService(outbox);
-    service = new AppointmentsService(h.withTenant, reminders, audit);
+    const loyaltyStub = {
+      autoAwardForCompletedAppointment: () => Promise.resolve(),
+    } as never;
+    service = new AppointmentsService(h.withTenant, h.prisma, reminders, audit, loyaltyStub);
   });
 
   afterAll(async () => {

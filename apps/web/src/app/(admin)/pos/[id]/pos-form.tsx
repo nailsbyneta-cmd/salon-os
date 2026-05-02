@@ -142,9 +142,7 @@ export function PosForm({
             </Button>
           </div>
         )}
-        {promoError ? (
-          <p className="mt-1.5 text-xs text-danger">{promoError}</p>
-        ) : null}
+        {promoError ? <p className="mt-1.5 text-xs text-danger">{promoError}</p> : null}
       </div>
 
       {/* Trinkgeld */}

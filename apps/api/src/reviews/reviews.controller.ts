@@ -61,9 +61,7 @@ export class ReviewsPublicController {
 
 // ── Admin Schemas ──────────────────────────────────────────────────────────
 
-const uuidParamSchema = z
-  .string()
-  .uuid('Ungültige UUID');
+const uuidParamSchema = z.string().uuid('Ungültige UUID');
 
 const featureBodySchema = z.object({
   featured: z.boolean(),
@@ -117,9 +115,7 @@ export class ReviewsAdminController {
   @Get()
   async list(
     @Query() rawQuery: Record<string, string>,
-  ): Promise<
-    Awaited<ReturnType<ReviewsService['listReviews']>>
-  > {
+  ): Promise<Awaited<ReturnType<ReviewsService['listReviews']>>> {
     const ctx = requireTenantContext();
     const query = listQuerySchema.parse(rawQuery);
     return this.svc.listReviews(ctx.tenantId, {
@@ -150,9 +146,7 @@ export class ReviewsAdminController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(
-    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
-  ): Promise<void> {
+  async remove(@Param('id', new ZodValidationPipe(uuidParamSchema)) id: string): Promise<void> {
     const ctx = requireTenantContext();
     await this.svc.deleteReview(ctx.tenantId, id);
   }

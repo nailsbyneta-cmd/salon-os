@@ -17,11 +17,17 @@ interface Props {
   clientToken?: string;
 }
 
-const API_URL = typeof window !== 'undefined'
-  ? (process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000')
-  : (process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000');
+const API_URL =
+  typeof window !== 'undefined'
+    ? (process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000')
+    : (process.env['PUBLIC_API_URL'] ?? 'http://localhost:4000');
 
-export function PublicFormClient({ formId, fields, appointmentId, clientToken }: Props): React.JSX.Element {
+export function PublicFormClient({
+  formId,
+  fields,
+  appointmentId,
+  clientToken,
+}: Props): React.JSX.Element {
   const [answers, setAnswers] = React.useState<Record<string, unknown>>({});
   const [submitted, setSubmitted] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -62,9 +68,7 @@ export function PublicFormClient({ formId, fields, appointmentId, clientToken }:
           ✓
         </div>
         <p className="font-display text-lg font-semibold text-text-primary">Formular gesendet</p>
-        <p className="text-sm text-text-secondary">
-          Danke! Deine Angaben wurden gespeichert.
-        </p>
+        <p className="text-sm text-text-secondary">Danke! Deine Angaben wurden gespeichert.</p>
       </div>
     );
   }

@@ -65,24 +65,18 @@ export function GenerateForm({ staff }: Props): React.JSX.Element {
               Abrechnungsperiode generieren
             </h2>
 
-            <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                void handleSubmit(e);
+              }}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Von">
-                  <Input
-                    type="date"
-                    name="fromDate"
-                    defaultValue={from}
-                    required
-                    max={to}
-                  />
+                  <Input type="date" name="fromDate" defaultValue={from} required max={to} />
                 </Field>
                 <Field label="Bis">
-                  <Input
-                    type="date"
-                    name="toDate"
-                    defaultValue={to}
-                    required
-                  />
+                  <Input type="date" name="toDate" defaultValue={to} required />
                 </Field>
               </div>
 
