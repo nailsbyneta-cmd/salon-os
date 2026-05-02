@@ -32,6 +32,7 @@ import { TenantModule } from './tenant/tenant.module.js';
 import { VoiceAiModule } from './voice-ai/voice-ai.module.js';
 import { WaitlistModule } from './waitlist/waitlist.module.js';
 import { WhatsappModule } from './whatsapp/whatsapp.module.js';
+import { FormsModule } from './forms/forms.module.js';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
     BrandingModule,
     VoiceAiModule,
     WhatsappModule,
+    FormsModule,
   ],
   controllers: [HealthController],
   providers: [

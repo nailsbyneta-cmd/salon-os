@@ -77,6 +77,8 @@ model Tenant {
   adsSpendDaily    TenantAdsSpendDaily[]
   loyaltyProgram   LoyaltyProgram?
   loyaltyStamps    LoyaltyStamp[]
+  consultationForms ConsultationForm[]
+  consultationSubmissions ConsultationSubmission[]
 
   @@index([status])
   @@map("tenant")
@@ -692,11 +694,51 @@ model Client {
   loyaltyStamps   LoyaltyStamp[]
   family          Client[]        @relation("Family")
   parent          Client?         @relation("Family", fields: [familyParentId], references: [id])
+  consultationSubmissions ConsultationSubmission[]
 
   @@index([tenantId, phoneE164])
   @@index([tenantId, email])
   @@index([tenantId, lastVisitAt])
   @@map("client")
+}
+
+// ─── Consultation Forms ────────────────────────────────────────
+// fields: Array<{ id, label, type: 'text'|'textarea'|'select'|'checkbox'|'signature', required, options? }>
+
+model ConsultationForm {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  name        String
+  description String?
+  fields      Json     @default("[]")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz
+  updatedAt   DateTime @updatedAt @db.Timestamptz
+
+  tenant      Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  submissions ConsultationSubmission[]
+
+  @@index([tenantId, active])
+  @@map("consultation_form")
+}
+
+model ConsultationSubmission {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  formId        String   @db.Uuid
+  clientId      String?  @db.Uuid
+  appointmentId String?  @db.Uuid
+  answers       Json     @default("{}")
+  createdAt     DateTime @default(now()) @db.Timestamptz
+
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  form        ConsultationForm  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  client      Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  appointment Appointment?      @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, formId, createdAt(sort: Desc)])
+  @@index([tenantId, clientId])
+  @@map("consultation_submission")
 }
 
 // ─── Appointments ──────────────────────────────────────────────
@@ -750,6 +792,7 @@ model Appointment {
   room     Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
   items    AppointmentItem[]
   series   AppointmentSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  consultationSubmissions ConsultationSubmission[]
 
   @@index([tenantId, startAt])
   @@index([tenantId, staffId, startAt])

@@ -102,6 +102,153 @@ export class MarketingService {
     return { enqueued, skippedRecent };
   }
 
+  async previewBirthdayForTenant(
+    tenantId: string,
+  ): Promise<{ eligible: number; lastRunAt: string | null }> {
+    const today = new Date();
+    const month = today.getUTCMonth() + 1;
+    const day = today.getUTCDate();
+    const yearKey = today.getUTCFullYear();
+
+    const matches = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM "client"
+      WHERE "tenantId" = ${tenantId}::uuid
+        AND "deletedAt" IS NULL AND blocked = FALSE
+        AND "emailOptIn" = TRUE AND email IS NOT NULL AND birthday IS NOT NULL
+        AND EXTRACT(MONTH FROM birthday) = ${month}::int
+        AND EXTRACT(DAY FROM birthday) = ${day}::int
+    `;
+    const last = await this.prisma.outboxEvent.findFirst({
+      where: { tenantId, type: 'marketing.birthday' },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    });
+    const yearStart = new Date(Date.UTC(yearKey, 0, 1));
+    const alreadySentIds = new Set(
+      (
+        await this.prisma.outboxEvent.findMany({
+          where: { tenantId, type: 'marketing.birthday', createdAt: { gte: yearStart } },
+          select: { payload: true },
+        })
+      ).map((e) => (e.payload as Record<string, unknown>)['clientId'] as string),
+    );
+    return {
+      eligible: matches.filter((m) => !alreadySentIds.has(m.id)).length,
+      lastRunAt: last?.createdAt.toISOString() ?? null,
+    };
+  }
+
+  async runBirthdayForTenant(tenantId: string): Promise<{ enqueued: number }> {
+    const today = new Date();
+    const month = today.getUTCMonth() + 1;
+    const day = today.getUTCDate();
+    const yearKey = today.getUTCFullYear();
+
+    const matches = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM "client"
+      WHERE "tenantId" = ${tenantId}::uuid
+        AND "deletedAt" IS NULL AND blocked = FALSE
+        AND "emailOptIn" = TRUE AND email IS NOT NULL AND birthday IS NOT NULL
+        AND EXTRACT(MONTH FROM birthday) = ${month}::int
+        AND EXTRACT(DAY FROM birthday) = ${day}::int
+    `;
+
+    let enqueued = 0;
+    const yearStart = new Date(Date.UTC(yearKey, 0, 1));
+    for (const c of matches) {
+      const existing = await this.prisma.outboxEvent.findFirst({
+        where: {
+          tenantId,
+          type: 'marketing.birthday',
+          createdAt: { gte: yearStart },
+          payload: { path: ['clientId'], equals: c.id },
+        },
+        select: { id: true },
+      });
+      if (existing) continue;
+      await this.prisma.outboxEvent.create({
+        data: {
+          tenantId,
+          type: 'marketing.birthday',
+          payload: { tenantId, clientId: c.id, year: yearKey },
+          status: 'PENDING',
+        },
+      });
+      enqueued += 1;
+    }
+    return { enqueued };
+  }
+
+  async previewRebookForTenant(
+    tenantId: string,
+  ): Promise<{ eligible: number; lastRunAt: string | null }> {
+    const days = Number(process.env['REBOOK_WINDOW_DAYS'] ?? 42);
+    const reactivationCutoff = new Date(Date.now() - REACTIVATION_DAYS * 24 * 60 * 60 * 1000);
+    const rebookCutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const eligible = await this.prisma.client.count({
+      where: {
+        tenantId,
+        deletedAt: null,
+        blocked: false,
+        marketingOptIn: true,
+        emailOptIn: true,
+        email: { not: null },
+        lastVisitAt: { lt: rebookCutoff, gte: reactivationCutoff },
+      },
+    });
+    const last = await this.prisma.outboxEvent.findFirst({
+      where: { tenantId, type: 'marketing.rebook' },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    });
+    return { eligible, lastRunAt: last?.createdAt.toISOString() ?? null };
+  }
+
+  async runRebookForTenant(tenantId: string): Promise<{ enqueued: number }> {
+    const days = Number(process.env['REBOOK_WINDOW_DAYS'] ?? 42);
+    const reactivationCutoff = new Date(Date.now() - REACTIVATION_DAYS * 24 * 60 * 60 * 1000);
+    const rebookCutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const cooldown = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const eligible = await this.prisma.client.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        blocked: false,
+        marketingOptIn: true,
+        emailOptIn: true,
+        email: { not: null },
+        lastVisitAt: { lt: rebookCutoff, gte: reactivationCutoff },
+      },
+      select: { id: true },
+    });
+
+    let enqueued = 0;
+    for (const c of eligible) {
+      const recent = await this.prisma.outboxEvent.findFirst({
+        where: {
+          tenantId,
+          type: 'marketing.rebook',
+          createdAt: { gte: cooldown },
+          payload: { path: ['clientId'], equals: c.id },
+        },
+        select: { id: true },
+      });
+      if (recent) continue;
+      await this.prisma.outboxEvent.create({
+        data: {
+          tenantId,
+          type: 'marketing.rebook',
+          payload: { tenantId, clientId: c.id },
+          status: 'PENDING',
+        },
+      });
+      enqueued += 1;
+    }
+    return { enqueued };
+  }
+
   /** Read-only: zeigt wie viele Kundinnen gerade reactivation-eligible sind. */
   async previewReactivation(): Promise<ReactivationPreview> {
     const cutoff = this.cutoff();

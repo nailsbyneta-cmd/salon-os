@@ -31,6 +31,7 @@ interface StaffFull {
   bio: string | null;
   active: boolean;
   serviceIds: string[];
+  commissionRate: string | null;
 }
 
 interface ServiceRow {
@@ -231,11 +232,20 @@ export default async function StaffDetailPage({
             <Badge tone="neutral">{s.role}</Badge>
           </div>
         </div>
-        <Link href={`/staff/${s.id}/shifts`}>
-          <Button variant="secondary" size="sm">
-            Arbeitszeiten →
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href={`/staff/${s.id}/shifts`}>
+            <Button variant="secondary" size="sm">
+              Arbeitszeiten →
+            </Button>
+          </Link>
+          {s.commissionRate ? (
+            <Link href={`/staff/${s.id}/commission`}>
+              <Button variant="ghost" size="sm">
+                Provision →
+              </Button>
+            </Link>
+          ) : null}
+        </div>
       </header>
 
       {(() => {

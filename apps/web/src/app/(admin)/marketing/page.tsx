@@ -1,26 +1,36 @@
+import * as React from 'react';
+import Link from 'next/link';
 import { Card, CardBody } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
-import { runReactivation } from './actions';
+import { runReactivation, runBirthday, runRebook } from './actions';
 
-interface Preview {
+interface CampaignPreview {
   eligible: number;
   lastRunAt: string | null;
-  lastRunCount: number;
+  lastRunCount?: number;
 }
 
-async function loadPreview(): Promise<Preview> {
+async function loadPreviews(): Promise<{
+  reactivation: CampaignPreview;
+  birthday: CampaignPreview;
+  rebook: CampaignPreview;
+}> {
   const ctx = await getCurrentTenant();
-  try {
-    return await apiFetch<Preview>('/v1/marketing/reactivation', {
-      tenantId: ctx.tenantId,
-      userId: ctx.userId,
-      role: ctx.role,
-    });
-  } catch (err) {
-    if (err instanceof ApiError) return { eligible: 0, lastRunAt: null, lastRunCount: 0 };
-    throw err;
-  }
+  const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
+  const empty: CampaignPreview = { eligible: 0, lastRunAt: null };
+
+  const [reactivation, birthday, rebook] = await Promise.allSettled([
+    apiFetch<CampaignPreview>('/v1/marketing/reactivation', auth),
+    apiFetch<CampaignPreview>('/v1/marketing/birthday', auth),
+    apiFetch<CampaignPreview>('/v1/marketing/rebook', auth),
+  ]);
+
+  return {
+    reactivation: reactivation.status === 'fulfilled' ? reactivation.value : empty,
+    birthday: birthday.status === 'fulfilled' ? birthday.value : empty,
+    rebook: rebook.status === 'fulfilled' ? rebook.value : empty,
+  };
 }
 
 function fmtDate(iso: string | null): string {
@@ -33,96 +43,183 @@ function fmtDate(iso: string | null): string {
   });
 }
 
+interface CampaignCardProps {
+  title: string;
+  description: string;
+  badge: string;
+  eligible: number;
+  lastRunAt: string | null;
+  lastRunCount?: number;
+  cooldownNote: string;
+  action: () => Promise<void>;
+  actionLabel: string;
+  icon: string;
+}
+
+function CampaignCard({
+  title,
+  description,
+  badge,
+  eligible,
+  lastRunAt,
+  lastRunCount,
+  cooldownNote,
+  action,
+  actionLabel,
+  icon,
+}: CampaignCardProps) {
+  return (
+    <Card>
+      <CardBody className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xl">
+            {icon}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-semibold text-text-primary">{title}</h2>
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+                {badge}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-text-secondary">{description}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-lg border border-border bg-surface p-3">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
+              Eligible
+            </p>
+            <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-text-primary">
+              {eligible}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface p-3">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
+              Letzter Run
+            </p>
+            <p className="mt-1 text-sm font-medium text-text-primary">{fmtDate(lastRunAt)}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface p-3">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
+              {lastRunCount !== undefined ? 'Letzter Run' : 'Cooldown'}
+            </p>
+            <p className="mt-1 text-sm font-medium text-text-primary">
+              {lastRunCount !== undefined ? `${lastRunCount} gesendet` : cooldownNote}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 border-t border-border pt-3">
+          <p className="text-xs text-text-muted">{cooldownNote}</p>
+          <form action={action}>
+            <button
+              type="submit"
+              disabled={eligible === 0}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-text-muted disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+            >
+              {eligible === 0 ? 'Niemand eligible' : `${actionLabel} (${eligible})`}
+            </button>
+          </form>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
 export default async function MarketingPage(): Promise<React.JSX.Element> {
-  const preview = await loadPreview();
+  const { reactivation, birthday, rebook } = await loadPreviews();
+  const totalEligible = reactivation.eligible + birthday.eligible + rebook.eligible;
 
   return (
     <div className="w-full p-4 md:p-8">
       <header className="mb-6">
         <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">Marketing</p>
         <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight md:text-3xl">
-          Reaktivierung
+          Automatische Kampagnen
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Schreib Kundinnen automatisch an, die seit über 90 Tagen nicht da waren.
+          E-Mail-Automationen die Kundinnen zurückbringen — ohne manuelle Arbeit.
         </p>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardBody className="space-y-1">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
-              Aktuell eligible
-            </p>
-            <p className="font-display text-3xl font-semibold tabular-nums text-text-primary">
-              {preview.eligible}
-            </p>
-            <p className="text-xs text-text-muted">
-              {preview.eligible === 0
-                ? 'Niemand bereit für Re-Engagement'
-                : `${preview.eligible === 1 ? 'Kundin wartet' : 'Kundinnen warten'} auf eine Erinnerung`}
-            </p>
-          </CardBody>
-        </Card>
+      {totalEligible > 0 ? (
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3">
+          <span className="text-lg">📬</span>
+          <p className="text-sm font-medium text-text-primary">
+            <span className="font-semibold text-accent">{totalEligible} Kundinnen</span> warten
+            aktuell auf eine Nachricht.
+          </p>
+        </div>
+      ) : null}
 
-        <Card>
-          <CardBody className="space-y-1">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
-              Letzte Aktion
-            </p>
-            <p className="font-display text-lg font-semibold text-text-primary">
-              {fmtDate(preview.lastRunAt)}
-            </p>
-            <p className="text-xs text-text-muted">
-              {preview.lastRunCount > 0
-                ? `${preview.lastRunCount} Email${preview.lastRunCount === 1 ? '' : 's'} verschickt`
-                : 'Noch nie ausgelöst'}
-            </p>
-          </CardBody>
-        </Card>
+      <div className="space-y-4">
+        <CampaignCard
+          title="Win-back / Reaktivierung"
+          description="Schreibt Kundinnen an, die seit über 90 Tagen nicht da waren. Direktlink zur Online-Buchung im Mail."
+          badge="90-Tage-Inaktiv"
+          eligible={reactivation.eligible}
+          lastRunAt={reactivation.lastRunAt}
+          lastRunCount={reactivation.lastRunCount}
+          cooldownNote="Max. 1× pro 60 Tage pro Kundin"
+          action={runReactivation}
+          actionLabel="Jetzt senden"
+          icon="💝"
+        />
 
-        <Card>
-          <CardBody className="space-y-1">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
-              Cooldown
-            </p>
-            <p className="font-display text-lg font-semibold text-text-primary">60 Tage</p>
-            <p className="text-xs text-text-muted">
-              Pro Kundin max. alle 60 Tage eine Reaktivierungs-Mail
-            </p>
+        <CampaignCard
+          title="Geburtstags-Gruss"
+          description="Schickt heute Geburtstag habenden Kundinnen eine persönliche Mail mit optionalem Rabatt-Code."
+          badge="Geburtstag heute"
+          eligible={birthday.eligible}
+          lastRunAt={birthday.lastRunAt}
+          cooldownNote="1× pro Jahr pro Kundin"
+          action={runBirthday}
+          actionLabel="Jetzt senden"
+          icon="🎂"
+        />
+
+        <CampaignCard
+          title="Rebook-Reminder"
+          description="Erinnert Kundinnen deren letzter Besuch 6 Wochen her ist — bevor sie zur Konkurrenz wechseln."
+          badge="6-Wochen-Reminder"
+          eligible={rebook.eligible}
+          lastRunAt={rebook.lastRunAt}
+          cooldownNote="Max. 1× pro 30 Tage pro Kundin"
+          action={runRebook}
+          actionLabel="Jetzt senden"
+          icon="🔄"
+        />
+
+        <Card className="opacity-60">
+          <CardBody>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface text-xl">
+                💬
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-text-primary">WhatsApp-Kampagne</h2>
+                  <span className="rounded-full bg-text-muted/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                    Bald verfügbar
+                  </span>
+                </div>
+                <p className="text-sm text-text-secondary">
+                  WhatsApp-Blast für opted-in Kundinnen. Benötigt WhatsApp Business API.
+                </p>
+              </div>
+            </div>
           </CardBody>
         </Card>
       </div>
 
-      <Card className="mt-6">
-        <CardBody>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold text-text-primary">
-                Reaktivierungs-Welle starten
-              </h2>
-              <p className="mt-1 text-sm text-text-secondary">
-                {preview.eligible === 0
-                  ? 'Aktuell keine eligible Kundinnen — der Cron läuft sonst täglich automatisch um 09:00.'
-                  : `Schickt eine 'Wir vermissen Dich'-Mail an ${preview.eligible} ${preview.eligible === 1 ? 'Kundin' : 'Kundinnen'} mit Direktlink zur Online-Buchung. Cooldown stellt sicher dass Du keine zweimal in 60 Tagen anschreibst.`}
-              </p>
-              <p className="mt-2 text-[11px] text-text-muted">
-                Die Mails gehen erst raus wenn POSTMARK_TOKEN in den Server-Settings gesetzt ist.
-                Sonst werden Events angelegt aber nur geloggt.
-              </p>
-            </div>
-            <form action={runReactivation}>
-              <button
-                type="submit"
-                disabled={preview.eligible === 0}
-                className="rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-text-muted disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-              >
-                Jetzt {preview.eligible} senden →
-              </button>
-            </form>
-          </div>
-        </CardBody>
-      </Card>
+      <div className="mt-8 flex items-center justify-between">
+        <p className="text-xs text-text-muted">Crons laufen täglich automatisch um 09:00.</p>
+        <Link href="/settings" className="text-xs text-accent hover:underline">
+          E-Mail-Settings (Postmark) →
+        </Link>
+      </div>
     </div>
   );
 }

@@ -83,4 +83,30 @@ export class MarketingAdminController {
     const ctx = requireTenantContext();
     return this.svc.runReactivationForTenant(ctx.tenantId);
   }
+
+  @Get('birthday')
+  async birthdayPreview() {
+    const ctx = requireTenantContext();
+    return this.svc.previewBirthdayForTenant(ctx.tenantId);
+  }
+
+  @Post('birthday/run')
+  @HttpCode(HttpStatus.OK)
+  async birthdayRun() {
+    const ctx = requireTenantContext();
+    return this.svc.runBirthdayForTenant(ctx.tenantId);
+  }
+
+  @Get('rebook')
+  async rebookPreview() {
+    const ctx = requireTenantContext();
+    return this.svc.previewRebookForTenant(ctx.tenantId);
+  }
+
+  @Post('rebook/run')
+  @HttpCode(HttpStatus.OK)
+  async rebookRun() {
+    const ctx = requireTenantContext();
+    return this.svc.runRebookForTenant(ctx.tenantId);
+  }
 }
