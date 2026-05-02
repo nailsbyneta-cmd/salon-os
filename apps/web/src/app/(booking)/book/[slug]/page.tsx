@@ -121,7 +121,8 @@ async function loadTenantData(slug: string): Promise<{
         cache: 'no-store',
       }).catch(() => null),
     ]);
-    if (!infoRes.ok || !svcRes.ok) return null;
+    if (infoRes.status === 404 || svcRes.status === 404) return null;
+    if (!infoRes.ok || !svcRes.ok) throw new Error(`API ${infoRes.status}/${svcRes.status}`);
     const info = (await infoRes.json()) as {
       tenant: TenantInfo;
       locations: Location[];
@@ -145,7 +146,8 @@ async function loadTenantData(slug: string): Promise<{
       reviews: info.reviews,
       gallery: info.gallery,
     };
-  } catch {
+  } catch (err) {
+    console.error('[loadTenantData]', slug, err);
     return null;
   }
 }
@@ -161,17 +163,34 @@ function formatAddress(loc: Location): string {
 
 function mapLink(loc: Location): string | null {
   if (loc.latitude != null && loc.longitude != null) {
-    return `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`;
+    const lat = Number(loc.latitude);
+    const lng = Number(loc.longitude);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return `https://www.google.com/maps?q=${lat},${lng}`;
+    }
   }
   const addr = formatAddress(loc);
   if (!addr) return null;
   return `https://www.google.com/maps?q=${encodeURIComponent(addr)}`;
 }
 
-function todayWeekdayKey(): string {
-  const d = new Date();
-  const idx = (d.getDay() + 6) % 7; // 0 = Mo
-  return WEEKDAYS[idx]!.key;
+function isSafeHttpUrl(url: string | null | undefined): url is string {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' || u.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+function todayWeekdayKey(timezone: string): string {
+  try {
+    const d = new Date(new Date().toLocaleString('en-US', { timeZone: timezone }));
+    return WEEKDAYS[(d.getDay() + 6) % 7]!.key;
+  } catch {
+    return WEEKDAYS[(new Date().getDay() + 6) % 7]!.key;
+  }
 }
 
 function formatHoursForDay(entry: OpeningHoursEntry | undefined): string {
@@ -191,12 +210,13 @@ function formatHoursForDay(entry: OpeningHoursEntry | undefined): string {
 
 function openingHoursArray(
   raw: unknown,
+  timezone: string,
 ): Array<{ key: string; label: string; text: string; isToday: boolean }> | null {
   if (!raw || typeof raw !== 'object') return null;
   const hours = raw as Record<string, OpeningHoursEntry>;
   const hasAnyKey = WEEKDAYS.some(({ key }) => key in hours);
   if (!hasAnyKey) return null;
-  const todayKey = todayWeekdayKey();
+  const todayKey = todayWeekdayKey(timezone);
   return WEEKDAYS.map(({ key, label }) => ({
     key,
     label,
@@ -324,7 +344,9 @@ export default async function BookingStart({
     .sort((a, b) => a.catOrder - b.catOrder || a.catName.localeCompare(b.catName));
 
   const primaryLocation = locations[0] ?? null;
-  const hours = primaryLocation ? openingHoursArray(primaryLocation.openingHours) : null;
+  const hours = primaryLocation
+    ? openingHoursArray(primaryLocation.openingHours, tenant.timezone)
+    : null;
 
   // Today-only Hours für die Hero-Pille — kompakt anzeigen "09:00–19:00"
   const todayHoursEntry = hours?.find((h) => h.isToday);
@@ -343,7 +365,7 @@ export default async function BookingStart({
           Floating-Pills unten: Sterne links, Öffnungs-Pille rechts. */}
       <header className="relative -mx-4 flex min-h-[60vh] items-center justify-center overflow-hidden bg-[#0A0A0A] text-center md:mx-0 md:min-h-[50vh] md:rounded-2xl">
         {/* Ken-Burns Hintergrundbild oder Gradient-Fallback */}
-        {tenant.heroImageUrl ? (
+        {isSafeHttpUrl(tenant.heroImageUrl) ? (
           <div
             className="absolute inset-0 animate-[kenBurns_12s_ease-in-out_infinite_alternate]"
             style={{
@@ -363,7 +385,7 @@ export default async function BookingStart({
           />
         )}
         {/* Overlay für Text-Lesbarkeit (Hero-Image-Variante) */}
-        {tenant.heroImageUrl ? (
+        {isSafeHttpUrl(tenant.heroImageUrl) ? (
           <div
             className="absolute inset-0"
             style={{
@@ -540,9 +562,11 @@ export default async function BookingStart({
       ) : null}
 
       {/* Services — sticky category tab nav + animated service list */}
-      <section aria-label="Behandlungen wählen">
-        <CategoryServiceGrid slug={slug} locationId={locations[0]?.id ?? ''} groups={grouped} />
-      </section>
+      {primaryLocation ? (
+        <section aria-label="Behandlungen wählen">
+          <CategoryServiceGrid slug={slug} locationId={primaryLocation.id} groups={grouped} />
+        </section>
+      ) : null}
 
       {/* Team */}
       {staff.length > 0 ? (
@@ -598,7 +622,7 @@ export default async function BookingStart({
                   <a
                     href={mapLink(primaryLocation)!}
                     target="_blank"
-                    rel="noopener"
+                    rel="noopener noreferrer"
                     className="mt-1.5 inline-block text-xs font-medium text-accent hover:underline"
                   >
                     Route in Google Maps →
@@ -719,16 +743,23 @@ export default async function BookingStart({
                     <span className="text-sm font-medium text-text-primary">{r.authorName}</span>
                   </div>
                   <span className="text-sm text-accent" aria-label={`${r.rating} von 5 Sternen`}>
-                    {'★'.repeat(r.rating)}
-                    <span className="text-text-muted/40">{'★'.repeat(5 - r.rating)}</span>
+                    {(() => {
+                      const stars = Math.min(5, Math.max(0, Math.round(r.rating)));
+                      return (
+                        <>
+                          {'★'.repeat(stars)}
+                          <span className="text-text-muted/40">{'★'.repeat(5 - stars)}</span>
+                        </>
+                      );
+                    })()}
                   </span>
                 </div>
                 <p className="line-clamp-4 text-sm leading-relaxed text-text-secondary">{r.text}</p>
-                {r.sourceUrl ? (
+                {isSafeHttpUrl(r.sourceUrl) ? (
                   <a
                     href={r.sourceUrl}
                     target="_blank"
-                    rel="noopener"
+                    rel="noopener noreferrer"
                     className="mt-2 inline-block text-[11px] text-text-muted hover:text-accent"
                   >
                     Auf Google →
@@ -778,7 +809,7 @@ export default async function BookingStart({
             <a
               href={tenant.instagramUrl}
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-sm active:translate-y-0 active:scale-[0.98]"
             >
               📸 Instagram
@@ -788,7 +819,7 @@ export default async function BookingStart({
             <a
               href={tenant.tiktokUrl}
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-sm active:translate-y-0 active:scale-[0.98]"
             >
               🎵 TikTok
@@ -798,7 +829,7 @@ export default async function BookingStart({
             <a
               href={tenant.facebookUrl}
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-sm active:translate-y-0 active:scale-[0.98]"
             >
               👤 Facebook
@@ -808,7 +839,7 @@ export default async function BookingStart({
             <a
               href={`https://wa.me/${tenant.whatsappE164.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               className="inline-flex h-10 items-center gap-2 rounded-md border border-success bg-success/10 px-4 text-sm font-medium text-success transition-colors hover:bg-success/20"
             >
               💬 WhatsApp
@@ -818,7 +849,7 @@ export default async function BookingStart({
             <a
               href={tenant.googleBusinessUrl}
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-sm active:translate-y-0 active:scale-[0.98]"
             >
               ⭐ Google Reviews
