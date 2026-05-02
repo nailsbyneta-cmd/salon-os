@@ -43,6 +43,11 @@ export type {
   ClientSession,
   LoyaltyProgram,
   LoyaltyStamp,
+  MembershipPlan,
+  ClientMembership,
+  PosRefund,
+  StaffCommission,
+  PromoCode,
 } from '@prisma/client';
 
 export {
@@ -58,6 +63,9 @@ export {
   OutboxStatus,
   StockMutationReason,
   LoyaltyStampReason,
+  PromoCodeType,
+  BillingCycle,
+  MembershipStatus,
 } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };

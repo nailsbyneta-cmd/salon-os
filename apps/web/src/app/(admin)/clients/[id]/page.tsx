@@ -5,7 +5,7 @@ import { computeLoyalty } from '@salon-os/utils';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { BlockToggleButton } from '@/components/block-toggle-button';
-import { forgetClient } from './actions';
+import { cancelMembership, forgetClient, subscribeMembership } from './actions';
 import { LoyaltyCard } from './loyalty-card';
 
 interface Client {
@@ -116,6 +116,67 @@ async function loadLoyalty(clientId: string): Promise<{
   };
 }
 
+// ─── Membership types ──────────────────────────────────────────────────────
+
+type BillingCycle = 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
+type MembershipStatus = 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'EXPIRED';
+
+interface MembershipPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  priceChf: string | number;
+  billingCycle: BillingCycle;
+  sessionCredits: number | null;
+  discountPct: number | null;
+  active: boolean;
+}
+
+interface ClientMembership {
+  id: string;
+  status: MembershipStatus;
+  startedAt: string;
+  nextBillingAt: string | null;
+  creditsUsed: number;
+  plan: MembershipPlan;
+}
+
+const cycleLabel: Record<BillingCycle, string> = {
+  MONTHLY: 'Monatlich',
+  QUARTERLY: 'Vierteljährlich',
+  ANNUAL: 'Jährlich',
+};
+
+async function loadMembership(clientId: string): Promise<{
+  membership: ClientMembership | null;
+  plans: MembershipPlan[];
+}> {
+  const ctx = await getCurrentTenant();
+  const auth = { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role };
+  const safe = async <T,>(p: Promise<T>, fallback: T): Promise<T> => {
+    try {
+      return await p;
+    } catch (err) {
+      if (err instanceof ApiError) return fallback;
+      throw err;
+    }
+  };
+  const [membershipRes, plansRes] = await Promise.all([
+    safe(
+      apiFetch<{ membership: ClientMembership | null }>(
+        `/v1/memberships/clients/${clientId}`,
+        auth,
+      ),
+      { membership: null },
+    ),
+    safe(apiFetch<{ plans: MembershipPlan[] }>('/v1/memberships/plans', auth), { plans: [] }),
+  ]);
+  return {
+    membership: membershipRes.membership,
+    plans: plansRes.plans.filter((p) => p.active),
+  };
+}
+
 async function loadClientAppointments(clientId: string): Promise<Appt[]> {
   const ctx = await getCurrentTenant();
   const from = new Date();
@@ -165,10 +226,11 @@ export default async function ClientDetailPage({
   params: Promise<{ id: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
-  const [client, appts, loyaltyData] = await Promise.all([
+  const [client, appts, loyaltyData, membershipData] = await Promise.all([
     loadClient(id),
     loadClientAppointments(id),
     loadLoyalty(id),
+    loadMembership(id),
   ]);
   if (!client) notFound();
 
@@ -522,6 +584,153 @@ export default async function ClientDetailPage({
           stamps={loyaltyData.stamps}
         />
       ) : null}
+
+      {/* ─── Mitgliedschaft ─── */}
+      <Card className="mb-8">
+        <CardBody>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+              Mitgliedschaft
+            </p>
+            <Link
+              href="/settings/memberships"
+              className="text-xs text-text-muted hover:text-accent transition-colors"
+            >
+              Alle Plane →
+            </Link>
+          </div>
+
+          {membershipData.membership ? (
+            <div className="space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-medium text-text-primary">
+                    {membershipData.membership.plan.name}
+                  </p>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    {Number(membershipData.membership.plan.priceChf).toLocaleString('de-CH', {
+                      minimumFractionDigits: 2,
+                    })}{' '}
+                    CHF · {cycleLabel[membershipData.membership.plan.billingCycle]}
+                  </p>
+                </div>
+                <Badge
+                  tone={
+                    membershipData.membership.status === 'ACTIVE'
+                      ? 'success'
+                      : membershipData.membership.status === 'PAUSED'
+                        ? 'warning'
+                        : 'danger'
+                  }
+                >
+                  {membershipData.membership.status === 'ACTIVE'
+                    ? 'Aktiv'
+                    : membershipData.membership.status === 'PAUSED'
+                      ? 'Pausiert'
+                      : 'Gekündigt'}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs text-text-secondary">
+                <div>
+                  <span className="text-text-muted">Beginn:</span>{' '}
+                  {new Date(membershipData.membership.startedAt).toLocaleDateString('de-CH', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </div>
+                {membershipData.membership.nextBillingAt ? (
+                  <div>
+                    <span className="text-text-muted">Nächste Abrechnung:</span>{' '}
+                    {new Date(membershipData.membership.nextBillingAt).toLocaleDateString('de-CH', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </div>
+                ) : null}
+                {membershipData.membership.plan.sessionCredits !== null ? (
+                  <div>
+                    <span className="text-text-muted">Credits:</span>{' '}
+                    {membershipData.membership.creditsUsed} /{' '}
+                    {membershipData.membership.plan.sessionCredits} genutzt
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-text-muted">Credits:</span> Unbegrenzt
+                  </div>
+                )}
+                {membershipData.membership.plan.discountPct ? (
+                  <div>
+                    <span className="text-text-muted">Rabatt:</span>{' '}
+                    {membershipData.membership.plan.discountPct}% auf alle Services
+                  </div>
+                ) : null}
+              </div>
+
+              {(membershipData.membership.status === 'ACTIVE' ||
+                membershipData.membership.status === 'PAUSED') ? (
+                <form
+                  action={cancelMembership.bind(null, membershipData.membership.id, id)}
+                  className="pt-1"
+                >
+                  <button
+                    type="submit"
+                    className="text-xs text-danger hover:underline transition-colors"
+                  >
+                    Mitgliedschaft kundigen
+                  </button>
+                </form>
+              ) : null}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-text-muted">Keine aktive Mitgliedschaft.</p>
+              {membershipData.plans.length > 0 ? (
+                <form
+                  action={async (formData: FormData) => {
+                    'use server';
+                    const planId = String(formData.get('planId') ?? '');
+                    if (planId) await subscribeMembership(id, planId);
+                  }}
+                  className="flex items-center gap-3"
+                >
+                  <select
+                    name="planId"
+                    required
+                    className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+                  >
+                    <option value="">Plan wählen…</option>
+                    {membershipData.plans.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name} —{' '}
+                        {Number(plan.priceChf).toLocaleString('de-CH', {
+                          minimumFractionDigits: 2,
+                        })}{' '}
+                        CHF / {cycleLabel[plan.billingCycle]}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className="inline-flex h-9 items-center rounded-md bg-accent px-3 text-xs font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+                  >
+                    Zuweisen
+                  </button>
+                </form>
+              ) : (
+                <Link
+                  href="/settings/memberships"
+                  className="inline-flex h-9 items-center rounded-md border border-border bg-surface px-3 text-xs font-medium text-text-secondary hover:bg-surface-raised"
+                >
+                  Plane einrichten →
+                </Link>
+              )}
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       {topServices.length > 0 ? (
         <Card className="mb-8">

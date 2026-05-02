@@ -8,6 +8,35 @@ import { transitionAppointment, cancelAppointment, markNoShow } from '../actions
 import { updateAppointmentNotes } from './actions';
 import { AppointmentEditForm } from './appointment-edit-form';
 
+interface CalendarPosRefund {
+  id: string;
+  amount: string;
+  paymentMethod: string;
+  reason: string | null;
+  notes: string | null;
+  refundedAt: string;
+}
+
+async function loadRefunds(appointmentId: string): Promise<CalendarPosRefund[]> {
+  const ctx = await getCurrentTenant();
+  try {
+    const res = await apiFetch<{ refunds: CalendarPosRefund[] }>(
+      `/v1/appointments/${appointmentId}/refunds`,
+      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
+    );
+    return res.refunds;
+  } catch {
+    return [];
+  }
+}
+
+const refundReasonLabels: Record<string, string> = {
+  DUPLICATE: 'Doppelzahlung',
+  CUSTOMER_DISSATISFIED: 'Kundin nicht zufrieden',
+  SERVICE_NOT_DELIVERED: 'Leistung nicht erbracht',
+  OTHER: 'Sonstiges',
+};
+
 function addDaysIso(isoDate: string, days: number): string {
   const [y, m, d] = isoDate.split('-').map(Number);
   if (!y || !m || !d) return isoDate;
@@ -174,13 +203,19 @@ export default async function AppointmentDetailPage({
   // auf alle Services. Parallel: Tenant-Name für pre-filled WA-Message.
   const isFreed = a.status === 'CANCELLED' || a.status === 'NO_SHOW';
   const allServiceIds = a.items.map((i) => i.serviceId).filter(Boolean);
-  const [matchesRes, tenantSettings] =
+
+  const waitlistPromise =
     isFreed && allServiceIds.length > 0
-      ? await Promise.all([
-          loadWaitlistMatches(allServiceIds, a.startAt, a.endAt, a.staffId),
-          loadTenantSettings(),
-        ])
-      : [{ entries: [] as WaitlistMatch[], total: 0 }, await loadTenantSettings()];
+      ? loadWaitlistMatches(allServiceIds, a.startAt, a.endAt, a.staffId)
+      : Promise.resolve({ entries: [] as WaitlistMatch[], total: 0 });
+  const refundsPromise =
+    a.status === 'COMPLETED' ? loadRefunds(id) : Promise.resolve([] as CalendarPosRefund[]);
+
+  const [matchesRes, tenantSettings, appointmentRefunds] = await Promise.all([
+    waitlistPromise,
+    loadTenantSettings(),
+    refundsPromise,
+  ]);
   const tenantName = tenantSettings.name;
   const tenantTimezone = tenantSettings.timezone;
   const waitlistMatches = matchesRes.entries;
@@ -630,6 +665,43 @@ export default async function AppointmentDetailPage({
             );
           })()
         : null}
+
+      {a.status === 'COMPLETED' && appointmentRefunds.length > 0 ? (
+        <Card className="mb-6">
+          <div className="border-b border-border px-5 py-3">
+            <h2 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+              Rückerstattungen
+            </h2>
+          </div>
+          <ul>
+            {appointmentRefunds.map((r) => (
+              <li
+                key={r.id}
+                className="flex items-center justify-between border-b border-border px-5 py-3 text-sm last:border-0"
+              >
+                <div>
+                  <div className="font-medium text-text-primary">
+                    {r.paymentMethod}
+                    {r.reason
+                      ? ` · ${refundReasonLabels[r.reason] ?? r.reason}`
+                      : ''}
+                  </div>
+                  <div className="text-xs text-text-muted">
+                    {new Date(r.refundedAt).toLocaleString('de-CH', {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                    })}
+                    {r.notes ? ` · ${r.notes}` : ''}
+                  </div>
+                </div>
+                <span className="font-semibold tabular-nums text-danger">
+                  -{Number(r.amount).toFixed(2)} CHF
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
 
       <Card>
         <CardBody>

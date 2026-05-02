@@ -4,6 +4,7 @@ import { Avatar, Badge, Card, CardBody, PriceDisplay } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { PosForm } from './pos-form';
+import { RefundForm } from './refund-form';
 
 interface Appt {
   id: string;
@@ -27,6 +28,15 @@ interface Appt {
   }>;
 }
 
+interface PosRefund {
+  id: string;
+  amount: string;
+  paymentMethod: string;
+  reason: string | null;
+  notes: string | null;
+  refundedAt: string;
+}
+
 async function loadAppointment(id: string): Promise<Appt | null> {
   const ctx = await getCurrentTenant();
   try {
@@ -41,16 +51,32 @@ async function loadAppointment(id: string): Promise<Appt | null> {
   }
 }
 
+async function loadRefunds(appointmentId: string): Promise<PosRefund[]> {
+  const ctx = await getCurrentTenant();
+  try {
+    const res = await apiFetch<{ refunds: PosRefund[] }>(
+      `/v1/appointments/${appointmentId}/refunds`,
+      { tenantId: ctx.tenantId, userId: ctx.userId, role: ctx.role },
+    );
+    return res.refunds;
+  } catch {
+    return [];
+  }
+}
+
 export default async function PosPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
-  const a = await loadAppointment(id);
+  const [a, existingRefunds] = await Promise.all([loadAppointment(id), loadRefunds(id)]);
   if (!a) notFound();
 
   const subtotal = a.items.reduce((s, i) => s + Number(i.price), 0);
+  const grossPaid = subtotal + Number(a.tipAmount ?? 0);
+  const alreadyRefunded = existingRefunds.reduce((s, r) => s + Number(r.amount), 0);
+  const maxRefundable = grossPaid - alreadyRefunded;
   const name = a.client ? `${a.client.firstName} ${a.client.lastName}` : 'Blockzeit';
   const already = a.paidAt !== null;
 
@@ -144,6 +170,24 @@ export default async function PosPage({
           )}
         </CardBody>
       </Card>
+
+      {a.status === 'COMPLETED' ? (
+        <Card className="mt-6">
+          <div className="border-b border-border px-5 py-3">
+            <h2 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+              Rückerstattung ausstellen
+            </h2>
+          </div>
+          <CardBody>
+            <RefundForm
+              appointmentId={a.id}
+              maxRefundable={maxRefundable}
+              currency="CHF"
+              existingRefunds={existingRefunds}
+            />
+          </CardBody>
+        </Card>
+      ) : null}
     </div>
   );
 }

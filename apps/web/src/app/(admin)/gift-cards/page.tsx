@@ -39,6 +39,22 @@ export default async function GiftCardsPage(): Promise<React.JSX.Element> {
 
   return (
     <div className="w-full p-4 md:p-8">
+      {/* Tabs: Gutscheine | Rabatt-Codes */}
+      <nav className="mb-6 flex gap-1 border-b border-border pb-0">
+        <span
+          className="rounded-t-md border-b-2 border-accent px-4 py-2.5 text-sm font-medium text-accent"
+          aria-current="page"
+        >
+          Gutscheine
+        </span>
+        <Link
+          href="/gift-cards/promo"
+          className="rounded-t-md px-4 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
+        >
+          Rabatt-Codes
+        </Link>
+      </nav>
+
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-accent">

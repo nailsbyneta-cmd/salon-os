@@ -80,6 +80,10 @@ model Tenant {
   consultationForms ConsultationForm[]
   consultationSubmissions ConsultationSubmission[]
   staffCommissions StaffCommission[]
+  promoCodes       PromoCode[]
+  membershipPlans  MembershipPlan[]
+  clientMemberships ClientMembership[]
+  posRefunds       PosRefund[]
 
   @@index([status])
   @@map("tenant")
@@ -435,6 +439,7 @@ model Staff {
   appointmentSeries   AppointmentSeries[]
   waitlistEntries     WaitlistEntry[]
   commissions         StaffCommission[]
+  posRefunds          PosRefund[]
 
   @@index([tenantId])
   @@index([tenantId, active])
@@ -697,6 +702,7 @@ model Client {
   family          Client[]        @relation("Family")
   parent          Client?         @relation("Family", fields: [familyParentId], references: [id])
   consultationSubmissions ConsultationSubmission[]
+  memberships             ClientMembership[]
 
   @@index([tenantId, phoneE164])
   @@index([tenantId, email])
@@ -823,6 +829,7 @@ model Appointment {
   series   AppointmentSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   consultationSubmissions ConsultationSubmission[]
   commission StaffCommission?
+  refunds    PosRefund[]
 
   @@index([tenantId, startAt])
   @@index([tenantId, staffId, startAt])
@@ -1163,4 +1170,114 @@ enum LoyaltyStampReason {
   REDEEM
   ADJUST
   EXPIRE
+}
+
+// ─── Promo / Discount Codes ───────────────────────────────────
+
+model PromoCode {
+  id          String         @id @default(uuid()) @db.Uuid
+  tenantId    String         @db.Uuid
+  code        String
+  type        PromoCodeType
+  value       Decimal        @db.Decimal(10, 2)
+  currency    String?        @db.Char(3)
+  minOrderChf Decimal?       @db.Decimal(10, 2)
+  maxUsages   Int?
+  usages      Int            @default(0)
+  active      Boolean        @default(true)
+  expiresAt   DateTime?      @db.Timestamptz
+  note        String?
+  createdAt   DateTime       @default(now()) @db.Timestamptz
+  updatedAt   DateTime       @updatedAt @db.Timestamptz
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, active])
+  @@map("promo_code")
+}
+
+enum PromoCodeType {
+  PERCENT
+  FIXED
+}
+
+// ─── Client Memberships ───────────────────────────────────────
+
+model MembershipPlan {
+  id              String               @id @default(uuid()) @db.Uuid
+  tenantId        String               @db.Uuid
+  name            String
+  description     String?
+  priceChf        Decimal              @db.Decimal(10, 2)
+  billingCycle    BillingCycle
+  sessionCredits  Int?
+  discountPct     Int?
+  active          Boolean              @default(true)
+  createdAt       DateTime             @default(now()) @db.Timestamptz
+  updatedAt       DateTime             @updatedAt @db.Timestamptz
+
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  clientMemberships ClientMembership[]
+
+  @@index([tenantId, active])
+  @@map("membership_plan")
+}
+
+model ClientMembership {
+  id              String             @id @default(uuid()) @db.Uuid
+  tenantId        String             @db.Uuid
+  clientId        String             @db.Uuid
+  planId          String             @db.Uuid
+  status          MembershipStatus   @default(ACTIVE)
+  startedAt       DateTime           @default(now()) @db.Timestamptz
+  nextBillingAt   DateTime?          @db.Timestamptz
+  cancelledAt     DateTime?          @db.Timestamptz
+  creditsUsed     Int                @default(0)
+  createdAt       DateTime           @default(now()) @db.Timestamptz
+  updatedAt       DateTime           @updatedAt @db.Timestamptz
+
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client          Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  plan            MembershipPlan     @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, clientId])
+  @@index([tenantId, status])
+  @@map("client_membership")
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum MembershipStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+// ─── POS Refunds ──────────────────────────────────────────────
+
+model PosRefund {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @db.Uuid
+  appointmentId   String    @db.Uuid
+  amount          Decimal   @db.Decimal(10, 2)
+  paymentMethod   String
+  reason          String?
+  notes           String?
+  refundedById    String?   @db.Uuid
+  refundedAt      DateTime  @default(now()) @db.Timestamptz
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  refundedBy      Staff?      @relation(fields: [refundedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, appointmentId])
+  @@index([tenantId, refundedAt(sort: Desc)])
+  @@map("pos_refund")
 }

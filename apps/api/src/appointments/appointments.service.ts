@@ -1,5 +1,13 @@
-import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import type { PrismaClient, Appointment } from '@salon-os/db';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import type { PrismaClient, Appointment, PosRefund } from '@salon-os/db';
 import type {
   CreateAppointmentInput,
   RescheduleAppointmentInput,
@@ -210,6 +218,10 @@ export class AppointmentsService {
       tipAmount: number;
       paymentMethod: 'CASH' | 'CARD' | 'TWINT' | 'STRIPE_CHECKOUT';
       completeAppointment: boolean;
+      /** Applied promo code (for logging / future discount field on Appointment). */
+      discountCode?: string;
+      /** CHF amount already deducted by the applied promo code. */
+      discountChf?: number;
     },
   ): Promise<Appointment> {
     const ctx = requireTenantContext();
@@ -503,6 +515,100 @@ export class AppointmentsService {
       return appt;
     });
   }
+
+  // ─── Refunds ────────────────────────────────────────────────────────────────
+
+  async issueRefund(
+    appointmentId: string,
+    input: {
+      amount: number;
+      paymentMethod: 'CASH' | 'CARD' | 'TWINT';
+      reason?: 'DUPLICATE' | 'CUSTOMER_DISSATISFIED' | 'SERVICE_NOT_DELIVERED' | 'OTHER';
+      notes?: string;
+    },
+  ): Promise<PosRefund> {
+    const ctx = requireTenantContext();
+
+    if (ctx.role !== 'OWNER' && ctx.role !== 'MANAGER') {
+      throw new ForbiddenException('Nur OWNER oder MANAGER dürfen Rückerstattungen ausstellen.');
+    }
+
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const appt = await tx.appointment.findFirst({
+        where: { id: appointmentId, tenantId: ctx.tenantId },
+        include: {
+          items: { select: { price: true } },
+          refunds: { select: { amount: true } },
+        },
+      });
+
+      if (!appt) {
+        throw new NotFoundException(`Appointment ${appointmentId} not found`);
+      }
+
+      if (appt.status !== 'COMPLETED') {
+        throw new BadRequestException(
+          'Rückerstattungen sind nur für abgeschlossene Termine möglich.',
+        );
+      }
+
+      const grossPaid =
+        appt.items.reduce((s, i) => s + Number(i.price), 0) + Number(appt.tipAmount ?? 0);
+      const alreadyRefunded = appt.refunds.reduce((s, r) => s + Number(r.amount), 0);
+      const maxRefundable = grossPaid - alreadyRefunded;
+
+      if (input.amount > maxRefundable) {
+        throw new BadRequestException(
+          `Betrag (${input.amount.toFixed(2)}) überschreitet den erstattbaren Betrag (${maxRefundable.toFixed(2)}).`,
+        );
+      }
+
+      const refund = await tx.posRefund.create({
+        data: {
+          tenantId: ctx.tenantId,
+          appointmentId,
+          amount: input.amount,
+          paymentMethod: input.paymentMethod,
+          reason: input.reason ?? null,
+          notes: input.notes ?? null,
+          refundedById: ctx.userId ?? null,
+          refundedAt: new Date(),
+        },
+      });
+
+      await this.audit.withinTx(tx, ctx.tenantId, ctx.userId, {
+        entity: 'Appointment',
+        entityId: appointmentId,
+        action: 'refund-issued',
+        diff: {
+          refundId: refund.id,
+          amount: input.amount,
+          paymentMethod: input.paymentMethod,
+          reason: input.reason ?? null,
+        },
+      });
+
+      return refund;
+    });
+  }
+
+  async getRefunds(appointmentId: string): Promise<PosRefund[]> {
+    const ctx = requireTenantContext();
+    return this.withTenant(ctx.tenantId, ctx.userId, ctx.role, async (tx) => {
+      const appt = await tx.appointment.findFirst({
+        where: { id: appointmentId, tenantId: ctx.tenantId },
+        select: { id: true },
+      });
+      if (!appt) throw new NotFoundException(`Appointment ${appointmentId} not found`);
+
+      return tx.posRefund.findMany({
+        where: { appointmentId, tenantId: ctx.tenantId },
+        orderBy: { refundedAt: 'asc' },
+      });
+    });
+  }
+
+  // ─── Commission (internal) ────────────────────────────────────────────────
 
   private async autoRecordCommission(
     appointmentId: string,

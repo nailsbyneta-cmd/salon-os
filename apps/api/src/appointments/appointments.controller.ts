@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -19,7 +20,7 @@ import {
 } from '@salon-os/types';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { AppointmentsService } from './appointments.service.js';
-import type { Appointment } from '@salon-os/db';
+import type { Appointment, PosRefund } from '@salon-os/db';
 
 @Controller('v1/appointments')
 export class AppointmentsController {
@@ -127,6 +128,40 @@ export class AppointmentsController {
     return this.svc.updateNotes(id, patch);
   }
 
+  @Post(':id/refund')
+  @HttpCode(HttpStatus.CREATED)
+  async issueRefund(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(
+      new ZodValidationPipe(
+        z.object({
+          amount: z.number().positive(),
+          paymentMethod: z.enum(['CASH', 'CARD', 'TWINT']),
+          reason: z
+            .enum(['DUPLICATE', 'CUSTOMER_DISSATISFIED', 'SERVICE_NOT_DELIVERED', 'OTHER'])
+            .optional(),
+          notes: z.string().max(500).optional(),
+        }),
+      ),
+    )
+    body: {
+      amount: number;
+      paymentMethod: 'CASH' | 'CARD' | 'TWINT';
+      reason?: 'DUPLICATE' | 'CUSTOMER_DISSATISFIED' | 'SERVICE_NOT_DELIVERED' | 'OTHER';
+      notes?: string;
+    },
+  ): Promise<PosRefund> {
+    return this.svc.issueRefund(id, body);
+  }
+
+  @Get(':id/refunds')
+  async getRefunds(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<{ refunds: PosRefund[] }> {
+    const refunds = await this.svc.getRefunds(id);
+    return { refunds };
+  }
+
   @Post(':id/checkout')
   @HttpCode(HttpStatus.OK)
   async checkout(
@@ -137,6 +172,8 @@ export class AppointmentsController {
           tipAmount: z.number().min(0).max(10_000).default(0),
           paymentMethod: z.enum(['CASH', 'CARD', 'TWINT', 'STRIPE_CHECKOUT']),
           completeAppointment: z.boolean().default(true),
+          discountCode: z.string().max(20).optional(),
+          discountChf: z.number().min(0).max(100_000).optional(),
         }),
       ),
     )
@@ -144,6 +181,8 @@ export class AppointmentsController {
       tipAmount: number;
       paymentMethod: 'CASH' | 'CARD' | 'TWINT' | 'STRIPE_CHECKOUT';
       completeAppointment: boolean;
+      discountCode?: string;
+      discountChf?: number;
     },
   ): Promise<Appointment> {
     return this.svc.checkout(id, body);

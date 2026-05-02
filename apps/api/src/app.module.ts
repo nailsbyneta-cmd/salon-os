@@ -13,9 +13,11 @@ import { CommonModule } from './common/common.module.js';
 import { DbModule } from './db/db.module.js';
 import { HealthController } from './health/health.controller.js';
 import { GiftCardsModule } from './gift-cards/gift-cards.module.js';
+import { PromoCodesModule } from './promo-codes/promo-codes.module.js';
 import { LocationsModule } from './locations/locations.module.js';
 import { LoyaltyModule } from './loyalty/loyalty.module.js';
 import { MarketingModule } from './marketing/marketing.module.js';
+import { MembershipsModule } from './memberships/memberships.module.js';
 import { OutboxModule } from './outbox/outbox.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { ProductsModule } from './products/products.module.js';
@@ -59,7 +61,9 @@ import { FormsModule } from './forms/forms.module.js';
     MarketingModule,
     PaymentsModule,
     GiftCardsModule,
+    PromoCodesModule,
     LoyaltyModule,
+    MembershipsModule,
     WaitlistModule,
     ProductsModule,
     SalonSettingsModule,
