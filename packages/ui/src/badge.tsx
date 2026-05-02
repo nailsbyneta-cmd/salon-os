@@ -9,23 +9,23 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const toneStyle: Record<Tone, string> = {
-  neutral: 'bg-surface-raised text-text-secondary border border-border',
-  success: 'bg-success/10 text-success border border-success/20',
-  warning: 'bg-warning/10 text-warning border border-warning/20',
-  danger: 'bg-danger/10 text-danger border border-danger/20',
-  info: 'bg-info/10 text-info border border-info/20',
-  accent: 'bg-accent/10 text-accent border border-accent/30',
-  brand: 'bg-brand/10 text-brand border border-brand/20',
+  neutral: 'bg-[#F5F5F5] text-[#666666] border border-[#E0E0E0]',
+  success: 'bg-green-50 text-green-700 border border-green-200',
+  warning: 'bg-orange-50 text-orange-600 border border-orange-200',
+  danger: 'bg-red-50 text-red-600 border border-red-200',
+  info: 'bg-blue-50 text-[#007AFF] border border-blue-200',
+  accent: 'bg-blue-50 text-[#007AFF] border border-blue-200',
+  brand: 'bg-blue-50 text-[#007AFF] border border-blue-200',
 };
 
 const dotColor: Record<Tone, string> = {
-  neutral: 'bg-text-muted',
-  success: 'bg-success',
-  warning: 'bg-warning',
-  danger: 'bg-danger',
-  info: 'bg-info',
-  accent: 'bg-accent',
-  brand: 'bg-brand',
+  neutral: 'bg-[#999999]',
+  success: 'bg-green-500',
+  warning: 'bg-orange-500',
+  danger: 'bg-red-500',
+  info: 'bg-[#007AFF]',
+  accent: 'bg-[#007AFF]',
+  brand: 'bg-[#007AFF]',
 };
 
 export function Badge({
@@ -60,8 +60,8 @@ export function Kbd({
   return (
     <kbd
       className={cn(
-        'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-sm font-mono text-[10px] font-medium',
-        'bg-surface-raised text-text-secondary border border-border shadow-sm',
+        'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-[4px] font-mono text-[10px] font-medium',
+        'bg-[#F5F5F5] text-[#666666] border border-[#E0E0E0] shadow-[0_1px_1px_rgba(0,0,0,0.06)]',
         className,
       )}
     >

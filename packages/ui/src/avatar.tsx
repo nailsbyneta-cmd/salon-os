@@ -14,9 +14,9 @@ export interface AvatarProps {
 
 const sizeClass: Record<Size, string> = {
   sm: 'h-7 w-7 text-[10px]',
-  md: 'h-10 w-10 text-sm',
-  lg: 'h-12 w-12 text-base',
-  xl: 'h-16 w-16 text-lg',
+  md: 'h-9 w-9 text-sm',
+  lg: 'h-11 w-11 text-base',
+  xl: 'h-14 w-14 text-lg',
 };
 
 function initials(name: string): string {
@@ -27,8 +27,8 @@ function initials(name: string): string {
 }
 
 /**
- * ClientAvatar / StaffAvatar. Zeigt Foto wenn vorhanden, sonst farbige Initialen.
- * VIP-Ring via `vip` — Gold-Akzent-Ring drum.
+ * Avatar. Shows photo when available, otherwise color-coded initials.
+ * VIP ring: blue accent ring around the avatar.
  */
 export function Avatar({
   src,
@@ -38,13 +38,13 @@ export function Avatar({
   vip,
   className,
 }: AvatarProps): React.JSX.Element {
-  const bg = color ?? '#737373';
+  const bg = color ?? '#007AFF';
   return (
     <div
       className={cn(
         'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold text-white',
         sizeClass[size],
-        vip && 'ring-2 ring-accent ring-offset-2 ring-offset-background',
+        vip && 'ring-2 ring-[#007AFF] ring-offset-2 ring-offset-white',
         className,
       )}
       style={src ? undefined : { backgroundColor: bg }}

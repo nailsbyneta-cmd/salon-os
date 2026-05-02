@@ -36,6 +36,7 @@ import { WaitlistModule } from './waitlist/waitlist.module.js';
 import { WhatsappModule } from './whatsapp/whatsapp.module.js';
 import { FormsModule } from './forms/forms.module.js';
 import { PayrollModule } from './payroll/payroll.module.js';
+import { StoreModule } from './store/store.module.js';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { PayrollModule } from './payroll/payroll.module.js';
     WhatsappModule,
     FormsModule,
     PayrollModule,
+    StoreModule,
   ],
   controllers: [HealthController],
   providers: [

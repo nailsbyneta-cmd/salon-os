@@ -1,97 +1,125 @@
 /**
  * SALON OS — Design-Tokens als CSS-Variablen.
- * Werte aus specs/design-system.md.
+ * Apple-aesthetic: pure white surfaces, 6-step neutral gray scale,
+ * systemBlue (#007AFF) as single accent. No warm tones, no gold.
  * Light + Dark Mode über data-theme Attribut oder prefers-color-scheme.
  */
 
 @layer base {
   :root {
-    /* Farben — Light */
-    --background: 37 15% 98%;           /* #FAFAF9 warm off-white */
-    --surface: 0 0% 100%;                /* #FFFFFF */
-    --surface-raised: 0 0% 100%;
-    --border: 24 6% 90%;                 /* #E7E5E4 */
-    --border-strong: 24 6% 80%;
-    --text-primary: 0 0% 4%;             /* #0A0A0A */
-    --text-secondary: 30 5% 35%;         /* #57534E */
-    --text-muted: 30 6% 64%;             /* #A8A29E */
+    /* Backgrounds */
+    --background: 0 0% 98%; /* #FAFAFA surface gray */
+    --surface: 0 0% 100%; /* #FFFFFF pure white */
+    --surface-raised: 0 0% 96%; /* #F5F5F5 */
 
-    --brand: 222 47% 11%;                /* #0F172A deep slate */
-    --brand-foreground: 0 0% 98%;
-    --brand-accent: 37 47% 61%;          /* #C8A96E Beautyneta-Gold (matched beautyneta.ch) */
-    --brand-accent-foreground: 0 0% 4%;  /* #0A0A0A auf Gold = Brand-Kontrast */
+    /* Borders */
+    --border: 0 0% 88%; /* #E0E0E0 hairline */
+    --border-strong: 0 0% 78%; /* #C7C7C7 */
 
+    /* Text */
+    --text-primary: 0 0% 9%; /* #171717 */
+    --text-secondary: 0 0% 40%; /* #666666 */
+    --text-muted: 0 0% 60%; /* #999999 */
+
+    /* Accent — Apple systemBlue */
+    --accent: 211 100% 50%; /* #007AFF */
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 211 100% 45%; /* #0066DD */
+    --accent-muted: 211 100% 97%; /* very light blue tint */
+
+    /* Brand (systemBlue — kept for app identity, not UI chrome) */
+    --brand: 211 100% 50%; /* #007AFF */
+    --brand-foreground: 0 0% 100%;
+    --brand-accent: 211 100% 50%; /* same as accent */
+    --brand-accent-foreground: 0 0% 100%;
+
+    /* Status */
     --success: 142 71% 45%;
-    --warning: 45 93% 47%;
-    --danger: 0 72% 51%;
-    --info: 199 89% 48%;
+    --warning: 38 92% 50%;
+    --danger: 0 84% 60%;
+    --info: 211 100% 50%;
 
-    /* Glow / Focus */
-    --ring: 32 48% 65%;
+    /* Focus ring */
+    --ring: 211 100% 50%; /* #007AFF */
     --ring-offset: 0 0% 100%;
 
     /* Radii */
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --radius-xl: 20px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
 
-    /* Shadows: 2-layer (soft + sharp) */
+    /* Shadows — ultra-subtle, Apple-style */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
-    --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.04);
-    --shadow-glow: 0 0 0 4px rgba(200, 169, 110, 0.14);
+    --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.05);
+    --shadow-glow: 0 0 0 3px rgba(0, 122, 255, 0.2);
   }
 
   [data-theme='dark'] {
-    /* Farben — Dark */
-    --background: 0 0% 4%;               /* #0A0A0A */
-    --surface: 0 0% 9%;                  /* #171717 */
-    --surface-raised: 0 0% 13%;
-    --border: 0 0% 17%;                  /* #262626 */
-    --border-strong: 0 0% 24%;
-    --text-primary: 0 0% 98%;
-    --text-secondary: 0 0% 72%;
-    --text-muted: 0 0% 52%;
+    --background: 0 0% 7%; /* #121212 */
+    --surface: 0 0% 10%; /* #1A1A1A */
+    --surface-raised: 0 0% 13%; /* #212121 */
 
-    --brand: 37 47% 61%;                 /* #C8A96E als primary auf Dark */
-    --brand-foreground: 0 0% 4%;
-    --brand-accent: 37 47% 65%;          /* leicht heller für Hover/Highlights */
-    --brand-accent-foreground: 0 0% 4%;
+    --border: 0 0% 20%; /* #333333 */
+    --border-strong: 0 0% 30%; /* #4D4D4D */
+
+    --text-primary: 0 0% 95%;
+    --text-secondary: 0 0% 65%;
+    --text-muted: 0 0% 45%;
+
+    --accent: 211 100% 60%; /* lighter blue on dark */
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 211 100% 65%;
+    --accent-muted: 211 100% 12%;
+
+    --brand: 211 100% 60%;
+    --brand-foreground: 0 0% 100%;
+    --brand-accent: 211 100% 60%;
+    --brand-accent-foreground: 0 0% 100%;
 
     --success: 142 71% 55%;
-    --warning: 45 93% 57%;
-    --danger: 0 72% 61%;
-    --info: 199 89% 58%;
+    --warning: 38 92% 60%;
+    --danger: 0 84% 65%;
+    --info: 211 100% 60%;
 
-    --ring: 32 48% 65%;
-    --ring-offset: 0 0% 4%;
+    --ring: 211 100% 60%;
+    --ring-offset: 0 0% 7%;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
     --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-glow: 0 0 0 4px rgba(200, 169, 110, 0.22);
+    --shadow-glow: 0 0 0 3px rgba(0, 122, 255, 0.3);
   }
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light']) {
-      --background: 0 0% 4%;
-      --surface: 0 0% 9%;
+      --background: 0 0% 7%;
+      --surface: 0 0% 10%;
       --surface-raised: 0 0% 13%;
-      --border: 0 0% 17%;
-      --border-strong: 0 0% 24%;
-      --text-primary: 0 0% 98%;
-      --text-secondary: 0 0% 72%;
-      --text-muted: 0 0% 52%;
 
-      --brand: 32 48% 65%;
-      --brand-foreground: 0 0% 4%;
-      --brand-accent: 32 48% 72%;
-      --brand-accent-foreground: 0 0% 4%;
+      --border: 0 0% 20%;
+      --border-strong: 0 0% 30%;
 
-      --ring-offset: 0 0% 4%;
+      --text-primary: 0 0% 95%;
+      --text-secondary: 0 0% 65%;
+      --text-muted: 0 0% 45%;
+
+      --accent: 211 100% 60%;
+      --accent-foreground: 0 0% 100%;
+      --accent-hover: 211 100% 65%;
+      --accent-muted: 211 100% 12%;
+
+      --brand: 211 100% 60%;
+      --brand-foreground: 0 0% 100%;
+      --brand-accent: 211 100% 60%;
+      --brand-accent-foreground: 0 0% 100%;
+
+      --ring: 211 100% 60%;
+      --ring-offset: 0 0% 7%;
+
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
       --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
       --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -117,7 +145,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--text-primary));
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -125,7 +153,8 @@
   /* Focus ring — nie outline: none */
   *:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--ring-offset)),
+    box-shadow:
+      0 0 0 2px hsl(var(--ring-offset)),
       0 0 0 4px hsl(var(--ring));
   }
 }

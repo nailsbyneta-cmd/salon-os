@@ -29,11 +29,7 @@ export default tseslint.config(
     // form.get('x')?.toString() ~massenweise. FormDataEntryValue wäre
     // theoretisch File|string; wir uploaden Files aber nie über
     // Form-Action-Routen → no-base-to-string ist hier nur Noise.
-    files: [
-      '**/actions.ts',
-      '**/app/**/confirm/page.tsx',
-      '**/app/**/confirm/*.tsx',
-    ],
+    files: ['**/actions.ts', '**/app/**/confirm/page.tsx', '**/app/**/confirm/*.tsx'],
     rules: {
       '@typescript-eslint/no-base-to-string': 'off',
     },

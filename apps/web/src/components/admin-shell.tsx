@@ -88,7 +88,7 @@ export function AdminShell({
       };
       const iconByKind = (kind: (typeof hits)[number]['kind'], label: string): React.ReactNode => {
         if (kind === 'client' || kind === 'staff') {
-          return <Avatar name={label} size="sm" color="hsl(var(--brand-accent))" />;
+          return <Avatar name={label} size="sm" color="#007AFF" />;
         }
         if (kind === 'appointment') return <span>📅</span>;
         return <span>🛎️</span>;
@@ -159,17 +159,16 @@ export function AdminShell({
   );
 
   return (
-    <div className="grid min-h-screen grid-cols-1 bg-background text-text-primary md:grid-cols-[240px_1fr]">
+    <div className="grid min-h-screen grid-cols-1 bg-[#FAFAFA] text-[#171717] md:grid-cols-[220px_1fr]">
       {/* Mobile Top-Bar */}
-      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/80 px-4 py-2.5 backdrop-blur-md md:hidden">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-accent to-brand text-brand-foreground text-xs font-bold">
+      <div className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-[#E0E0E0] bg-white/90 px-4 backdrop-blur-md md:hidden">
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#007AFF] text-white text-[10px] font-bold tracking-tight">
             S
           </div>
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold tracking-tight">SALON OS</div>
-            <div className="truncate text-[9px] uppercase tracking-wider text-text-muted">
-              {tenantName}
+            <div className="truncate text-sm font-semibold tracking-tight text-[#171717]">
+              SALON OS
             </div>
           </div>
         </Link>
@@ -177,10 +176,10 @@ export function AdminShell({
           type="button"
           onClick={() => setNavOpen((v) => !v)}
           aria-label="Menü"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-text-secondary hover:bg-surface-raised"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] text-[#666666] hover:bg-[#F5F5F5] transition-colors"
         >
           <svg
-            className="h-5 w-5"
+            className="h-4 w-4"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -207,32 +206,35 @@ export function AdminShell({
           type="button"
           onClick={() => setNavOpen(false)}
           aria-label="Menü schliessen"
-          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          className="fixed inset-0 z-30 bg-black/20 backdrop-blur-[1px] md:hidden"
         />
       ) : null}
 
+      {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 border-r border-border bg-surface flex flex-col transition-transform duration-200',
-          'md:sticky md:top-0 md:h-screen md:w-auto md:translate-x-0 md:backdrop-blur-sm md:bg-surface/50',
+          'fixed inset-y-0 left-0 z-40 w-[220px] border-r border-[#E0E0E0] bg-white flex flex-col transition-transform duration-200',
+          'md:sticky md:top-0 md:h-screen md:translate-x-0',
           navOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="hidden items-center gap-2 px-5 py-5 md:flex">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-accent to-brand text-brand-foreground text-sm font-bold">
+        {/* Logo */}
+        <div className="hidden items-center gap-2.5 px-5 pt-5 pb-4 md:flex">
+          <div className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[#007AFF] text-white text-xs font-bold tracking-tight">
             S
           </div>
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold tracking-tight">SALON OS</div>
-            <div className="truncate text-[10px] uppercase tracking-wider text-text-muted">
-              {tenantName}
+            <div className="truncate text-sm font-semibold tracking-tight text-[#171717]">
+              SALON OS
             </div>
+            <div className="truncate text-[10px] text-[#999999] mt-0.5">{tenantName}</div>
           </div>
         </div>
 
+        {/* Search / Command Palette trigger */}
         <button
           onClick={() => setPaletteOpen(true)}
-          className="mx-3 mb-3 flex items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs text-text-muted hover:border-border-strong hover:text-text-secondary transition-colors"
+          className="mx-3 mb-3 flex items-center justify-between gap-2 rounded-[6px] border border-[#E0E0E0] bg-[#FAFAFA] px-3 py-2 text-xs text-[#999999] hover:border-[#C7C7C7] hover:bg-white transition-colors"
         >
           <span className="flex items-center gap-2">
             <svg
@@ -240,24 +242,22 @@ export function AdminShell({
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               aria-hidden
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
+              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             Suchen
           </span>
           <Kbd>⌘K</Kbd>
         </button>
 
-        <nav className="flex-1 px-2 py-2">
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto px-2 py-1">
           {nav.map((item) => {
             const active = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href);
-            // Badge-Count + kontextueller Label pro Nav-Item.
             const badgeMeta: {
               count: number;
               tone: 'warning' | 'neutral';
@@ -289,32 +289,38 @@ export function AdminShell({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-all duration-200',
+                  'relative flex items-center gap-2.5 rounded-[6px] px-3 py-2 text-sm transition-colors duration-150',
                   active
-                    ? 'bg-accent/10 font-medium text-text-primary shadow-sm'
-                    : 'text-text-secondary hover:bg-surface-raised hover:text-text-primary',
+                    ? 'text-[#007AFF] font-medium bg-[#007AFF]/[0.06]'
+                    : 'text-[#666666] hover:bg-[#F5F5F5] hover:text-[#171717]',
                 )}
                 aria-label={
                   badgeCount > 0 ? `${item.label} — ${badgeCount} ${badgeMeta.context}` : undefined
                 }
               >
+                {/* Active indicator — 2px left blue bar */}
                 {active ? (
                   <span
                     aria-hidden
-                    className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-r bg-accent"
+                    className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r bg-[#007AFF]"
                   />
                 ) : null}
-                <span className={cn('text-text-muted', active && 'text-accent')}>{item.icon}</span>
-                <span className="flex-1">{item.label}</span>
-                {/* Reserved-space placeholder verhindert CLS wenn counts
-                    asynchron reinkommen. */}
                 <span
                   className={cn(
-                    'inline-flex h-5 min-w-[22px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums transition-opacity',
+                    'shrink-0 transition-colors',
+                    active ? 'text-[#007AFF]' : 'text-[#999999]',
+                  )}
+                >
+                  {item.icon}
+                </span>
+                <span className="flex-1 truncate">{item.label}</span>
+                <span
+                  className={cn(
+                    'inline-flex h-4.5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums transition-opacity',
                     badgeCount > 0
                       ? badgeMeta.tone === 'warning'
-                        ? 'bg-warning/20 text-warning opacity-100'
-                        : 'bg-surface-raised text-text-secondary opacity-100'
+                        ? 'bg-orange-100 text-orange-600 opacity-100'
+                        : 'bg-[#F5F5F5] text-[#666666] opacity-100'
                       : 'opacity-0',
                   )}
                   aria-hidden="true"
@@ -326,23 +332,26 @@ export function AdminShell({
           })}
         </nav>
 
-        <div className="border-t border-border p-3 space-y-1">
+        {/* Bottom: theme toggle + logout */}
+        <div className="border-t border-[#E0E0E0] p-3 space-y-0.5">
           <button
             onClick={toggle}
-            className="flex w-full items-center justify-between rounded-md px-3 py-2 text-xs text-text-secondary hover:bg-surface-raised transition-colors"
+            className="flex w-full items-center justify-between rounded-[6px] px-3 py-2 text-xs text-[#666666] hover:bg-[#F5F5F5] hover:text-[#171717] transition-colors"
             aria-label="Theme wechseln"
           >
             <span>{resolved === 'dark' ? 'Dunkel' : 'Hell'}</span>
-            <span className="text-base">{resolved === 'dark' ? '🌙' : '☀️'}</span>
+            <span className="text-sm opacity-60">{resolved === 'dark' ? '🌙' : '☀️'}</span>
           </button>
           <form action={logoutAction}>
             <button
               type="submit"
-              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-xs text-text-secondary hover:bg-surface-raised transition-colors"
+              className="flex w-full items-center justify-between rounded-[6px] px-3 py-2 text-xs text-[#666666] hover:bg-[#F5F5F5] hover:text-[#171717] transition-colors"
               aria-label="Abmelden"
             >
               <span>Abmelden</span>
-              <span aria-hidden>↪</span>
+              <span aria-hidden className="text-[#999999]">
+                ↪
+              </span>
             </button>
           </form>
         </div>

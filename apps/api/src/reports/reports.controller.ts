@@ -37,6 +37,16 @@ export class ReportsController {
     });
   }
 
+  @Get('locations')
+  async locationSummaries(
+    @Query('days') daysParam?: string,
+  ): Promise<Awaited<ReturnType<ReportsService['getLocationSummaries']>>> {
+    const ctx = requireTenantContext();
+    requireManagerOrOwner(ctx.role);
+    const days = daysParam && /^\d+$/.test(daysParam) ? parseInt(daysParam, 10) : 30;
+    return this.svc.getLocationSummaries(ctx.tenantId, ctx.userId, ctx.role, days);
+  }
+
   @Get('staff/:staffId')
   async staffKpi(
     @Param('staffId', ParseUUIDPipe) staffId: string,

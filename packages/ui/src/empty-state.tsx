@@ -10,7 +10,7 @@ export interface EmptyStateProps {
 }
 
 /**
- * EmptyState — niemals nur „keine Daten". Immer Illustration + nächste Aktion.
+ * EmptyState — niemals nur "keine Daten". Immer Illustration + nächste Aktion.
  * Icon via Slot, z. B. ein lucide-icon oder unser minimaler SVG-Platzhalter.
  */
 export function EmptyState({
@@ -29,14 +29,14 @@ export function EmptyState({
       )}
     >
       {icon ? (
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-raised text-text-muted ring-1 ring-border">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] text-[#999999] ring-1 ring-[#E0E0E0]">
           {icon}
         </div>
       ) : (
         <DefaultIllustration />
       )}
-      <h3 className="text-base font-semibold text-text-primary">{title}</h3>
-      {description ? <p className="max-w-md text-sm text-text-secondary">{description}</p> : null}
+      <h3 className="text-base font-semibold text-[#171717]">{title}</h3>
+      {description ? <p className="max-w-md text-sm text-[#666666]">{description}</p> : null}
       {action ? <div className="mt-2">{action}</div> : null}
     </div>
   );
@@ -45,27 +45,15 @@ export function EmptyState({
 function DefaultIllustration(): React.JSX.Element {
   return (
     <svg
-      width="88"
-      height="88"
-      viewBox="0 0 88 88"
+      width="80"
+      height="80"
+      viewBox="0 0 80 80"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
-      <circle
-        cx="44"
-        cy="44"
-        r="40"
-        className="stroke-border"
-        strokeWidth="2"
-        strokeDasharray="4 4"
-      />
-      <path
-        d="M28 44h32M44 28v32"
-        className="stroke-text-muted"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
+      <circle cx="40" cy="40" r="36" stroke="#E0E0E0" strokeWidth="1.5" strokeDasharray="4 3" />
+      <path d="M24 40h32M40 24v32" stroke="#C7C7C7" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }

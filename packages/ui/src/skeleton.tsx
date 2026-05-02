@@ -2,8 +2,8 @@ import * as React from 'react';
 import { cn } from './cn.js';
 
 /**
- * Skeleton — placeholder während Loading.
- * Niemals Spinner; immer Skeleton, das die Form des Endcontents nachbildet.
+ * Skeleton — placeholder while loading.
+ * Never a spinner; always a skeleton that mirrors the end content shape.
  */
 export function Skeleton({
   className,
@@ -12,7 +12,7 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        'rounded-sm bg-gradient-to-r from-border/40 via-border/60 to-border/40',
+        'rounded-[4px] bg-gradient-to-r from-[#F0F0F0] via-[#E8E8E8] to-[#F0F0F0]',
         'bg-[length:200%_100%] animate-shimmer',
         className,
       )}

@@ -12,8 +12,8 @@ export interface StatProps {
 }
 
 /**
- * Stripe-Dashboard-ähnliche KPI-Karte. Nutzt Fluid-Typography,
- * optional Trend-Pill + Icon, optional als Link.
+ * Apple-style KPI card. Clean white surface, no heavy shadows.
+ * Optional trend pill + icon, optional as link.
  */
 export function Stat({
   label,
@@ -27,29 +27,30 @@ export function Stat({
   const body = (
     <div
       className={cn(
-        'group rounded-lg bg-surface border border-border p-5',
-        'transition-all duration-200',
+        'group rounded-lg bg-white border border-[#E0E0E0] p-5',
+        'shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
+        'transition-all duration-150',
         href &&
-          'cursor-pointer hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md active:translate-y-0 active:scale-[0.99]',
+          'cursor-pointer hover:-translate-y-px hover:border-[#C7C7C7] hover:shadow-[0_1px_3px_rgba(0,0,0,0.08),_0_1px_2px_rgba(0,0,0,0.04)] active:translate-y-0 active:scale-[0.99]',
         className,
       )}
     >
       <div className="flex items-start justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-text-muted group-hover:text-accent transition-colors">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#999999] group-hover:text-[#007AFF] transition-colors">
           {label}
         </span>
-        {icon ? <span className="text-text-muted">{icon}</span> : null}
+        {icon ? <span className="text-[#999999]">{icon}</span> : null}
       </div>
-      <div className="mt-2 font-display text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">
+      <div className="mt-2.5 font-sans text-[28px] font-semibold tracking-tight tabular-nums text-[#171717] leading-none">
         {value}
       </div>
-      <div className="mt-1 flex items-center gap-2 text-xs text-text-muted">
+      <div className="mt-1.5 flex items-center gap-2 text-xs text-[#999999]">
         {trend ? (
           <span
             className={cn(
               'inline-flex items-center gap-0.5 font-medium',
-              trend.direction === 'up' && 'text-success',
-              trend.direction === 'down' && 'text-danger',
+              trend.direction === 'up' && 'text-green-600',
+              trend.direction === 'down' && 'text-red-500',
             )}
           >
             {trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '·'}

@@ -13,10 +13,11 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(function Card(
     <div
       ref={ref}
       className={cn(
-        'rounded-lg bg-surface border border-border text-text-primary',
-        elevation === 'raised' && 'shadow-md',
+        'rounded-lg bg-white border border-[#E0E0E0] text-[#171717]',
+        elevation === 'flat' && 'shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
+        elevation === 'raised' && 'shadow-[0_1px_3px_rgba(0,0,0,0.08),_0_1px_2px_rgba(0,0,0,0.04)]',
         elevation === 'hoverable' &&
-          'transition-all duration-medium hover:border-border-strong hover:shadow-md',
+          'shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all duration-200 hover:border-[#C7C7C7] hover:shadow-[0_1px_3px_rgba(0,0,0,0.08),_0_1px_2px_rgba(0,0,0,0.04)]',
         className,
       )}
       {...props}
@@ -27,7 +28,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(function Card(
 export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   function CardHeader({ className, ...props }, ref) {
     return (
-      <div ref={ref} className={cn('border-b border-border px-5 py-4', className)} {...props} />
+      <div ref={ref} className={cn('border-b border-[#E0E0E0] px-5 py-4', className)} {...props} />
     );
   },
 );
@@ -43,7 +44,7 @@ export const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
     return (
       <div
         ref={ref}
-        className={cn('border-t border-border px-5 py-4 bg-background/30', className)}
+        className={cn('border-t border-[#E0E0E0] px-5 py-4 bg-[#FAFAFA]', className)}
         {...props}
       />
     );

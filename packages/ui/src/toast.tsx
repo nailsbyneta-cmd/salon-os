@@ -26,10 +26,17 @@ export function useToast(): ToastContextValue {
 }
 
 const toneStyle: Record<Tone, string> = {
-  success: 'border-success/50 bg-success/10 text-success',
-  info: 'border-info/50 bg-info/10 text-info',
-  warning: 'border-warning/50 bg-warning/10 text-warning',
-  danger: 'border-danger/50 bg-danger/10 text-danger',
+  success: 'border-green-200 bg-white text-green-700',
+  info: 'border-blue-200 bg-white text-[#007AFF]',
+  warning: 'border-orange-200 bg-white text-orange-600',
+  danger: 'border-red-200 bg-white text-red-600',
+};
+
+const toneIconBg: Record<Tone, string> = {
+  success: 'bg-green-100 text-green-600',
+  info: 'bg-blue-50 text-[#007AFF]',
+  warning: 'bg-orange-100 text-orange-600',
+  danger: 'bg-red-100 text-red-600',
 };
 
 const toneIcon: Record<Tone, string> = {
@@ -63,22 +70,29 @@ export function ToastProvider({ children }: { children: React.ReactNode }): Reac
             key={t.id}
             role="status"
             className={cn(
-              'pointer-events-auto flex max-w-sm items-start gap-3 rounded-md border bg-surface-raised px-4 py-3 shadow-lg animate-fade-in',
+              'pointer-events-auto flex max-w-sm items-start gap-3 rounded-lg border bg-white px-4 py-3',
+              'shadow-[0_4px_6px_rgba(0,0,0,0.07),_0_2px_4px_rgba(0,0,0,0.05)]',
+              'animate-fade-in',
               toneStyle[t.tone],
             )}
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
+            <span
+              className={cn(
+                'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                toneIconBg[t.tone],
+              )}
+            >
               {toneIcon[t.tone]}
             </span>
             <div className="flex-1 text-sm">
-              <div className="font-medium text-text-primary">{t.title}</div>
+              <div className="font-medium text-[#171717]">{t.title}</div>
               {t.description ? (
-                <div className="mt-0.5 text-xs text-text-secondary">{t.description}</div>
+                <div className="mt-0.5 text-xs text-[#666666]">{t.description}</div>
               ) : null}
             </div>
             <button
               onClick={() => setItems((prev) => prev.filter((x) => x.id !== t.id))}
-              className="text-text-muted transition-colors hover:text-text-primary"
+              className="text-[#999999] transition-colors hover:text-[#171717] shrink-0"
               aria-label="Schliessen"
             >
               ✕

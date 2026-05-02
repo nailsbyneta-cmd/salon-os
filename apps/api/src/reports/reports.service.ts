@@ -66,6 +66,16 @@ export interface ReportsBookingChannel {
   revenueChf: number;
 }
 
+export interface LocationSummary {
+  locationId: string;
+  locationName: string;
+  city: string | null;
+  totalRevenueCHF: number;
+  appointmentCount: number;
+  avgTicketCHF: number | null;
+  staffCount: number;
+}
+
 export interface StaffKpi {
   staffId: string;
   name: string;
@@ -423,6 +433,94 @@ export class ReportsService {
         trend,
         topServices,
       };
+    });
+  }
+
+  /**
+   * Multi-Location Franchise Aggregate Report.
+   *
+   * Gibt pro Standort (letzte `days` Tage) zurück:
+   * - Umsatz (CHF), Terminanzahl, Avg. Ticket, aktive Mitarbeiter-Anzahl.
+   *
+   * Sortiert nach Umsatz absteigend.
+   */
+  async getLocationSummaries(
+    tenantId: string,
+    userId: string | null,
+    role: string | null,
+    days = 30,
+  ): Promise<LocationSummary[]> {
+    return this.withTenant(tenantId, userId, role, async (tx) => {
+      const round2 = (n: number): number => Math.round(n * 100) / 100;
+
+      const toDate = new Date();
+      const fromDate = new Date(toDate.getTime() - days * 24 * 60 * 60 * 1000);
+
+      // Fetch all locations for this tenant (excluding soft-deleted).
+      const locations = await tx.location.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { id: true, name: true, city: true },
+      });
+
+      if (locations.length === 0) return [];
+
+      // Fetch COMPLETED appointments with their items in the date range,
+      // grouped per location — single query for all locations.
+      const appts = await tx.appointment.findMany({
+        where: {
+          tenantId,
+          status: 'COMPLETED',
+          startAt: { gte: fromDate, lte: toDate },
+        },
+        select: {
+          locationId: true,
+          items: { select: { price: true } },
+        },
+      });
+
+      // Aggregate per locationId.
+      const byLocation = new Map<string, { count: number; revenueChf: number }>();
+      for (const a of appts) {
+        const cur = byLocation.get(a.locationId) ?? { count: 0, revenueChf: 0 };
+        cur.count += 1;
+        for (const item of a.items) {
+          cur.revenueChf += Number(item.price);
+        }
+        byLocation.set(a.locationId, cur);
+      }
+
+      // Active staff count per location via StaffLocation + Staff.active.
+      // We join through staff to filter only active staff members.
+      const staffAssignments = await tx.staffLocation.findMany({
+        where: {
+          locationId: { in: locations.map((l) => l.id) },
+          staff: { tenantId, active: true, deletedAt: null },
+        },
+        select: { locationId: true },
+      });
+
+      const staffCountByLocation = new Map<string, number>();
+      for (const sa of staffAssignments) {
+        staffCountByLocation.set(sa.locationId, (staffCountByLocation.get(sa.locationId) ?? 0) + 1);
+      }
+
+      // Compose result.
+      const summaries: LocationSummary[] = locations.map((loc) => {
+        const agg = byLocation.get(loc.id) ?? { count: 0, revenueChf: 0 };
+        const totalRevenueCHF = round2(agg.revenueChf);
+        const appointmentCount = agg.count;
+        return {
+          locationId: loc.id,
+          locationName: loc.name,
+          city: loc.city ?? null,
+          totalRevenueCHF,
+          appointmentCount,
+          avgTicketCHF: appointmentCount > 0 ? round2(totalRevenueCHF / appointmentCount) : null,
+          staffCount: staffCountByLocation.get(loc.id) ?? 0,
+        };
+      });
+
+      return summaries.sort((a, b) => b.totalRevenueCHF - a.totalRevenueCHF);
     });
   }
 }
