@@ -8,36 +8,86 @@ interface Props {
   appointmentId: string;
   currentStartIso: string;
   durationMinutes: number;
+  timezone: string;
+}
+
+function toWallTime(isoUtc: string, tz: string): { date: string; time: string } {
+  const dt = new Date(isoUtc);
+  const date = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(dt);
+  const time = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(dt);
+  return { date, time };
+}
+
+function wallTimeToUtcIso(date: string, time: string, tz: string): string {
+  // Build a wall-clock string and interpret it in the given timezone
+  const wallStr = `${date}T${time}:00`;
+  // Use Intl to find the UTC offset for that wall time in the given timezone
+  const localDt = new Date(wallStr);
+  // Get what "this wall time in tz" corresponds to in UTC via offset computation
+  const utcMs = localDt.getTime();
+  // Compute offset: format localDt as if it were in tz and compare with UTC string
+  const utcString = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(localDt);
+  // Parse the tz-formatted string back
+  const [datePart, timePart] = utcString.replace(', ', 'T').split('T');
+  const tzAsUtc = new Date(`${datePart}T${timePart}Z`);
+  const offsetMs = tzAsUtc.getTime() - utcMs;
+  // The wall time in tz as UTC = treat wallStr as UTC then subtract offset
+  const wallAsUtcMs = new Date(`${wallStr}Z`).getTime();
+  return new Date(wallAsUtcMs - offsetMs).toISOString();
 }
 
 export function AppointmentEditForm({
   appointmentId,
   currentStartIso,
   durationMinutes,
+  timezone,
 }: Props): React.JSX.Element {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
 
-  const initDate = currentStartIso.slice(0, 10);
-  const initTime = currentStartIso.slice(11, 16);
+  const { date: initDate, time: initTime } = toWallTime(currentStartIso, timezone);
 
   const [date, setDate] = React.useState(initDate);
   const [time, setTime] = React.useState(initTime);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  const todayIso = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setError(null);
     setSaving(true);
     try {
-      const newStart = new Date(`${date}T${time}:00`);
-      const newEnd = new Date(newStart.getTime() + durationMinutes * 60_000);
-      const result = await rescheduleAppointment(
-        appointmentId,
-        newStart.toISOString(),
-        newEnd.toISOString(),
-      );
+      const newStartIso = wallTimeToUtcIso(date, time, timezone);
+      const newEndIso = new Date(
+        new Date(newStartIso).getTime() + durationMinutes * 60_000,
+      ).toISOString();
+      const result = await rescheduleAppointment(appointmentId, newStartIso, newEndIso);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -73,6 +123,7 @@ export function AppointmentEditForm({
         <Input
           type="date"
           value={date}
+          min={todayIso}
           onChange={(e) => setDate(e.target.value)}
           required
           className="w-40"

@@ -99,17 +99,17 @@ async function loadWaitlistMatches(
   }
 }
 
-async function loadTenantName(): Promise<string> {
+async function loadTenantSettings(): Promise<{ name: string; timezone: string }> {
   const ctx = await getCurrentTenant();
   try {
-    const res = await apiFetch<{ name: string }>('/v1/settings/tenant', {
+    const res = await apiFetch<{ name: string; timezone?: string }>('/v1/settings/tenant', {
       tenantId: ctx.tenantId,
       userId: ctx.userId,
       role: ctx.role,
     });
-    return res.name || '';
+    return { name: res.name || '', timezone: res.timezone ?? 'Europe/Zurich' };
   } catch (err) {
-    if (err instanceof ApiError) return '';
+    if (err instanceof ApiError) return { name: '', timezone: 'Europe/Zurich' };
     throw err;
   }
 }
@@ -174,13 +174,15 @@ export default async function AppointmentDetailPage({
   // auf alle Services. Parallel: Tenant-Name für pre-filled WA-Message.
   const isFreed = a.status === 'CANCELLED' || a.status === 'NO_SHOW';
   const allServiceIds = a.items.map((i) => i.serviceId).filter(Boolean);
-  const [matchesRes, tenantName] =
+  const [matchesRes, tenantSettings] =
     isFreed && allServiceIds.length > 0
       ? await Promise.all([
           loadWaitlistMatches(allServiceIds, a.startAt, a.endAt, a.staffId),
-          loadTenantName(),
+          loadTenantSettings(),
         ])
-      : [{ entries: [] as WaitlistMatch[], total: 0 }, ''];
+      : [{ entries: [] as WaitlistMatch[], total: 0 }, await loadTenantSettings()];
+  const tenantName = tenantSettings.name;
+  const tenantTimezone = tenantSettings.timezone;
   const waitlistMatches = matchesRes.entries;
   const waitlistTotal = matchesRes.total;
 
@@ -440,6 +442,7 @@ export default async function AppointmentDetailPage({
             appointmentId={a.id}
             currentStartIso={a.startAt}
             durationMinutes={a.items.reduce((s, i) => s + i.duration, 0)}
+            timezone={tenantTimezone}
           />
         </div>
       ) : null}

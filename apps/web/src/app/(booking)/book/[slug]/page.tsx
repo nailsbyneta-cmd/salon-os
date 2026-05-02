@@ -829,16 +829,21 @@ export default async function BookingStart({
               👤 Facebook
             </a>
           ) : null}
-          {tenant.whatsappE164 && /^\+[1-9]\d{6,14}$/.test(tenant.whatsappE164) ? (
-            <a
-              href={`https://wa.me/${tenant.whatsappE164.slice(1)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-success bg-success/10 px-4 text-sm font-medium text-success transition-colors hover:bg-success/20"
-            >
-              💬 WhatsApp
-            </a>
-          ) : null}
+          {(() => {
+            const raw = tenant.whatsappE164;
+            const normalized = raw ? `+${raw.replace(/[^\d]/g, '')}` : null;
+            if (!normalized || !/^\+[1-9]\d{6,14}$/.test(normalized)) return null;
+            return (
+              <a
+                href={`https://wa.me/${normalized.slice(1)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 items-center gap-2 rounded-md border border-success bg-success/10 px-4 text-sm font-medium text-success transition-colors hover:bg-success/20"
+              >
+                💬 WhatsApp
+              </a>
+            );
+          })()}
           {tenant.googleBusinessUrl ? (
             <a
               href={tenant.googleBusinessUrl}
