@@ -344,6 +344,7 @@ export default async function BookingStart({
     .sort((a, b) => a.catOrder - b.catOrder || a.catName.localeCompare(b.catName));
 
   const primaryLocation = locations[0] ?? null;
+  const primaryMapLink = primaryLocation ? mapLink(primaryLocation) : null;
   const hours = primaryLocation
     ? openingHoursArray(primaryLocation.openingHours, tenant.timezone)
     : null;
@@ -363,11 +364,11 @@ export default async function BookingStart({
           Gradient-Overlay damit Text auf jeder Hero-Bild lesbar bleibt.
           Ken-Burns Auto-Zoom auf dem Hintergrundbild (8s scale 1->1.05).
           Floating-Pills unten: Sterne links, Öffnungs-Pille rechts. */}
-      <header className="relative -mx-4 flex min-h-[60vh] items-center justify-center overflow-hidden bg-[#0A0A0A] text-center md:mx-0 md:min-h-[50vh] md:rounded-2xl">
+      <header className="relative z-0 -mx-4 flex min-h-[60vh] items-center justify-center overflow-hidden bg-[#0A0A0A] text-center md:mx-0 md:min-h-[50vh] md:rounded-2xl">
         {/* Ken-Burns Hintergrundbild oder Gradient-Fallback */}
         {isSafeHttpUrl(tenant.heroImageUrl) ? (
           <div
-            className="absolute inset-0 animate-[kenBurns_12s_ease-in-out_infinite_alternate]"
+            className="absolute inset-0 animate-[kenBurns_12s_ease-in-out_infinite_alternate] motion-reduce:animate-none"
             style={{
               backgroundImage: `url(${tenant.heroImageUrl})`,
               backgroundSize: 'cover',
@@ -407,27 +408,27 @@ export default async function BookingStart({
           ) : null}
           {primaryLocation?.city ? (
             <p
-              className="animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] text-[11px] font-medium uppercase tracking-[0.4em] text-accent"
+              className="animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] motion-reduce:animate-none motion-reduce:opacity-100 text-[11px] font-medium uppercase tracking-[0.4em] text-accent"
               style={{ animationDelay: '50ms' }}
             >
               ★ {primaryLocation.city}
             </p>
           ) : (
             <p
-              className="animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] text-[11px] font-medium uppercase tracking-[0.4em] text-accent"
+              className="animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] motion-reduce:animate-none motion-reduce:opacity-100 text-[11px] font-medium uppercase tracking-[0.4em] text-accent"
               style={{ animationDelay: '50ms' }}
             >
               Premium Beauty
             </p>
           )}
           <h1
-            className="mt-4 animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] font-display text-5xl font-light tracking-tight text-white md:text-6xl lg:text-7xl"
+            className="mt-4 animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] motion-reduce:animate-none motion-reduce:opacity-100 font-display text-5xl font-light tracking-tight text-white md:text-6xl lg:text-7xl"
             style={{ animationDelay: '200ms' }}
           >
             {tenant.name}
           </h1>
           <p
-            className="mt-4 max-w-md animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] text-base font-light italic text-white/75 md:text-lg"
+            className="mt-4 max-w-md animate-[heroFadeIn_700ms_cubic-bezier(0.16,1,0.3,1)_both] motion-reduce:animate-none motion-reduce:opacity-100 text-base font-light italic text-white/75 md:text-lg"
             style={{ animationDelay: '400ms' }}
           >
             {tenant.tagline?.trim() ? tenant.tagline : 'Dein Moment. Dein Glanz.'}
@@ -481,14 +482,6 @@ export default async function BookingStart({
           @keyframes heroFadeIn {
             from { opacity: 0; transform: translateY(12px); }
             to   { opacity: 1; transform: translateY(0); }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .animate-\\[kenBurns_12s_ease-in-out_infinite_alternate\\],
-            .animate-\\[heroFadeIn_700ms_cubic-bezier\\(0\\.16\\,1\\,0\\.3\\,1\\)_both\\] {
-              animation: none !important;
-              opacity: 1 !important;
-              transform: none !important;
-            }
           }
         `}</style>
       </header>
@@ -618,9 +611,9 @@ export default async function BookingStart({
                     {formatAddress(primaryLocation)}
                   </div>
                 ) : null}
-                {mapLink(primaryLocation) ? (
+                {primaryMapLink ? (
                   <a
-                    href={mapLink(primaryLocation)!}
+                    href={primaryMapLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-1.5 inline-block text-xs font-medium text-accent hover:underline"
@@ -704,6 +697,7 @@ export default async function BookingStart({
                 key={g.id}
                 src={g.imageUrl}
                 alt={g.caption ?? 'Gallerie'}
+                loading="lazy"
                 className="h-44 w-44 flex-none rounded-xl border border-border object-cover shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md md:h-auto md:w-auto md:aspect-square md:flex-initial md:rounded-lg"
               />
             ))}
@@ -835,9 +829,9 @@ export default async function BookingStart({
               👤 Facebook
             </a>
           ) : null}
-          {tenant.whatsappE164 ? (
+          {tenant.whatsappE164 && /^\+[1-9]\d{6,14}$/.test(tenant.whatsappE164) ? (
             <a
-              href={`https://wa.me/${tenant.whatsappE164.replace(/[^+\d]/g, '').replace(/^\+/, '')}`}
+              href={`https://wa.me/${tenant.whatsappE164.slice(1)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-10 items-center gap-2 rounded-md border border-success bg-success/10 px-4 text-sm font-medium text-success transition-colors hover:bg-success/20"
