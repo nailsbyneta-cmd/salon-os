@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Badge, Button, Card, CardBody } from '@salon-os/ui';
+import { Badge, Button } from '@salon-os/ui';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getCurrentTenant } from '@/lib/tenant';
 import { FormBuilderClient } from '../form-builder-client';

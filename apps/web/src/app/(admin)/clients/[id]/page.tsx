@@ -691,7 +691,8 @@ export default async function ClientDetailPage({
                 <form
                   action={async (formData: FormData) => {
                     'use server';
-                    const planId = String(formData.get('planId') ?? '');
+                    const rawPlanId = formData.get('planId');
+                    const planId = typeof rawPlanId === 'string' ? rawPlanId : '';
                     if (planId) await subscribeMembership(id, planId);
                   }}
                   className="flex items-center gap-3"

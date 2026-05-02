@@ -35,6 +35,7 @@ import { VoiceAiModule } from './voice-ai/voice-ai.module.js';
 import { WaitlistModule } from './waitlist/waitlist.module.js';
 import { WhatsappModule } from './whatsapp/whatsapp.module.js';
 import { FormsModule } from './forms/forms.module.js';
+import { PayrollModule } from './payroll/payroll.module.js';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { FormsModule } from './forms/forms.module.js';
     VoiceAiModule,
     WhatsappModule,
     FormsModule,
+    PayrollModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -1,8 +1,15 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import type { PrismaClient } from '@salon-os/db';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import type { PrismaClient, SalonReview } from '@salon-os/db';
 import { signSelfServiceToken, verifySelfServiceToken } from '@salon-os/utils';
 import { PRISMA } from '../db/db.module.js';
 import { OutboxService } from '../common/outbox.service.js';
+import { requireTenantContext } from '../tenant/tenant.context.js';
 
 const REVIEW_REQUEST_LEAD_HOURS = 24;
 const REVIEW_TOKEN_TTL_DAYS = 30;
@@ -207,5 +214,134 @@ export class ReviewsService {
       }
       throw e;
     }
+  }
+
+  // ─── Admin methods ───────────────────────────────────────────────────────
+
+  /**
+   * Paginated list of reviews for a tenant with optional filters.
+   * Returns reviews + total count + average rating + star distribution.
+   */
+  async listReviews(
+    tenantId: string,
+    filters: {
+      rating?: number;
+      featured?: boolean;
+      source?: string;
+      page: number;
+      limit: number;
+    },
+  ): Promise<{
+    reviews: SalonReview[];
+    total: number;
+    avgRating: number;
+    distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+  }> {
+    const ctx = requireTenantContext();
+    if (ctx.role !== 'OWNER' && ctx.role !== 'MANAGER') {
+      throw new ForbiddenException('Nur OWNER oder MANAGER dürfen Reviews verwalten.');
+    }
+
+    const where: {
+      tenantId: string;
+      rating?: number;
+      featured?: boolean;
+      submittedVia?: string;
+    } = { tenantId };
+    if (filters.rating !== undefined) where.rating = filters.rating;
+    if (filters.featured !== undefined) where.featured = filters.featured;
+    if (filters.source !== undefined) where.submittedVia = filters.source;
+
+    const skip = (filters.page - 1) * filters.limit;
+
+    const [reviews, total, allForStats] = await Promise.all([
+      this.prisma.salonReview.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }],
+        skip,
+        take: filters.limit,
+      }),
+      this.prisma.salonReview.count({ where }),
+      this.prisma.salonReview.findMany({
+        where: { tenantId },
+        select: { rating: true },
+      }),
+    ]);
+
+    const distribution: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let ratingSum = 0;
+    for (const r of allForStats) {
+      const star = r.rating as 1 | 2 | 3 | 4 | 5;
+      distribution[star] = (distribution[star] ?? 0) + 1;
+      ratingSum += r.rating;
+    }
+    const avgRating =
+      allForStats.length > 0
+        ? Math.round((ratingSum / allForStats.length) * 10) / 10
+        : 0;
+
+    return { reviews, total, avgRating, distribution };
+  }
+
+  /** Toggle the featured flag on a review. Scoped to tenant. */
+  async toggleFeature(tenantId: string, reviewId: string, featured: boolean): Promise<SalonReview> {
+    const ctx = requireTenantContext();
+    if (ctx.role !== 'OWNER' && ctx.role !== 'MANAGER') {
+      throw new ForbiddenException('Nur OWNER oder MANAGER dürfen Reviews featuren.');
+    }
+
+    const existing = await this.prisma.salonReview.findFirst({
+      where: { id: reviewId, tenantId },
+    });
+    if (!existing) throw new NotFoundException('Review nicht gefunden.');
+
+    return this.prisma.salonReview.update({
+      where: { id: reviewId },
+      data: { featured },
+    });
+  }
+
+  /** Permanently delete a review. OWNER only. */
+  async deleteReview(tenantId: string, reviewId: string): Promise<void> {
+    const ctx = requireTenantContext();
+    if (ctx.role !== 'OWNER') {
+      throw new ForbiddenException('Nur OWNER dürfen Reviews löschen.');
+    }
+
+    const existing = await this.prisma.salonReview.findFirst({
+      where: { id: reviewId, tenantId },
+    });
+    if (!existing) throw new NotFoundException('Review nicht gefunden.');
+
+    await this.prisma.salonReview.delete({ where: { id: reviewId } });
+  }
+
+  /** Manually import a review (submittedVia: 'manual'). */
+  async importReview(
+    tenantId: string,
+    input: {
+      rating: number;
+      text: string;
+      authorName: string;
+      sourceUrl?: string | null;
+      source?: string | null;
+    },
+  ): Promise<SalonReview> {
+    const ctx = requireTenantContext();
+    if (ctx.role !== 'OWNER' && ctx.role !== 'MANAGER') {
+      throw new ForbiddenException('Nur OWNER oder MANAGER dürfen Reviews importieren.');
+    }
+
+    return this.prisma.salonReview.create({
+      data: {
+        tenantId,
+        authorName: input.authorName,
+        rating: input.rating,
+        text: input.text.trim(),
+        sourceUrl: input.sourceUrl ?? null,
+        featured: false,
+        submittedVia: (input.source as 'manual' | 'google_import' | null) ?? 'manual',
+      },
+    });
   }
 }

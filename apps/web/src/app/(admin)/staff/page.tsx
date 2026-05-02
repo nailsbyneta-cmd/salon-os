@@ -80,11 +80,19 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
           </h1>
           <p className="mt-1 text-sm text-text-secondary">{staff.length} aktive Teammitglieder</p>
         </div>
-        <Link href="/staff/new">
-          <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
-            Neue Mitarbeiterin
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/staff/payroll"
+            className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary"
+          >
+            Lohnabrechnung
+          </Link>
+          <Link href="/staff/new">
+            <Button variant="primary" iconLeft={<span className="text-base leading-none">+</span>}>
+              Neue Mitarbeiterin
+            </Button>
+          </Link>
+        </div>
       </header>
 
       {staff.length === 0 ? (
@@ -124,12 +132,14 @@ export default async function StaffPage(): Promise<React.JSX.Element> {
                     </div>
                   </Link>
                   <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
-                    <Link
-                      href={`/staff/${s.id}/shifts`}
-                      className="text-xs font-medium text-text-secondary transition-colors hover:text-text-primary"
-                    >
-                      Arbeitszeiten →
-                    </Link>
+                    <div className="flex gap-3">
+                      <Link
+                        href={`/staff/${s.id}/shifts`}
+                        className="text-xs font-medium text-text-secondary transition-colors hover:text-text-primary"
+                      >
+                        Arbeitszeiten →
+                      </Link>
+                    </div>
                     {s.role !== 'OWNER' ? (
                       <form action={deleteStaff.bind(null, s.id)}>
                         <button type="submit" className="text-xs text-danger hover:underline">

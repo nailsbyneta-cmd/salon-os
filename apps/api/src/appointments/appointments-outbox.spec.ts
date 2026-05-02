@@ -4,6 +4,10 @@ import { AppointmentsService } from './appointments.service.js';
 import { RemindersService } from '../reminders/reminders.service.js';
 import { AuditService } from '../audit/audit.service.js';
 
+vi.mock('../tenant/tenant.context.js', () => ({
+  requireTenantContext: () => ({ tenantId: 'tenant-1', userId: 'user-1', role: 'OWNER' }),
+}));
+
 describe('AppointmentsService — Outbox Integration', () => {
   let appointmentsService: AppointmentsService;
   let mockReminders: Partial<RemindersService>;
@@ -64,13 +68,6 @@ describe('AppointmentsService — Outbox Integration', () => {
         },
       ],
     };
-
-    // Mock tenant context
-    vi.stubGlobal('requireTenantContext', () => ({
-      tenantId: 'tenant-1',
-      userId: 'user-1',
-      role: 'admin',
-    }));
 
     await appointmentsService.create(input);
 

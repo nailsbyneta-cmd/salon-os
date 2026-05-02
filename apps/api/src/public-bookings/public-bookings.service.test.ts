@@ -26,6 +26,9 @@ function makePrismaPublic(tenantOverride?: Partial<{ status: string }>) {
         ...tenantOverride,
       }),
     },
+    tenantAdsIntegration: {
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
   };
 }
 
@@ -57,6 +60,9 @@ function makeReminders() {
   return {
     sendConfirmationNow: vi.fn().mockResolvedValue(undefined),
     scheduleEmailReminder: vi.fn().mockResolvedValue(undefined),
+    enqueueConfirmationViaOutbox: vi.fn().mockResolvedValue(undefined),
+    enqueueReminderViaOutbox: vi.fn().mockResolvedValue(undefined),
+    cancelReminder: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -383,7 +389,8 @@ describe('PublicBookingsService', () => {
       await service.createBooking('demo-salon', BASE_INPUT);
       // fire-and-forget: wait a tick
       await new Promise((r) => setTimeout(r, 10));
-      expect(reminders.sendConfirmationNow).toHaveBeenCalledWith(
+      expect(reminders.enqueueConfirmationViaOutbox).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ appointmentId: 'appt1', tenantId: 'tenant1' }),
       );
     });

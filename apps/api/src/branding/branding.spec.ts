@@ -1,36 +1,32 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { BrandingController } from './branding.controller.js';
-import { BrandingService } from './branding.service.js';
+import type { BrandingService } from './branding.service.js';
+
+const MOCK_BRANDING = {
+  tenantSlug: 'test-salon',
+  logoUrl: 'https://example.com/logo.svg',
+  primaryColor: '#000000',
+  secondaryColor: '#ffffff',
+  accentColor: '#0066cc',
+  fontFamily: "'Montserrat', sans-serif",
+  appName: 'Test Salon App',
+  deepLinkScheme: 'testsalon://',
+};
+
+function makeService() {
+  return {
+    getBrandingByTenantSlug: vi.fn().mockResolvedValue(MOCK_BRANDING),
+    upsertBranding: vi.fn().mockResolvedValue(MOCK_BRANDING),
+  } as unknown as BrandingService;
+}
 
 describe('BrandingController', () => {
   let controller: BrandingController;
-  let service: BrandingService;
+  let service: ReturnType<typeof makeService>;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [BrandingController],
-      providers: [
-        {
-          provide: BrandingService,
-          useValue: {
-            getBrandingByTenantSlug: vi.fn().mockResolvedValue({
-              tenantSlug: 'test-salon',
-              logoUrl: 'https://example.com/logo.svg',
-              primaryColor: '#000000',
-              secondaryColor: '#ffffff',
-              accentColor: '#0066cc',
-              fontFamily: "'Montserrat', sans-serif",
-              appName: 'Test Salon App',
-              deepLinkScheme: 'testsalon://',
-            }),
-          },
-        },
-      ],
-    }).compile();
-
-    controller = module.get<BrandingController>(BrandingController);
-    service = module.get<BrandingService>(BrandingService);
+  beforeEach(() => {
+    service = makeService();
+    controller = new BrandingController(service);
   });
 
   describe('getBranding', () => {

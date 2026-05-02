@@ -14,6 +14,10 @@ function makePrisma() {
       create: vi.fn(),
       update: vi.fn().mockResolvedValue({}),
     },
+    stockMutation: {
+      create: vi.fn().mockResolvedValue({}),
+      findMany: vi.fn().mockResolvedValue([]),
+    },
   };
 }
 

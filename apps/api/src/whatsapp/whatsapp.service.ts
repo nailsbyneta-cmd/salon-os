@@ -75,7 +75,9 @@ export class WhatsappService {
     return {
       type: 'booking',
       service: detectedService,
-      date: dateMatch?.[1] || 'unspecified',
+      date: dateMatch?.[1]
+        ? dateMatch[1].charAt(0).toUpperCase() + dateMatch[1].slice(1)
+        : 'unspecified',
       time: timeMatch?.[0] || 'unspecified',
       clientPhone: senderPhone,
     };

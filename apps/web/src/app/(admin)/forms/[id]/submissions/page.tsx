@@ -37,7 +37,10 @@ async function load(formId: string): Promise<{ form: FormMeta; submissions: Subm
 function fmtAnswer(value: unknown): string {
   if (value === null || value === undefined) return '—';
   if (typeof value === 'boolean') return value ? 'Ja' : 'Nein';
-  return String(value);
+  if (typeof value === 'object') return JSON.stringify(value);
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'bigint') return value.toString();
+  return '—';
 }
 
 function fmtDate(iso: string): string {
@@ -116,7 +119,7 @@ export default async function SubmissionsPage({
                     <div key={field.id} className="grid grid-cols-[minmax(0,1fr)_2fr] gap-2">
                       <dt className="text-xs font-medium text-text-muted">{field.label}</dt>
                       <dd className="text-sm text-text-primary">
-                        {fmtAnswer((sub.answers as Record<string, unknown>)[field.id])}
+                        {fmtAnswer(sub.answers[field.id])}
                       </dd>
                     </div>
                   ))}
